@@ -17,6 +17,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gowebpki/jcs"
 )
 
 const runtimeProtocol = "virgil.dev/runtime/v1alpha1"
@@ -76,21 +78,28 @@ type evidenceReference struct {
 }
 
 type immutableResourceRef struct {
-	URI    string `json:"uri"`
-	Digest string `json:"digest"`
+	URI      string `json:"uri"`
+	Revision string `json:"revision,omitempty"`
+	Digest   string `json:"digest"`
 }
 
 type evidenceManifest struct {
-	SchemaVersion string `json:"schema_version"`
-	Layer         string `json:"layer"`
-	Fixture       struct {
-		FixtureID string `json:"fixture_id"`
-		Digest    string `json:"digest"`
+	SchemaVersion   string `json:"schema_version"`
+	ProtocolVersion string `json:"protocol_version"`
+	BundleID        string `json:"bundle_id"`
+	Layer           string `json:"layer"`
+	Fixture         struct {
+		FixtureID       string `json:"fixture_id"`
+		FixtureRevision string `json:"fixture_revision"`
+		Digest          string `json:"digest"`
 	} `json:"fixture"`
-	Trace    immutableResourceRef `json:"trace"`
-	Contents []struct {
-		Role     string               `json:"role"`
-		Resource immutableResourceRef `json:"resource"`
+	Trace        immutableResourceRef `json:"trace"`
+	RunnerReport immutableResourceRef `json:"runner_report"`
+	Contents     []struct {
+		Role      string               `json:"role"`
+		SchemaID  string               `json:"schema_id"`
+		MediaType string               `json:"media_type"`
+		Resource  immutableResourceRef `json:"resource"`
 	} `json:"contents"`
 	Diffs struct {
 		Target immutableResourceRef `json:"target"`
@@ -105,8 +114,66 @@ type evidenceManifest struct {
 	} `json:"outcome"`
 	PublishedAtomically bool `json:"published_atomically"`
 	Integrity           struct {
-		Digest string `json:"digest"`
+		Digest           string `json:"digest"`
+		Canonicalization string `json:"canonicalization"`
 	} `json:"integrity"`
+}
+
+type evidenceRunnerReport struct {
+	SchemaVersion string `json:"schema_version"`
+	Fixture       struct {
+		FixtureID string `json:"fixture_id"`
+		Digest    string `json:"digest"`
+	} `json:"fixture"`
+	Processes []struct {
+		ProcessID    string   `json:"process_id"`
+		PID          int      `json:"pid"`
+		FreshProcess bool     `json:"fresh_process"`
+		ExitCode     int      `json:"exit_code"`
+		ActionIDs    []string `json:"action_ids"`
+		RequestIDs   []string `json:"request_ids"`
+	} `json:"processes"`
+	Checkpoints []struct {
+		CheckpointID string `json:"checkpoint_id"`
+		RelativeTo   string `json:"relative_to"`
+		Target       struct {
+			Diff immutableResourceRef `json:"diff"`
+		} `json:"target"`
+		Store struct {
+			Diff immutableResourceRef `json:"diff"`
+		} `json:"store"`
+	} `json:"checkpoints"`
+	Checks []struct {
+		CheckID string `json:"check_id"`
+		Status  string `json:"status"`
+	} `json:"checks"`
+	Outcome struct {
+		Status string `json:"status"`
+	} `json:"outcome"`
+}
+
+type evidenceTrace struct {
+	SchemaVersion string `json:"schema_version"`
+	Fixture       struct {
+		FixtureID string `json:"fixture_id"`
+		Digest    string `json:"digest"`
+	} `json:"fixture"`
+	Entries []struct {
+		EntryID     string `json:"entry_id"`
+		Sequence    int    `json:"sequence"`
+		Kind        string `json:"kind"`
+		ProcessID   string `json:"process_id"`
+		CausationID string `json:"causation_id"`
+	} `json:"entries"`
+	Outcome struct {
+		Status string `json:"status"`
+	} `json:"outcome"`
+}
+
+type evidenceDiff struct {
+	Changes []struct {
+		Path string `json:"path"`
+	} `json:"changes"`
 }
 
 type appRun struct {
@@ -219,7 +286,7 @@ func assertScenarioPassed(t *testing.T, execution appRun, fixtureID string) {
 	}
 	assertProcesses(t, fixtureID, scenario.Processes)
 	assertChecks(t, scenario.Checks)
-	assertEvidence(t, execution.EvidenceRoot, fixtureID, scenario.Evidence)
+	assertEvidence(t, execution.EvidenceRoot, fixtureID, scenario.Processes, scenario.Checks, scenario.Evidence)
 	assertWorkspace(t, execution.WorkspaceRoot, fixtureID)
 }
 
@@ -274,44 +341,325 @@ func assertChecks(t *testing.T, checks []checkResult) {
 	}
 }
 
-func assertEvidence(t *testing.T, evidenceRoot, fixtureID string, evidence *evidenceReference) {
+func assertEvidence(t *testing.T, evidenceRoot, fixtureID string, processes []processObservation, scenarioChecks []checkResult, evidence *evidenceReference) {
 	t.Helper()
 	if evidence == nil {
 		t.Fatal("passed scenario has no EvidenceReference")
 	}
 	content := readEvidenceResource(t, evidenceRoot, immutableResourceRef(*evidence))
+	assertSealedIntegrity(t, "EvidenceBundle manifest", content)
 	var manifest evidenceManifest
-	if err := json.Unmarshal(content, &manifest); err != nil {
-		t.Fatalf("decode EvidenceBundle manifest: %v", err)
+	decodeOneJSONValue(t, "EvidenceBundle manifest", content, &manifest)
+	if manifest.SchemaVersion != "virgil.dev/evidence-bundle/v1alpha1" ||
+		manifest.ProtocolVersion != "virgil.dev/planning-slice1/v1alpha1" || manifest.BundleID == "" || manifest.Layer != "T0" {
+		t.Fatalf("unexpected EvidenceBundle identity %q/%q/%q", manifest.SchemaVersion, manifest.ProtocolVersion, manifest.Layer)
 	}
-	if manifest.SchemaVersion != "virgil.dev/evidence-bundle/v1alpha1" || manifest.Layer != "T0" {
-		t.Fatalf("unexpected EvidenceBundle identity %q/%q", manifest.SchemaVersion, manifest.Layer)
-	}
-	if manifest.Fixture.FixtureID != fixtureID || manifest.Fixture.Digest == "" {
+	if manifest.Fixture.FixtureID != fixtureID || manifest.Fixture.FixtureRevision == "" || manifest.Fixture.Digest == "" {
 		t.Fatalf("EvidenceBundle fixture mismatch: %+v", manifest.Fixture)
 	}
-	if manifest.Outcome.Status != "passed" || !manifest.PublishedAtomically || manifest.Integrity.Digest == "" {
+	if manifest.Outcome.Status != "passed" || !manifest.PublishedAtomically ||
+		manifest.Integrity.Digest == "" || manifest.Integrity.Canonicalization != "RFC8785" {
 		t.Fatalf("EvidenceBundle cannot certify passed: outcome=%q atomic=%v integrity=%q", manifest.Outcome.Status, manifest.PublishedAtomically, manifest.Integrity.Digest)
 	}
-	if len(manifest.Checks) == 0 {
-		t.Fatal("EvidenceBundle has no checks")
-	}
-	for _, check := range manifest.Checks {
-		if check.CheckID == "" || check.Status != "passed" {
-			t.Fatalf("EvidenceBundle contains non-passing check: %+v", check)
-		}
-	}
-	readEvidenceResource(t, evidenceRoot, manifest.Trace)
-	readEvidenceResource(t, evidenceRoot, manifest.Diffs.Target)
-	readEvidenceResource(t, evidenceRoot, manifest.Diffs.Store)
+	assertManifestChecks(t, manifest, scenarioChecks)
+
+	traceBytes := readEvidenceResource(t, evidenceRoot, manifest.Trace)
+	reportBytes := readEvidenceResource(t, evidenceRoot, manifest.RunnerReport)
+	targetDiffBytes := readEvidenceResource(t, evidenceRoot, manifest.Diffs.Target)
+	storeDiffBytes := readEvidenceResource(t, evidenceRoot, manifest.Diffs.Store)
+	assertSealedIntegrity(t, "AgentInteractionTrace", traceBytes)
+	assertSealedIntegrity(t, "RunnerObservationReport", reportBytes)
+	assertTrace(t, fixtureID, manifest.Fixture.Digest, processes, traceBytes)
+	assertRunnerReport(t, evidenceRoot, fixtureID, manifest.Fixture.Digest, processes, reportBytes)
+	assertStoreDiffSubset(t, targetDiffBytes, storeDiffBytes)
+
 	if len(manifest.Contents) == 0 {
 		t.Fatal("EvidenceBundle has no content resources")
 	}
+	expectedFiles := map[string]struct{}{evidenceFilePath(t, evidence.URI): {}}
+	roleCounts := make(map[string]int)
 	for _, item := range manifest.Contents {
-		if item.Role == "" {
-			t.Fatal("EvidenceBundle content has no role")
+		if !validContentContract(item.Role, item.SchemaID, item.MediaType) {
+			t.Fatalf("EvidenceBundle content has invalid role/schema/media contract: %+v", item)
 		}
-		readEvidenceResource(t, evidenceRoot, item.Resource)
+		resourceBytes := readEvidenceResource(t, evidenceRoot, item.Resource)
+		if item.MediaType == "application/json" && item.Role != "trace" && item.Role != "runner_report" {
+			assertOneJSONValue(t, item.Role, resourceBytes)
+		}
+		roleCounts[item.Role]++
+		expectedFiles[evidenceFilePath(t, item.Resource.URI)] = struct{}{}
+	}
+	assertContentCardinality(t, fixtureID, roleCounts)
+	if manifest.Trace != findContentResource(t, manifest, "trace") || manifest.RunnerReport != findContentResource(t, manifest, "runner_report") ||
+		manifest.Diffs.Target != findContentResourceByValue(t, manifest, "filesystem_diff", manifest.Diffs.Target) ||
+		manifest.Diffs.Store != findContentResourceByValue(t, manifest, "filesystem_diff", manifest.Diffs.Store) {
+		t.Fatal("EvidenceBundle top-level references are not closed over typed contents")
+	}
+	assertEvidenceTree(t, evidenceRoot, filepath.Dir(evidenceFilePath(t, evidence.URI)), expectedFiles)
+}
+
+func assertManifestChecks(t *testing.T, manifest evidenceManifest, scenarioChecks []checkResult) {
+	t.Helper()
+	if len(manifest.Checks) == 0 {
+		t.Fatal("EvidenceBundle has no checks")
+	}
+	scenario := make(map[string]string, len(scenarioChecks))
+	for _, check := range scenarioChecks {
+		scenario[check.CheckID] = check.Status
+	}
+	for _, check := range manifest.Checks {
+		if check.CheckID == "" || check.Status != "passed" || scenario[check.CheckID] != "passed" {
+			t.Fatalf("EvidenceBundle contains an uncorrelated or non-passing check: %+v", check)
+		}
+	}
+	if scenario["evidence-bundle"] != "passed" {
+		t.Fatal("public scenario did not report evidence-bundle publication")
+	}
+}
+
+func assertTrace(t *testing.T, fixtureID, fixtureDigest string, processes []processObservation, content []byte) {
+	t.Helper()
+	var trace evidenceTrace
+	decodeOneJSONValue(t, "AgentInteractionTrace", content, &trace)
+	if trace.SchemaVersion != "virgil.dev/agent-interaction-trace/v1alpha1" || trace.Fixture.FixtureID != fixtureID ||
+		trace.Fixture.Digest != fixtureDigest || trace.Outcome.Status != "passed" || len(trace.Entries) == 0 {
+		t.Fatalf("invalid AgentInteractionTrace identity/outcome: %+v", trace)
+	}
+	knownProcesses := make(map[string]struct{}, len(processes))
+	for _, process := range processes {
+		knownProcesses[process.ProcessID] = struct{}{}
+	}
+	entryPositions := make(map[string]int, len(trace.Entries))
+	requestRoots := map[string]struct{}{
+		"init-happy-001":     {},
+		"init-unmanaged-001": {},
+		"init-retry-001-a":   {},
+	}
+	for index, entry := range trace.Entries {
+		if entry.Sequence != index || entry.EntryID == "" || entry.Kind == "" {
+			t.Fatalf("trace entry %d is not sequenced or identified: %+v", index, entry)
+		}
+		if _, ok := knownProcesses[entry.ProcessID]; !ok {
+			t.Fatalf("trace entry %q references unknown process %q", entry.EntryID, entry.ProcessID)
+		}
+		if _, root := requestRoots[entry.CausationID]; !root {
+			if cause, ok := entryPositions[entry.CausationID]; !ok || cause >= index {
+				t.Fatalf("trace entry %q has non-causal predecessor %q", entry.EntryID, entry.CausationID)
+			}
+		}
+		entryPositions[entry.EntryID] = index
+	}
+}
+
+func assertRunnerReport(t *testing.T, evidenceRoot, fixtureID, fixtureDigest string, processes []processObservation, content []byte) {
+	t.Helper()
+	var report evidenceRunnerReport
+	decodeOneJSONValue(t, "RunnerObservationReport", content, &report)
+	if report.SchemaVersion != "virgil.dev/runner-observation-report/v1alpha1" || report.Fixture.FixtureID != fixtureID ||
+		report.Fixture.Digest != fixtureDigest || report.Outcome.Status != "passed" || len(report.Checkpoints) == 0 {
+		t.Fatalf("invalid RunnerObservationReport identity/outcome: %+v", report)
+	}
+	public := make(map[string]processObservation, len(processes))
+	for _, process := range processes {
+		public[process.ProcessID] = process
+	}
+	if len(report.Processes) != len(public) {
+		t.Fatalf("runner report process count %d differs from public %d", len(report.Processes), len(public))
+	}
+	for _, process := range report.Processes {
+		observed, ok := public[process.ProcessID]
+		if !ok || process.PID != observed.OSPID || process.ExitCode != observed.ExitCode || !process.FreshProcess ||
+			len(process.ActionIDs) == 0 || len(process.RequestIDs) == 0 {
+			t.Fatalf("runner report process is not the public fresh process: %+v", process)
+		}
+	}
+	checkSeen := make(map[string]struct{}, len(report.Checks))
+	for _, check := range report.Checks {
+		if check.CheckID == "" || check.Status != "passed" {
+			t.Fatalf("runner report contains non-passing check: %+v", check)
+		}
+		checkSeen[check.CheckID] = struct{}{}
+	}
+	if _, ok := checkSeen["no_unexpected_nodes"]; !ok {
+		t.Fatal("runner report omitted no_unexpected_nodes")
+	}
+	for _, checkpoint := range report.Checkpoints {
+		if checkpoint.CheckpointID == "" || checkpoint.RelativeTo == "" {
+			t.Fatalf("runner checkpoint is incomplete: %+v", checkpoint)
+		}
+		readEvidenceResource(t, evidenceRoot, checkpoint.Target.Diff)
+		readEvidenceResource(t, evidenceRoot, checkpoint.Store.Diff)
+	}
+}
+
+func assertStoreDiffSubset(t *testing.T, targetRaw, storeRaw []byte) {
+	t.Helper()
+	var target evidenceDiff
+	var store evidenceDiff
+	decodeOneJSONValue(t, "target filesystem diff", targetRaw, &target)
+	decodeOneJSONValue(t, "store filesystem diff", storeRaw, &store)
+	targetPaths := make(map[string]struct{}, len(target.Changes))
+	for _, change := range target.Changes {
+		targetPaths[change.Path] = struct{}{}
+	}
+	for _, change := range store.Changes {
+		if _, ok := targetPaths[change.Path]; !ok {
+			t.Fatalf("store diff path %q is absent from target diff", change.Path)
+		}
+	}
+}
+
+func assertSealedIntegrity(t *testing.T, label string, content []byte) {
+	t.Helper()
+	var document map[string]any
+	decodeOneJSONValue(t, label, content, &document)
+	integrityValue, ok := document["integrity"]
+	if !ok {
+		t.Fatalf("%s has no integrity object", label)
+	}
+	integrityObject, ok := integrityValue.(map[string]any)
+	if !ok || integrityObject["canonicalization"] != "RFC8785" {
+		t.Fatalf("%s integrity is not RFC8785", label)
+	}
+	wantDigest, ok := integrityObject["digest"].(string)
+	if !ok || wantDigest == "" {
+		t.Fatalf("%s integrity has no digest", label)
+	}
+	delete(integrityObject, "digest")
+	unsigned, err := json.Marshal(document)
+	if err != nil {
+		t.Fatalf("marshal unsigned %s: %v", label, err)
+	}
+	canonical, err := jcs.Transform(unsigned)
+	if err != nil {
+		t.Fatalf("canonicalize unsigned %s: %v", label, err)
+	}
+	gotDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(canonical))
+	if gotDigest != wantDigest {
+		t.Fatalf("%s integrity mismatch: got %q want %q", label, wantDigest, gotDigest)
+	}
+}
+
+func decodeOneJSONValue(t *testing.T, label string, content []byte, target any) {
+	t.Helper()
+	decoder := json.NewDecoder(bytes.NewReader(content))
+	decoder.UseNumber()
+	if err := decoder.Decode(target); err != nil {
+		t.Fatalf("decode %s: %v", label, err)
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		t.Fatalf("%s contains more than one JSON value: %v", label, err)
+	}
+}
+
+func assertOneJSONValue(t *testing.T, label string, content []byte) {
+	t.Helper()
+	var value any
+	decodeOneJSONValue(t, label, content, &value)
+}
+
+func validContentContract(role, schemaID, mediaType string) bool {
+	contracts := map[string][2]string{
+		"trace":               {"https://schemas.virgil.dev/planning-slice1/v1alpha1/agent-interaction-trace.schema.json", "application/json"},
+		"event_log":           {"https://schemas.virgil.dev/planning-slice1/v1alpha1/project-initialized-event.schema.json", "application/x-ndjson"},
+		"project_state":       {"https://schemas.virgil.dev/planning-slice1/v1alpha1/project-state.schema.json", "application/json"},
+		"filesystem_snapshot": {"https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-snapshot.schema.json", "application/json"},
+		"filesystem_diff":     {"https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-diff.schema.json", "application/json"},
+		"runner_report":       {"https://schemas.virgil.dev/planning-slice1/v1alpha1/runner-observation-report.schema.json", "application/json"},
+	}
+	want, ok := contracts[role]
+	return ok && want[0] == schemaID && want[1] == mediaType
+}
+
+func assertContentCardinality(t *testing.T, fixtureID string, counts map[string]int) {
+	t.Helper()
+	for _, role := range []string{"trace", "event_log", "runner_report"} {
+		if counts[role] != 1 {
+			t.Fatalf("EvidenceBundle has %d %s resources, want one", counts[role], role)
+		}
+	}
+	wantProjectState := 1
+	if fixtureID == "t0-init-unmanaged-write-blocked" {
+		wantProjectState = 0
+	}
+	if counts["project_state"] != wantProjectState || counts["filesystem_snapshot"] < 2 || counts["filesystem_diff"] < 2 {
+		t.Fatalf("EvidenceBundle content cardinality is invalid: %+v", counts)
+	}
+}
+
+func findContentResource(t *testing.T, manifest evidenceManifest, role string) immutableResourceRef {
+	t.Helper()
+	var found immutableResourceRef
+	count := 0
+	for _, item := range manifest.Contents {
+		if item.Role == role {
+			found, count = item.Resource, count+1
+		}
+	}
+	if count != 1 {
+		t.Fatalf("EvidenceBundle has %d content resources for role %q", count, role)
+	}
+	return found
+}
+
+func findContentResourceByValue(t *testing.T, manifest evidenceManifest, role string, resource immutableResourceRef) immutableResourceRef {
+	t.Helper()
+	count := 0
+	for _, item := range manifest.Contents {
+		if item.Role == role && item.Resource == resource {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("EvidenceBundle resource %+v is not exactly once under role %q", resource, role)
+	}
+	return resource
+}
+
+func assertEvidenceTree(t *testing.T, evidenceRoot, bundleRoot string, expectedFiles map[string]struct{}) {
+	t.Helper()
+	evidenceRoot = filepath.Clean(evidenceRoot)
+	bundleRoot = filepath.Clean(bundleRoot)
+	expectedDirectories := map[string]struct{}{
+		evidenceRoot:                           {},
+		bundleRoot:                             {},
+		filepath.Join(bundleRoot, "snapshots"): {},
+		filepath.Join(bundleRoot, "diffs"):     {},
+	}
+	seenFiles := make(map[string]struct{}, len(expectedFiles))
+	err := filepath.WalkDir(evidenceRoot, func(entryPath string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		entryPath = filepath.Clean(entryPath)
+		info, err := os.Lstat(entryPath)
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("evidence tree contains symlink %q", entryPath)
+		}
+		if info.IsDir() {
+			if _, ok := expectedDirectories[entryPath]; !ok {
+				return fmt.Errorf("evidence tree contains unexplained directory %q", entryPath)
+			}
+			return nil
+		}
+		if !info.Mode().IsRegular() {
+			return fmt.Errorf("evidence tree contains non-regular resource %q", entryPath)
+		}
+		if _, ok := expectedFiles[entryPath]; !ok {
+			return fmt.Errorf("evidence tree contains unexplained file %q", entryPath)
+		}
+		seenFiles[entryPath] = struct{}{}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(seenFiles) != len(expectedFiles) {
+		t.Fatalf("evidence tree contains %d expected files, want %d", len(seenFiles), len(expectedFiles))
 	}
 }
 
