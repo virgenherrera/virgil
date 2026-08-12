@@ -156,7 +156,7 @@ distintas, pero no cambiar el significado de sus relaciones.
 |---|---|
 | Dogma operativo de Virgil | `Virgil/docs/` identificado por DogmaRef |
 | Ceremonia y gates | Method Pack activo |
-| Identidad, ledger, grafo y briefs | Virgil (Secretaría Ejecutiva) |
+| Identidad, ledger, grafo y briefs | Virgil |
 | Representación y acceso al store | ArtifactStoreAdapter configurado |
 | Contenido y aprobación de planning | Actores definidos por el Method Pack |
 | Código y evidencia de ejecución | Execution bajo el RunContext |

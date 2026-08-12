@@ -17,8 +17,8 @@ En estos documentos:
 
 ## Alcance
 
-Virgil **es la Secretaría Ejecutiva**: el project knowledge/control plane
-agnóstico de agente y metodología. Posee identidad, ledger, trazabilidad,
+Virgil **es el project knowledge/control plane**, agnóstico de agente y
+metodología. Posee identidad, ledger, trazabilidad,
 context briefs y la aplicación y registro de transiciones. Busca acompañar un
 cambio desde una idea hasta su entrega y, cuando aplique, su operación.
 
@@ -75,7 +75,7 @@ sistemas pueden ofrecer adapters equivalentes sin cambiar el kernel.
 
 - [Visión y fundamentos](foundations/vision.md)
 - [Límites del sistema](architecture/system-boundaries.md)
-- [Secretaría Ejecutiva](architecture/executive-secretary.md)
+- [Rol arquitectónico](architecture/role.md)
 - [Runtime Go T0 — contrato de implementación](architecture/go-runtime.md)
 - [Contratos conceptuales mínimos](protocol/core-contracts.md)
 - [Estrategia de validación](quality/validation-strategy.md)

@@ -2,7 +2,7 @@
 
 ## Entidades que no deben confundirse
 
-### Virgil / Secretaría Ejecutiva
+### Virgil
 
 Virgil es el knowledge/control plane del proyecto. Posee identidad, ledger,
 trazabilidad, compilación de `ContextBrief` y aplicación y registro de
@@ -47,7 +47,7 @@ accidente.
 ### Kernel
 
 El kernel de Virgil aplica contratos e invariantes comunes y conserva las
-primitivas de Secretaría Ejecutiva. No contiene ceremonia de Scrum, Waterfall,
+primitivas del knowledge/control plane. No contiene ceremonia de Scrum, Waterfall,
 Kanban o Shape Up; recibe esa política desde el Method Pack.
 
 ### HostAdapter
@@ -119,7 +119,7 @@ solicitud
   -> resolver DogmaRef + ProjectRef + ArtifactStoreRef + RunContext
   -> validar source/target, policies y capacidades
   -> discovery/invocación mediante HostAdapter
-  -> consultar a Virgil (Secretaría Ejecutiva)
+  -> consultar a Virgil (knowledge/control plane)
   -> compilar ContextBrief
   -> ejecutar la operación canónica
   -> persistir mediante ArtifactStoreAdapter

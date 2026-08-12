@@ -21,8 +21,8 @@ La metodología necesita resolver dos responsabilidades a la vez:
 
 ## Objetivo
 
-Virgil **es la Secretaría Ejecutiva** del proyecto: un knowledge/control plane
-agnóstico de host y metodología que mantiene identidad, un registro trazable
+Virgil **es el knowledge/control plane** del proyecto: agnóstico de host y
+metodología, mantiene identidad, un registro trazable
 del trabajo, briefs de contexto y transiciones. Debe poder acompañar un cambio
 desde la idea hasta el handoff, la implementación, la verificación, la entrega
 y la operación cuando corresponda.

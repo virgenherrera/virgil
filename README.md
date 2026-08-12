@@ -1,7 +1,6 @@
 # Virgil
 
-Virgil es una Secretaría Ejecutiva para desarrollo asistido por agentes: un
-knowledge/control plane que conserva ownership, contexto mínimo y trazabilidad
+Virgil es el knowledge/control plane para desarrollo asistido por agentes: conserva ownership, contexto mínimo y trazabilidad
 desde una idea hasta el código, la evidencia de verificación, el deploy y la
 operación cuando aplique.
 

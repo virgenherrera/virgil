@@ -1,10 +1,10 @@
-# Virgil: Secretaría Ejecutiva
+# Virgil: rol arquitectónico
 
-## Rol arquitectónico
+## Knowledge/control plane
 
-Virgil **es la Secretaría Ejecutiva**: el **knowledge plane** y el **control
-plane** del proyecto. Mantiene su identidad y mapa global, aplica y registra
-transiciones y prepara el contexto que cada actor necesita.
+Virgil **es el knowledge plane y el control plane** del proyecto. Mantiene su
+identidad y mapa global, aplica y registra transiciones y prepara el contexto
+que cada actor necesita.
 
 No es un rol productivo, no decide el producto y no implementa código. Tampoco
 es Scrum Master: ese nombre pertenece, si el pack lo necesita, a un rol
@@ -61,7 +61,7 @@ managed namespace sea escribible por defecto.
 
 ## Invariante de contexto
 
-La Secretaría conoce el inventario global, pero no entrega ese inventario
+Virgil conoce el inventario global, pero no entrega ese inventario
 completo por defecto:
 
 > **`global ownership != global context injection`**
@@ -83,7 +83,7 @@ HostAdapter ejecuta la invocación soportada por el host y el
 ArtifactStoreAdapter persiste los efectos autorizados por su policy.
 
 Si execution encuentra que una condición aprobada es ambigua, contradictoria
-o insuficiente, la Secretaría registra `PlanningGapDetected`, bloquea solo el
+o insuficiente, Virgil registra `PlanningGapDetected`, bloquea solo el
 scope afectado y devuelve el control a planning. Execution no reescribe el
 artefacto aprobado.
 

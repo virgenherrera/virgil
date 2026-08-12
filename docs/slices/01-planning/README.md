@@ -14,7 +14,7 @@ implementación.
 - Runtime: un solo agente y un solo writer.
 - Idioma del corpus normativo: español.
 
-Virgil actúa como Secretaría Ejecutiva. El pack Scrum posee ceremonia, roles,
+Virgil actúa como knowledge/control plane. El pack Scrum posee ceremonia, roles,
 routing y gates. Si el pack define Scrum Master, es un rol opcional del pack;
 Virgil no asume esa identidad. En un runtime de un solo agente, distintos
 contratos de rol pueden ejecutarse secuencialmente sin convertirlos en

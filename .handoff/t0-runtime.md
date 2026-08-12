@@ -1,13 +1,13 @@
-# Handoff: Executive Secretary T0 Runtime
+# Handoff: T0 Runtime
 
 ## Branch
 
-`feat/takeover-conclude-executive-secretary` (takeover from `refactor/executive-secretary-docs`)
+`feat/t0-runtime` (takeover from `refactor/executive-secretary-docs`)
 
 ## Summary
 
-Complete reconstruction of Virgil as an Executive Secretary architecture with
-a standalone Go 1.26.5 binary implementing the T0 runtime vertical: `virgil.init`
+Complete reconstruction of Virgil as a knowledge/control plane with a standalone
+Go 1.26.5 binary implementing the T0 runtime vertical: `virgil.init`
 through the `repo-docs` adapter, black-box certification via fresh subprocesses,
 and fail-closed evidence publication. Docker-based build/test pipeline for
 absolute version control.
