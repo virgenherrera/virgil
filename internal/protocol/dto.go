@@ -128,6 +128,114 @@ func ContextFromRequest(request OperationRequest) Context {
 	}
 }
 
+// ContinueInput is the typed payload for virgil.continue.
+type ContinueInput struct {
+	ChangeID string     `json:"change_id"`
+	Entry    EntryUnion `json:"entry"`
+}
+
+// EntryUnion discriminates on Kind: content_proposal | approval | answer | recovery_request.
+type EntryUnion struct {
+	Kind string `json:"kind"`
+	// Content proposal fields.
+	ArtifactKind string       `json:"artifact_kind,omitempty"`
+	Content      *ResourceRef `json:"content,omitempty"`
+	// Approval fields.
+	ArtifactID string `json:"artifact_id,omitempty"`
+	Revision   string `json:"revision,omitempty"`
+	Decision   string `json:"decision,omitempty"`
+	Rationale  string `json:"rationale,omitempty"`
+	// Answer fields.
+	Answer string `json:"answer,omitempty"`
+	// Recovery fields.
+	Reason string `json:"reason,omitempty"`
+}
+
+// UpstreamRef points to the revision of an upstream artifact kind a revision was built on.
+type UpstreamRef struct {
+	RevisionID   string `json:"revision_id"`
+	ArtifactKind string `json:"artifact_kind"`
+}
+
+// RevisionEnvelope represents an artifact revision stored at
+// artifacts/{kind}/rev-{NNNNNN}/envelope.json.
+type RevisionEnvelope struct {
+	SchemaVersion   string           `json:"schema_version"`
+	ProtocolVersion string           `json:"protocol_version"`
+	RevisionID      string           `json:"revision_id"`
+	ArtifactKind    string           `json:"artifact_kind"`
+	ChangeID        string           `json:"change_id"`
+	ProjectID       string           `json:"project_id"`
+	State           string           `json:"state"`
+	UpstreamRefs    []UpstreamRef    `json:"upstream_refs"`
+	Content         ResourceRef      `json:"content"`
+	Provenance      SourceProvenance `json:"provenance"`
+	CreatedAt       string           `json:"created_at"`
+	IdempotencyKey  string           `json:"idempotency_key"`
+	RequestID       string           `json:"request_id"`
+	ApprovedBy      *ActorRef        `json:"approved_by,omitempty"`
+	ApprovedAt      string           `json:"approved_at,omitempty"`
+}
+
+// RevisionLifecycleEvent is appended to changes/{change_id}/events.jsonl for
+// revision lifecycle transitions.
+type RevisionLifecycleEvent struct {
+	SchemaVersion   string   `json:"schema_version"`
+	ProtocolVersion string   `json:"protocol_version"`
+	Kind            string   `json:"kind"`
+	RevisionID      string   `json:"revision_id"`
+	ArtifactKind    string   `json:"artifact_kind"`
+	ChangeID        string   `json:"change_id"`
+	ProjectID       string   `json:"project_id"`
+	Operation       string   `json:"operation"`
+	RequestID       string   `json:"request_id"`
+	IdempotencyKey  string   `json:"idempotency_key"`
+	Actor           ActorRef `json:"actor"`
+	Timestamp       string   `json:"timestamp"`
+	RunRef          RunRef   `json:"run_ref"`
+	// Conditional fields.
+	ApprovedBy   *ActorRef `json:"approved_by,omitempty"`
+	Rationale    string    `json:"rationale,omitempty"`
+	Reason       string    `json:"reason,omitempty"`
+	SupersededBy string    `json:"superseded_by,omitempty"`
+}
+
+// ContextBrief is compiled context for a specific step, stored at
+// briefs/{brief_id}.json.
+type ContextBrief struct {
+	SchemaVersion    string           `json:"schema_version"`
+	ProtocolVersion  string           `json:"protocol_version"`
+	BriefID          string           `json:"brief_id"`
+	ChangeID         string           `json:"change_id"`
+	ProjectID        string           `json:"project_id"`
+	ArtifactKind     string           `json:"artifact_kind"`
+	Objective        string           `json:"objective"`
+	Sources          []BriefSource    `json:"sources"`
+	ExcludedSources  []ExcludedSource `json:"excluded_sources"`
+	Budget           BriefBudget      `json:"budget"`
+	BaselineRevision string           `json:"baseline_revision,omitempty"`
+	CreatedAt        string           `json:"created_at"`
+}
+
+// BriefSource is a source consulted when compiling a ContextBrief.
+type BriefSource struct {
+	URI        string           `json:"uri"`
+	Provenance SourceProvenance `json:"provenance"`
+	Digest     string           `json:"digest"`
+}
+
+// ExcludedSource is a source deliberately excluded from a ContextBrief.
+type ExcludedSource struct {
+	URI    string `json:"uri"`
+	Reason string `json:"reason"`
+}
+
+// BriefBudget tracks the token budget of a ContextBrief.
+type BriefBudget struct {
+	MaxTokens  int `json:"max_tokens"`
+	UsedTokens int `json:"used_tokens"`
+}
+
 type ObjectPointer struct {
 	ObjectID string       `json:"object_id"`
 	Kind     string       `json:"kind"`

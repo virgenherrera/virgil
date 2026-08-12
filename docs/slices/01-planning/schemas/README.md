@@ -35,6 +35,16 @@ no requiere acceso de red a `schemas.virgil.dev`.
   entre dos snapshots del mismo root.
 - [`runner-observation-report.schema.json`](runner-observation-report.schema.json):
   procesos reales, checkpoints y checks calculados por el harness externo.
+- [`revision-envelope.schema.json`](revision-envelope.schema.json): forma de
+  `artifacts/{kind}/rev-{NNNNNN}/envelope.json`, incluida su transición
+  `draft → awaiting_approval → approved` y la referencia a revisiones upstream.
+- [`revision-lifecycle-event.schema.json`](revision-lifecycle-event.schema.json):
+  forma de cada línea de `changes/{change_id}/events.jsonl` para las
+  transiciones de una revisión (`revision_drafted`, `revision_submitted`,
+  `revision_approved`, `revision_withdrawn`, `revision_superseded`).
+- [`context-brief.schema.json`](context-brief.schema.json): forma de
+  `briefs/{brief_id}.json`, el contexto compilado y presupuestado para un paso
+  concreto de `virgil.continue`.
 
 ## Autoridad
 

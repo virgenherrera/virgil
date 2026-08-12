@@ -49,6 +49,26 @@ func TestApp_T0NewChangeIdCollision(t *testing.T) {
 	assertScenarioPassed(t, execution, "t0-new-change-id-collision")
 }
 
+func TestApp_T0ContinueContentProposalHappy(t *testing.T) {
+	const fixtureID = "t0-continue-content-proposal-happy"
+	execution := runT0Seeded(t, fixtureID, func(targetRoot string) error {
+		seedDir := filepath.Join(targetRoot, "seed")
+		if err := os.MkdirAll(seedDir, 0o700); err != nil {
+			return err
+		}
+		return os.WriteFile(filepath.Join(seedDir, "idea-proposal.md"), []byte(continueContentProposalSeed), 0o600)
+	})
+	assertScenarioPassed(t, execution, fixtureID)
+}
+
+// continueContentProposalSeed is the content_proposal source file the T0
+// ActorScript for t0-continue-content-proposal-happy references by relative
+// path (seed/idea-proposal.md). ActorScript actions cannot themselves write
+// arbitrary target files, so the harness materializes this file directly on
+// disk before the isolated public binary is invoked. Its bytes are fixed so
+// the digest embedded in the fixture's actor-script.json stays correlated.
+const continueContentProposalSeed = "# Idea Proposal\n\nThis is the initial idea proposal for change-continue-alpha.\n"
+
 type runResult struct {
 	RuntimeProtocol string           `json:"runtime_protocol"`
 	Kind            string           `json:"kind"`
@@ -195,6 +215,17 @@ type appRun struct {
 
 func runT0(t *testing.T, fixtureID string) appRun {
 	t.Helper()
+	return runT0Seeded(t, fixtureID, nil)
+}
+
+// runT0Seeded runs a T0 fixture exactly like runT0, except that when seed is
+// non-nil it materializes fixture-owned content directly under the isolated
+// target root before the isolated public binary is invoked. This is the only
+// way to give an ActorScript action (e.g. a content_proposal entry) a real
+// file to read: ActorScript actions are limited to invoke/retry/
+// restart_process/stop and cannot themselves write arbitrary target files.
+func runT0Seeded(t *testing.T, fixtureID string, seed func(targetRoot string) error) appRun {
+	t.Helper()
 	binary := buildPublicBinary(t)
 	isolationRoot := t.TempDir()
 	workspaceRoot := filepath.Join(isolationRoot, "workspace")
@@ -204,6 +235,15 @@ func runT0(t *testing.T, fixtureID string) appRun {
 	}
 	if err := os.Mkdir(evidenceRoot, 0o700); err != nil {
 		t.Fatalf("create isolated evidence root: %v", err)
+	}
+	if seed != nil {
+		targetRoot := filepath.Join(workspaceRoot, fixtureID, "target")
+		if err := os.MkdirAll(targetRoot, 0o700); err != nil {
+			t.Fatalf("materialize isolated target for seeding: %v", err)
+		}
+		if err := seed(targetRoot); err != nil {
+			t.Fatalf("seed isolated target content: %v", err)
+		}
 	}
 	request := map[string]any{
 		"runtime_protocol": runtimeProtocol,
@@ -309,6 +349,8 @@ func assertProcesses(t *testing.T, fixtureID string, processes []processObservat
 		wantCount = 2
 	case "t0-new-change-id-collision":
 		wantCount = 3
+	case "t0-continue-content-proposal-happy":
+		wantCount = 4
 	}
 	if len(processes) != wantCount {
 		t.Fatalf("scenario %q: expected %d fresh processes, got %+v", fixtureID, wantCount, processes)
@@ -448,11 +490,12 @@ func assertTrace(t *testing.T, fixtureID, fixtureDigest string, processes []proc
 	}
 	entryPositions := make(map[string]int, len(trace.Entries))
 	requestRoots := map[string]struct{}{
-		"init-happy-001":     {},
-		"init-unmanaged-001": {},
-		"init-retry-001-a":   {},
-		"init-new-happy-001": {},
-		"init-collision-001": {},
+		"init-happy-001":          {},
+		"init-unmanaged-001":      {},
+		"init-retry-001-a":        {},
+		"init-new-happy-001":      {},
+		"init-collision-001":      {},
+		"init-continue-happy-001": {},
 	}
 	for index, entry := range trace.Entries {
 		if entry.Sequence != index || entry.EntryID == "" || entry.Kind == "" {
@@ -765,10 +808,11 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 		return
 	}
 	projectByFixture := map[string]string{
-		"t0-init-repo-docs-happy":    "consumer-init-happy",
-		"t0-init-idempotent-retry":   "consumer-retry",
-		"t0-new-repo-docs-happy":     "consumer-new-happy",
-		"t0-new-change-id-collision": "consumer-collision",
+		"t0-init-repo-docs-happy":            "consumer-init-happy",
+		"t0-init-idempotent-retry":           "consumer-retry",
+		"t0-new-repo-docs-happy":             "consumer-new-happy",
+		"t0-new-change-id-collision":         "consumer-collision",
+		"t0-continue-content-proposal-happy": "consumer-continue-happy",
 	}
 	projectID, ok := projectByFixture[fixtureID]
 	if !ok {
@@ -780,8 +824,9 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 		filepath.Join(prefix, "project.json"),
 	}
 	changeByFixture := map[string]string{
-		"t0-new-repo-docs-happy":     "change-alpha",
-		"t0-new-change-id-collision": "change-beta",
+		"t0-new-repo-docs-happy":             "change-alpha",
+		"t0-new-change-id-collision":         "change-beta",
+		"t0-continue-content-proposal-happy": "change-continue-alpha",
 	}
 	if changeID, hasChange := changeByFixture[fixtureID]; hasChange {
 		changePrefix := filepath.Join(prefix, "changes", changeID)
@@ -789,8 +834,16 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 			filepath.Join(changePrefix, "change.json"),
 			filepath.Join(changePrefix, "events.jsonl"),
 		)
-		sort.Strings(want)
 	}
+	if fixtureID == "t0-continue-content-proposal-happy" {
+		revisionPrefix := filepath.Join(prefix, "changes", "change-continue-alpha", "artifacts", "idea", "rev-000001")
+		want = append(want,
+			filepath.Join(revisionPrefix, "envelope.json"),
+			filepath.Join(revisionPrefix, "content.md"),
+			filepath.Join(fixtureID, "target", "seed", "idea-proposal.md"),
+		)
+	}
+	sort.Strings(want)
 	if !equalStrings(files, want) {
 		t.Fatalf("scenario %q workspace files: got %v want %v", fixtureID, files, want)
 	}
