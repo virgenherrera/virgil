@@ -37,8 +37,10 @@ var FixtureOrder = []string{
 }
 
 type Fixture struct {
-	Definition protocol.ScenarioFixture
-	Script     protocol.ActorScript
+	Definition    protocol.ScenarioFixture
+	DefinitionRaw []byte
+	Script        protocol.ActorScript
+	ScriptRaw     []byte
 }
 
 func (registry *Registry) LoadAllT0Fixtures() (map[string]Fixture, error) {
@@ -80,7 +82,12 @@ func (registry *Registry) LoadAllT0Fixtures() (map[string]Fixture, error) {
 		if err := validateFixtureSemantics(definition, script, fixtureRaw); err != nil {
 			return nil, fmt.Errorf("fixture %s semantic contract: %w", fixtureID, err)
 		}
-		loaded[fixtureID] = Fixture{Definition: definition, Script: script}
+		loaded[fixtureID] = Fixture{
+			Definition:    definition,
+			DefinitionRaw: append([]byte(nil), fixtureRaw...),
+			Script:        script,
+			ScriptRaw:     append([]byte(nil), scriptRaw...),
+		}
 	}
 	return loaded, nil
 }

@@ -70,6 +70,13 @@ func (runner *Runner) Run(ctx context.Context, envelope wire.RunT0Envelope) wire
 	for _, fixtureID := range selected {
 		result.Scenarios = append(result.Scenarios, runner.runFixture(ctx, envelope, fixtures[fixtureID]))
 	}
+	result.Outcome = "passed"
+	for _, scenario := range result.Scenarios {
+		if scenario.Outcome != "passed" {
+			result.Outcome = "failed"
+			break
+		}
+	}
 	return result
 }
 
@@ -124,7 +131,7 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 			}
 
 			invoke := actorInvokeEnvelope(fixture, targetRoot, envelope.Clock, action)
-			childResult, process, invokeErr := invokeFreshProcess(ctx, runner.registry, envelope, invoke)
+			childResult, process, capture, invokeErr := invokeFreshProcess(ctx, runner.registry, envelope, invoke)
 			if process.ProcessID != "" {
 				scenario.Processes = append(scenario.Processes, process)
 			}
@@ -145,6 +152,7 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 				Request:    request,
 				Child:      childResult,
 				Process:    process,
+				Capture:    capture,
 				StepID:     stepID,
 				Checkpoint: checkpoint,
 			})
@@ -179,7 +187,8 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 	}
 	scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "checkpoint-oracle", Status: "passed", Detail: "independent target and store snapshots match every fixture checkpoint"})
 
-	if fixture.Definition.FixtureID == "t0-init-unmanaged-write-blocked" {
+	switch fixture.Definition.FixtureID {
+	case "t0-init-unmanaged-write-blocked":
 		if len(executions) != 1 || executions[0].Action.Kind != "invoke" {
 			return failScenario(scenario, "fixture_failure", "BLOCKED_SCRIPT_INVALID", "blocked fixture did not execute exactly one invoke")
 		}
@@ -194,11 +203,6 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 			wire.CheckResult{CheckID: "blocked-policy-oracle", Status: "passed", Detail: "blocked result, diagnostic, denied effect, and stop action match the fixture"},
 			wire.CheckResult{CheckID: "workspace-zero-diff", Status: "passed", Detail: "independent workspace snapshots are identical"},
 		)
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "evidence-bundle", Status: "failed", Detail: "EvidenceBundle publication is intentionally outside this Green increment"})
-		return failScenario(scenario, "virgil_failure", "EVIDENCE_BUNDLE_NOT_IMPLEMENTED", "blocked behavior is Green at the operation boundary, but the app-level scenario remains Red until complete evidence is published")
-	}
-
-	switch fixture.Definition.FixtureID {
 	case "t0-init-repo-docs-happy":
 		if err := validateHappyScenario(runner.registry, fixture, targetRoot, executions); err != nil {
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-init-oracle", Status: "failed", Detail: "happy init violated the durable operation oracle"})
@@ -217,8 +221,17 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 		return failScenario(scenario, "fixture_failure", "FIXTURE_ORACLE_MISSING", "runner has no operational oracle for fixture")
 	}
 
-	scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "evidence-bundle", Status: "failed", Detail: "operational behavior is Green, but no EvidenceBundle has been published"})
-	return failScenario(scenario, "virgil_failure", "EVIDENCE_BUNDLE_NOT_IMPLEMENTED", "happy and retry operation/checkpoint behavior is Green, but the app-level scenario remains Red until complete evidence is published")
+	scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "no_unexpected_nodes", Status: "passed", Detail: "independent filesystem walk found no unexplained node"})
+	reference, err := runner.publishScenarioEvidence(envelope, fixture, targetRoot, baseline, executions, scenario.Checks)
+	if err != nil {
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "evidence-bundle", Status: "failed", Detail: "typed EvidenceBundle publication failed closed"})
+		return failScenario(scenario, "virgil_failure", "EVIDENCE_BUNDLE_INVALID", err.Error())
+	}
+	scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "evidence-bundle", Status: "passed", Detail: "typed evidence was validated and atomically published manifest-last"})
+	scenario.Outcome = "passed"
+	scenario.Failure = nil
+	scenario.Evidence = &reference
+	return scenario
 }
 
 type operationExecution struct {
@@ -226,6 +239,7 @@ type operationExecution struct {
 	Request    protocol.OperationRequest
 	Child      wire.InvokeResult
 	Process    wire.ProcessObservation
+	Capture    processCapture
 	StepID     string
 	Checkpoint checkpointCapture
 }
@@ -827,21 +841,21 @@ func firstInvoke(fixture contracts.Fixture) (action struct {
 	return action, false
 }
 
-func invokeFreshProcess(ctx context.Context, registry *contracts.Registry, envelope wire.RunT0Envelope, invoke wire.InvokeEnvelope) (wire.InvokeResult, wire.ProcessObservation, error) {
+func invokeFreshProcess(ctx context.Context, registry *contracts.Registry, envelope wire.RunT0Envelope, invoke wire.InvokeEnvelope) (wire.InvokeResult, wire.ProcessObservation, processCapture, error) {
 	timeout, outputLimit, err := effectiveLimits(envelope.Limits)
 	if err != nil {
-		return wire.InvokeResult{}, wire.ProcessObservation{}, err
+		return wire.InvokeResult{}, wire.ProcessObservation{}, processCapture{}, err
 	}
 	childContext, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	executable, err := os.Executable()
 	if err != nil {
-		return wire.InvokeResult{}, wire.ProcessObservation{}, fmt.Errorf("resolve current executable: %w", err)
+		return wire.InvokeResult{}, wire.ProcessObservation{}, processCapture{}, fmt.Errorf("resolve current executable: %w", err)
 	}
 	payload, err := json.Marshal(invoke)
 	if err != nil {
-		return wire.InvokeResult{}, wire.ProcessObservation{}, fmt.Errorf("marshal invoke envelope: %w", err)
+		return wire.InvokeResult{}, wire.ProcessObservation{}, processCapture{}, fmt.Errorf("marshal invoke envelope: %w", err)
 	}
 
 	command := exec.CommandContext(childContext, executable)
@@ -853,31 +867,32 @@ func invokeFreshProcess(ctx context.Context, registry *contracts.Registry, envel
 	command.Stdout = stdout
 	command.Stderr = stderr
 	if err := command.Start(); err != nil {
-		return wire.InvokeResult{}, wire.ProcessObservation{}, fmt.Errorf("start public invoke process: %w", err)
+		return wire.InvokeResult{}, wire.ProcessObservation{}, processCapture{}, fmt.Errorf("start public invoke process: %w", err)
 	}
 	process := wire.ProcessObservation{ProcessID: invoke.ProcessID, OSPID: command.Process.Pid, ExitCode: -1}
 	waitErr := command.Wait()
 	process.ExitCode = command.ProcessState.ExitCode()
+	capture := captureProcessStreams(stdout.Bytes(), stderr.Bytes(), stdout.Exceeded(), stderr.Exceeded())
 	if errors.Is(childContext.Err(), context.DeadlineExceeded) {
-		return wire.InvokeResult{}, process, fmt.Errorf("public invoke process timed out")
+		return wire.InvokeResult{}, process, capture, fmt.Errorf("public invoke process timed out")
 	}
 	if waitErr != nil {
-		return wire.InvokeResult{}, process, fmt.Errorf("public invoke process exited %d", process.ExitCode)
+		return wire.InvokeResult{}, process, capture, fmt.Errorf("public invoke process exited %d", process.ExitCode)
 	}
 	if stdout.Exceeded() || stderr.Exceeded() {
-		return wire.InvokeResult{}, process, fmt.Errorf("public invoke process exceeded output limit")
+		return wire.InvokeResult{}, process, capture, fmt.Errorf("public invoke process exceeded output limit")
 	}
 	decoded, err := wire.DecodeInvokeResult(stdout.Bytes())
 	if err != nil {
-		return wire.InvokeResult{}, process, err
+		return wire.InvokeResult{}, process, capture, err
 	}
 	if decoded.ProcessID != invoke.ProcessID || decoded.OSPID != process.OSPID {
-		return wire.InvokeResult{}, process, fmt.Errorf("public invoke process identity mismatch")
+		return wire.InvokeResult{}, process, capture, fmt.Errorf("public invoke process identity mismatch")
 	}
 	if err := validateChildOperationResult(registry, invoke.Request, decoded.Result); err != nil {
-		return wire.InvokeResult{}, process, err
+		return wire.InvokeResult{}, process, capture, err
 	}
-	return decoded, process, nil
+	return decoded, process, capture, nil
 }
 
 func validateChildOperationResult(registry *contracts.Registry, requestRaw json.RawMessage, result protocol.OperationResult) error {
