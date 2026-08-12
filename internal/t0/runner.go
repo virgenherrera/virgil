@@ -204,14 +204,14 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 			wire.CheckResult{CheckID: "workspace-zero-diff", Status: "passed", Detail: "independent workspace snapshots are identical"},
 		)
 	case "t0-init-repo-docs-happy":
-		if err := validateHappyScenario(runner.registry, fixture, targetRoot, executions); err != nil {
+		if err := validateHappyScenario(runner.registry, targetRoot, executions); err != nil {
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-init-oracle", Status: "failed", Detail: "happy init violated the durable operation oracle"})
 			return failScenario(scenario, "virgil_failure", "INIT_ORACLE_FAILED", err.Error())
 		}
 		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-init-oracle", Status: "passed", Detail: "init published exactly project.json, events.jsonl, and one project_initialized event"})
 
 	case "t0-init-idempotent-retry":
-		if err := validateRetryScenario(runner.registry, fixture, targetRoot, executions); err != nil {
+		if err := validateRetryScenario(runner.registry, targetRoot, executions); err != nil {
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "fresh-process-replay-oracle", Status: "failed", Detail: "fresh-process retry violated the durable replay oracle"})
 			return failScenario(scenario, "virgil_failure", "RETRY_ORACLE_FAILED", err.Error())
 		}
@@ -487,7 +487,7 @@ func countProjectEvents(targetRoot, namespace string) (int, error) {
 	return len(lines), nil
 }
 
-func validateHappyScenario(registry *contracts.Registry, fixture contracts.Fixture, targetRoot string, executions []operationExecution) error {
+func validateHappyScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
 	if len(executions) != 1 || executions[0].Action.Kind != "invoke" {
 		return fmt.Errorf("happy fixture executed %d operations, want one invoke", len(executions))
 	}
@@ -504,7 +504,7 @@ func validateHappyScenario(registry *contracts.Registry, fixture contracts.Fixtu
 	return nil
 }
 
-func validateRetryScenario(registry *contracts.Registry, fixture contracts.Fixture, targetRoot string, executions []operationExecution) error {
+func validateRetryScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
 	if len(executions) != 2 || executions[0].Action.Kind != "invoke" || executions[1].Action.Kind != "retry" {
 		return fmt.Errorf("retry fixture did not execute invoke A followed by retry B")
 	}
@@ -824,21 +824,6 @@ func matchFixtureResourcePattern(pattern, resource string) bool {
 		return resource == strings.TrimSuffix(pattern, "/**") || strings.HasPrefix(resource, strings.TrimSuffix(pattern, "**"))
 	}
 	return pattern == resource
-}
-
-func firstInvoke(fixture contracts.Fixture) (action struct {
-	ProcessID        string
-	OperationRequest json.RawMessage
-}, ok bool) {
-	for _, candidate := range fixture.Script.Actions {
-		if candidate.Kind == "invoke" && len(candidate.OperationRequest) != 0 {
-			return struct {
-				ProcessID        string
-				OperationRequest json.RawMessage
-			}{ProcessID: candidate.ProcessID, OperationRequest: candidate.OperationRequest}, true
-		}
-	}
-	return action, false
 }
 
 func invokeFreshProcess(ctx context.Context, registry *contracts.Registry, envelope wire.RunT0Envelope, invoke wire.InvokeEnvelope) (wire.InvokeResult, wire.ProcessObservation, processCapture, error) {
