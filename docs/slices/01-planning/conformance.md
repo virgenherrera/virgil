@@ -132,3 +132,19 @@ DogmaRef, ArtifactStoreRef o `project_id` que los incluidos en el envelope.
 **When** Virgil resuelve el request antes de efectos.
 **Then** responde `IDENTITY_AMBIGUOUS` o `PRECONDITION_FAILED`, registra las
 referencias conflictivas y no lee ni escribe ningún store o target.
+
+## C17 — Fixture inválido falla antes de efectos
+
+**Given** un ScenarioFixture que viola su schema o cuyas expectativas tienen
+IDs inexistentes, orden cíclico o `min_count > max_count`.
+**When** el harness intenta preparar la corrida.
+**Then** clasifica `fixture_failure`, no invoca a Virgil y conserva target y
+store intactos.
+
+## C18 — Evidencia parcial o inconsistente no certifica
+
+**Given** una corrida cuyo manifest omite la traza, contiene un digest que no
+coincide, publica un secret o no fue publicado atómicamente.
+**When** el harness evalúa el EvidenceBundle.
+**Then** el scenario no obtiene `passed`; la falla y el recurso afectado quedan
+identificados sin presentar el bundle como evidencia autoritativa.

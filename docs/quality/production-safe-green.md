@@ -40,9 +40,10 @@ superficies selecciona solo controles pertinentes y documenta la razón; no
 copia un checklist universal.
 
 Red debe fallar inicialmente por ausencia del comportamiento esperado, no por
-un fixture roto o un environment indisponible. Los tests unitarios PUEDEN
-complementar, pero los ACs que certifican el flujo son app-level según la
-[estrategia de validación](validation-strategy.md).
+un fixture roto o un environment indisponible. Los tests unitarios no forman
+parte de los gates de Virgil: aunque una implementación los use como
+diagnóstico, los ACs que certifican el flujo son exclusivamente app-level según
+la [estrategia de validación](validation-strategy.md).
 
 ## Contrato mínimo del handoff
 

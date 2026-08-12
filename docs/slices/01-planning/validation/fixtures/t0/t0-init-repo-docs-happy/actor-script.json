@@ -1,0 +1,106 @@
+{
+  "schema_version": "virgil.dev/scripted-actor/v1alpha1",
+  "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+  "script_id": "script-t0-init-repo-docs-happy",
+  "script_revision": "v1",
+  "actor": {
+    "actor_id": "scripted-agent",
+    "kind": "agent",
+    "authority": [
+      "virgil.operation.invoke"
+    ]
+  },
+  "actions": [
+    {
+      "action_id": "invoke-init",
+      "sequence": 0,
+      "kind": "invoke",
+      "process_id": "process-a",
+      "after_trace_kind": "activation_decision",
+      "operation_request": {
+        "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+        "operation": "virgil.init",
+        "request_id": "init-happy-001",
+        "idempotency_key": "init-happy-v1",
+        "dogma_ref": {
+          "dogma_id": "virgil-dogma",
+          "version": "fixture-v1",
+          "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169",
+          "source": {
+            "uri": "fixture://dogma/virgil/v1",
+            "revision": "fixture-v1",
+            "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169"
+          },
+          "method_pack": {
+            "pack_id": "virgil",
+            "pack_version": "fixture-v1"
+          }
+        },
+        "project_ref": {
+          "project_id": "consumer-init-happy",
+          "target": {
+            "uri": "fixture://targets/consumer-init-happy",
+            "canonical_path": "/fixtures/targets/consumer-init-happy",
+            "baseline": "baseline-v1"
+          },
+          "dogma_ref_id": "virgil-dogma",
+          "artifact_store_ref_id": "store-consumer-init-happy"
+        },
+        "artifact_store_ref": {
+          "store_ref_id": "store-consumer-init-happy",
+          "adapter": {
+            "adapter_id": "repo-docs",
+            "adapter_version": "v1alpha1"
+          },
+          "project_id": "consumer-init-happy",
+          "namespace": "docs/virgil/projects/consumer-init-happy",
+          "policy": {
+            "policy_version": "repo-docs/v1alpha1",
+            "read_allowlist": [
+              "docs/**"
+            ],
+            "write_allowlist": [
+              "docs/virgil/**"
+            ]
+          }
+        },
+        "host": {
+          "adapter": {
+            "adapter_id": "generic-host",
+            "adapter_version": "v1alpha1"
+          },
+          "capabilities": {
+            "supported": [
+              "operation.invoke",
+              "effect.observe",
+              "trace.emit",
+              "fresh_process"
+            ],
+            "guarantees": [
+              "structured_envelope",
+              "deterministic_replay"
+            ]
+          }
+        },
+        "actor": {
+          "actor_id": "scripted-agent",
+          "kind": "agent",
+          "authority": [
+            "virgil.operation.invoke"
+          ]
+        },
+        "input": {
+          "project_id": "consumer-init-happy"
+        }
+      }
+    },
+    {
+      "action_id": "stop-after-success",
+      "sequence": 1,
+      "kind": "stop",
+      "process_id": "process-a",
+      "after_trace_kind": "operation_decided",
+      "reason": "The expected init result was observed."
+    }
+  ]
+}

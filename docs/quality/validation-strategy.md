@@ -34,6 +34,11 @@ Virgil** ni sustituyen los scenarios app-level. Una suite solo unitaria no
 demuestra discovery, composición real, enforcement de boundaries, recovery ni
 resistencia ante un agente que desobedece.
 
+Por eso el harness de Virgil no los exige, no les asigna un gate y no invierte
+en cobertura unitaria como objetivo. Si una implementación los agrega para
+diagnóstico, siguen fuera del EvidenceBundle certificable y nunca cierran Red,
+Green, Refactor o Verify.
+
 La política de [Production-Safe Green](production-safe-green.md) aplica al
 harness y a cualquier implementación evaluada por esta estrategia.
 
@@ -168,6 +173,12 @@ El prompt guía al agente; los guards de Virgil protegen el sistema.
 
 Cada scenario DEBE ser autocontenido y versionado:
 
+La forma machine-readable normativa de ScenarioFixture, AgentInteractionTrace
+y EvidenceBundle vive en los
+[schemas de Slice 1](../slices/01-planning/schemas/README.md).
+Las primeras especificaciones Red ejecutables están en las
+[fixtures T0 de Slice 1](../slices/01-planning/validation/fixtures/t0/README.md).
+
 | Campo | Contenido |
 |---|---|
 | `fixture_id` y `fixture_revision` | Identidad estable y revisión del scenario. |
@@ -179,7 +190,9 @@ Cada scenario DEBE ser autocontenido y versionado:
 | `expected_interaction` | Activación, llamadas, guards, stops, retry/escalation y outcome esperados. |
 | `expected_events` | Eventos requeridos, orden parcial permitido y campos relevantes. |
 | `expected_artifacts` | Revisiones, relaciones y contenido/oráculos esperados. |
+| `expected_effects` | Intentos autorizados, denegados o ausentes, filtrables por campos exactos. |
 | `expected_target_diff` | Con `repo-docs`, diff exacto permitido bajo `managed_root`; con adapter externo, diff vacío. |
+| `expected_checkpoints` | Diffs y conteos entre estados intermedios; permiten demostrar, por ejemplo, que un retry no escribió. |
 | `prohibited_effects` | Escrituras, llamadas o degradaciones que invalidan el scenario. |
 | `context_budget` | Allowlist/denylist y límites de fuentes, bytes o tokens. |
 

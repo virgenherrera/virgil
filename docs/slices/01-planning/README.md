@@ -109,3 +109,4 @@ Slice 1 no incluye:
 - [Protocolo de operaciones](operation-protocol.md)
 - [JSON Schemas del protocolo](schemas/README.md)
 - [Conformidad black-box](conformance.md)
+- [Primeros contratos Red T0](validation/fixtures/t0/README.md)

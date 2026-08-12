@@ -25,6 +25,20 @@
       },
       "additionalProperties": false
     },
+    "ImmutableResourceRef": {
+      "type": "object",
+      "required": ["uri", "digest"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "minLength": 1,
+          "format": "uri-reference"
+        },
+        "revision": { "$ref": "#/$defs/NonEmptyString" },
+        "digest": { "$ref": "#/$defs/Digest" }
+      },
+      "additionalProperties": false
+    },
     "AdapterRef": {
       "type": "object",
       "required": ["adapter_id", "adapter_version"],

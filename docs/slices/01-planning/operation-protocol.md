@@ -176,6 +176,19 @@ intención:
 3. un retry conserva causalidad hacia el primer `request_id`;
 4. una respuesta perdida no autoriza a repetir efectos no idempotentes.
 
+El digest estable del request es `sha256` de su representación JSON
+canonicalizada según RFC 8785, excluyendo únicamente `request_id`. El
+`idempotency_key` sí participa: no es metadata del transporte. Dos requests que
+solo difieren en `request_id` son el mismo contenido para replay; cualquier
+otra diferencia produce otro digest y, con la misma key, un conflicto.
+
+Un replay enumera en su `OperationResult.effects` solo los efectos nuevos del
+intento actual —por ejemplo, reads autorizados para recuperar el resultado— y
+usa `replayed_from_request_id` para enlazar la invocación original. Nunca copia
+los writes originales como si hubieran ocurrido otra vez. La equivalencia
+semántica ignora `request_id`, timestamps, `replayed_from_request_id` y esa
+lista de efectos frescos; no ignora eventos, revisiones, briefs, status ni next.
+
 ## Publicación y recuperación
 
 Un resultado solo referencia eventos, revisiones o briefs publicados de forma
