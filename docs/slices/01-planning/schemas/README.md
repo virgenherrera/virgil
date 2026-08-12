@@ -15,6 +15,10 @@ no requiere acceso de red a `schemas.virgil.dev`.
   estructurados de `virgil.init`, `virgil.new` y `virgil.continue`.
 - [`effect-record.schema.json`](effect-record.schema.json): decisión de policy
   y efecto realmente observado.
+- [`project-initialized-event.schema.json`](project-initialized-event.schema.json):
+  forma de **cada línea** de `events.jsonl` para el evento inicial de Slice 1.
+- [`project-state.schema.json`](project-state.schema.json): estado durable mínimo
+  de `project.json`, incluidas identidad resuelta e intención idempotente.
 - [`operation-result.schema.json`](operation-result.schema.json): resultado
   correlacionable, recuperable y no dependiente de prosa.
 - [`scenario-fixture.schema.json`](scenario-fixture.schema.json): actor,
@@ -24,7 +28,13 @@ no requiere acceso de red a `schemas.virgil.dev`.
 - [`agent-interaction-trace.schema.json`](agent-interaction-trace.schema.json):
   secuencia causal de instrucciones, decisiones, llamadas, contexto y efectos.
 - [`evidence-bundle.schema.json`](evidence-bundle.schema.json): manifest
-  inmutable de traza, artefactos, diffs, checks, outcome e integridad.
+  inmutable de traza, autoridad de init, diffs, checks, outcome e integridad.
+- [`filesystem-snapshot.schema.json`](filesystem-snapshot.schema.json): estado
+  observado de un root target/store en un checkpoint.
+- [`filesystem-diff.schema.json`](filesystem-diff.schema.json): cambios exactos
+  entre dos snapshots del mismo root.
+- [`runner-observation-report.schema.json`](runner-observation-report.schema.json):
+  procesos reales, checkpoints y checks calculados por el harness externo.
 
 ## Autoridad
 
@@ -63,6 +73,9 @@ Como mínimo, el harness verifica además:
   allowlist/denylist y no exceden el budget;
 - el outcome del trace coincide con el scenario y con los checks del bundle;
 - cada contenido, diff y trace del manifest coincide con sus bytes y digest.
+- cada `BundleContent.schema_id` selecciona el schema exacto de sus bytes: JSON
+  se valida como un documento y `application/x-ndjson` línea por línea; no se
+  aceptan blobs, roles o media types sin formato normativo;
 - cada checkpoint referencia un step existente; `relative_to` es
   `fixture_baseline` o un checkpoint anterior y sus diffs se calculan entre
   esos dos estados, no siempre contra el baseline inicial;
@@ -71,6 +84,78 @@ Como mínimo, el harness verifica además:
   originales;
 - para `repo-docs`, cada path del store diff también aparece en el target diff
   del mismo intervalo.
+
+## Paths y observación de filesystem
+
+Los paths dentro de snapshots y diffs son canónicos, usan `/` y son relativos
+al `root` declarado: `/` identifica el propio root, nunca el filesystem del
+host. `root.uri` y `root.resolved_path` se entregan explícitamente; no se
+infieren desde CWD. Un baseline vacío se representa con `entries: []`.
+`scope_path` define el subconjunto observado en esas coordenadas: `/` para el
+target completo y `/{managed_root}` para el store `repo-docs`. Por eso un path
+del store coincide byte por byte con el mismo path del target.
+
+Cada entry conserva `type`, `mode`, `size` y `sha256`. Para archivos regulares,
+`size` y `sha256` corresponden a sus bytes. Para symlinks, corresponden a los
+bytes exactos del link target devueltos por `readlink`: el harness **no sigue**
+el symlink. Los directorios se recorren pero no se enumeran: así el diff lógico
+de init conserva exactamente `project.json` y `events.jsonl`, sin convertir sus
+parents en writes. El check obligatorio `no_unexpected_nodes` falla ante un
+directorio temporal/huérfano o cualquier nodo no explicado. `mode` son siempre
+los cuatro dígitos octales de permisos; el tipo vive en `type`. Cada path
+aparece una sola vez. Estas invariantes son semánticas y el harness las
+recalcula fuera del worker.
+
+Las expectativas de fixture conservan paths policy-relative sin `/` inicial;
+el harness las compara con evidencia prefijando exactamente `/`. No aplica
+`filepath.Clean`, CWD ni otra reinterpretación ambiental.
+
+Un diff siempre identifica `from_checkpoint`, `to_checkpoint` y un root
+explícito. Cada change conserva estado anterior/posterior completo; `added`
+exige `before: null`, `deleted` exige `after: null` y `modified` exige ambos.
+Cada path aparece a lo sumo una vez y `modified` exige que al menos uno de
+`type`, `mode`, `size` o `sha256` haya cambiado.
+
+El runner report enlaza cada checkpoint con snapshots/diffs inmutables y
+registra PID real, ejecutable, acciones, requests, exit code y hashes de los
+streams capturados por proceso. `fresh_process: true` es una afirmación que el
+selector app-level debe contrastar con el subprocess observado, no una prueba
+por sí sola. `byte_count` y `sha256` describen los bytes **después** de redacción
+y truncado; los bytes crudos con potenciales secrets no se persisten ni se
+hashean dentro del bundle.
+
+## Contenidos obligatorios del EvidenceBundle
+
+El bundle contiene exactamente un trace y un runner report, un event log, y al
+menos los snapshots y diffs target/store requeridos por la corrida. Las
+referencias top-level `trace`, `runner_report` y `diffs` deben coincidir por URI
+y digest con sus respectivos contents; cada snapshot/diff citado por el runner
+report también debe estar enumerado. `checks` y `outcome` del manifest deben
+coincidir con el runner report; los target/store diffs top-level siempre son el
+intervalo `fixture_baseline` → último checkpoint. Para un init exitoso se
+incluye además un `project_state`. En un scenario bloqueado sin `project.json`,
+ese rol no se inventa. Estas correspondencias y la cardinalidad condicional por
+outcome son oráculos semánticos del harness.
+
+Los tres fixtures T0 declaran cero ArtifactEnvelope y cero ContextBrief, por eso
+el bundle v1alpha1 no admite roles opacos para ellos. Una slice que produzca
+esos objetos debe publicar primero su schema exacto y versionar/ampliar este
+contrato; no puede esconderlos como `check_output` o JSON arbitrario.
+
+`events.jsonl` se valida línea por línea contra
+`project-initialized-event.schema.json`; el archivo vacío del scenario bloqueado
+es válido como stream de cero records. Cada record conserva el digest JCS del
+request canónico, excluyendo únicamente `request_id`, y debe coincidir con el
+registro de idempotencia y con `original_request` de `project.json`. La copia
+completa del request es evidencia durable; el harness recalcula su digest y
+verifica identidad, referencias y request ID original, no confía en los campos
+resumen.
+
+En `project-state`, `state` es siempre `initialized`,
+`idempotency.original_request_id` coincide con `original_request.request_id` y
+`idempotency.request_digest` se recalcula desde ese request por JCS RFC 8785
+excluyendo únicamente `request_id`. `project_ref`, `resolved_context` y el
+evento deben resolver las mismas identidades; una discrepancia falla cerrado.
 
 `field_equals` usa JSON Pointers absolutos como keys y escalares como valores.
 El harness compara cada pointer contra el objeto observado antes de aplicar los

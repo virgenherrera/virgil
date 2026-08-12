@@ -11,6 +11,10 @@
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9+._-]*:[A-Fa-f0-9]{8,}$"
     },
+    "SHA256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
     "ResourceRef": {
       "type": "object",
       "required": ["uri"],
@@ -35,7 +39,7 @@
           "format": "uri-reference"
         },
         "revision": { "$ref": "#/$defs/NonEmptyString" },
-        "digest": { "$ref": "#/$defs/Digest" }
+        "digest": { "$ref": "#/$defs/SHA256" }
       },
       "additionalProperties": false
     },

@@ -15,6 +15,7 @@
     "runtime_capabilities",
     "environment",
     "trace",
+    "runner_report",
     "contents",
     "diffs",
     "checks",
@@ -58,6 +59,9 @@
     "trace": {
       "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
     },
+    "runner_report": {
+      "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
+    },
     "contents": {
       "type": "array",
       "minItems": 1,
@@ -72,7 +76,7 @@
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/$defs/CheckResult"
+        "$ref": "runner-observation-report.schema.json#/$defs/CheckResult"
       }
     },
     "outcome": {
@@ -92,6 +96,90 @@
       "$ref": "agent-interaction-trace.schema.json#/$defs/Integrity"
     }
   },
+  "allOf": [
+    {
+      "properties": {
+        "contents": {
+          "contains": {
+            "properties": {
+              "role": { "const": "trace" }
+            },
+            "required": ["role"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "contents": {
+          "contains": {
+            "properties": {
+              "role": { "const": "project_state" }
+            },
+            "required": ["role"]
+          },
+          "minContains": 0,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "contents": {
+          "contains": {
+            "properties": {
+              "role": { "const": "event_log" }
+            },
+            "required": ["role"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "contents": {
+          "contains": {
+            "properties": {
+              "role": { "const": "runner_report" }
+            },
+            "required": ["role"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "contents": {
+          "contains": {
+            "properties": {
+              "role": { "const": "filesystem_snapshot" }
+            },
+            "required": ["role"]
+          },
+          "minContains": 2
+        }
+      }
+    },
+    {
+      "properties": {
+        "contents": {
+          "contains": {
+            "properties": {
+              "role": { "const": "filesystem_diff" }
+            },
+            "required": ["role"]
+          },
+          "minContains": 2
+        }
+      }
+    }
+  ],
   "$defs": {
     "EnvironmentSnapshot": {
       "type": "object",
@@ -117,24 +205,133 @@
     },
     "BundleContent": {
       "type": "object",
-      "required": ["role", "resource"],
+      "required": ["role", "schema_id", "media_type", "resource"],
       "properties": {
         "role": {
           "enum": [
             "trace",
             "event_log",
-            "artifact",
-            "context_brief",
-            "target_diff",
-            "store_diff",
-            "check_output",
-            "environment"
+            "project_state",
+            "filesystem_snapshot",
+            "filesystem_diff",
+            "runner_report"
           ]
+        },
+        "schema_id": {
+          "enum": [
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/agent-interaction-trace.schema.json",
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-initialized-event.schema.json",
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-state.schema.json",
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-snapshot.schema.json",
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-diff.schema.json",
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/runner-observation-report.schema.json"
+          ]
+        },
+        "media_type": {
+          "enum": ["application/json", "application/x-ndjson"]
         },
         "resource": {
           "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "role": { "const": "trace" }
+            },
+            "required": ["role"]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/agent-interaction-trace.schema.json"
+              },
+              "media_type": { "const": "application/json" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": { "const": "event_log" }
+            },
+            "required": ["role"]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-initialized-event.schema.json"
+              },
+              "media_type": { "const": "application/x-ndjson" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": { "const": "project_state" }
+            },
+            "required": ["role"]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-state.schema.json"
+              },
+              "media_type": { "const": "application/json" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": { "const": "filesystem_snapshot" }
+            },
+            "required": ["role"]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-snapshot.schema.json"
+              },
+              "media_type": { "const": "application/json" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": { "const": "filesystem_diff" }
+            },
+            "required": ["role"]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-diff.schema.json"
+              },
+              "media_type": { "const": "application/json" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": { "const": "runner_report" }
+            },
+            "required": ["role"]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/runner-observation-report.schema.json"
+              },
+              "media_type": { "const": "application/json" }
+            }
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "DiffSet": {
@@ -145,25 +342,6 @@
           "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
         },
         "store": {
-          "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
-        }
-      },
-      "additionalProperties": false
-    },
-    "CheckResult": {
-      "type": "object",
-      "required": ["check_id", "status", "reason"],
-      "properties": {
-        "check_id": {
-          "$ref": "common.schema.json#/$defs/NonEmptyString"
-        },
-        "status": {
-          "enum": ["passed", "failed", "skipped"]
-        },
-        "reason": {
-          "$ref": "common.schema.json#/$defs/NonEmptyString"
-        },
-        "output": {
           "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
         }
       },

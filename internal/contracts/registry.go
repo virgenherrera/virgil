@@ -20,8 +20,13 @@ const (
 	SchemaCommon                = schemaBase + "common.schema.json"
 	SchemaEffectRecord          = schemaBase + "effect-record.schema.json"
 	SchemaEvidenceBundle        = schemaBase + "evidence-bundle.schema.json"
+	SchemaFilesystemDiff        = schemaBase + "filesystem-diff.schema.json"
+	SchemaFilesystemSnapshot    = schemaBase + "filesystem-snapshot.schema.json"
 	SchemaOperationRequest      = schemaBase + "operation-request.schema.json"
 	SchemaOperationResult       = schemaBase + "operation-result.schema.json"
+	SchemaProjectInitialized    = schemaBase + "project-initialized-event.schema.json"
+	SchemaProjectState          = schemaBase + "project-state.schema.json"
+	SchemaRunnerObservation     = schemaBase + "runner-observation-report.schema.json"
 	SchemaScenarioFixture       = schemaBase + "scenario-fixture.schema.json"
 )
 
@@ -31,8 +36,13 @@ var schemaAssets = map[string]string{
 	SchemaCommon:                "docs/slices/01-planning/schemas/common.schema.json",
 	SchemaEffectRecord:          "docs/slices/01-planning/schemas/effect-record.schema.json",
 	SchemaEvidenceBundle:        "docs/slices/01-planning/schemas/evidence-bundle.schema.json",
+	SchemaFilesystemDiff:        "docs/slices/01-planning/schemas/filesystem-diff.schema.json",
+	SchemaFilesystemSnapshot:    "docs/slices/01-planning/schemas/filesystem-snapshot.schema.json",
 	SchemaOperationRequest:      "docs/slices/01-planning/schemas/operation-request.schema.json",
 	SchemaOperationResult:       "docs/slices/01-planning/schemas/operation-result.schema.json",
+	SchemaProjectInitialized:    "docs/slices/01-planning/schemas/project-initialized-event.schema.json",
+	SchemaProjectState:          "docs/slices/01-planning/schemas/project-state.schema.json",
+	SchemaRunnerObservation:     "docs/slices/01-planning/schemas/runner-observation-report.schema.json",
 	SchemaScenarioFixture:       "docs/slices/01-planning/schemas/scenario-fixture.schema.json",
 }
 

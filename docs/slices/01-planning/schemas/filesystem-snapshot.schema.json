@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-snapshot.schema.json",
+  "title": "Virgil Filesystem Snapshot",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "protocol_version",
+    "snapshot_id",
+    "root",
+    "checkpoint_id",
+    "captured_at",
+    "entries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "virgil.dev/filesystem-snapshot/v1alpha1"
+    },
+    "protocol_version": {
+      "const": "virgil.dev/planning-slice1/v1alpha1"
+    },
+    "snapshot_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "root": {
+      "$ref": "#/$defs/ObservedRoot"
+    },
+    "checkpoint_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SnapshotEntry"
+      }
+    }
+  },
+  "$defs": {
+    "CanonicalPath": {
+      "type": "string",
+      "allOf": [
+        {
+          "pattern": "^/([^/\\\\]+(/[^/\\\\]+)*)?$"
+        },
+        {
+          "not": {
+            "pattern": "(^|/)\\.\\.?(/|$)"
+          }
+        }
+      ]
+    },
+    "ObservedRoot": {
+      "type": "object",
+      "required": ["kind", "uri", "resolved_path", "scope_path"],
+      "properties": {
+        "kind": {
+          "enum": ["target", "store"]
+        },
+        "uri": {
+          "type": "string",
+          "minLength": 1,
+          "format": "uri-reference"
+        },
+        "resolved_path": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        },
+        "scope_path": {
+          "$ref": "#/$defs/CanonicalPath"
+        }
+      },
+      "additionalProperties": false
+    },
+    "NodeState": {
+      "type": "object",
+      "required": ["type", "mode", "size", "sha256"],
+      "properties": {
+        "type": {
+          "enum": ["file", "symlink"]
+        },
+        "mode": {
+          "type": "string",
+          "pattern": "^[0-7]{4}$"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "common.schema.json#/$defs/SHA256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SnapshotEntry": {
+      "type": "object",
+      "required": ["path", "type", "mode", "size", "sha256"],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/CanonicalPath"
+        },
+        "type": {
+          "enum": ["file", "symlink"]
+        },
+        "mode": {
+          "type": "string",
+          "pattern": "^[0-7]{4}$"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "common.schema.json#/$defs/SHA256"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

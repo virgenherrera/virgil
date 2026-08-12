@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-diff.schema.json",
+  "title": "Virgil Filesystem Diff",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "protocol_version",
+    "diff_id",
+    "root",
+    "from_checkpoint",
+    "to_checkpoint",
+    "changes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "virgil.dev/filesystem-diff/v1alpha1"
+    },
+    "protocol_version": {
+      "const": "virgil.dev/planning-slice1/v1alpha1"
+    },
+    "diff_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "root": {
+      "$ref": "filesystem-snapshot.schema.json#/$defs/ObservedRoot"
+    },
+    "from_checkpoint": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "to_checkpoint": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Change"
+      }
+    }
+  },
+  "$defs": {
+    "Change": {
+      "type": "object",
+      "required": ["path", "change_type", "before", "after"],
+      "properties": {
+        "path": {
+          "$ref": "filesystem-snapshot.schema.json#/$defs/CanonicalPath"
+        },
+        "change_type": {
+          "enum": ["added", "modified", "deleted"]
+        },
+        "before": {
+          "oneOf": [
+            {
+              "$ref": "filesystem-snapshot.schema.json#/$defs/NodeState"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "after": {
+          "oneOf": [
+            {
+              "$ref": "filesystem-snapshot.schema.json#/$defs/NodeState"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "change_type": { "const": "added" }
+            },
+            "required": ["change_type"]
+          },
+          "then": {
+            "properties": {
+              "before": { "type": "null" },
+              "after": {
+                "$ref": "filesystem-snapshot.schema.json#/$defs/NodeState"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "change_type": { "const": "deleted" }
+            },
+            "required": ["change_type"]
+          },
+          "then": {
+            "properties": {
+              "before": {
+                "$ref": "filesystem-snapshot.schema.json#/$defs/NodeState"
+              },
+              "after": { "type": "null" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "change_type": { "const": "modified" }
+            },
+            "required": ["change_type"]
+          },
+          "then": {
+            "properties": {
+              "before": {
+                "$ref": "filesystem-snapshot.schema.json#/$defs/NodeState"
+              },
+              "after": {
+                "$ref": "filesystem-snapshot.schema.json#/$defs/NodeState"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

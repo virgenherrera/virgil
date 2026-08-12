@@ -185,7 +185,7 @@ Reglas obligatorias:
 El binario DEBE incluir directamente, mediante `go:embed`, los bytes
 versionados de:
 
-- los ocho JSON Schemas de
+- todos los JSON Schemas versionados de
   [`docs/slices/01-planning/schemas/`](../slices/01-planning/schemas/README.md);
 - las tres fixtures T0 y sus ActorScripts.
 
@@ -238,6 +238,16 @@ idempotente: key, digest RFC 8785 y `request_id` original. `events.jsonl`
 contiene exactamente un evento completo `project_initialized` para el primer
 init.
 
+La forma de `project.json` es
+[`project-state.schema.json`](../slices/01-planning/schemas/project-state.schema.json).
+Conserva exactamente una referencia de dogma y una del event log. Cada línea de
+`events.jsonl` se valida contra
+[`project-initialized-event.schema.json`](../slices/01-planning/schemas/project-initialized-event.schema.json)
+y contiene el mismo request digest JCS, request ID original e identidad
+resuelta. `project.json` conserva además el OperationRequest original completo,
+desde el cual el runtime y el harness recalculan el digest. Recovery no depende
+de campos privados del runtime ni de blobs sin schema.
+
 El namespace fuera de la policy se rechaza antes de escribir. El resultado es
 `blocked`, incluye `STORE_POLICY_VIOLATION`, registra un `EffectRecord` de
 write denegado con `occurred = false` y deja diff cero.
@@ -281,8 +291,24 @@ que incluye:
 - perfiles, capabilities, entorno y procesos/PIDs;
 - traza completa, event log y recursos requeridos;
 - diffs de target/store y checkpoints intermedios;
+- runner observation report con procesos/PIDs, streams, checkpoints y checks;
 - checks y clasificación del outcome;
 - digests de todos los recursos enumerados.
+
+Snapshots y diffs usan
+[`filesystem-snapshot.schema.json`](../slices/01-planning/schemas/filesystem-snapshot.schema.json)
+y
+[`filesystem-diff.schema.json`](../slices/01-planning/schemas/filesystem-diff.schema.json).
+Sus paths usan `/` relativo al root target/store explícito; nunca se resuelven
+desde CWD. Un symlink se observa sin seguirlo y su size/hash corresponden a los
+bytes de su link target. El
+[`runner-observation-report.schema.json`](../slices/01-planning/schemas/runner-observation-report.schema.json)
+enlaza esos documentos con cada checkpoint y con el PID real de cada proceso.
+
+Cada `EvidenceBundle.contents` declara `role`, media type y `$id` del schema que
+valida sus bytes. El harness rechaza roles opacos y comprueba que los contents
+coincidan con las referencias top-level y con las referencias del runner
+report. Para NDJSON valida cada línea; para JSON valida el documento completo.
 
 La traza y el manifest calculan SHA-256 sobre RFC 8785 excluyendo únicamente su
 propio `integrity.digest`. Credenciales, tokens y valores sensibles nunca se

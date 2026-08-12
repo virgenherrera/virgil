@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.virgil.dev/planning-slice1/v1alpha1/runner-observation-report.schema.json",
+  "title": "Virgil Runner Observation Report",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "protocol_version",
+    "report_id",
+    "fixture",
+    "target_root",
+    "store_root",
+    "started_at",
+    "ended_at",
+    "processes",
+    "checkpoints",
+    "checks",
+    "outcome",
+    "integrity"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "virgil.dev/runner-observation-report/v1alpha1"
+    },
+    "protocol_version": {
+      "const": "virgil.dev/planning-slice1/v1alpha1"
+    },
+    "report_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "fixture": {
+      "$ref": "agent-interaction-trace.schema.json#/$defs/FixtureRef"
+    },
+    "target_root": {
+      "allOf": [
+        {
+          "$ref": "filesystem-snapshot.schema.json#/$defs/ObservedRoot"
+        },
+        {
+          "properties": {
+            "kind": { "const": "target" },
+            "scope_path": { "const": "/" }
+          }
+        }
+      ]
+    },
+    "store_root": {
+      "allOf": [
+        {
+          "$ref": "filesystem-snapshot.schema.json#/$defs/ObservedRoot"
+        },
+        {
+          "properties": {
+            "kind": { "const": "store" }
+          }
+        }
+      ]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "processes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/ProcessObservation"
+      }
+    },
+    "checkpoints": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/CheckpointObservation"
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/CheckResult"
+      }
+    },
+    "outcome": {
+      "$ref": "scenario-fixture.schema.json#/$defs/ExpectedOutcome"
+    },
+    "integrity": {
+      "$ref": "agent-interaction-trace.schema.json#/$defs/Integrity"
+    }
+  },
+  "allOf": [
+    {
+      "properties": {
+        "checks": {
+          "contains": {
+            "properties": {
+              "check_id": { "const": "no_unexpected_nodes" }
+            },
+            "required": ["check_id"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "CapturedStream": {
+      "type": "object",
+      "required": ["byte_count", "sha256", "truncated", "redacted"],
+      "properties": {
+        "byte_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "common.schema.json#/$defs/SHA256"
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "redacted": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProcessObservation": {
+      "type": "object",
+      "required": [
+        "process_id",
+        "pid",
+        "fresh_process",
+        "executable",
+        "action_ids",
+        "request_ids",
+        "started_at",
+        "ended_at",
+        "exit_code",
+        "stdout",
+        "stderr"
+      ],
+      "properties": {
+        "process_id": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        },
+        "pid": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "fresh_process": {
+          "const": true
+        },
+        "executable": {
+          "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
+        },
+        "action_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/NonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "request_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/NonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ended_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "exit_code": {
+          "type": "integer"
+        },
+        "stdout": {
+          "$ref": "#/$defs/CapturedStream"
+        },
+        "stderr": {
+          "$ref": "#/$defs/CapturedStream"
+        }
+      },
+      "additionalProperties": false
+    },
+    "IntervalObservation": {
+      "type": "object",
+      "required": ["before_snapshot", "after_snapshot", "diff"],
+      "properties": {
+        "before_snapshot": {
+          "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
+        },
+        "after_snapshot": {
+          "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
+        },
+        "diff": {
+          "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CheckpointObservation": {
+      "type": "object",
+      "required": [
+        "checkpoint_id",
+        "after_step",
+        "relative_to",
+        "captured_at",
+        "target",
+        "store"
+      ],
+      "properties": {
+        "checkpoint_id": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        },
+        "after_step": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        },
+        "relative_to": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        },
+        "captured_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "target": {
+          "$ref": "#/$defs/IntervalObservation"
+        },
+        "store": {
+          "$ref": "#/$defs/IntervalObservation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CheckResult": {
+      "type": "object",
+      "required": ["check_id", "status", "reason"],
+      "properties": {
+        "check_id": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        },
+        "status": {
+          "enum": ["passed", "failed", "skipped"]
+        },
+        "reason": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

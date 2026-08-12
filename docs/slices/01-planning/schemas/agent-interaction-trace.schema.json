@@ -79,7 +79,7 @@
           "$ref": "common.schema.json#/$defs/NonEmptyString"
         },
         "digest": {
-          "$ref": "common.schema.json#/$defs/Digest"
+          "$ref": "common.schema.json#/$defs/SHA256"
         }
       },
       "additionalProperties": false
@@ -364,10 +364,10 @@
       "required": ["digest", "canonicalization"],
       "properties": {
         "digest": {
-          "$ref": "common.schema.json#/$defs/Digest"
+          "$ref": "common.schema.json#/$defs/SHA256"
         },
         "canonicalization": {
-          "$ref": "common.schema.json#/$defs/NonEmptyString"
+          "const": "RFC8785"
         }
       },
       "additionalProperties": false

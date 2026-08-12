@@ -12,8 +12,9 @@ const (
 )
 
 // canonicalAssets is owned by the module root because go:embed patterns may
-// not traverse to parent directories. These are the canonical docs assets,
-// not generated or relaxed copies.
+// not traverse to parent directories. The schema glob deliberately embeds the
+// complete versioned contract set, including evidence payload schemas; these
+// are canonical docs assets, not generated or relaxed copies.
 //
 //go:embed docs/slices/01-planning/schemas/*.json docs/slices/01-planning/validation/fixtures/t0/*/*.json docs/slices/01-planning/validation/fixtures/t0/README.md
 var canonicalAssets embed.FS
