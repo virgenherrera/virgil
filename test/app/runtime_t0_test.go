@@ -151,6 +151,44 @@ const continueHandoffCompleteDesignSeed = "# Design Proposal\n\nThis is the desi
 const continueHandoffCompleteTasksSeed = "# Tasks Proposal\n\nThis is the tasks proposal for change-handoff-alpha.\n"
 const continueHandoffCompleteHandoffSeed = "# Handoff Proposal\n\nThis is the handoff proposal for change-handoff-alpha.\n"
 
+// TestApp_T0ContinueRecoveryFreshProcess proves that a brand-new operating
+// system process with no in-memory state can recover a change's derived step
+// purely from durable storage. Process A drives init, new, and the idea
+// content_proposal/approval pair to completion (advancing derived_step to
+// "spec"), then stops. A restart_process action discards process A entirely
+// before process B — a distinct fresh OS process — proposes the spec
+// revision, which must durably link back to the idea revision process A
+// approved.
+func TestApp_T0ContinueRecoveryFreshProcess(t *testing.T) {
+	const fixtureID = "t0-continue-recovery-fresh-process"
+	execution := runT0Seeded(t, fixtureID, func(targetRoot string) error {
+		seedDir := filepath.Join(targetRoot, "seed")
+		if err := os.MkdirAll(seedDir, 0o700); err != nil {
+			return err
+		}
+		seeds := map[string]string{
+			"idea-proposal.md": continueRecoveryFreshProcessIdeaSeed,
+			"spec-proposal.md": continueRecoveryFreshProcessSpecSeed,
+		}
+		for name, content := range seeds {
+			if err := os.WriteFile(filepath.Join(seedDir, name), []byte(content), 0o600); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	assertScenarioPassed(t, execution, fixtureID)
+}
+
+// The continueRecoveryFreshProcess*Seed constants are the content_proposal
+// source files the T0 ActorScript for t0-continue-recovery-fresh-process
+// references by relative path (seed/idea-proposal.md, seed/spec-proposal.md).
+// See continueContentProposalSeed for why the T0 harness must materialize
+// them directly on disk. Their bytes are fixed so the digests embedded in the
+// fixture's actor-script.json stay correlated.
+const continueRecoveryFreshProcessIdeaSeed = "# Idea Proposal\n\nThis is the initial idea proposal for change-recovery-alpha.\n"
+const continueRecoveryFreshProcessSpecSeed = "# Spec Proposal\n\nThis is the spec proposal for change-recovery-alpha.\n"
+
 type runResult struct {
 	RuntimeProtocol string           `json:"runtime_protocol"`
 	Kind            string           `json:"kind"`
@@ -437,6 +475,8 @@ func assertProcesses(t *testing.T, fixtureID string, processes []processObservat
 		wantCount = 3
 	case "t0-continue-handoff-complete":
 		wantCount = 12
+	case "t0-continue-recovery-fresh-process":
+		wantCount = 5
 	}
 	if len(processes) != wantCount {
 		t.Fatalf("scenario %q: expected %d fresh processes, got %+v", fixtureID, wantCount, processes)
@@ -464,6 +504,14 @@ func assertProcesses(t *testing.T, fixtureID string, processes []processObservat
 		}
 		if _, ok := processIDs["process-b"]; !ok {
 			t.Fatal("retry scenario did not observe process-b")
+		}
+	}
+	if fixtureID == "t0-continue-recovery-fresh-process" {
+		if _, ok := processIDs["process-a"]; !ok {
+			t.Fatal("recovery-fresh-process scenario did not observe process-a")
+		}
+		if _, ok := processIDs["process-b"]; !ok {
+			t.Fatal("recovery-fresh-process scenario did not observe process-b")
 		}
 	}
 }
@@ -586,6 +634,7 @@ func assertTrace(t *testing.T, fixtureID, fixtureDigest string, processes []proc
 		"init-continue-retry-001":   {},
 		"init-blocked-001":          {},
 		"init-handoff-complete-001": {},
+		"init-recovery-001":         {},
 	}
 	for index, entry := range trace.Entries {
 		if entry.Sequence != index || entry.EntryID == "" || entry.Kind == "" {
@@ -907,6 +956,7 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 		"t0-continue-idempotent-retry":           "consumer-continue-retry",
 		"t0-continue-out-of-scope-write-blocked": "consumer-out-of-scope",
 		"t0-continue-handoff-complete":           "consumer-handoff-complete",
+		"t0-continue-recovery-fresh-process":     "consumer-recovery",
 	}
 	projectID, ok := projectByFixture[fixtureID]
 	if !ok {
@@ -925,6 +975,7 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 		"t0-continue-idempotent-retry":           "change-retry-alpha",
 		"t0-continue-out-of-scope-write-blocked": "change-blocked-alpha",
 		"t0-continue-handoff-complete":           "change-handoff-alpha",
+		"t0-continue-recovery-fresh-process":     "change-recovery-alpha",
 	}
 	if changeID, hasChange := changeByFixture[fixtureID]; hasChange {
 		changePrefix := filepath.Join(prefix, "changes", changeID)
@@ -960,6 +1011,16 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 	if fixtureID == "t0-continue-handoff-complete" {
 		for _, kind := range []string{"idea", "spec", "design", "tasks", "handoff"} {
 			revisionPrefix := filepath.Join(prefix, "changes", "change-handoff-alpha", "artifacts", kind, "rev-000001")
+			want = append(want,
+				filepath.Join(revisionPrefix, "envelope.json"),
+				filepath.Join(revisionPrefix, "content.md"),
+				filepath.Join(fixtureID, "target", "seed", kind+"-proposal.md"),
+			)
+		}
+	}
+	if fixtureID == "t0-continue-recovery-fresh-process" {
+		for _, kind := range []string{"idea", "spec"} {
+			revisionPrefix := filepath.Join(prefix, "changes", "change-recovery-alpha", "artifacts", kind, "rev-000001")
 			want = append(want,
 				filepath.Join(revisionPrefix, "envelope.json"),
 				filepath.Join(revisionPrefix, "content.md"),

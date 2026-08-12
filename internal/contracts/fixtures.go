@@ -56,6 +56,10 @@ var fixtureAssets = map[string]struct {
 		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-handoff-complete/fixture.json",
 		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-handoff-complete/actor-script.json",
 	},
+	"t0-continue-recovery-fresh-process": {
+		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-recovery-fresh-process/fixture.json",
+		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-recovery-fresh-process/actor-script.json",
+	},
 }
 
 var FixtureOrder = []string{
@@ -69,6 +73,7 @@ var FixtureOrder = []string{
 	"t0-continue-idempotent-retry",
 	"t0-continue-out-of-scope-write-blocked",
 	"t0-continue-handoff-complete",
+	"t0-continue-recovery-fresh-process",
 }
 
 type Fixture struct {

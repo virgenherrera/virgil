@@ -267,6 +267,13 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 		}
 		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-handoff-complete-oracle", Status: "passed", Detail: "all five artifact kinds were drafted, submitted, and approved in order, advancing derived_step to complete"})
 
+	case "t0-continue-recovery-fresh-process":
+		if err := validateRecoveryFreshProcessScenario(runner.registry, targetRoot, executions); err != nil {
+			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-recovery-fresh-process-oracle", Status: "failed", Detail: "a fresh process failed to recover derived state and continue the change durably"})
+			return failScenario(scenario, "virgil_failure", "CONTINUE_RECOVERY_FRESH_PROCESS_ORACLE_FAILED", err.Error())
+		}
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-recovery-fresh-process-oracle", Status: "passed", Detail: "a brand-new operating-system process with no in-memory state derived the approved idea step from durable storage and proposed the spec revision with the correct upstream_ref"})
+
 	default:
 		return failScenario(scenario, "fixture_failure", "FIXTURE_ORACLE_MISSING", "runner has no operational oracle for fixture")
 	}
@@ -1567,6 +1574,285 @@ func validateApprovalResultForStep(request protocol.OperationRequest, result pro
 	if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" ||
 		effect.RequestID != request.RequestID || effect.CausationID != request.RequestID {
 		return fmt.Errorf("approval for %s effect is not an authorized write correlated to the request", artifactKind)
+	}
+	return nil
+}
+
+// validateRecoveryFreshProcessScenario proves that a brand-new operating
+// system process, launched with no in-memory state from any earlier
+// invocation, can correctly recover a change's derived state purely from
+// durable storage and continue the pipeline. Process A drives init, new, and
+// the idea content_proposal/approval pair to completion (advancing
+// derived_step to "spec") and then stops. The ActorScript then issues a
+// restart_process action and process B — a distinct fresh OS process — issues
+// only the spec content_proposal. Because repo-docs' derived_step and
+// upstream_refs are always recomputed as queries over durable revisions
+// (never cached in memory, see computeDerivedStep and upstreamRefsFor), the
+// only way process B can correctly target "spec" and link its revision's
+// upstream_refs to the approved idea revision is by reading the durable
+// change authority from disk.
+func validateRecoveryFreshProcessScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
+	if len(executions) != 5 {
+		return fmt.Errorf("recovery-fresh-process fixture executed %d operations, want 5", len(executions))
+	}
+	for _, execution := range executions {
+		if execution.Action.Kind != "invoke" {
+			return fmt.Errorf("recovery-fresh-process fixture contains a non-invoke execution")
+		}
+	}
+	initExec, newExec, ideaProposeExec, ideaApproveExec, specProposeExec := executions[0], executions[1], executions[2], executions[3], executions[4]
+
+	if initExec.Action.ProcessID != "process-a" || newExec.Action.ProcessID != "process-a" ||
+		ideaProposeExec.Action.ProcessID != "process-a" || ideaApproveExec.Action.ProcessID != "process-a" {
+		return fmt.Errorf("init, new, and the idea content_proposal/approval pair did not all execute in process-a")
+	}
+	if specProposeExec.Action.ProcessID != "process-b" {
+		return fmt.Errorf("the spec content_proposal did not execute in a distinct logical process-b")
+	}
+	if ideaApproveExec.Process.OSPID <= 0 || specProposeExec.Process.OSPID <= 0 || ideaApproveExec.Process.OSPID == specProposeExec.Process.OSPID {
+		return fmt.Errorf("recovery did not cross distinct operating-system processes")
+	}
+
+	if err := validateFreshInitResult(initExec.Request, initExec.Child.Result, initExec.Checkpoint.Target, targetRoot); err != nil {
+		return fmt.Errorf("init phase: %w", err)
+	}
+	if err := validatePublishedAuthority(registry, targetRoot, initExec.Request, initExec.Child.Result); err != nil {
+		return fmt.Errorf("init phase: %w", err)
+	}
+	if initExec.Checkpoint.EventCount != 1 {
+		return fmt.Errorf("init published %d project events, want one", initExec.Checkpoint.EventCount)
+	}
+
+	if err := validateFreshNewResult(newExec.Request, newExec.Child.Result, targetRoot); err != nil {
+		return fmt.Errorf("new phase: %w", err)
+	}
+	if newExec.Checkpoint.EventCount != 1 {
+		return fmt.Errorf("new phase changed project event count to %d, want 1", newExec.Checkpoint.EventCount)
+	}
+
+	var newInput struct {
+		ChangeID string `json:"change_id"`
+	}
+	if err := json.Unmarshal(newExec.Request.Input, &newInput); err != nil || newInput.ChangeID == "" {
+		return fmt.Errorf("new request input does not contain a valid change_id")
+	}
+
+	if err := validateContentProposalResultForStep(ideaProposeExec.Request, ideaProposeExec.Child.Result, "idea"); err != nil {
+		return fmt.Errorf("idea content_proposal phase: %w", err)
+	}
+	if ideaProposeExec.Checkpoint.EventCount != 1 {
+		return fmt.Errorf("idea content_proposal phase changed project event count to %d, want 1", ideaProposeExec.Checkpoint.EventCount)
+	}
+
+	if err := validateApprovalResultForStep(ideaApproveExec.Request, ideaApproveExec.Child.Result, "idea", "spec", "virgil.continue"); err != nil {
+		return fmt.Errorf("idea approval phase: %w", err)
+	}
+	if ideaApproveExec.Checkpoint.EventCount != 1 {
+		return fmt.Errorf("idea approval phase changed project event count to %d, want 1", ideaApproveExec.Checkpoint.EventCount)
+	}
+
+	// The critical recovery assertion: process B — a fresh OS process that
+	// never observed process A's in-memory results — must still resolve
+	// derived_step to "spec" (not "idea") purely from durable revisions.
+	if err := validateContentProposalResultForStep(specProposeExec.Request, specProposeExec.Child.Result, "spec"); err != nil {
+		return fmt.Errorf("spec content_proposal phase (process B, fresh process): %w", err)
+	}
+	if specProposeExec.Checkpoint.EventCount != 1 {
+		return fmt.Errorf("spec content_proposal phase changed project event count to %d, want 1", specProposeExec.Checkpoint.EventCount)
+	}
+
+	namespace := newExec.Request.ArtifactStoreRef.Namespace
+	changePath := filepath.Join(targetRoot, filepath.FromSlash(pathJoin(namespace, "changes", newInput.ChangeID)))
+
+	changeStateBytes, err := os.ReadFile(filepath.Join(changePath, protocol.RepoDocsChangeFile))
+	if err != nil {
+		return fmt.Errorf("read change authority: %w", err)
+	}
+	if err := registry.Validate(contracts.SchemaChangeState, changeStateBytes); err != nil {
+		return fmt.Errorf("change state violates schema: %w", err)
+	}
+
+	ideaEnvelope, err := readRevisionEnvelope(registry, changePath, "idea")
+	if err != nil {
+		return fmt.Errorf("idea revision: %w", err)
+	}
+	if ideaEnvelope.State != "approved" || ideaEnvelope.ApprovedBy == nil || ideaEnvelope.ApprovedBy.ActorID == "" || ideaEnvelope.ApprovedAt == "" {
+		return fmt.Errorf("idea revision is not durably approved")
+	}
+	if len(ideaEnvelope.UpstreamRefs) != 0 {
+		return fmt.Errorf("idea revision must not carry an upstream_refs entry, got %d", len(ideaEnvelope.UpstreamRefs))
+	}
+
+	specEnvelope, err := readRevisionEnvelope(registry, changePath, "spec")
+	if err != nil {
+		return fmt.Errorf("spec revision: %w", err)
+	}
+	if specEnvelope.State != "awaiting_approval" {
+		return fmt.Errorf("spec revision state is %q, want awaiting_approval", specEnvelope.State)
+	}
+	// This is the durable proof that process B recovered the current step
+	// from disk rather than from any cached or default state: the spec
+	// revision drafted by the fresh process links back to the exact idea
+	// revision that process A approved.
+	if len(specEnvelope.UpstreamRefs) != 1 || specEnvelope.UpstreamRefs[0].ArtifactKind != "idea" || specEnvelope.UpstreamRefs[0].RevisionID != "rev-000001" {
+		return fmt.Errorf("spec revision upstream_refs does not point at the approved idea revision")
+	}
+
+	for kind, envelope := range map[string]revisionEnvelopeProbe{"idea": ideaEnvelope, "spec": specEnvelope} {
+		contentBytes, err := os.ReadFile(filepath.Join(changePath, "artifacts", kind, "rev-000001", "content.md"))
+		if err != nil {
+			return fmt.Errorf("read %s revision content: %w", kind, err)
+		}
+		if wantDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(contentBytes)); envelope.Content.Digest != wantDigest {
+			return fmt.Errorf("%s revision content digest does not match the durable envelope", kind)
+		}
+	}
+
+	changeEventsPath := filepath.Join(changePath, protocol.RepoDocsEventsFile)
+	eventBytes, err := os.ReadFile(changeEventsPath)
+	if err != nil {
+		return fmt.Errorf("read change event log: %w", err)
+	}
+	if len(eventBytes) == 0 || eventBytes[len(eventBytes)-1] != '\n' {
+		return fmt.Errorf("change event log is not newline terminated")
+	}
+	lines := bytes.Split(bytes.TrimSpace(eventBytes), []byte{'\n'})
+	wantKinds := []string{"change_created", "revision_drafted", "revision_submitted", "revision_approved", "revision_drafted", "revision_submitted"}
+	wantArtifactKinds := []string{"", "idea", "idea", "idea", "spec", "spec"}
+	if len(lines) != len(wantKinds) {
+		return fmt.Errorf("change event log has %d lines, want %d (created, idea drafted/submitted/approved, spec drafted/submitted)", len(lines), len(wantKinds))
+	}
+	for index, line := range lines {
+		if index == 0 {
+			if err := registry.Validate(contracts.SchemaChangeCreated, line); err != nil {
+				return fmt.Errorf("change_created event violates schema: %w", err)
+			}
+		} else if err := registry.Validate(contracts.SchemaRevisionLifecycleEvent, line); err != nil {
+			return fmt.Errorf("revision lifecycle event %d violates schema: %w", index, err)
+		}
+		var probe struct {
+			Kind         string `json:"kind"`
+			RevisionID   string `json:"revision_id"`
+			ArtifactKind string `json:"artifact_kind"`
+		}
+		if err := json.Unmarshal(line, &probe); err != nil {
+			return fmt.Errorf("decode change event %d: %w", index, err)
+		}
+		if probe.Kind != wantKinds[index] {
+			return fmt.Errorf("change event %d has kind %q, want %q", index, probe.Kind, wantKinds[index])
+		}
+		if index > 0 && (probe.RevisionID != "rev-000001" || probe.ArtifactKind != wantArtifactKinds[index]) {
+			return fmt.Errorf("change event %d does not correlate to the %s revision", index, wantArtifactKinds[index])
+		}
+	}
+
+	return validateRecoveryFreshProcessTree(targetRoot, namespace, newInput.ChangeID, "seed/idea-proposal.md", "seed/spec-proposal.md")
+}
+
+// revisionEnvelopeProbe decodes just the RevisionEnvelope fields the recovery
+// oracle needs to cross-check: durable state, approval, upstream linkage, and
+// content digest.
+type revisionEnvelopeProbe struct {
+	RevisionID   string `json:"revision_id"`
+	ArtifactKind string `json:"artifact_kind"`
+	State        string `json:"state"`
+	UpstreamRefs []struct {
+		RevisionID   string `json:"revision_id"`
+		ArtifactKind string `json:"artifact_kind"`
+	} `json:"upstream_refs"`
+	ApprovedBy *struct {
+		ActorID string `json:"actor_id"`
+	} `json:"approved_by"`
+	ApprovedAt string `json:"approved_at"`
+	Content    struct {
+		URI    string `json:"uri"`
+		Digest string `json:"digest"`
+	} `json:"content"`
+}
+
+func readRevisionEnvelope(registry *contracts.Registry, changePath, artifactKind string) (revisionEnvelopeProbe, error) {
+	revisionPath := filepath.Join(changePath, "artifacts", artifactKind, "rev-000001")
+	envelopeBytes, err := os.ReadFile(filepath.Join(revisionPath, "envelope.json"))
+	if err != nil {
+		return revisionEnvelopeProbe{}, fmt.Errorf("read revision envelope: %w", err)
+	}
+	if err := registry.Validate(contracts.SchemaRevisionEnvelope, envelopeBytes); err != nil {
+		return revisionEnvelopeProbe{}, fmt.Errorf("revision envelope schema: %w", err)
+	}
+	var envelope revisionEnvelopeProbe
+	if err := json.Unmarshal(envelopeBytes, &envelope); err != nil {
+		return revisionEnvelopeProbe{}, fmt.Errorf("decode revision envelope: %w", err)
+	}
+	if envelope.RevisionID != "rev-000001" || envelope.ArtifactKind != artifactKind {
+		return revisionEnvelopeProbe{}, fmt.Errorf("revision envelope identity does not match its path")
+	}
+	return envelope, nil
+}
+
+// validateRecoveryFreshProcessTree walks the entire target repository and
+// confirms it contains exactly the repo-docs managed tree for one approved
+// idea revision and one awaiting-approval spec revision, plus the fixture's
+// two pre-seeded content_proposal source files living outside the managed
+// namespace.
+func validateRecoveryFreshProcessTree(targetRoot, namespace, changeID, ideaSeedPath, specSeedPath string) error {
+	changePath := pathJoin(namespace, "changes", changeID)
+	expected := map[string]string{
+		"docs":                 "dir",
+		"docs/virgil":          "dir",
+		"docs/virgil/projects": "dir",
+		namespace:              "dir",
+		pathJoin(namespace, protocol.RepoDocsProjectFile): "file",
+		pathJoin(namespace, protocol.RepoDocsEventsFile):  "file",
+		pathJoin(namespace, "changes"):                    "dir",
+		changePath:                                        "dir",
+		pathJoin(changePath, protocol.RepoDocsChangeFile): "file",
+		pathJoin(changePath, protocol.RepoDocsEventsFile): "file",
+		pathJoin(changePath, "artifacts"):                 "dir",
+	}
+	for _, kind := range []string{"idea", "spec"} {
+		kindPath := pathJoin(changePath, "artifacts", kind)
+		revisionPath := pathJoin(kindPath, "rev-000001")
+		expected[kindPath] = "dir"
+		expected[revisionPath] = "dir"
+		expected[pathJoin(revisionPath, "envelope.json")] = "file"
+		expected[pathJoin(revisionPath, "content.md")] = "file"
+	}
+	for _, seedPath := range []string{ideaSeedPath, specSeedPath} {
+		for directory := path.Dir(seedPath); directory != "." && directory != "/"; directory = path.Dir(directory) {
+			expected[directory] = "dir"
+		}
+		expected[seedPath] = "file"
+	}
+
+	seen := make(map[string]bool, len(expected))
+	err := filepath.WalkDir(targetRoot, func(entryPath string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entryPath == targetRoot {
+			return nil
+		}
+		relative, err := filepath.Rel(targetRoot, entryPath)
+		if err != nil {
+			return err
+		}
+		relative = filepath.ToSlash(relative)
+		kind, found := expected[relative]
+		if !found {
+			return fmt.Errorf("unexpected target node %q", relative)
+		}
+		info, err := os.Lstat(entryPath)
+		if err != nil || info.Mode()&os.ModeSymlink != 0 || (kind == "dir" && !info.IsDir()) || (kind == "file" && !info.Mode().IsRegular()) {
+			return fmt.Errorf("target node %q has an unexpected kind", relative)
+		}
+		seen[relative] = true
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if len(seen) != len(expected) {
+		return fmt.Errorf("target node set is incomplete")
 	}
 	return nil
 }
