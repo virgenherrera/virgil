@@ -76,6 +76,7 @@ sistemas pueden ofrecer adapters equivalentes sin cambiar el kernel.
 - [Visión y fundamentos](foundations/vision.md)
 - [Límites del sistema](architecture/system-boundaries.md)
 - [Secretaría Ejecutiva](architecture/executive-secretary.md)
+- [Runtime Go T0 — contrato de implementación](architecture/go-runtime.md)
 - [Contratos conceptuales mínimos](protocol/core-contracts.md)
 - [Estrategia de validación](quality/validation-strategy.md)
 - [Production-Safe Green](quality/production-safe-green.md)

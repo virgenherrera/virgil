@@ -39,6 +39,21 @@ en cobertura unitaria como objetivo. Si una implementación los agrega para
 diagnóstico, siguen fuera del EvidenceBundle certificable y nunca cierran Red,
 Green, Refactor o Verify.
 
+La implementación de referencia en Go PUEDE usar `go test` como launcher, no
+como boundary. Los scenarios certificables viven en `./test/app`, se nombran
+`TestApp_*` y siempre ejecutan el binario por su superficie pública contra un
+target/store aislado. El selector canónico es:
+
+```sh
+go test ./test/app -run '^TestApp_'
+```
+
+Un package interno, mock del kernel o test que llama funciones Go directamente
+no entra a esa selección ni produce evidencia certificable. Se prefiere
+package + nombre sobre un build tag obligatorio para evitar que los app tests
+desaparezcan silenciosamente de una corrida; un tag adicional puede servir
+para CI, pero no reemplaza el boundary.
+
 La política de [Production-Safe Green](production-safe-green.md) aplica al
 harness y a cualquier implementación evaluada por esta estrategia.
 

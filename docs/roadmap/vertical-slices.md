@@ -14,6 +14,11 @@ El diseño normativo, sus límites y escenarios de conformidad viven en
 su posición: establecer identidad, persistencia, lifecycle, context briefs y el
 flujo idea → handoff antes de tocar código, producto o configuración del target.
 
+El [contrato del runtime Go T0](../architecture/go-runtime.md) fija el diseño de
+implementación seleccionado para las primeras fixtures de este slice. Define
+boundaries y gates futuros; no declara capacidad implementada ni avance del
+slice.
+
 ## Slice 2 — Execution: handoff → code/tests
 
 Entrega mínima:
