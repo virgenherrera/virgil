@@ -150,6 +150,14 @@ func rejectAmbiguousJSON(raw []byte) error {
 	return nil
 }
 
+// ValidateUnambiguousJSON rejects duplicate object keys, excessive nesting,
+// malformed documents and multiple top-level JSON values. Durable stores use
+// the same checker as the public wire boundary so recovery cannot interpret a
+// document differently from ingestion.
+func ValidateUnambiguousJSON(raw []byte) error {
+	return rejectAmbiguousJSON(raw)
+}
+
 func inspectJSONValue(decoder *json.Decoder, depth int) error {
 	if depth > MaxJSONDepth {
 		return fmt.Errorf("maximum depth %d exceeded", MaxJSONDepth)
