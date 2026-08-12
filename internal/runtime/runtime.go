@@ -3,15 +3,18 @@ package runtime
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	virgil "github.com/virgenherrera/virgil"
 	"github.com/virgenherrera/virgil/internal/contracts"
 	"github.com/virgenherrera/virgil/internal/protocol"
+	"github.com/virgenherrera/virgil/internal/repodocs"
 	"github.com/virgenherrera/virgil/internal/wire"
 )
 
@@ -28,6 +31,9 @@ func Invoke(registry *contracts.Registry, envelope wire.InvokeEnvelope) (wire.In
 	}
 	if request.Operation == "virgil.init" && !namespaceIsManaged(request) {
 		return blockedStorePolicyResult(registry, envelope, request)
+	}
+	if request.Operation == "virgil.init" {
+		return invokeRepoDocsInit(registry, envelope, request)
 	}
 
 	context := protocol.ContextFromRequest(request)
@@ -72,6 +78,102 @@ func Invoke(registry *contracts.Registry, envelope wire.InvokeEnvelope) (wire.In
 		Result:          result,
 		Observations:    []wire.Observation{},
 	}, nil
+}
+
+func invokeRepoDocsInit(registry *contracts.Registry, envelope wire.InvokeEnvelope, request protocol.OperationRequest) (wire.InvokeResult, error) {
+	now, err := time.Parse(time.RFC3339, envelope.Clock.Now)
+	if err != nil {
+		return wire.InvokeResult{}, fmt.Errorf("invoke clock violates runtime envelope: %w", err)
+	}
+
+	result, err := repodocs.Init(
+		request,
+		envelope.Bindings.Target.Root,
+		repodocs.ClockFunc(func() time.Time { return now }),
+		repodocs.JCSCanonicalizer{},
+	)
+	if err != nil {
+		var adapterError *repodocs.Error
+		if !errors.As(err, &adapterError) {
+			return wire.InvokeResult{}, fmt.Errorf("repo-docs init failed without a protocol diagnostic: %w", err)
+		}
+		result = repoDocsErrorResult(request, adapterError)
+	}
+
+	serialized, err := json.Marshal(result)
+	if err != nil {
+		return wire.InvokeResult{}, fmt.Errorf("marshal repo-docs OperationResult: %w", err)
+	}
+	if err := registry.Validate(contracts.SchemaOperationResult, serialized); err != nil {
+		return wire.InvokeResult{}, fmt.Errorf("repo-docs OperationResult violates contract: %w", err)
+	}
+
+	return wire.InvokeResult{
+		RuntimeProtocol: wire.RuntimeProtocol,
+		Kind:            "invoke_result",
+		ProcessID:       envelope.ProcessID,
+		OSPID:           os.Getpid(),
+		Result:          result,
+		Observations:    []wire.Observation{},
+	}, nil
+}
+
+func repoDocsErrorResult(request protocol.OperationRequest, adapterError *repodocs.Error) protocol.OperationResult {
+	status := "error"
+	nextAction := "inspect the repo-docs adapter failure and recover the durable authority before retrying"
+	switch adapterError.Code {
+	case "STORE_POLICY_VIOLATION":
+		status = "blocked"
+		nextAction = "select a repo-docs namespace and path below the effective managed write policy"
+	case "IDEMPOTENCY_CONFLICT":
+		status = "blocked"
+		nextAction = "use a new idempotency key for the changed intent or replay the original request"
+	case "PRECONDITION_FAILED", "IDENTITY_AMBIGUOUS", "METHOD_TARGET_COLLISION":
+		status = "blocked"
+		nextAction = "correct the explicit request identity or precondition before retrying"
+	case "ATOMICITY_UNSUPPORTED":
+		status = "unsupported"
+		nextAction = "use a host filesystem that provides the required atomic publication guarantees"
+	case "CAPABILITY_UNSUPPORTED":
+		status = "unsupported"
+		nextAction = "provide the required runtime, adapter, or canonicalization capability"
+	case "CORRUPT_LEDGER":
+		status = "error"
+		nextAction = "repair or quarantine the corrupt durable authority before retrying"
+	case "INTERNAL_ERROR":
+		status = "error"
+		nextAction = "inspect the runtime failure without treating partial state as authoritative"
+	}
+
+	scope := adapterError.Scope
+	if scope == "" {
+		scope = request.Operation
+	}
+	return protocol.OperationResult{
+		ProtocolVersion:  request.ProtocolVersion,
+		Operation:        request.Operation,
+		RequestID:        request.RequestID,
+		IdempotencyKey:   request.IdempotencyKey,
+		Status:           status,
+		RequestedContext: protocol.ContextFromRequest(request),
+		Artifacts:        []protocol.ObjectPointer{},
+		Briefs:           []protocol.ObjectPointer{},
+		Events:           []protocol.ObjectPointer{},
+		Effects:          []protocol.EffectRecord{},
+		Next: protocol.NextAction{
+			Operation: "none",
+			Condition: adapterError.Condition,
+		},
+		Diagnostics: []protocol.Diagnostic{
+			{
+				Code:       adapterError.Code,
+				Severity:   "error",
+				Scope:      scope,
+				Condition:  adapterError.Condition,
+				NextAction: nextAction,
+			},
+		},
+	}
 }
 
 func blockedStorePolicyResult(registry *contracts.Registry, envelope wire.InvokeEnvelope, request protocol.OperationRequest) (wire.InvokeResult, error) {
