@@ -28,12 +28,22 @@ var fixtureAssets = map[string]struct {
 		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-init-idempotent-retry/fixture.json",
 		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-init-idempotent-retry/actor-script.json",
 	},
+	"t0-new-repo-docs-happy": {
+		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-new-repo-docs-happy/fixture.json",
+		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-new-repo-docs-happy/actor-script.json",
+	},
+	"t0-new-change-id-collision": {
+		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-new-change-id-collision/fixture.json",
+		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-new-change-id-collision/actor-script.json",
+	},
 }
 
 var FixtureOrder = []string{
 	"t0-init-repo-docs-happy",
 	"t0-init-unmanaged-write-blocked",
 	"t0-init-idempotent-retry",
+	"t0-new-repo-docs-happy",
+	"t0-new-change-id-collision",
 }
 
 type Fixture struct {

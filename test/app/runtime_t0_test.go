@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -36,6 +37,16 @@ func TestApp_T0InitUnmanagedWriteBlocked(t *testing.T) {
 func TestApp_T0InitIdempotentRetryFreshProcess(t *testing.T) {
 	execution := runT0(t, "t0-init-idempotent-retry")
 	assertScenarioPassed(t, execution, "t0-init-idempotent-retry")
+}
+
+func TestApp_T0NewRepoDocsHappy(t *testing.T) {
+	execution := runT0(t, "t0-new-repo-docs-happy")
+	assertScenarioPassed(t, execution, "t0-new-repo-docs-happy")
+}
+
+func TestApp_T0NewChangeIdCollision(t *testing.T) {
+	execution := runT0(t, "t0-new-change-id-collision")
+	assertScenarioPassed(t, execution, "t0-new-change-id-collision")
 }
 
 type runResult struct {
@@ -293,20 +304,25 @@ func assertScenarioPassed(t *testing.T, execution appRun, fixtureID string) {
 func assertProcesses(t *testing.T, fixtureID string, processes []processObservation) {
 	t.Helper()
 	wantCount := 1
-	if fixtureID == "t0-init-idempotent-retry" {
+	switch fixtureID {
+	case "t0-init-idempotent-retry", "t0-new-repo-docs-happy":
 		wantCount = 2
+	case "t0-new-change-id-collision":
+		wantCount = 3
 	}
 	if len(processes) != wantCount {
 		t.Fatalf("scenario %q: expected %d fresh processes, got %+v", fixtureID, wantCount, processes)
 	}
+	// process_id names the actor's logical, continuous working session: it may
+	// legitimately repeat across several fresh OS processes when the
+	// ActorScript issues consecutive invoke actions with no restart_process
+	// boundary in between (e.g. init immediately followed by new). Only the
+	// operating-system PID is required to be unique within a scenario.
 	processIDs := make(map[string]struct{}, len(processes))
 	pids := make(map[int]struct{}, len(processes))
 	for _, process := range processes {
 		if process.ProcessID == "" || process.OSPID <= 0 || process.ExitCode != 0 {
 			t.Fatalf("scenario %q: invalid process observation %+v", fixtureID, process)
-		}
-		if _, duplicate := processIDs[process.ProcessID]; duplicate {
-			t.Fatalf("scenario %q: duplicate process_id %q", fixtureID, process.ProcessID)
 		}
 		if _, duplicate := pids[process.OSPID]; duplicate {
 			t.Fatalf("scenario %q: PID %d was reused", fixtureID, process.OSPID)
@@ -435,6 +451,8 @@ func assertTrace(t *testing.T, fixtureID, fixtureDigest string, processes []proc
 		"init-happy-001":     {},
 		"init-unmanaged-001": {},
 		"init-retry-001-a":   {},
+		"init-new-happy-001": {},
+		"init-collision-001": {},
 	}
 	for index, entry := range trace.Entries {
 		if entry.Sequence != index || entry.EntryID == "" || entry.Kind == "" {
@@ -460,16 +478,19 @@ func assertRunnerReport(t *testing.T, evidenceRoot, fixtureID, fixtureDigest str
 		report.Fixture.Digest != fixtureDigest || report.Outcome.Status != "passed" || len(report.Checkpoints) == 0 {
 		t.Fatalf("invalid RunnerObservationReport identity/outcome: %+v", report)
 	}
-	public := make(map[string]processObservation, len(processes))
+	// Correlate by OS PID, not process_id: process_id names a logical actor
+	// session and may repeat across several fresh OS processes (see
+	// assertProcesses), while OSPID is guaranteed unique within a scenario.
+	public := make(map[int]processObservation, len(processes))
 	for _, process := range processes {
-		public[process.ProcessID] = process
+		public[process.OSPID] = process
 	}
-	if len(report.Processes) != len(public) {
-		t.Fatalf("runner report process count %d differs from public %d", len(report.Processes), len(public))
+	if len(report.Processes) != len(processes) {
+		t.Fatalf("runner report process count %d differs from public %d", len(report.Processes), len(processes))
 	}
 	for _, process := range report.Processes {
-		observed, ok := public[process.ProcessID]
-		if !ok || process.PID != observed.OSPID || process.ExitCode != observed.ExitCode || !process.FreshProcess ||
+		observed, ok := public[process.PID]
+		if !ok || process.ProcessID != observed.ProcessID || process.ExitCode != observed.ExitCode || !process.FreshProcess ||
 			len(process.ActionIDs) == 0 || len(process.RequestIDs) == 0 {
 			t.Fatalf("runner report process is not the public fresh process: %+v", process)
 		}
@@ -744,8 +765,10 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 		return
 	}
 	projectByFixture := map[string]string{
-		"t0-init-repo-docs-happy":  "consumer-init-happy",
-		"t0-init-idempotent-retry": "consumer-retry",
+		"t0-init-repo-docs-happy":    "consumer-init-happy",
+		"t0-init-idempotent-retry":   "consumer-retry",
+		"t0-new-repo-docs-happy":     "consumer-new-happy",
+		"t0-new-change-id-collision": "consumer-collision",
 	}
 	projectID, ok := projectByFixture[fixtureID]
 	if !ok {
@@ -755,6 +778,18 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 	want := []string{
 		filepath.Join(prefix, "events.jsonl"),
 		filepath.Join(prefix, "project.json"),
+	}
+	changeByFixture := map[string]string{
+		"t0-new-repo-docs-happy":     "change-alpha",
+		"t0-new-change-id-collision": "change-beta",
+	}
+	if changeID, hasChange := changeByFixture[fixtureID]; hasChange {
+		changePrefix := filepath.Join(prefix, "changes", changeID)
+		want = append(want,
+			filepath.Join(changePrefix, "change.json"),
+			filepath.Join(changePrefix, "events.jsonl"),
+		)
+		sort.Strings(want)
 	}
 	if !equalStrings(files, want) {
 		t.Fatalf("scenario %q workspace files: got %v want %v", fixtureID, files, want)

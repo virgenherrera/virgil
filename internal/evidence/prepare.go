@@ -901,13 +901,15 @@ func validateTimestamp(raw string, upperBound time.Time, label string) error {
 	return nil
 }
 
+// validateProcesses validates each observed runner process. A process_id may
+// legitimately be observed more than once: it names the actor's logical,
+// continuous working session in the ActorScript, and successive "invoke"
+// actions within that session (with no intervening restart_process boundary)
+// each still spawn a genuinely fresh OS process. The only OS-level identity
+// invariant is that operating-system PIDs are never reused within a scenario.
 func validateProcesses(processes []processView, publishedAt time.Time) error {
-	ids := make(map[string]struct{}, len(processes))
 	pids := make(map[int]string, len(processes))
 	for _, process := range processes {
-		if _, duplicate := ids[process.ProcessID]; duplicate {
-			return fmt.Errorf("duplicate runner process_id %q", process.ProcessID)
-		}
 		if previous, duplicate := pids[process.PID]; duplicate {
 			return fmt.Errorf("fresh processes %q and %q reused PID %d", previous, process.ProcessID, process.PID)
 		}
@@ -917,7 +919,6 @@ func validateProcesses(processes []processView, publishedAt time.Time) error {
 		if err := validateInterval(process.StartedAt, process.EndedAt, publishedAt, "process "+process.ProcessID); err != nil {
 			return err
 		}
-		ids[process.ProcessID] = struct{}{}
 		pids[process.PID] = process.ProcessID
 	}
 	return nil

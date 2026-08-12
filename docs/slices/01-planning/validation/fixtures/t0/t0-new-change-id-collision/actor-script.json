@@ -1,0 +1,282 @@
+{
+  "schema_version": "virgil.dev/scripted-actor/v1alpha1",
+  "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+  "script_id": "script-t0-new-change-id-collision",
+  "script_revision": "v1",
+  "actor": {
+    "actor_id": "scripted-agent",
+    "kind": "agent",
+    "authority": [
+      "virgil.operation.invoke"
+    ]
+  },
+  "actions": [
+    {
+      "action_id": "invoke-init",
+      "sequence": 0,
+      "kind": "invoke",
+      "process_id": "process-a",
+      "after_trace_kind": "activation_decision",
+      "operation_request": {
+        "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+        "operation": "virgil.init",
+        "request_id": "init-collision-001",
+        "idempotency_key": "init-collision-v1",
+        "dogma_ref": {
+          "dogma_id": "virgil-dogma",
+          "version": "fixture-v1",
+          "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169",
+          "source": {
+            "uri": "fixture://dogma/virgil/v1",
+            "revision": "fixture-v1",
+            "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169"
+          },
+          "method_pack": {
+            "pack_id": "virgil",
+            "pack_version": "fixture-v1"
+          }
+        },
+        "project_ref": {
+          "project_id": "consumer-collision",
+          "target": {
+            "uri": "fixture://targets/consumer-collision",
+            "canonical_path": "/fixtures/targets/consumer-collision",
+            "baseline": "baseline-v1"
+          },
+          "dogma_ref_id": "virgil-dogma",
+          "artifact_store_ref_id": "store-consumer-collision"
+        },
+        "artifact_store_ref": {
+          "store_ref_id": "store-consumer-collision",
+          "adapter": {
+            "adapter_id": "repo-docs",
+            "adapter_version": "v1alpha1"
+          },
+          "project_id": "consumer-collision",
+          "namespace": "docs/virgil/projects/consumer-collision",
+          "policy": {
+            "policy_version": "repo-docs/v1alpha1",
+            "read_allowlist": [
+              "docs/**"
+            ],
+            "write_allowlist": [
+              "docs/virgil/**"
+            ]
+          }
+        },
+        "host": {
+          "adapter": {
+            "adapter_id": "generic-host",
+            "adapter_version": "v1alpha1"
+          },
+          "capabilities": {
+            "supported": [
+              "operation.invoke",
+              "effect.observe",
+              "trace.emit",
+              "fresh_process"
+            ],
+            "guarantees": [
+              "structured_envelope",
+              "deterministic_replay"
+            ]
+          }
+        },
+        "actor": {
+          "actor_id": "scripted-agent",
+          "kind": "agent",
+          "authority": [
+            "virgil.operation.invoke"
+          ]
+        },
+        "input": {
+          "project_id": "consumer-collision"
+        }
+      }
+    },
+    {
+      "action_id": "invoke-new-first",
+      "sequence": 1,
+      "kind": "invoke",
+      "process_id": "process-a",
+      "after_trace_kind": "operation_decided",
+      "operation_request": {
+        "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+        "operation": "virgil.new",
+        "request_id": "new-collision-001",
+        "idempotency_key": "new-collision-v1",
+        "dogma_ref": {
+          "dogma_id": "virgil-dogma",
+          "version": "fixture-v1",
+          "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169",
+          "source": {
+            "uri": "fixture://dogma/virgil/v1",
+            "revision": "fixture-v1",
+            "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169"
+          },
+          "method_pack": {
+            "pack_id": "virgil",
+            "pack_version": "fixture-v1"
+          }
+        },
+        "project_ref": {
+          "project_id": "consumer-collision",
+          "target": {
+            "uri": "fixture://targets/consumer-collision",
+            "canonical_path": "/fixtures/targets/consumer-collision",
+            "baseline": "baseline-v1"
+          },
+          "dogma_ref_id": "virgil-dogma",
+          "artifact_store_ref_id": "store-consumer-collision"
+        },
+        "artifact_store_ref": {
+          "store_ref_id": "store-consumer-collision",
+          "adapter": {
+            "adapter_id": "repo-docs",
+            "adapter_version": "v1alpha1"
+          },
+          "project_id": "consumer-collision",
+          "namespace": "docs/virgil/projects/consumer-collision",
+          "policy": {
+            "policy_version": "repo-docs/v1alpha1",
+            "read_allowlist": [
+              "docs/**"
+            ],
+            "write_allowlist": [
+              "docs/virgil/**"
+            ]
+          }
+        },
+        "host": {
+          "adapter": {
+            "adapter_id": "generic-host",
+            "adapter_version": "v1alpha1"
+          },
+          "capabilities": {
+            "supported": [
+              "operation.invoke",
+              "effect.observe",
+              "trace.emit",
+              "fresh_process"
+            ],
+            "guarantees": [
+              "structured_envelope",
+              "deterministic_replay"
+            ]
+          }
+        },
+        "actor": {
+          "actor_id": "scripted-agent",
+          "kind": "agent",
+          "authority": [
+            "virgil.operation.invoke"
+          ]
+        },
+        "input": {
+          "change_id": "change-beta",
+          "intent": "Add billing export endpoint",
+          "provenance": {
+            "kind": "human_input",
+            "captured_at": "2026-01-15T10:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "action_id": "invoke-new-collision",
+      "sequence": 2,
+      "kind": "invoke",
+      "process_id": "process-a",
+      "after_trace_kind": "operation_decided",
+      "operation_request": {
+        "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+        "operation": "virgil.new",
+        "request_id": "new-collision-002",
+        "idempotency_key": "new-collision-v2",
+        "dogma_ref": {
+          "dogma_id": "virgil-dogma",
+          "version": "fixture-v1",
+          "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169",
+          "source": {
+            "uri": "fixture://dogma/virgil/v1",
+            "revision": "fixture-v1",
+            "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169"
+          },
+          "method_pack": {
+            "pack_id": "virgil",
+            "pack_version": "fixture-v1"
+          }
+        },
+        "project_ref": {
+          "project_id": "consumer-collision",
+          "target": {
+            "uri": "fixture://targets/consumer-collision",
+            "canonical_path": "/fixtures/targets/consumer-collision",
+            "baseline": "baseline-v1"
+          },
+          "dogma_ref_id": "virgil-dogma",
+          "artifact_store_ref_id": "store-consumer-collision"
+        },
+        "artifact_store_ref": {
+          "store_ref_id": "store-consumer-collision",
+          "adapter": {
+            "adapter_id": "repo-docs",
+            "adapter_version": "v1alpha1"
+          },
+          "project_id": "consumer-collision",
+          "namespace": "docs/virgil/projects/consumer-collision",
+          "policy": {
+            "policy_version": "repo-docs/v1alpha1",
+            "read_allowlist": [
+              "docs/**"
+            ],
+            "write_allowlist": [
+              "docs/virgil/**"
+            ]
+          }
+        },
+        "host": {
+          "adapter": {
+            "adapter_id": "generic-host",
+            "adapter_version": "v1alpha1"
+          },
+          "capabilities": {
+            "supported": [
+              "operation.invoke",
+              "effect.observe",
+              "trace.emit",
+              "fresh_process"
+            ],
+            "guarantees": [
+              "structured_envelope",
+              "deterministic_replay"
+            ]
+          }
+        },
+        "actor": {
+          "actor_id": "scripted-agent",
+          "kind": "agent",
+          "authority": [
+            "virgil.operation.invoke"
+          ]
+        },
+        "input": {
+          "change_id": "change-beta",
+          "intent": "Add billing export endpoint",
+          "provenance": {
+            "kind": "human_input",
+            "captured_at": "2026-01-15T11:30:00Z"
+          }
+        }
+      }
+    },
+    {
+      "action_id": "stop-after-collision",
+      "sequence": 3,
+      "kind": "stop",
+      "process_id": "process-a",
+      "after_trace_kind": "operation_decided",
+      "reason": "Collision was correctly detected."
+    }
+  ]
+}

@@ -35,6 +35,12 @@ func Invoke(registry *contracts.Registry, envelope wire.InvokeEnvelope) (wire.In
 	if request.Operation == "virgil.init" {
 		return invokeRepoDocsInit(registry, envelope, request)
 	}
+	if request.Operation == "virgil.new" && !namespaceIsManaged(request) {
+		return blockedStorePolicyResult(registry, envelope, request)
+	}
+	if request.Operation == "virgil.new" {
+		return invokeRepoDocsNew(registry, envelope, request)
+	}
 
 	context := protocol.ContextFromRequest(request)
 	result := protocol.OperationResult{
@@ -98,6 +104,46 @@ func invokeRepoDocsInit(registry *contracts.Registry, envelope wire.InvokeEnvelo
 		var adapterError *repodocs.Error
 		if !errors.As(err, &adapterError) {
 			return wire.InvokeResult{}, fmt.Errorf("repo-docs init failed without a protocol diagnostic: %w", err)
+		}
+		result = repoDocsErrorResult(request, adapterError)
+	}
+
+	serialized, err := json.Marshal(result)
+	if err != nil {
+		return wire.InvokeResult{}, fmt.Errorf("marshal repo-docs OperationResult: %w", err)
+	}
+	if err := registry.Validate(contracts.SchemaOperationResult, serialized); err != nil {
+		return wire.InvokeResult{}, fmt.Errorf("repo-docs OperationResult violates contract: %w", err)
+	}
+
+	return wire.InvokeResult{
+		RuntimeProtocol: wire.RuntimeProtocol,
+		Kind:            "invoke_result",
+		ProcessID:       envelope.ProcessID,
+		OSPID:           os.Getpid(),
+		Result:          result,
+		Observations:    []wire.Observation{},
+	}, nil
+}
+
+func invokeRepoDocsNew(registry *contracts.Registry, envelope wire.InvokeEnvelope, request protocol.OperationRequest) (wire.InvokeResult, error) {
+	now, err := time.Parse(time.RFC3339, envelope.Clock.Now)
+	if err != nil {
+		return wire.InvokeResult{}, fmt.Errorf("invoke clock violates runtime envelope: %w", err)
+	}
+
+	result, err := repodocs.New(
+		request,
+		envelope.Bindings.Target.Root,
+		repodocs.ClockFunc(func() time.Time { return now }),
+		repodocs.JCSCanonicalizer{},
+		registry,
+		wire.ValidateUnambiguousJSON,
+	)
+	if err != nil {
+		var adapterError *repodocs.Error
+		if !errors.As(err, &adapterError) {
+			return wire.InvokeResult{}, fmt.Errorf("repo-docs new failed without a protocol diagnostic: %w", err)
 		}
 		result = repoDocsErrorResult(request, adapterError)
 	}

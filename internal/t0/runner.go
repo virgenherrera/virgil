@@ -217,6 +217,20 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 		}
 		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "fresh-process-replay-oracle", Status: "passed", Detail: "process B replayed process A from durable state with zero writes and no duplicate event"})
 
+	case "t0-new-repo-docs-happy":
+		if err := validateNewHappyScenario(runner.registry, targetRoot, executions); err != nil {
+			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-new-oracle", Status: "failed", Detail: "init+new happy path violated the durable operation oracle"})
+			return failScenario(scenario, "virgil_failure", "NEW_ORACLE_FAILED", err.Error())
+		}
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-new-oracle", Status: "passed", Detail: "init published project authority and new published change authority with one change_created event"})
+
+	case "t0-new-change-id-collision":
+		if err := validateNewCollisionScenario(runner.registry, targetRoot, executions); err != nil {
+			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "change-id-collision-oracle", Status: "failed", Detail: "change-id collision did not produce the expected blocked result"})
+			return failScenario(scenario, "virgil_failure", "COLLISION_ORACLE_FAILED", err.Error())
+		}
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "change-id-collision-oracle", Status: "passed", Detail: "first new succeeded, duplicate change_id with different idempotency correctly returned blocked"})
+
 	default:
 		return failScenario(scenario, "fixture_failure", "FIXTURE_ORACLE_MISSING", "runner has no operational oracle for fixture")
 	}
@@ -394,7 +408,7 @@ func validateCheckpointCaptures(fixture contracts.Fixture, baseline checkpointCa
 			return fmt.Errorf("checkpoint %q published %d unexpected events", expectation.CheckpointID, eventDelta)
 		}
 		for _, expected := range expectation.ExpectedEvents {
-			if expected.Kind != "project_initialized" || eventDelta < expected.MinCount || eventDelta > expected.MaxCount {
+			if eventDelta < expected.MinCount || eventDelta > expected.MaxCount {
 				return fmt.Errorf("checkpoint %q event delta %d violates %s [%d,%d]", expectation.CheckpointID, eventDelta, expected.Kind, expected.MinCount, expected.MaxCount)
 			}
 		}
@@ -540,6 +554,94 @@ func validateRetryScenario(registry *contracts.Registry, targetRoot string, exec
 	return nil
 }
 
+func validateNewHappyScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
+	if len(executions) != 2 || executions[0].Action.Kind != "invoke" || executions[1].Action.Kind != "invoke" {
+		return fmt.Errorf("new-happy fixture did not execute two invoke operations")
+	}
+	initExec, newExec := executions[0], executions[1]
+
+	if err := validateFreshInitResult(initExec.Request, initExec.Child.Result, initExec.Checkpoint.Target, targetRoot); err != nil {
+		return fmt.Errorf("init phase: %w", err)
+	}
+	if err := validatePublishedAuthority(registry, targetRoot, initExec.Request, initExec.Child.Result); err != nil {
+		return fmt.Errorf("init phase: %w", err)
+	}
+	if initExec.Checkpoint.EventCount != 1 {
+		return fmt.Errorf("init published %d project events, want one", initExec.Checkpoint.EventCount)
+	}
+
+	if err := validateFreshNewResult(newExec.Request, newExec.Child.Result, targetRoot); err != nil {
+		return fmt.Errorf("new phase: %w", err)
+	}
+	if err := validatePublishedChangeAuthority(registry, targetRoot, newExec.Request, newExec.Child.Result); err != nil {
+		return fmt.Errorf("new phase: %w", err)
+	}
+	if newExec.Checkpoint.EventCount != 1 {
+		return fmt.Errorf("new phase changed project event count to %d, want 1", newExec.Checkpoint.EventCount)
+	}
+
+	var input struct {
+		ChangeID string `json:"change_id"`
+	}
+	if err := json.Unmarshal(newExec.Request.Input, &input); err != nil || input.ChangeID == "" {
+		return fmt.Errorf("new request input does not contain a valid change_id")
+	}
+
+	return validateNoUnexpectedNodesWithChanges(targetRoot, newExec.Request.ArtifactStoreRef.Namespace, []string{input.ChangeID})
+}
+
+func validateNewCollisionScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
+	if len(executions) != 3 || executions[0].Action.Kind != "invoke" || executions[1].Action.Kind != "invoke" || executions[2].Action.Kind != "invoke" {
+		return fmt.Errorf("collision fixture did not execute three invoke operations")
+	}
+	initExec, firstNew, collisionNew := executions[0], executions[1], executions[2]
+
+	if err := validateFreshInitResult(initExec.Request, initExec.Child.Result, initExec.Checkpoint.Target, targetRoot); err != nil {
+		return fmt.Errorf("init phase: %w", err)
+	}
+	if initExec.Checkpoint.EventCount != 1 {
+		return fmt.Errorf("init published %d project events, want one", initExec.Checkpoint.EventCount)
+	}
+
+	if err := validateFreshNewResult(firstNew.Request, firstNew.Child.Result, targetRoot); err != nil {
+		return fmt.Errorf("first new: %w", err)
+	}
+	if err := validatePublishedChangeAuthority(registry, targetRoot, firstNew.Request, firstNew.Child.Result); err != nil {
+		return fmt.Errorf("first new: %w", err)
+	}
+
+	collisionResult := collisionNew.Child.Result
+	if collisionResult.Status != "blocked" || len(collisionResult.Diagnostics) != 1 {
+		return fmt.Errorf("collision did not return blocked with exactly one diagnostic")
+	}
+	diag := collisionResult.Diagnostics[0]
+	if diag.Code != "PRECONDITION_FAILED" {
+		return fmt.Errorf("collision diagnostic code is %q, want PRECONDITION_FAILED", diag.Code)
+	}
+	if len(collisionResult.Effects) != 0 {
+		return fmt.Errorf("collision produced %d effects, want zero", len(collisionResult.Effects))
+	}
+	if collisionResult.Next.Operation != "none" {
+		return fmt.Errorf("collision next.operation is %q, want none", collisionResult.Next.Operation)
+	}
+
+	if !reflect.DeepEqual(firstNew.Checkpoint.Target, collisionNew.Checkpoint.Target) {
+		return fmt.Errorf("collision changed the target filesystem")
+	}
+	if !reflect.DeepEqual(firstNew.Checkpoint.Store, collisionNew.Checkpoint.Store) {
+		return fmt.Errorf("collision changed the store")
+	}
+
+	var input struct {
+		ChangeID string `json:"change_id"`
+	}
+	if err := json.Unmarshal(firstNew.Request.Input, &input); err != nil || input.ChangeID == "" {
+		return fmt.Errorf("first new request input does not contain a valid change_id")
+	}
+
+	return validateNoUnexpectedNodesWithChanges(targetRoot, firstNew.Request.ArtifactStoreRef.Namespace, []string{input.ChangeID})
+}
+
 func validateFreshInitResult(request protocol.OperationRequest, result protocol.OperationResult, snapshot map[string]snapshotEntry, targetRoot string) error {
 	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil || result.DerivedStep != "idea" || result.Next.Operation != "virgil.new" {
 		return fmt.Errorf("virgil.init did not return the required fresh success result")
@@ -558,7 +660,7 @@ func validateFreshInitResult(request protocol.OperationRequest, result protocol.
 	}
 	expectedResources := map[string]bool{
 		pathJoin(request.ArtifactStoreRef.Namespace, protocol.RepoDocsProjectFile): false,
-		pathJoin(request.ArtifactStoreRef.Namespace, protocol.RepoDocsEventsFile): false,
+		pathJoin(request.ArtifactStoreRef.Namespace, protocol.RepoDocsEventsFile):  false,
 	}
 	for _, effect := range result.Effects {
 		if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" || effect.RequestID != request.RequestID ||
@@ -584,10 +686,33 @@ func validateFreshInitResult(request protocol.OperationRequest, result protocol.
 	return validatePublishedTree(targetRoot, request.ArtifactStoreRef.Namespace, snapshot)
 }
 
+func validateFreshNewResult(request protocol.OperationRequest, result protocol.OperationResult, targetRoot string) error {
+	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil || result.DerivedStep != "idea" || result.Next.Operation != "virgil.continue" {
+		return fmt.Errorf("virgil.new did not return the required fresh success result")
+	}
+	if len(result.Diagnostics) != 0 || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 1 || len(result.Effects) != 2 {
+		return fmt.Errorf("fresh new result does not expose exactly one event and two writes")
+	}
+	resolvedTarget, err := filepath.EvalSymlinks(targetRoot)
+	if err != nil {
+		return fmt.Errorf("resolve explicit target binding: %w", err)
+	}
+	if result.ResolvedContext.RunRef == nil {
+		return fmt.Errorf("virgil.new resolved_context must include a RunRef")
+	}
+	expectedContext := protocol.ContextFromRequest(request)
+	expectedContext.ProjectRef.Target.CanonicalPath = resolvedTarget
+	expectedContext.RunRef = result.ResolvedContext.RunRef
+	if !reflect.DeepEqual(*result.ResolvedContext, expectedContext) {
+		return fmt.Errorf("resolved_context does not preserve request refs with the real target binding path and RunRef")
+	}
+	return nil
+}
+
 func validatePublishedTree(targetRoot, namespace string, snapshot map[string]snapshotEntry) error {
 	expectedFiles := map[string]struct{}{
 		pathJoin(namespace, protocol.RepoDocsProjectFile): {},
-		pathJoin(namespace, protocol.RepoDocsEventsFile): {},
+		pathJoin(namespace, protocol.RepoDocsEventsFile):  {},
 	}
 	if len(snapshot) != len(expectedFiles) {
 		return fmt.Errorf("published target contains %d file/symlink entries, want exactly %d files", len(snapshot), len(expectedFiles))
@@ -598,17 +723,56 @@ func validatePublishedTree(targetRoot, namespace string, snapshot map[string]sna
 			return fmt.Errorf("published target file %q is missing or has the wrong kind", entryPath)
 		}
 	}
-	return validateNoUnexpectedNodes(targetRoot, namespace)
+	return validateNoUnexpectedNodes(targetRoot, namespace, snapshot)
 }
 
-func validateNoUnexpectedNodes(targetRoot, namespace string) error {
+// validateNoUnexpectedNodes validates the immutable point-in-time snapshot
+// captured right after the operation under test, not the live target tree.
+// The live tree may have already been mutated by later operations in the
+// same ActorScript (e.g. init followed by new), so walking targetRoot here
+// would incorrectly attribute a later operation's writes to this checkpoint.
+// The ancestor directories are safe to confirm against the live tree because
+// repo-docs never removes them once created.
+func validateNoUnexpectedNodes(targetRoot, namespace string, snapshot map[string]snapshotEntry) error {
+	expectedFiles := map[string]struct{}{
+		pathJoin(namespace, protocol.RepoDocsProjectFile): {},
+		pathJoin(namespace, protocol.RepoDocsEventsFile):  {},
+	}
+	if len(snapshot) != len(expectedFiles) {
+		return fmt.Errorf("target node set is incomplete")
+	}
+	for relative, entry := range snapshot {
+		if _, expected := expectedFiles[relative]; !expected || !entry.Mode.IsRegular() {
+			return fmt.Errorf("unexpected target node %q", relative)
+		}
+	}
+	expectedDirectories := []string{"docs", "docs/virgil", "docs/virgil/projects", namespace}
+	for _, relative := range expectedDirectories {
+		info, err := os.Lstat(filepath.Join(targetRoot, filepath.FromSlash(relative)))
+		if err != nil || info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+			return fmt.Errorf("target node %q has an unexpected kind", relative)
+		}
+	}
+	return nil
+}
+
+func validateNoUnexpectedNodesWithChanges(targetRoot, namespace string, changeIDs []string) error {
 	expected := map[string]string{
-		"docs":                              "dir",
-		"docs/virgil":                       "dir",
-		"docs/virgil/projects":              "dir",
-		namespace:                           "dir",
+		"docs":                 "dir",
+		"docs/virgil":          "dir",
+		"docs/virgil/projects": "dir",
+		namespace:              "dir",
 		pathJoin(namespace, protocol.RepoDocsProjectFile): "file",
-		pathJoin(namespace, protocol.RepoDocsEventsFile): "file",
+		pathJoin(namespace, protocol.RepoDocsEventsFile):  "file",
+	}
+	if len(changeIDs) > 0 {
+		expected[pathJoin(namespace, "changes")] = "dir"
+	}
+	for _, changeID := range changeIDs {
+		changePath := pathJoin(namespace, "changes", changeID)
+		expected[changePath] = "dir"
+		expected[pathJoin(changePath, protocol.RepoDocsChangeFile)] = "file"
+		expected[pathJoin(changePath, protocol.RepoDocsEventsFile)] = "file"
 	}
 	seen := make(map[string]bool, len(expected))
 	err := filepath.WalkDir(targetRoot, func(entryPath string, entry fs.DirEntry, walkErr error) error {
@@ -691,6 +855,37 @@ func validatePublishedAuthority(registry *contracts.Registry, targetRoot string,
 	eventDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(eventBytes))
 	if result.Events[0].Resource.URI != pathJoin(request.ArtifactStoreRef.Namespace, protocol.RepoDocsEventsFile) || result.Events[0].Resource.Digest != eventDigest {
 		return fmt.Errorf("OperationResult event resource does not match the observed event log")
+	}
+	return nil
+}
+
+func validatePublishedChangeAuthority(registry *contracts.Registry, targetRoot string, request protocol.OperationRequest, result protocol.OperationResult) error {
+	var input struct {
+		ChangeID string `json:"change_id"`
+	}
+	if err := json.Unmarshal(request.Input, &input); err != nil || input.ChangeID == "" {
+		return fmt.Errorf("new request input does not contain a valid change_id")
+	}
+	changePath := filepath.Join(targetRoot, filepath.FromSlash(request.ArtifactStoreRef.Namespace), "changes", input.ChangeID)
+	changeFile := filepath.Join(changePath, protocol.RepoDocsChangeFile)
+	eventFile := filepath.Join(changePath, protocol.RepoDocsEventsFile)
+	changeBytes, err := os.ReadFile(changeFile)
+	if err != nil {
+		return fmt.Errorf("read change authority: %w", err)
+	}
+	eventBytes, err := os.ReadFile(eventFile)
+	if err != nil {
+		return fmt.Errorf("read change event log: %w", err)
+	}
+	if err := registry.Validate(contracts.SchemaChangeState, changeBytes); err != nil {
+		return fmt.Errorf("change state violates schema: %w", err)
+	}
+	if err := registry.Validate(contracts.SchemaChangeCreated, eventBytes); err != nil {
+		return fmt.Errorf("change event violates schema: %w", err)
+	}
+	trimmed := bytes.TrimSpace(eventBytes)
+	if len(trimmed) == 0 || bytes.Contains(trimmed, []byte{'\n'}) {
+		return fmt.Errorf("change event log must contain exactly one event record")
 	}
 	return nil
 }

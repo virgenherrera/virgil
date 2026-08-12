@@ -27,12 +27,18 @@ const (
 	managedRoot  = "docs/virgil"
 	projectFile  = protocol.RepoDocsProjectFile
 	eventsFile   = protocol.RepoDocsEventsFile
+	changeFile   = protocol.RepoDocsChangeFile
 	projectEvent = "project_initialized"
+	changeEvent  = "change_created"
 	eventSchema  = "virgil.dev/project-initialized-event/v1alpha1"
 	stateSchema  = "virgil.dev/project-state/v1alpha1"
+	changeEventSchema = "virgil.dev/change-created-event/v1alpha1"
+	changeStateSchema = "virgil.dev/change-state/v1alpha1"
 
 	schemaProjectState       = "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-state.schema.json"
 	schemaProjectInitialized = "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-initialized-event.schema.json"
+	schemaChangeState        = "https://schemas.virgil.dev/planning-slice1/v1alpha1/change-state.schema.json"
+	schemaChangeCreated      = "https://schemas.virgil.dev/planning-slice1/v1alpha1/change-created-event.schema.json"
 	schemaOperationResult    = "https://schemas.virgil.dev/planning-slice1/v1alpha1/operation-result.schema.json"
 	schemaEffectRecord       = "https://schemas.virgil.dev/planning-slice1/v1alpha1/effect-record.schema.json"
 )
@@ -161,6 +167,61 @@ type ProjectInitialized struct {
 	ArtifactStoreRef protocol.ArtifactStoreRef `json:"artifact_store_ref"`
 }
 
+// ChangeResource records immutable inputs that explain change state.
+type ChangeResource struct {
+	Role     string               `json:"role"`
+	Resource protocol.ResourceRef `json:"resource"`
+}
+
+// ChangeState is the durable authority published in change.json.
+type ChangeState struct {
+	SchemaVersion   string                    `json:"schema_version"`
+	ProtocolVersion string                    `json:"protocol_version"`
+	ProjectRef      protocol.ProjectRef       `json:"project_ref"`
+	ChangeID        string                    `json:"change_id"`
+	Operation       string                    `json:"operation"`
+	State           string                    `json:"state"`
+	DerivedStep     string                    `json:"derived_step"`
+	Intent          string                    `json:"intent"`
+	Provenance      protocol.SourceProvenance `json:"provenance"`
+	Idempotency     IdempotencyRecord         `json:"idempotency"`
+	OriginalRequest protocol.OperationRequest `json:"original_request"`
+	CreatedAt       string                    `json:"created_at"`
+	ResolvedContext protocol.Context          `json:"resolved_context"`
+	Event           EventPointer              `json:"event"`
+	Resources       []ChangeResource          `json:"resources"`
+}
+
+// ChangeCreated is the event published when a new change is created.
+type ChangeCreated struct {
+	SchemaVersion    string                    `json:"schema_version"`
+	ProtocolVersion  string                    `json:"protocol_version"`
+	EventID          string                    `json:"event_id"`
+	Kind             string                    `json:"kind"`
+	OccurredAt       string                    `json:"occurred_at"`
+	Operation        string                    `json:"operation"`
+	ProjectID        string                    `json:"project_id"`
+	ChangeID         string                    `json:"change_id"`
+	Intent           string                    `json:"intent"`
+	RequestID        string                    `json:"request_id"`
+	RequestDigest    string                    `json:"request_digest"`
+	IdempotencyKey   string                    `json:"idempotency_key"`
+	CausationID      string                    `json:"causation_id"`
+	Actor            protocol.ActorRef         `json:"actor"`
+	DogmaRef         protocol.DogmaRef         `json:"dogma_ref"`
+	ProjectRef       protocol.ProjectRef       `json:"project_ref"`
+	ArtifactStoreRef protocol.ArtifactStoreRef `json:"artifact_store_ref"`
+	RunRef           protocol.RunRef           `json:"run_ref"`
+}
+
+// NewInput extracts the typed input fields from a virgil.new request.
+type NewInput struct {
+	ChangeID   string                    `json:"change_id"`
+	Intent     string                    `json:"intent"`
+	Provenance protocol.SourceProvenance `json:"provenance"`
+	Evidence   []protocol.ResourceRef    `json:"evidence,omitempty"`
+}
+
 // Init validates, recovers or atomically publishes repo-docs state for
 // virgil.init. targetRoot must be the explicit host binding for ProjectRef.
 func Init(request protocol.OperationRequest, targetRoot string, clock Clock, canonicalizer Canonicalizer, schema SchemaValidator, validateJSON JSONValidator) (protocol.OperationResult, error) {
@@ -217,6 +278,521 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 	}
 
 	return result, nil
+}
+
+// New validates, recovers or atomically publishes a change for virgil.new.
+// The project must already be initialized. targetRoot must be the explicit
+// host binding for ProjectRef.
+func New(request protocol.OperationRequest, targetRoot string, clock Clock, canonicalizer Canonicalizer, schema SchemaValidator, validateJSON JSONValidator) (protocol.OperationResult, error) {
+	if err := validateNew(request, targetRoot, clock, canonicalizer, validateJSON); err != nil {
+		return protocol.OperationResult{}, err
+	}
+
+	var input NewInput
+	if err := decodeSingleJSON(request.Input, &input, validateJSON); err != nil {
+		return protocol.OperationResult{}, typedError("IDENTITY_AMBIGUOUS", request.Operation, "new input is not valid JSON", err)
+	}
+
+	digest, err := requestDigest(request, canonicalizer)
+	if err != nil {
+		return protocol.OperationResult{}, err
+	}
+	root, resolvedTarget, err := openTargetRoot(targetRoot)
+	if err != nil {
+		return protocol.OperationResult{}, err
+	}
+	defer root.Close()
+
+	projectPath := request.ArtifactStoreRef.Namespace
+	if _, found, loadErr := loadExisting(root, projectPath, resolvedTarget, canonicalizer, schema, validateJSON); loadErr != nil {
+		return protocol.OperationResult{}, loadErr
+	} else if !found {
+		return protocol.OperationResult{}, typedError("PRECONDITION_FAILED", request.Operation, "project is not initialized", nil)
+	}
+
+	changePath := path.Join(projectPath, "changes", input.ChangeID)
+	if state, found, loadErr := loadExistingChange(root, changePath, resolvedTarget, canonicalizer, schema, validateJSON); loadErr != nil {
+		return protocol.OperationResult{}, loadErr
+	} else if found {
+		result, replayErr := replayNewResult(request, state, digest, input)
+		return validateResult(schema, result, replayErr)
+	}
+
+	now := clock.Now()
+	if now.IsZero() {
+		return protocol.OperationResult{}, typedError("PRECONDITION_FAILED", request.Operation, "clock must return a non-zero instant", nil)
+	}
+	createdAt := now.UTC().Format(time.RFC3339Nano)
+	resolved := resolvedNewContext(request, resolvedTarget, input)
+	state, event, changeBytes, eventBytes, err := buildChangePublication(root, request, input, digest, createdAt, resolved, projectPath)
+	if err != nil {
+		return protocol.OperationResult{}, typedError("INTERNAL_ERROR", request.Operation, "cannot encode authoritative change state", err)
+	}
+	result := newSuccessResult(request, state, event, changeBytes, eventBytes, input, changePath)
+	if err := validateChangePublication(schema, changeBytes, eventBytes, result); err != nil {
+		return protocol.OperationResult{}, err
+	}
+	if err := publishChange(root, projectPath, input.ChangeID, changeBytes, eventBytes); err != nil {
+		var publicationError *publishError
+		if errors.As(err, &publicationError) {
+			state, found, loadErr := loadExistingChange(root, changePath, resolvedTarget, canonicalizer, schema, validateJSON)
+			if loadErr != nil {
+				return protocol.OperationResult{}, loadErr
+			}
+			if found {
+				replayed, replayErr := replayNewResult(request, state, digest, input)
+				return validateResult(schema, replayed, replayErr)
+			}
+			return protocol.OperationResult{}, typedError("ATOMICITY_UNSUPPORTED", changePath, "cannot atomically publish the change directory", publicationError.Cause)
+		}
+		return protocol.OperationResult{}, err
+	}
+
+	return result, nil
+}
+
+func validateNew(request protocol.OperationRequest, targetRoot string, clock Clock, canonicalizer Canonicalizer, validateJSON JSONValidator) error {
+	if request.ProtocolVersion != protocol.Version || request.Operation != "virgil.new" {
+		return typedError("PRECONDITION_FAILED", request.Operation, "repo-docs New accepts only the current virgil.new protocol", nil)
+	}
+	if request.RequestID == "" || request.IdempotencyKey == "" || request.ProjectRef.ProjectID == "" {
+		return typedError("PRECONDITION_FAILED", request.Operation, "request, idempotency and project identities are required", nil)
+	}
+	if request.ProjectRef.ProjectID != request.ArtifactStoreRef.ProjectID ||
+		request.ProjectRef.DogmaRefID != request.DogmaRef.DogmaID ||
+		request.ProjectRef.ArtifactStoreRefID != request.ArtifactStoreRef.StoreRefID {
+		return typedError("IDENTITY_AMBIGUOUS", request.Operation, "request references are not coherent", nil)
+	}
+	if request.DogmaRef.Source.URI == "" || !validSHA256(request.DogmaRef.Digest) ||
+		(request.DogmaRef.Source.Digest != "" && request.DogmaRef.Source.Digest != request.DogmaRef.Digest) {
+		return typedError("IDENTITY_AMBIGUOUS", request.Operation, "dogma source and immutable digest are not coherent", nil)
+	}
+	if request.ProjectRef.Target.URI == request.DogmaRef.Source.URI {
+		return typedError("METHOD_TARGET_COLLISION", request.ProjectRef.Target.URI, "method source and target identity collide", nil)
+	}
+	if request.ArtifactStoreRef.Adapter.AdapterID != "repo-docs" || request.ArtifactStoreRef.Adapter.AdapterVersion != "v1alpha1" {
+		return typedError("CAPABILITY_UNSUPPORTED", request.ArtifactStoreRef.Adapter.AdapterID, "artifact store adapter is unsupported", nil)
+	}
+	if request.ArtifactStoreRef.Policy.PolicyVersion != "repo-docs/v1alpha1" {
+		return typedError("CAPABILITY_UNSUPPORTED", request.ArtifactStoreRef.Policy.PolicyVersion, "repo-docs policy version is unsupported", nil)
+	}
+	expectedNamespace := path.Join(managedRoot, "projects", request.ProjectRef.ProjectID)
+	if !safeRelativePath(request.ProjectRef.ProjectID) || request.ArtifactStoreRef.Namespace != expectedNamespace {
+		return typedError("STORE_POLICY_VIOLATION", request.ArtifactStoreRef.Namespace, "namespace must be exactly docs/virgil/projects/{project_id}", nil)
+	}
+	if !allowedByWritePolicy(request.ArtifactStoreRef.Namespace, request.ArtifactStoreRef.Policy.WriteAllowlist) {
+		return typedError("STORE_POLICY_VIOLATION", request.ArtifactStoreRef.Namespace, "namespace is outside the effective write allowlist", nil)
+	}
+	if err := validateJSON(request.Input); err != nil {
+		return typedError("IDENTITY_AMBIGUOUS", request.Operation, "new input is ambiguous JSON", err)
+	}
+	var input NewInput
+	if err := decodeSingleJSON(request.Input, &input, validateJSON); err != nil {
+		return typedError("IDENTITY_AMBIGUOUS", request.Operation, "new input cannot be decoded", err)
+	}
+	if input.ChangeID == "" || input.Intent == "" {
+		return typedError("PRECONDITION_FAILED", request.Operation, "change_id and intent are required", nil)
+	}
+	if !safeRelativePath(input.ChangeID) {
+		return typedError("STORE_POLICY_VIOLATION", input.ChangeID, "change_id must be a safe relative path component", nil)
+	}
+	if input.Provenance.Kind == "" || input.Provenance.CapturedAt == "" {
+		return typedError("PRECONDITION_FAILED", request.Operation, "provenance kind and captured_at are required", nil)
+	}
+	if request.RunRef != nil {
+		return typedError("PRECONDITION_FAILED", request.Operation, "virgil.new must not receive a run_ref", nil)
+	}
+	if !filepath.IsAbs(targetRoot) {
+		return typedError("IDENTITY_AMBIGUOUS", targetRoot, "target root must be explicit and absolute", nil)
+	}
+	if clock == nil {
+		return typedError("PRECONDITION_FAILED", request.Operation, "an explicit clock is required", nil)
+	}
+	if canonicalizer == nil || canonicalizer.Algorithm() != "RFC8785" {
+		return typedError("CAPABILITY_UNSUPPORTED", request.Operation, "RFC 8785 canonicalization is required", nil)
+	}
+	return nil
+}
+
+func loadExistingChange(root *os.Root, changePath, resolvedTarget string, canonicalizer Canonicalizer, schema SchemaValidator, validateJSON JSONValidator) (ChangeState, bool, error) {
+	changeInfo, statErr := root.Lstat(changePath)
+	if errors.Is(statErr, fs.ErrNotExist) {
+		return ChangeState{}, false, nil
+	}
+	if statErr != nil || !changeInfo.IsDir() || changeInfo.Mode()&os.ModeSymlink != 0 {
+		return ChangeState{}, false, typedError("CORRUPT_LEDGER", changePath, "published change path is not a real directory", statErr)
+	}
+	entries, err := fs.ReadDir(root.FS(), changePath)
+	if err != nil {
+		return ChangeState{}, false, typedError("CORRUPT_LEDGER", changePath, "cannot enumerate change authority", err)
+	}
+	var changeFound, eventsFound bool
+	for _, entry := range entries {
+		entryPath := path.Join(changePath, entry.Name())
+		info, statErr := root.Lstat(entryPath)
+		if statErr != nil || info.Mode()&os.ModeSymlink != 0 {
+			return ChangeState{}, false, typedError("CORRUPT_LEDGER", entryPath, "change authority contains an unreadable or symlinked entry", statErr)
+		}
+		switch entry.Name() {
+		case changeFile:
+			if !info.Mode().IsRegular() {
+				return ChangeState{}, false, typedError("CORRUPT_LEDGER", entryPath, "change.json must be a regular file", nil)
+			}
+			changeFound = true
+		case eventsFile:
+			if !info.Mode().IsRegular() {
+				return ChangeState{}, false, typedError("CORRUPT_LEDGER", entryPath, "events.jsonl must be a regular file", nil)
+			}
+			eventsFound = true
+		default:
+			return ChangeState{}, false, typedError("CORRUPT_LEDGER", entryPath, "change authority contains an unknown entry", nil)
+		}
+	}
+	if !changeFound || !eventsFound {
+		return ChangeState{}, false, typedError("CORRUPT_LEDGER", changePath, "change authority requires regular change.json and events.jsonl", nil)
+	}
+	changeBytes, err := root.ReadFile(path.Join(changePath, changeFile))
+	if err != nil {
+		return ChangeState{}, false, typedError("CORRUPT_LEDGER", changePath, "cannot read change authority", err)
+	}
+	eventBytes, err := root.ReadFile(path.Join(changePath, eventsFile))
+	if err != nil {
+		return ChangeState{}, false, typedError("CORRUPT_LEDGER", changePath, "change authority has no complete event log", err)
+	}
+	if err := schema.Validate(schemaChangeState, changeBytes); err != nil {
+		return ChangeState{}, false, typedError("CORRUPT_LEDGER", changePath, "change state violates its bundled schema", err)
+	}
+	if err := schema.Validate(schemaChangeCreated, eventBytes); err != nil {
+		return ChangeState{}, false, typedError("CORRUPT_LEDGER", changePath, "change event violates its bundled schema", err)
+	}
+	state, event, err := decodeChangeAuthority(changeBytes, eventBytes, validateJSON)
+	if err != nil {
+		return ChangeState{}, false, typedError("CORRUPT_LEDGER", changePath, "published change authority is invalid", err)
+	}
+	eventURI := path.Join(changePath, eventsFile)
+	durableDigest, digestErr := requestDigest(state.OriginalRequest, canonicalizer)
+	if digestErr != nil {
+		return ChangeState{}, false, typedError("CORRUPT_LEDGER", changePath, "cannot re-canonicalize original request", digestErr)
+	}
+	projectAuthorityResource, eventResource, resourcesOK := authoritativeChangeResources(state.Resources)
+	expectedResolved := protocol.ContextFromRequest(state.OriginalRequest)
+	expectedResolved.ProjectRef.Target.CanonicalPath = resolvedTarget
+	expectedResolved.RunRef = state.ResolvedContext.RunRef
+	if state.Event.EventID != event.EventID || state.Event.Kind != changeEvent || state.Event.LineNumber != 1 ||
+		state.Event.Resource.URI != eventURI || state.Event.Resource.Digest != fmt.Sprintf("sha256:%x", sha256.Sum256(eventBytes)) ||
+		state.Idempotency.RequestDigest != durableDigest || state.Idempotency.RequestDigest != event.RequestDigest ||
+		state.Idempotency.Key != state.OriginalRequest.IdempotencyKey || state.Idempotency.OriginalRequestID != state.OriginalRequest.RequestID ||
+		state.ProtocolVersion != state.OriginalRequest.ProtocolVersion || state.Operation != state.OriginalRequest.Operation ||
+		state.ProjectRef.ProjectID != event.ProjectID || state.ChangeID != event.ChangeID ||
+		state.ResolvedContext.ProjectRef.ProjectID != state.ProjectRef.ProjectID ||
+		state.ResolvedContext.ArtifactStoreRef.ProjectID != state.ProjectRef.ProjectID ||
+		state.ResolvedContext.ArtifactStoreRef.Namespace != path.Dir(path.Dir(changePath)) ||
+		state.ResolvedContext.ArtifactStoreRef.StoreRefID != state.ResolvedContext.ProjectRef.ArtifactStoreRefID ||
+		state.ResolvedContext.DogmaRef.DogmaID != state.ResolvedContext.ProjectRef.DogmaRefID ||
+		!reflect.DeepEqual(state.ProjectRef, state.ResolvedContext.ProjectRef) ||
+		!reflect.DeepEqual(state.ResolvedContext, expectedResolved) ||
+		!reflect.DeepEqual(state.ResolvedContext.DogmaRef, event.DogmaRef) ||
+		!reflect.DeepEqual(state.ResolvedContext.ProjectRef, event.ProjectRef) ||
+		!reflect.DeepEqual(state.ResolvedContext.ArtifactStoreRef, event.ArtifactStoreRef) ||
+		!reflect.DeepEqual(state.OriginalRequest.Actor, event.Actor) ||
+		state.ResolvedContext.RunRef == nil || !reflect.DeepEqual(*state.ResolvedContext.RunRef, event.RunRef) ||
+		!resourcesOK || !reflect.DeepEqual(eventResource, state.Event.Resource) ||
+		projectAuthorityResource.URI == "" || !validSHA256(projectAuthorityResource.Digest) {
+		return ChangeState{}, false, typedError("CORRUPT_LEDGER", changePath, "change state and creation event disagree", nil)
+	}
+	return state, true, nil
+}
+
+func decodeChangeAuthority(changeBytes, eventBytes []byte, validateJSON JSONValidator) (ChangeState, ChangeCreated, error) {
+	var state ChangeState
+	if err := decodeSingleJSON(changeBytes, &state, validateJSON); err != nil {
+		return ChangeState{}, ChangeCreated{}, err
+	}
+	lines := bytes.Split(bytes.TrimSpace(eventBytes), []byte{'\n'})
+	if len(lines) != 1 || len(lines[0]) == 0 {
+		return ChangeState{}, ChangeCreated{}, fmt.Errorf("change events.jsonl must contain exactly one event")
+	}
+	var event ChangeCreated
+	if err := decodeSingleJSON(lines[0], &event, validateJSON); err != nil {
+		return ChangeState{}, ChangeCreated{}, err
+	}
+	if _, err := time.Parse(time.RFC3339, state.CreatedAt); err != nil {
+		return ChangeState{}, ChangeCreated{}, fmt.Errorf("created_at is not RFC3339: %w", err)
+	}
+	if _, err := time.Parse(time.RFC3339, event.OccurredAt); err != nil {
+		return ChangeState{}, ChangeCreated{}, fmt.Errorf("event occurred_at is not RFC3339: %w", err)
+	}
+	if state.SchemaVersion != changeStateSchema || state.ProtocolVersion != protocol.Version ||
+		state.ProjectRef.ProjectID == "" || state.ChangeID == "" || state.Operation != "virgil.new" || state.State != "created" ||
+		state.DerivedStep != "idea" || state.Intent == "" ||
+		state.Idempotency.Key == "" || state.Idempotency.RequestDigest == "" || state.Idempotency.OriginalRequestID == "" ||
+		state.OriginalRequest.RequestID == "" || state.CreatedAt == "" || state.Event.EventID == "" || state.Event.LineNumber != 1 ||
+		state.Event.Resource.URI == "" || state.Event.Resource.Digest == "" || len(state.Resources) != 2 ||
+		!validSHA256(state.Idempotency.RequestDigest) || !validSHA256(state.Event.Resource.Digest) ||
+		event.SchemaVersion != changeEventSchema || event.ProtocolVersion != protocol.Version || event.EventID == "" || event.Kind != changeEvent ||
+		event.Operation != state.Operation || event.IdempotencyKey != state.Idempotency.Key ||
+		!validSHA256(event.RequestDigest) || event.RequestID != state.Idempotency.OriginalRequestID || event.CausationID != event.RequestID || event.OccurredAt != state.CreatedAt ||
+		event.Actor.ActorID == "" || event.ProjectRef.ProjectID != event.ProjectID ||
+		event.DogmaRef.DogmaID != event.ProjectRef.DogmaRefID ||
+		event.ArtifactStoreRef.ProjectID != event.ProjectID ||
+		event.ArtifactStoreRef.StoreRefID != event.ProjectRef.ArtifactStoreRefID ||
+		event.RunRef.ChangeID != state.ChangeID || event.RunRef.ProjectID != state.ProjectRef.ProjectID {
+		return ChangeState{}, ChangeCreated{}, fmt.Errorf("change authority version or event kind is invalid")
+	}
+	return state, event, nil
+}
+
+func authoritativeChangeResources(resources []ChangeResource) (protocol.ResourceRef, protocol.ResourceRef, bool) {
+	if len(resources) != 2 {
+		return protocol.ResourceRef{}, protocol.ResourceRef{}, false
+	}
+	var projectAuth, eventLog protocol.ResourceRef
+	for _, resource := range resources {
+		if resource.Resource.URI == "" || !validSHA256(resource.Resource.Digest) {
+			return protocol.ResourceRef{}, protocol.ResourceRef{}, false
+		}
+		switch resource.Role {
+		case "project_authority":
+			if projectAuth.URI != "" {
+				return protocol.ResourceRef{}, protocol.ResourceRef{}, false
+			}
+			projectAuth = resource.Resource
+		case "event_log":
+			if eventLog.URI != "" {
+				return protocol.ResourceRef{}, protocol.ResourceRef{}, false
+			}
+			eventLog = resource.Resource
+		default:
+			return protocol.ResourceRef{}, protocol.ResourceRef{}, false
+		}
+	}
+	return projectAuth, eventLog, projectAuth.URI != "" && eventLog.URI != ""
+}
+
+func replayNewResult(request protocol.OperationRequest, state ChangeState, digest string, input NewInput) (protocol.OperationResult, error) {
+	if state.ProjectRef.ProjectID != request.ProjectRef.ProjectID || state.Operation != request.Operation || state.Idempotency.Key != request.IdempotencyKey {
+		return protocol.OperationResult{}, typedError("PRECONDITION_FAILED", request.ProjectRef.ProjectID, "change already exists from a different intention", nil)
+	}
+	if state.Idempotency.RequestDigest != digest {
+		return protocol.OperationResult{}, typedError("IDEMPOTENCY_CONFLICT", request.IdempotencyKey, "idempotency key is already bound to a different request digest", nil)
+	}
+	resolved := state.ResolvedContext
+	return protocol.OperationResult{
+		ProtocolVersion:     request.ProtocolVersion,
+		Operation:           request.Operation,
+		RequestID:           request.RequestID,
+		IdempotencyKey:      request.IdempotencyKey,
+		ReplayedFromRequest: state.Idempotency.OriginalRequestID,
+		Status:              "success",
+		RequestedContext:    protocol.ContextFromRequest(request),
+		ResolvedContext:     &resolved,
+		DerivedStep:         "idea",
+		Artifacts:           []protocol.ObjectPointer{},
+		Briefs:              []protocol.ObjectPointer{},
+		Events:              []protocol.ObjectPointer{changeEventPointer(state)},
+		Effects:             []protocol.EffectRecord{},
+		Next: protocol.NextAction{
+			Operation: "virgil.continue",
+			Condition: "change is created and ready for the first artifact",
+		},
+		Diagnostics: []protocol.Diagnostic{},
+	}, nil
+}
+
+func resolvedNewContext(request protocol.OperationRequest, resolvedTarget string, input NewInput) protocol.Context {
+	context := protocol.ContextFromRequest(request)
+	context.ProjectRef.Target.CanonicalPath = resolvedTarget
+	context.RunRef = &protocol.RunRef{
+		RunID:     stableID("run", request.ProjectRef.ProjectID, input.ChangeID, request.IdempotencyKey),
+		ChangeID:  input.ChangeID,
+		ProjectID: request.ProjectRef.ProjectID,
+		Baseline:  request.ProjectRef.Target.Baseline,
+	}
+	return context
+}
+
+func buildChangePublication(root *os.Root, request protocol.OperationRequest, input NewInput, digest, createdAt string, resolved protocol.Context, projectPath string) (ChangeState, ChangeCreated, []byte, []byte, error) {
+	eventID := stableID("event", request.ProjectRef.ProjectID, input.ChangeID, request.Operation, request.IdempotencyKey, digest)
+	changePath := path.Join(projectPath, "changes", input.ChangeID)
+	event := ChangeCreated{
+		SchemaVersion:    changeEventSchema,
+		ProtocolVersion:  request.ProtocolVersion,
+		EventID:          eventID,
+		Kind:             changeEvent,
+		OccurredAt:       createdAt,
+		Operation:        request.Operation,
+		ProjectID:        request.ProjectRef.ProjectID,
+		ChangeID:         input.ChangeID,
+		Intent:           input.Intent,
+		RequestID:        request.RequestID,
+		RequestDigest:    digest,
+		IdempotencyKey:   request.IdempotencyKey,
+		CausationID:      request.RequestID,
+		Actor:            request.Actor,
+		DogmaRef:         resolved.DogmaRef,
+		ProjectRef:       resolved.ProjectRef,
+		ArtifactStoreRef: resolved.ArtifactStoreRef,
+		RunRef:           *resolved.RunRef,
+	}
+	eventURI := path.Join(changePath, eventsFile)
+	eventBytes, err := json.Marshal(event)
+	if err != nil {
+		return ChangeState{}, ChangeCreated{}, nil, nil, err
+	}
+	eventBytes = append(eventBytes, '\n')
+	eventResource := withDigest(protocol.ResourceRef{URI: eventURI}, eventBytes)
+
+	projectAuthorityURI := path.Join(projectPath, projectFile)
+	projectAuthorityBytes, err := root.ReadFile(path.Join(projectPath, projectFile))
+	if err != nil {
+		projectAuthorityBytes = nil
+	}
+	var projectAuthorityResource protocol.ResourceRef
+	if len(projectAuthorityBytes) > 0 {
+		projectAuthorityResource = withDigest(protocol.ResourceRef{URI: projectAuthorityURI}, projectAuthorityBytes)
+	} else {
+		projectAuthorityResource = protocol.ResourceRef{URI: projectAuthorityURI}
+	}
+
+	state := ChangeState{
+		SchemaVersion:   changeStateSchema,
+		ProtocolVersion: request.ProtocolVersion,
+		ProjectRef:      resolved.ProjectRef,
+		ChangeID:        input.ChangeID,
+		Operation:       request.Operation,
+		State:           "created",
+		DerivedStep:     "idea",
+		Intent:          input.Intent,
+		Provenance:      input.Provenance,
+		Idempotency: IdempotencyRecord{
+			Key:               request.IdempotencyKey,
+			RequestDigest:     digest,
+			OriginalRequestID: request.RequestID,
+		},
+		OriginalRequest: request,
+		CreatedAt:       createdAt,
+		ResolvedContext: resolved,
+		Event: EventPointer{
+			EventID:    eventID,
+			Kind:       changeEvent,
+			LineNumber: 1,
+			Resource:   eventResource,
+		},
+		Resources: []ChangeResource{
+			{Role: "project_authority", Resource: projectAuthorityResource},
+			{Role: "event_log", Resource: eventResource},
+		},
+	}
+	changeBytes, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return ChangeState{}, ChangeCreated{}, nil, nil, err
+	}
+	changeBytes = append(changeBytes, '\n')
+	return state, event, changeBytes, eventBytes, nil
+}
+
+func newSuccessResult(request protocol.OperationRequest, state ChangeState, event ChangeCreated, changeBytes, eventBytes []byte, input NewInput, changePath string) protocol.OperationResult {
+	changeResource := withDigest(protocol.ResourceRef{URI: path.Join(changePath, changeFile)}, changeBytes)
+	eventResource := withDigest(state.Event.Resource, eventBytes)
+	eventPointer := changeEventPointer(state)
+	eventPointer.Resource = &eventResource
+	resolved := state.ResolvedContext
+	return protocol.OperationResult{
+		ProtocolVersion:  request.ProtocolVersion,
+		Operation:        request.Operation,
+		RequestID:        request.RequestID,
+		IdempotencyKey:   request.IdempotencyKey,
+		Status:           "success",
+		RequestedContext: protocol.ContextFromRequest(request),
+		ResolvedContext:  &resolved,
+		DerivedStep:      "idea",
+		Artifacts:        []protocol.ObjectPointer{},
+		Briefs:           []protocol.ObjectPointer{},
+		Events:           []protocol.ObjectPointer{eventPointer},
+		Effects: []protocol.EffectRecord{
+			writeEffect(request, "change", changeResource, eventResource, len(changeBytes)),
+			writeEffect(request, "event", eventResource, eventResource, len(eventBytes)),
+		},
+		Next: protocol.NextAction{
+			Operation: "virgil.continue",
+			Condition: "change is created and ready for the first artifact",
+		},
+		Diagnostics: []protocol.Diagnostic{},
+	}
+}
+
+func changeEventPointer(state ChangeState) protocol.ObjectPointer {
+	resource := state.Event.Resource
+	return protocol.ObjectPointer{
+		ObjectID: state.Event.EventID,
+		Kind:     state.Event.Kind,
+		Revision: state.Idempotency.RequestDigest,
+		Resource: &resource,
+	}
+}
+
+func validateChangePublication(schema SchemaValidator, changeBytes, eventBytes []byte, result protocol.OperationResult) error {
+	if err := schema.Validate(schemaChangeState, changeBytes); err != nil {
+		return typedError("INTERNAL_ERROR", result.Operation, "generated change state violates its bundled schema", err)
+	}
+	if err := schema.Validate(schemaChangeCreated, eventBytes); err != nil {
+		return typedError("INTERNAL_ERROR", result.Operation, "generated change event violates its bundled schema", err)
+	}
+	validated, err := validateResult(schema, result, nil)
+	if err != nil {
+		return err
+	}
+	_ = validated
+	return nil
+}
+
+func publishChange(root *os.Root, projectPath, changeID string, changeBytes, eventBytes []byte) error {
+	changesDir := path.Join(projectPath, "changes")
+	changePath := path.Join(changesDir, changeID)
+	if err := createDirectoryChain(root, changesDir); err != nil {
+		return err
+	}
+	if err := syncDirectoryChain(root, changesDir); err != nil {
+		return err
+	}
+
+	tempName := ".new-" + stableID("tmp", changePath, fmt.Sprintf("%x", sha256.Sum256(changeBytes)))
+	tempPath := path.Join(changesDir, tempName)
+	if err := root.Mkdir(tempPath, 0o700); err != nil {
+		if !errors.Is(err, fs.ErrExist) {
+			return typedError("ATOMICITY_UNSUPPORTED", tempPath, "cannot create exclusive sibling staging directory", err)
+		}
+		if removeErr := root.RemoveAll(tempPath); removeErr != nil {
+			return typedError("ATOMICITY_UNSUPPORTED", tempPath, "cannot recover crashed staging directory", errors.Join(err, removeErr))
+		}
+		if err := root.Mkdir(tempPath, 0o700); err != nil {
+			return typedError("ATOMICITY_UNSUPPORTED", tempPath, "cannot create staging directory after crash recovery", err)
+		}
+	}
+	published := false
+	defer func() {
+		if !published {
+			_ = root.RemoveAll(tempPath)
+		}
+	}()
+
+	if err := writeExclusive(root, path.Join(tempPath, changeFile), changeBytes); err != nil {
+		return err
+	}
+	if err := writeExclusive(root, path.Join(tempPath, eventsFile), eventBytes); err != nil {
+		return err
+	}
+	if err := syncDirectory(root, tempPath); err != nil {
+		return err
+	}
+	if err := root.Rename(tempPath, changePath); err != nil {
+		return &publishError{Cause: err}
+	}
+	published = true
+	if err := syncDirectory(root, changesDir); err != nil {
+		return err
+	}
+	return nil
 }
 
 func validateInit(request protocol.OperationRequest, targetRoot string, clock Clock, canonicalizer Canonicalizer, validateJSON JSONValidator) error {

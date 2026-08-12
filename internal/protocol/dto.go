@@ -12,6 +12,7 @@ const Version = "virgil.dev/planning-slice1/v1alpha1"
 const (
 	RepoDocsProjectFile = "project.json"
 	RepoDocsEventsFile  = "events.jsonl"
+	RepoDocsChangeFile  = "change.json"
 )
 
 type ResourceRef struct {
@@ -87,6 +88,12 @@ type ActorRef struct {
 	ActorID   string   `json:"actor_id"`
 	Kind      string   `json:"kind"`
 	Authority []string `json:"authority"`
+}
+
+type SourceProvenance struct {
+	Kind       string       `json:"kind"`
+	CapturedAt string       `json:"captured_at"`
+	Source     *ResourceRef `json:"source,omitempty"`
 }
 
 type OperationRequest struct {

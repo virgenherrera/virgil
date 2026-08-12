@@ -17,6 +17,8 @@ const schemaBase = "https://schemas.virgil.dev/planning-slice1/v1alpha1/"
 const (
 	SchemaActorScript           = schemaBase + "actor-script.schema.json"
 	SchemaAgentInteractionTrace = schemaBase + "agent-interaction-trace.schema.json"
+	SchemaChangeCreated         = schemaBase + "change-created-event.schema.json"
+	SchemaChangeState           = schemaBase + "change-state.schema.json"
 	SchemaCommon                = schemaBase + "common.schema.json"
 	SchemaEffectRecord          = schemaBase + "effect-record.schema.json"
 	SchemaEvidenceBundle        = schemaBase + "evidence-bundle.schema.json"
@@ -33,6 +35,8 @@ const (
 var schemaAssets = map[string]string{
 	SchemaActorScript:           "docs/slices/01-planning/schemas/actor-script.schema.json",
 	SchemaAgentInteractionTrace: "docs/slices/01-planning/schemas/agent-interaction-trace.schema.json",
+	SchemaChangeCreated:         "docs/slices/01-planning/schemas/change-created-event.schema.json",
+	SchemaChangeState:           "docs/slices/01-planning/schemas/change-state.schema.json",
 	SchemaCommon:                "docs/slices/01-planning/schemas/common.schema.json",
 	SchemaEffectRecord:          "docs/slices/01-planning/schemas/effect-record.schema.json",
 	SchemaEvidenceBundle:        "docs/slices/01-planning/schemas/evidence-bundle.schema.json",
