@@ -7,9 +7,11 @@ del proyecto. El problema contrario también existe: inyectarle todo el
 historial, todos los documentos y todo el código aumenta ruido, costo y riesgo
 de mezclar decisiones que pertenecen a cambios distintos.
 
-La situación empeora cuando la herramienta metodológica vive cerca del
-proyecto que la consume. Si no hay identidades y límites explícitos, el agente
-puede tratar la fuente de Virgil como si fuera el producto que debe modificar.
+La situación empeora cuando se confunden dos árboles con el mismo nombre:
+`Virgil/docs/`, que contiene el dogma operativo, y `{consumer}/docs/`, que
+contiene conocimiento del proyecto consumidor. La cercanía física del segundo
+es útil para retrieval local; el problema es carecer de identidad, policy y
+write scope explícitos.
 
 La metodología necesita resolver dos responsabilidades a la vez:
 
@@ -24,6 +26,11 @@ agnóstico de host y metodología que mantiene identidad, un registro trazable
 del trabajo, briefs de contexto y transiciones. Debe poder acompañar un cambio
 desde la idea hasta el handoff, la implementación, la verificación, la entrega
 y la operación cuando corresponda.
+
+El dogma de Virgil permanece read-only para consumidores. El conocimiento
+operativo se persiste mediante un ArtifactStoreAdapter: `repo-docs` usa por
+defecto un namespace administrado en `{target}/docs/virgil/`; otros adapters
+pueden usar sistemas externos sin tocar el working tree.
 
 Virgil no es Scrum Master ni reemplaza los roles de una metodología. Cada
 Method Pack posee su ceremonia, sus roles, su routing y sus gates. El pack
@@ -42,14 +49,16 @@ completo en cada prompt.
 
 ### 1. Identidad antes que inferencia
 
-El framework, el proyecto objetivo y el run/change activo DEBEN identificarse
-de forma explícita. El directorio actual de la terminal no es suficiente para
-inferirlos.
+`DogmaRef`, `ProjectRef`, `ArtifactStoreRef` y el run/change activo DEBEN
+identificarse de forma explícita. El directorio actual de la terminal no es
+suficiente para inferirlos.
 
 ### 2. Autoridad separada de retrieval
 
-Artefactos versionados, ledger y evidencia conservan la autoridad. Índices
-léxicos, vectoriales o de grafo son proyecciones reconstruibles para lectura.
+Artefactos versionados, ledger y evidencia conservan la autoridad en el
+ArtifactStore configurado. El corpus del consumidor puede alimentar índices
+léxicos, vectoriales o de grafo, pero esos índices son proyecciones
+reconstruibles para lectura.
 
 ### 3. Contexto compilado por contrato
 
@@ -68,11 +77,12 @@ Planning define y aprueba intención, criterios y decisiones. Execution los
 implementa y produce evidencia. Si execution descubre un defecto de planning,
 NO lo corrige silenciosamente: emite `PlanningGapDetected`.
 
-### 6. El host es un adapter
+### 6. Host y ArtifactStore son adapters distintos
 
 Un host puede tener un solo agente, subagentes, ejecución paralela, Git,
-herramientas remotas o ninguna de esas capacidades. El kernel expresa la
-intención; el runtime adapter declara qué puede realizar y cómo degrada.
+herramientas remotas o ninguna de esas capacidades. El HostAdapter expresa
+discovery, invocación y envelopes; el ArtifactStoreAdapter traduce persistencia
+y retrieval. El kernel no incorpora semántica de un proveedor particular.
 
 ### 7. Entrega incremental
 
@@ -85,6 +95,12 @@ roadmap, no en el contrato normativo.
 Virgil posee las primitivas comunes de conocimiento y control. Los Method
 Packs poseen la política metodológica. El kernel no contiene roles ni
 transiciones con nombres de una ceremonia particular.
+
+### 9. Dogma separado del RAG operativo
+
+`Virgil/docs/` define cómo opera Virgil. `{consumer}/docs/` contiene fuentes y
+artefactos del consumidor. Compartir el nombre `docs` no autoriza a mezclar
+identidad, ownership ni write policies.
 
 ## No-objetivos iniciales
 

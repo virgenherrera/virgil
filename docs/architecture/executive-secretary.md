@@ -11,6 +11,10 @@ es Scrum Master: ese nombre pertenece, si el pack lo necesita, a un rol
 opcional del Method Pack Scrum. El ownership de Virgil es sobre identidad,
 conocimiento, procedencia, coordinación y continuidad.
 
+Virgil opera desde dogma versionado y read-only. Los artefactos de cada
+consumidor viven en el ArtifactStore configurado; nunca se anexan al dogma
+canónico por conveniencia.
+
 ## Componentes lógicos
 
 ### Ledger
@@ -28,7 +32,10 @@ embebidos en código.
 ### ArtifactRepository
 
 Custodia artefactos y revisiones. Conserva identidad, ownership, procedencia y
-relaciones; el formato físico puede variar por adapter.
+relaciones; el formato físico lo traduce un ArtifactStoreAdapter. Con
+`repo-docs`, la autoridad operativa vive en el managed namespace del consumidor.
+Con un adapter externo puede vivir en Jira, Confluence, Basecamp, GitHub u otro
+sistema sin cambiar la semántica del kernel.
 
 ### EvidenceIngestion
 
@@ -45,7 +52,9 @@ selección se deriva del contrato activo y queda trazable.
 ### RetrievalProjection
 
 Expone búsquedas sobre una proyección léxica, vectorial o de grafo. Puede
-reconstruirse desde las fuentes autoritativas.
+reconstruirse desde las fuentes autoritativas. En `repo-docs`, la policy puede
+incluir documentación project-specific bajo `{target}/docs/` aunque solo el
+managed namespace sea escribible por defecto.
 
 > **El RAG no es autoridad.** Es una optimización de lectura sobre el ledger,
 > el repositorio de artefactos, el grafo y la evidencia.
@@ -70,7 +79,8 @@ Para cada ejecución debe poder responder:
 Una transición se acepta cuando el contrato aplicable y su evidencia lo
 permiten. El Method Pack aporta ceremonia, roles, routing y gates; Virgil
 evalúa el resultado del gate, aplica la transición permitida y la registra. El
-RuntimeAdapter ejecuta los efectos soportados por el host.
+HostAdapter ejecuta la invocación soportada por el host y el
+ArtifactStoreAdapter persiste los efectos autorizados por su policy.
 
 Si execution encuentra que una condición aprobada es ambigua, contradictoria
 o insuficiente, la Secretaría registra `PlanningGapDetected`, bloquea solo el
@@ -80,5 +90,6 @@ artefacto aprobado.
 ## Recovery
 
 Después de una sesión perdida, el estado se reconstruye desde el ledger, las
-revisiones de artefactos, el grafo y la evidencia. Una caché de conversación o
-un índice RAG puede acelerar la recuperación, pero nunca reemplazarla.
+revisiones de artefactos, el grafo y la evidencia recuperados mediante el
+ArtifactStoreAdapter. Una caché de conversación o un índice RAG puede acelerar
+la recuperación, pero nunca reemplazarla.

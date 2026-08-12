@@ -2,16 +2,17 @@
 
 El roadmap prioriza flujos completos sobre capas abstractas aisladas. Cada
 slice debe demostrar recovery, trazabilidad y aislamiento entre Virgil y el
-target antes de considerarse terminado.
+target, además de respetar la policy del ArtifactStoreAdapter, antes de
+considerarse terminado.
 
 ## Slice 1 — Planning: idea → handoff
 
-**Baseline:** Scrum, persistencia local y un solo agente.
+**Baseline:** Scrum, ArtifactStoreAdapter `repo-docs` y un solo agente.
 
 El diseño normativo, sus límites y escenarios de conformidad viven en
 [Slice 1 — Planning](../slices/01-planning/README.md). Este roadmap solo fija
 su posición: establecer identidad, persistencia, lifecycle, context briefs y el
-flujo idea → handoff antes de tocar el target.
+flujo idea → handoff antes de tocar código, producto o configuración del target.
 
 ## Slice 2 — Execution: handoff → code/tests
 
@@ -58,8 +59,9 @@ segunda configuración del primero.
 
 Entrega mínima:
 
-- RuntimeAdapters con declaración de capacidades y fallbacks;
-- al menos un segundo adapter de persistencia o integración;
+- HostAdapters con declaración de capacidades y fallbacks;
+- al menos un segundo ArtifactStoreAdapter externo —por ejemplo Jira,
+  Confluence, Basecamp o GitHub Projects/Issues—;
 - pruebas de conformidad sobre los contratos usados por los slices 1–4;
 - mismo `RunContext` semántico, independientemente del host.
 

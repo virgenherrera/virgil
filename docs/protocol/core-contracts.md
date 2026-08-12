@@ -3,6 +3,19 @@
 Este documento fija semántica mínima. No pretende definir todavía schemas
 exhaustivos, formatos de archivo ni una API estable.
 
+## DogmaRef
+
+Identifica la fuente read-only del dogma operativo de Virgil. Debe poder
+expresar:
+
+- identidad y versión/digest del corpus canónico;
+- referencia del Method Pack y su versión;
+- ubicación o mecanismo de resolución.
+
+`DogmaRef` nunca apunta al RAG/artifact-store operativo de un consumidor.
+Al resolverlo junto con un `ProjectRef`, Virgil aplica
+`method_source != target`.
+
 ## ProjectRef
 
 Identifica sin ambigüedad el proyecto objetivo.
@@ -11,10 +24,24 @@ Debe poder expresar:
 
 - identidad estable del proyecto;
 - raíz o referencia explícita del target;
-- referencia del Method Pack y su versión;
-- ubicación de los registros autoritativos.
+- `DogmaRef` aplicable;
+- `ArtifactStoreRef` configurado.
 
 Una ruta de filesystem por sí sola no reemplaza la identidad del proyecto.
+
+## ArtifactStoreRef
+
+Identifica dónde y mediante qué adapter se persisten y consultan ledger,
+artefactos, briefs y evidencia. Debe poder expresar:
+
+- ID y versión del ArtifactStoreAdapter;
+- ubicación, proyecto y namespace;
+- policy versionada de lectura y escritura;
+- roots/recursos resueltos cuando aplique;
+- capabilities y garantías de consistencia disponibles.
+
+Para `repo-docs`, distingue `corpus_root` y `managed_root`. Para un adapter
+externo puede usar IDs o recursos sin correspondencia de filesystem.
 
 ## RunContext
 
@@ -29,7 +56,8 @@ Debe poder expresar:
   defina;
 - baseline del target;
 - Method Pack fijado para el run;
-- RuntimeAdapter y snapshot de capacidades;
+- HostAdapter y snapshot de capacidades;
+- ArtifactStoreRef y policy efectiva;
 - permisos de lectura, escritura y escalación.
 
 Todo efecto sobre el target o sobre el estado del proceso pertenece a un
@@ -45,7 +73,7 @@ Debe poder expresar:
 - project y run/change de origen;
 - owner y productores;
 - estado de aprobación aplicable;
-- referencia al contenido;
+- referencia al contenido mediante el ArtifactStoreAdapter;
 - procedencia y relaciones de trazabilidad;
 - revisión que reemplaza o de la que deriva.
 
@@ -62,6 +90,7 @@ Debe poder expresar:
 - scope permitido y exclusiones;
 - artefactos, hechos y evidencia seleccionados;
 - referencias a las fuentes y su frescura;
+- ArtifactStoreRef, allowlist aplicada y exclusiones;
 - capacidades autorizadas;
 - condiciones de éxito, bloqueo y escalación.
 
@@ -78,6 +107,7 @@ Debe poder expresar:
 - project, run/change, actor y tiempo;
 - baseline o revisión del target observada;
 - referencias a outputs verificables;
+- adapter, policy y efectos observados cuando aplique;
 - relación con nodos del grafo de trazabilidad;
 - integridad o identidad del contenido observado.
 
@@ -124,8 +154,10 @@ distintas, pero no cambiar el significado de sus relaciones.
 
 | Concern | Autoridad |
 |---|---|
+| Dogma operativo de Virgil | `Virgil/docs/` identificado por DogmaRef |
 | Ceremonia y gates | Method Pack activo |
 | Identidad, ledger, grafo y briefs | Virgil (Secretaría Ejecutiva) |
+| Representación y acceso al store | ArtifactStoreAdapter configurado |
 | Contenido y aprobación de planning | Actores definidos por el Method Pack |
 | Código y evidencia de ejecución | Execution bajo el RunContext |
 | Decisiones que requieren autoridad humana | Humano identificado por el proyecto |

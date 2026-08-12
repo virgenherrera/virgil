@@ -9,7 +9,8 @@ implementación.
 ## Baseline
 
 - Method Pack: Scrum, predeterminado para este slice.
-- Persistencia: store local externo.
+- Persistencia: ArtifactStoreAdapter `repo-docs`, con managed namespace
+  recomendado `{target}/docs/virgil/`.
 - Runtime: un solo agente y un solo writer.
 - Idioma del corpus normativo: español.
 
@@ -22,15 +23,17 @@ infraestructura core.
 ## Objetivo
 
 Transformar una intención inicial en un handoff aprobado, recuperable y
-trazable, sin escribir en el proyecto objetivo. Una sesión fresca debe poder
-determinar qué falta y continuar sin depender del historial conversacional.
+trazable, sin escribir código, producto o configuración del proyecto objetivo.
+Planning persiste únicamente mediante el ArtifactStoreAdapter configurado. Una
+sesión fresca debe poder determinar qué falta sin historial conversacional.
 
 ## Scope
 
 El slice incluye:
 
-- selección explícita de proyecto, cambio, fuente del método y target;
-- store local aislado por `project_id` y `change_id`;
+- selección explícita de `DogmaRef`, proyecto, cambio, target y
+  `ArtifactStoreRef`;
+- `repo-docs` aislado por `project_id` y `change_id` bajo el managed namespace;
 - ledger append-only y revisiones inmutables de artefactos;
 - lifecycle única para revisiones;
 - compilación de `ContextBrief` mínimo por paso;
@@ -59,22 +62,24 @@ Para cada paso, Virgil:
 1. deriva el primer artefacto requerido sin una revisión aprobada efectiva;
 2. solicita al Method Pack el contrato de rol, routing y gate aplicable;
 3. compila un `ContextBrief` con las revisiones upstream necesarias;
-4. ejecuta una acción acotada mediante el RuntimeAdapter;
-5. persiste revisión, evidencia y eventos;
+4. ejecuta una acción acotada mediante el HostAdapter;
+5. persiste revisión, evidencia y eventos mediante el ArtifactStoreAdapter;
 6. aplica y registra la transición permitida por el resultado del gate.
 
 ## Restricciones
 
-1. Planning NO DEBE escribir, crear, borrar ni formatear archivos dentro del
-   target.
-2. El store DEBE vivir fuera del target y de la fuente del método.
-3. `method_source` y `target` DEBEN resolverse explícitamente y ser distintos.
-4. El slice asume un solo writer. Si detecta concurrencia, DEBE detenerse; no
+1. Planning SOLO escribe mediante el ArtifactStoreAdapter configurado.
+2. Con `repo-docs`, solo `{target}/docs/virgil/` es escribible por defecto. El
+   resto de `{target}/docs/` es read-only salvo opt-in explícito.
+3. Código, producto y configuración del target están fuera del write scope.
+4. `method_source` y `target` DEBEN resolverse explícitamente y ser distintos;
+   el dogma nunca se usa como store operativo.
+5. El slice asume un solo writer. Si detecta concurrencia, DEBE detenerse; no
    simula locking.
-5. Una revisión aprobada es inmutable. Corregirla crea una revisión nueva.
-6. El contexto se selecciona por contrato:
+6. Una revisión aprobada es inmutable. Corregirla crea una revisión nueva.
+7. El contexto se selecciona por contrato:
    `global ownership != global context injection`.
-7. Una capacidad ausente se reporta como unsupported; no se finge.
+8. Una capacidad ausente se reporta como unsupported; no se finge.
 
 ## Salida
 
@@ -87,7 +92,7 @@ siguiente acción disponible.
 
 Slice 1 no incluye:
 
-- escritura de código o tests en el target;
+- escritura de código, tests o configuración en el target;
 - execution, verify, ship u operation;
 - GraphRAG, búsqueda vectorial o DBMS;
 - múltiples writers, leases, locking, lanes o paralelismo;
@@ -99,6 +104,8 @@ Slice 1 no incluye:
 ## Documentos del slice
 
 - [Modelo de estado](state-model.md)
-- [Store local](local-store.md)
+- [Adapter `repo-docs`](repo-docs-adapter.md)
 - [Contratos de skills](skill-contracts.md)
+- [Protocolo de operaciones](operation-protocol.md)
+- [JSON Schemas del protocolo](schemas/README.md)
 - [Conformidad black-box](conformance.md)
