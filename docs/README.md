@@ -7,11 +7,6 @@ Virgil: protocolo, boundaries, Method Packs, quality y slices. Es read-only
 para proyectos consumidores. Por ahora se mantiene únicamente en español para
 evitar que una traducción se convierta en una segunda fuente de verdad.
 
-El corpus anterior se conserva, sin modificaciones, en
-[`docs-legacy/v0/`](../docs-legacy/v0/README.md). Ese material sirve como
-referencia histórica: no define el comportamiento vigente y no debe usarse
-para resolver contradicciones de esta versión.
-
 En estos documentos:
 
 - **DEBE** expresa una invariante obligatoria.
