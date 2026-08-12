@@ -138,21 +138,39 @@ type NextAction struct {
 }
 
 type OperationResult struct {
-	ProtocolVersion     string            `json:"protocol_version"`
-	Operation           string            `json:"operation"`
-	RequestID           string            `json:"request_id"`
-	IdempotencyKey      string            `json:"idempotency_key"`
-	ReplayedFromRequest string            `json:"replayed_from_request_id,omitempty"`
-	Status              string            `json:"status"`
-	RequestedContext    Context           `json:"requested_context"`
-	ResolvedContext     *Context          `json:"resolved_context,omitempty"`
-	DerivedStep         string            `json:"derived_step,omitempty"`
-	Artifacts           []ObjectPointer   `json:"artifacts"`
-	Briefs              []ObjectPointer   `json:"briefs"`
-	Events              []ObjectPointer   `json:"events"`
-	Effects             []json.RawMessage `json:"effects"`
-	Next                NextAction        `json:"next"`
-	Diagnostics         []Diagnostic      `json:"diagnostics"`
+	ProtocolVersion     string          `json:"protocol_version"`
+	Operation           string          `json:"operation"`
+	RequestID           string          `json:"request_id"`
+	IdempotencyKey      string          `json:"idempotency_key"`
+	ReplayedFromRequest string          `json:"replayed_from_request_id,omitempty"`
+	Status              string          `json:"status"`
+	RequestedContext    Context         `json:"requested_context"`
+	ResolvedContext     *Context        `json:"resolved_context,omitempty"`
+	DerivedStep         string          `json:"derived_step,omitempty"`
+	Artifacts           []ObjectPointer `json:"artifacts"`
+	Briefs              []ObjectPointer `json:"briefs"`
+	Events              []ObjectPointer `json:"events"`
+	Effects             []EffectRecord  `json:"effects"`
+	Next                NextAction      `json:"next"`
+	Diagnostics         []Diagnostic    `json:"diagnostics"`
+}
+
+type EffectRecord struct {
+	ProtocolVersion string         `json:"protocol_version"`
+	EffectID        string         `json:"effect_id"`
+	RequestID       string         `json:"request_id"`
+	CausationID     string         `json:"causation_id"`
+	Kind            string         `json:"kind"`
+	Resource        ResourceRef    `json:"resource"`
+	Adapter         AdapterRef     `json:"adapter"`
+	Capability      string         `json:"capability"`
+	PolicyDecision  string         `json:"policy_decision"`
+	Requested       map[string]any `json:"requested"`
+	Occurred        bool           `json:"occurred"`
+	Observed        any            `json:"observed"`
+	StateBefore     *ResourceRef   `json:"state_before,omitempty"`
+	StateAfter      *ResourceRef   `json:"state_after,omitempty"`
+	Evidence        []ResourceRef  `json:"evidence"`
 }
 
 type ScenarioFixture struct {

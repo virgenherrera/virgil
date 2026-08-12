@@ -108,6 +108,17 @@ Con `repo-docs`, cada write autorizado debe quedar bajo `managed_root` y ser
 explicable por revisiones, briefs o eventos publicados. Con un adapter externo,
 el target diff de planning permanece vacío.
 
+Un `EffectRecord` describe un **efecto lógico sobre un recurso del adapter**, no
+cada syscall usada para publicarlo. En el init T0 hay exactamente dos writes
+lógicos: la publicación de `project.json` y la de `events.jsonl`. Temporales,
+`fsync` y el rename del directorio son mecanismos internos cuya atomicidad se
+demuestra mediante snapshots y evidencia filesystem; no agregan EffectRecords
+ni inflan los conteos del fixture.
+
+Las reglas `prohibited_effects` del harness se evalúan solo sobre registros con
+`occurred = true`. Los intentos denegados permanecen auditables como
+`expected_effects`, pero no se confunden con una mutación prohibida consumada.
+
 ## `OperationResult`
 
 Toda operación devuelve un resultado estructurado con:

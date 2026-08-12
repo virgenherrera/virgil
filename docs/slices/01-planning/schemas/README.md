@@ -82,6 +82,12 @@ usa la policy resuelta del adapter y `by_request` atribuye la prohibición a un
 intento concreto. Los patrones usan `/` y glob `*`/`**`; no aceptan prefijos de
 negación como `!`.
 
+`prohibited_effects` invalida únicamente efectos que **ocurrieron**
+(`EffectRecord.occurred = true`). Un intento correctamente denegado se registra
+en `expected_effects` con `policy_decision = denied`, `occurred = false` y
+`observed = null`; no constituye por sí mismo el efecto prohibido que el guard
+evitó. Esto permite certificar fail-closed sin ocultar el intento adversarial.
+
 `ExpectedOutcome` describe la certificación del scenario y solo puede ser
 `passed` o `failed`. `blocked` y `unsupported` pertenecen a OperationResult: un
 scenario que esperaba y observó correctamente uno de esos stops puede pasar.

@@ -3,9 +3,11 @@ package t0
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -100,6 +102,10 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 	if err := os.MkdirAll(targetRoot, 0o700); err != nil {
 		return failScenario(scenario, "environment_failure", "TARGET_UNAVAILABLE", "cannot materialize isolated target")
 	}
+	before, err := snapshotTree(envelope.WorkspaceRoot)
+	if err != nil {
+		return failScenario(scenario, "environment_failure", "WORKSPACE_SNAPSHOT_FAILED", "cannot snapshot workspace baseline")
+	}
 
 	invoke := wire.InvokeEnvelope{
 		RuntimeProtocol: wire.RuntimeProtocol,
@@ -129,6 +135,24 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "public-invoke", Status: "failed", Detail: "public invoke process did not return a valid result"})
 		return failScenario(scenario, "virgil_failure", "PUBLIC_INVOKE_FAILED", "Virgil public invoke plumbing failed")
 	}
+	after, err := snapshotTree(envelope.WorkspaceRoot)
+	if err != nil {
+		return failScenario(scenario, "environment_failure", "WORKSPACE_SNAPSHOT_FAILED", "cannot snapshot workspace after invoke")
+	}
+	scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "public-invoke", Status: "passed", Detail: "public invoke returned a schema-valid and correlated result"})
+
+	if fixture.Definition.FixtureID == "t0-init-unmanaged-write-blocked" {
+		if err := validateBlockedScenario(fixture, childResult, before, after); err != nil {
+			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "blocked-policy-oracle", Status: "failed", Detail: "blocked policy result violated its fixture oracle"})
+			return failScenario(scenario, "virgil_failure", "BLOCKED_POLICY_ORACLE_FAILED", err.Error())
+		}
+		scenario.Checks = append(scenario.Checks,
+			wire.CheckResult{CheckID: "blocked-policy-oracle", Status: "passed", Detail: "blocked result, diagnostic, denied effect, and stop action match the fixture"},
+			wire.CheckResult{CheckID: "workspace-zero-diff", Status: "passed", Detail: "independent workspace snapshots are identical"},
+		)
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "evidence-bundle", Status: "failed", Detail: "EvidenceBundle publication is intentionally outside this Green increment"})
+		return failScenario(scenario, "virgil_failure", "EVIDENCE_BUNDLE_NOT_IMPLEMENTED", "blocked behavior is Green at the operation boundary, but the app-level scenario remains Red until complete evidence is published")
+	}
 	if childResult.Result.Status == "unsupported" {
 		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "virgil-init", Status: "failed", Detail: "virgil.init returned unsupported in Phase 1"})
 		return failScenario(scenario, "virgil_failure", "VIRGIL_INIT_NOT_IMPLEMENTED", "virgil.init is not implemented")
@@ -136,6 +160,180 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 
 	scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "evidence-bundle", Status: "failed", Detail: "Phase 1 does not yet execute or publish scenario evidence"})
 	return failScenario(scenario, "virgil_failure", "T0_EXECUTION_NOT_IMPLEMENTED", "T0 execution and evidence are not implemented")
+}
+
+type snapshotEntry struct {
+	Mode   os.FileMode
+	Size   int64
+	Digest string
+	Link   string
+}
+
+func snapshotTree(root string) (map[string]snapshotEntry, error) {
+	snapshot := make(map[string]snapshotEntry)
+	err := filepath.WalkDir(root, func(entryPath string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entryPath == root {
+			return nil
+		}
+		relative, err := filepath.Rel(root, entryPath)
+		if err != nil {
+			return err
+		}
+		info, err := os.Lstat(entryPath)
+		if err != nil {
+			return err
+		}
+		record := snapshotEntry{Mode: info.Mode(), Size: info.Size()}
+		switch {
+		case info.Mode().IsRegular():
+			content, err := os.ReadFile(entryPath)
+			if err != nil {
+				return err
+			}
+			record.Digest = fmt.Sprintf("sha256:%x", sha256.Sum256(content))
+		case info.Mode()&os.ModeSymlink != 0:
+			record.Link, err = os.Readlink(entryPath)
+			if err != nil {
+				return err
+			}
+		}
+		snapshot[filepath.ToSlash(relative)] = record
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return snapshot, nil
+}
+
+func validateBlockedScenario(fixture contracts.Fixture, child wire.InvokeResult, before, after map[string]snapshotEntry) error {
+	result := child.Result
+	request := fixture.Definition.InitialRequest
+	if result.Status != "blocked" || result.ResolvedContext != nil || result.Next.Operation != "none" {
+		return fmt.Errorf("OperationResult is not the required terminal blocked result")
+	}
+	if len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != "STORE_POLICY_VIOLATION" || result.Diagnostics[0].Severity != "error" {
+		return fmt.Errorf("OperationResult does not contain exactly one STORE_POLICY_VIOLATION diagnostic")
+	}
+	if len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 0 {
+		return fmt.Errorf("blocked OperationResult references published objects")
+	}
+	if len(result.Effects) != 1 {
+		return fmt.Errorf("blocked OperationResult contains %d effects, want exactly one", len(result.Effects))
+	}
+	effect := result.Effects[0]
+	if effect.ProtocolVersion != request.ProtocolVersion ||
+		effect.RequestID != request.RequestID || effect.CausationID != request.RequestID ||
+		effect.Kind != "write" || effect.PolicyDecision != "denied" || effect.Occurred || effect.Observed != nil ||
+		effect.Resource.URI != request.ArtifactStoreRef.Namespace ||
+		!reflect.DeepEqual(effect.Adapter, request.ArtifactStoreRef.Adapter) ||
+		effect.Capability != "artifact_store.write" || len(effect.Evidence) != 0 ||
+		effect.StateBefore != nil || effect.StateAfter != nil {
+		return fmt.Errorf("denied EffectRecord does not describe the observed write attempt")
+	}
+	if effect.Requested["namespace"] != request.ArtifactStoreRef.Namespace || effect.Requested["operation"] != request.Operation {
+		return fmt.Errorf("denied EffectRecord requested payload is not correlated")
+	}
+	if len(child.Observations) != 1 || child.Observations[0].Kind != "policy_decision" {
+		return fmt.Errorf("worker did not report the policy decision observation")
+	}
+	if !reflect.DeepEqual(before, after) {
+		return fmt.Errorf("target changed despite denied write")
+	}
+	if err := validateBlockedFixtureExpectations(fixture, result, effect); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateBlockedFixtureExpectations(fixture contracts.Fixture, result protocol.OperationResult, effect protocol.EffectRecord) error {
+	var operationStep *protocol.InteractionStep
+	var effectStep *protocol.InteractionStep
+	for index := range fixture.Definition.ExpectedInteraction.RequiredSteps {
+		step := &fixture.Definition.ExpectedInteraction.RequiredSteps[index]
+		switch step.Kind {
+		case "operation_decided":
+			operationStep = step
+		case "effect_observed":
+			effectStep = step
+		}
+	}
+	if operationStep == nil || operationStep.OperationStatus != result.Status ||
+		operationStep.DiagnosticCode != result.Diagnostics[0].Code ||
+		operationStep.RequestID != result.RequestID || operationStep.NextOperation != result.Next.Operation {
+		return fmt.Errorf("OperationResult does not match expected interaction")
+	}
+	if effectStep == nil || effectStep.EffectKind != effect.Kind || effectStep.PolicyDecision != effect.PolicyDecision ||
+		effectStep.Occurred == nil || *effectStep.Occurred != effect.Occurred ||
+		!matchFixtureResourcePattern(effectStep.ResourcePattern, effect.Resource.URI) {
+		return fmt.Errorf("denied effect does not match expected interaction")
+	}
+	if len(fixture.Definition.ExpectedEffects) != 1 ||
+		fixture.Definition.ExpectedEffects[0].MinCount != 1 || fixture.Definition.ExpectedEffects[0].MaxCount != 1 {
+		return fmt.Errorf("fixture does not require exactly one denied effect")
+	}
+	if err := validateDeniedEffectExpectation(fixture.Definition.ExpectedEffects[0], effect); err != nil {
+		return err
+	}
+	if !fixtureRequiresEmptyDiffs(fixture.Definition) {
+		return fmt.Errorf("blocked fixture does not require empty target/store diffs")
+	}
+	actions := fixture.Script.Actions
+	if len(actions) != 2 || actions[0].Kind != "invoke" || actions[1].Kind != "stop" ||
+		actions[1].ProcessID != actions[0].ProcessID || actions[1].AfterTraceKind != "operation_decided" {
+		return fmt.Errorf("ActorScript stop contract was not completed")
+	}
+	return nil
+}
+
+func validateDeniedEffectExpectation(expectation protocol.ObjectExpectation, effect protocol.EffectRecord) error {
+	if expectation.Kind != effect.Kind {
+		return fmt.Errorf("expected effect kind does not match denied effect")
+	}
+	actual := map[string]any{
+		"/request_id":      effect.RequestID,
+		"/policy_decision": effect.PolicyDecision,
+		"/occurred":        effect.Occurred,
+		"/observed":        effect.Observed,
+	}
+	for pointer, expected := range expectation.FieldEquals {
+		value, supported := actual[pointer]
+		if !supported || !reflect.DeepEqual(value, expected) {
+			return fmt.Errorf("denied effect does not satisfy fixture field oracle %q", pointer)
+		}
+	}
+	return nil
+}
+
+func fixtureRequiresEmptyDiffs(fixture protocol.ScenarioFixture) bool {
+	if !diffExpectationIsEmpty(fixture.ExpectedTargetDiff) || len(fixture.ExpectedCheckpoints) != 1 {
+		return false
+	}
+	checkpoint := fixture.ExpectedCheckpoints[0]
+	return diffExpectationIsEmpty(checkpoint.TargetDiff) && diffExpectationIsEmpty(checkpoint.StoreDiff) &&
+		len(checkpoint.ExpectedEvents) == 0 && len(checkpoint.ExpectedArtifacts) == 0
+}
+
+func diffExpectationIsEmpty(raw json.RawMessage) bool {
+	var expectation struct {
+		Mode            string            `json:"mode"`
+		AllowedPaths    []string          `json:"allowed_paths"`
+		ExpectedChanges []json.RawMessage `json:"expected_changes"`
+	}
+	if err := json.Unmarshal(raw, &expectation); err != nil {
+		return false
+	}
+	return expectation.Mode == "empty" && len(expectation.AllowedPaths) == 0 && len(expectation.ExpectedChanges) == 0
+}
+
+func matchFixtureResourcePattern(pattern, resource string) bool {
+	if strings.HasSuffix(pattern, "/**") {
+		return resource == strings.TrimSuffix(pattern, "/**") || strings.HasPrefix(resource, strings.TrimSuffix(pattern, "**"))
+	}
+	return pattern == resource
 }
 
 func firstInvoke(fixture contracts.Fixture) (action struct {

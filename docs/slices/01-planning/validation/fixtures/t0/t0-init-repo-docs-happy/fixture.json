@@ -235,6 +235,11 @@
         "next_operation": "virgil.new"
       },
       {
+        "step_id": "stop",
+        "kind": "stop",
+        "process_id": "process-a"
+      },
+      {
         "step_id": "outcome",
         "kind": "outcome",
         "process_id": "process-a"
@@ -271,6 +276,10 @@
       },
       {
         "before": "result",
+        "after": "stop"
+      },
+      {
+        "before": "stop",
         "after": "outcome"
       }
     ],
