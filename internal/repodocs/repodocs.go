@@ -20,19 +20,32 @@ import (
 	"time"
 
 	"github.com/gowebpki/jcs"
-	"github.com/virgenherrera/virgil/internal/contracts"
 	"github.com/virgenherrera/virgil/internal/protocol"
-	"github.com/virgenherrera/virgil/internal/wire"
 )
 
 const (
 	managedRoot  = "docs/virgil"
-	projectFile  = "project.json"
-	eventsFile   = "events.jsonl"
+	projectFile  = protocol.RepoDocsProjectFile
+	eventsFile   = protocol.RepoDocsEventsFile
 	projectEvent = "project_initialized"
 	eventSchema  = "virgil.dev/project-initialized-event/v1alpha1"
 	stateSchema  = "virgil.dev/project-state/v1alpha1"
+
+	schemaProjectState       = "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-state.schema.json"
+	schemaProjectInitialized = "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-initialized-event.schema.json"
+	schemaOperationResult    = "https://schemas.virgil.dev/planning-slice1/v1alpha1/operation-result.schema.json"
+	schemaEffectRecord       = "https://schemas.virgil.dev/planning-slice1/v1alpha1/effect-record.schema.json"
 )
+
+// SchemaValidator validates JSON bytes against a schema identified by its
+// canonical URI. The caller provides the concrete implementation so that
+// this package never imports the contracts registry directly.
+type SchemaValidator interface {
+	Validate(schemaID string, document []byte) error
+}
+
+// JSONValidator rejects ambiguous JSON (duplicate keys, trailing data).
+type JSONValidator func([]byte) error
 
 // Clock supplies the deterministic timestamp recorded by virgil.init.
 // It deliberately does not expose the ambient wall clock.
@@ -150,18 +163,14 @@ type ProjectInitialized struct {
 
 // Init validates, recovers or atomically publishes repo-docs state for
 // virgil.init. targetRoot must be the explicit host binding for ProjectRef.
-func Init(request protocol.OperationRequest, targetRoot string, clock Clock, canonicalizer Canonicalizer) (protocol.OperationResult, error) {
-	if err := validateInit(request, targetRoot, clock, canonicalizer); err != nil {
+func Init(request protocol.OperationRequest, targetRoot string, clock Clock, canonicalizer Canonicalizer, schema SchemaValidator, validateJSON JSONValidator) (protocol.OperationResult, error) {
+	if err := validateInit(request, targetRoot, clock, canonicalizer, validateJSON); err != nil {
 		return protocol.OperationResult{}, err
 	}
 
 	digest, err := requestDigest(request, canonicalizer)
 	if err != nil {
 		return protocol.OperationResult{}, err
-	}
-	registry, err := contracts.NewRegistry()
-	if err != nil {
-		return protocol.OperationResult{}, typedError("CAPABILITY_UNSUPPORTED", request.Operation, "bundled durable-state schemas are unavailable", err)
 	}
 	root, resolvedTarget, err := openTargetRoot(targetRoot)
 	if err != nil {
@@ -170,11 +179,11 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 	defer root.Close()
 
 	projectPath := request.ArtifactStoreRef.Namespace
-	if state, found, loadErr := loadExisting(root, projectPath, resolvedTarget, canonicalizer, registry); loadErr != nil {
+	if state, found, loadErr := loadExisting(root, projectPath, resolvedTarget, canonicalizer, schema, validateJSON); loadErr != nil {
 		return protocol.OperationResult{}, loadErr
 	} else if found {
 		result, replayErr := replayResult(request, state, digest)
-		return validateResult(registry, result, replayErr)
+		return validateResult(schema, result, replayErr)
 	}
 
 	now := clock.Now()
@@ -188,19 +197,19 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 		return protocol.OperationResult{}, typedError("INTERNAL_ERROR", request.Operation, "cannot encode authoritative init state", err)
 	}
 	result := successResult(request, state, event, projectBytes, eventBytes)
-	if err := validatePublication(registry, projectBytes, eventBytes, result); err != nil {
+	if err := validatePublication(schema, projectBytes, eventBytes, result); err != nil {
 		return protocol.OperationResult{}, err
 	}
 	if err := publish(root, projectPath, projectBytes, eventBytes); err != nil {
 		var publicationError *publishError
 		if errors.As(err, &publicationError) {
-			state, found, loadErr := loadExisting(root, projectPath, resolvedTarget, canonicalizer, registry)
+			state, found, loadErr := loadExisting(root, projectPath, resolvedTarget, canonicalizer, schema, validateJSON)
 			if loadErr != nil {
 				return protocol.OperationResult{}, loadErr
 			}
 			if found {
 				replayed, replayErr := replayResult(request, state, digest)
-				return validateResult(registry, replayed, replayErr)
+				return validateResult(schema, replayed, replayErr)
 			}
 			return protocol.OperationResult{}, typedError("ATOMICITY_UNSUPPORTED", projectPath, "cannot atomically publish the complete project directory", publicationError.Cause)
 		}
@@ -210,7 +219,7 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 	return result, nil
 }
 
-func validateInit(request protocol.OperationRequest, targetRoot string, clock Clock, canonicalizer Canonicalizer) error {
+func validateInit(request protocol.OperationRequest, targetRoot string, clock Clock, canonicalizer Canonicalizer, validateJSON JSONValidator) error {
 	if request.ProtocolVersion != protocol.Version || request.Operation != "virgil.init" {
 		return typedError("PRECONDITION_FAILED", request.Operation, "repo-docs Init accepts only the current virgil.init protocol", nil)
 	}
@@ -245,10 +254,10 @@ func validateInit(request protocol.OperationRequest, targetRoot string, clock Cl
 	var input struct {
 		ProjectID string `json:"project_id"`
 	}
-	if err := wire.ValidateUnambiguousJSON(request.Input); err != nil {
+	if err := validateJSON(request.Input); err != nil {
 		return typedError("IDENTITY_AMBIGUOUS", request.Operation, "init input is ambiguous JSON", err)
 	}
-	if err := decodeSingleJSON(request.Input, &input); err != nil || input.ProjectID != request.ProjectRef.ProjectID {
+	if err := decodeSingleJSON(request.Input, &input, validateJSON); err != nil || input.ProjectID != request.ProjectRef.ProjectID {
 		return typedError("IDENTITY_AMBIGUOUS", request.Operation, "init input project_id does not match ProjectRef", err)
 	}
 	if !filepath.IsAbs(targetRoot) {
@@ -315,7 +324,7 @@ func openTargetRoot(targetRoot string) (*os.Root, string, error) {
 	return root, resolved, nil
 }
 
-func loadExisting(root *os.Root, projectPath, resolvedTarget string, canonicalizer Canonicalizer, registry *contracts.Registry) (ProjectState, bool, error) {
+func loadExisting(root *os.Root, projectPath, resolvedTarget string, canonicalizer Canonicalizer, schema SchemaValidator, validateJSON JSONValidator) (ProjectState, bool, error) {
 	projectInfo, projectStatErr := root.Lstat(projectPath)
 	if errors.Is(projectStatErr, fs.ErrNotExist) {
 		return ProjectState{}, false, nil
@@ -364,18 +373,18 @@ func loadExisting(root *os.Root, projectPath, resolvedTarget string, canonicaliz
 	if err != nil {
 		return ProjectState{}, false, typedError("CORRUPT_LEDGER", projectPath, "project authority has no complete event log", err)
 	}
-	if err := registry.Validate(contracts.SchemaProjectState, projectBytes); err != nil {
+	if err := schema.Validate(schemaProjectState, projectBytes); err != nil {
 		return ProjectState{}, false, typedError("CORRUPT_LEDGER", projectPath, "project state violates its bundled schema", err)
 	}
-	if err := registry.Validate(contracts.SchemaProjectInitialized, eventBytes); err != nil {
+	if err := schema.Validate(schemaProjectInitialized, eventBytes); err != nil {
 		return ProjectState{}, false, typedError("CORRUPT_LEDGER", projectPath, "initialization event violates its bundled schema", err)
 	}
-	state, event, err := decodeAuthority(projectBytes, eventBytes)
+	state, event, err := decodeAuthority(projectBytes, eventBytes, validateJSON)
 	if err != nil {
 		return ProjectState{}, false, typedError("CORRUPT_LEDGER", projectPath, "published project authority is invalid", err)
 	}
 	validationClock := ClockFunc(func() time.Time { return time.Unix(1, 0).UTC() })
-	if err := validateInit(state.OriginalRequest, resolvedTarget, validationClock, canonicalizer); err != nil {
+	if err := validateInit(state.OriginalRequest, resolvedTarget, validationClock, canonicalizer, validateJSON); err != nil {
 		return ProjectState{}, false, typedError("CORRUPT_LEDGER", projectPath, "original request no longer satisfies the init contract", err)
 	}
 	eventURI := path.Join(projectPath, eventsFile)
@@ -412,9 +421,9 @@ func loadExisting(root *os.Root, projectPath, resolvedTarget string, canonicaliz
 	return state, true, nil
 }
 
-func decodeAuthority(projectBytes, eventBytes []byte) (ProjectState, ProjectInitialized, error) {
+func decodeAuthority(projectBytes, eventBytes []byte, validateJSON JSONValidator) (ProjectState, ProjectInitialized, error) {
 	var state ProjectState
-	if err := decodeSingleJSON(projectBytes, &state); err != nil {
+	if err := decodeSingleJSON(projectBytes, &state, validateJSON); err != nil {
 		return ProjectState{}, ProjectInitialized{}, err
 	}
 	lines := bytes.Split(bytes.TrimSpace(eventBytes), []byte{'\n'})
@@ -422,7 +431,7 @@ func decodeAuthority(projectBytes, eventBytes []byte) (ProjectState, ProjectInit
 		return ProjectState{}, ProjectInitialized{}, fmt.Errorf("events.jsonl must contain exactly one event")
 	}
 	var event ProjectInitialized
-	if err := decodeSingleJSON(lines[0], &event); err != nil {
+	if err := decodeSingleJSON(lines[0], &event, validateJSON); err != nil {
 		return ProjectState{}, ProjectInitialized{}, err
 	}
 	if _, err := time.Parse(time.RFC3339, state.InitializedAt); err != nil {
@@ -475,8 +484,8 @@ func authoritativeResources(resources []ProjectResource) (protocol.ResourceRef, 
 	return dogma, eventLog, dogma.URI != "" && eventLog.URI != ""
 }
 
-func decodeSingleJSON(document []byte, target any) error {
-	if err := wire.ValidateUnambiguousJSON(document); err != nil {
+func decodeSingleJSON(document []byte, target any, validateJSON JSONValidator) error {
+	if err := validateJSON(document); err != nil {
 		return err
 	}
 	decoder := json.NewDecoder(bytes.NewReader(document))
@@ -615,7 +624,15 @@ func publish(root *os.Root, projectPath string, projectBytes, eventBytes []byte)
 	tempName := ".init-" + stableID("tmp", projectPath, fmt.Sprintf("%x", sha256.Sum256(projectBytes)))
 	tempPath := path.Join(parent, tempName)
 	if err := root.Mkdir(tempPath, 0o700); err != nil {
-		return typedError("ATOMICITY_UNSUPPORTED", tempPath, "cannot create exclusive sibling staging directory", err)
+		if !errors.Is(err, fs.ErrExist) {
+			return typedError("ATOMICITY_UNSUPPORTED", tempPath, "cannot create exclusive sibling staging directory", err)
+		}
+		if removeErr := root.RemoveAll(tempPath); removeErr != nil {
+			return typedError("ATOMICITY_UNSUPPORTED", tempPath, "cannot recover crashed staging directory", errors.Join(err, removeErr))
+		}
+		if err := root.Mkdir(tempPath, 0o700); err != nil {
+			return typedError("ATOMICITY_UNSUPPORTED", tempPath, "cannot create staging directory after crash recovery", err)
+		}
 	}
 	published := false
 	defer func() {
@@ -757,14 +774,14 @@ func operationEventPointer(state ProjectState) protocol.ObjectPointer {
 	}
 }
 
-func validatePublication(registry *contracts.Registry, projectBytes, eventBytes []byte, result protocol.OperationResult) error {
-	if err := registry.Validate(contracts.SchemaProjectState, projectBytes); err != nil {
+func validatePublication(schema SchemaValidator, projectBytes, eventBytes []byte, result protocol.OperationResult) error {
+	if err := schema.Validate(schemaProjectState, projectBytes); err != nil {
 		return typedError("INTERNAL_ERROR", result.Operation, "generated project state violates its bundled schema", err)
 	}
-	if err := registry.Validate(contracts.SchemaProjectInitialized, eventBytes); err != nil {
+	if err := schema.Validate(schemaProjectInitialized, eventBytes); err != nil {
 		return typedError("INTERNAL_ERROR", result.Operation, "generated initialization event violates its bundled schema", err)
 	}
-	validated, err := validateResult(registry, result, nil)
+	validated, err := validateResult(schema, result, nil)
 	if err != nil {
 		return err
 	}
@@ -772,7 +789,7 @@ func validatePublication(registry *contracts.Registry, projectBytes, eventBytes 
 	return nil
 }
 
-func validateResult(registry *contracts.Registry, result protocol.OperationResult, operationErr error) (protocol.OperationResult, error) {
+func validateResult(schema SchemaValidator, result protocol.OperationResult, operationErr error) (protocol.OperationResult, error) {
 	if operationErr != nil {
 		return protocol.OperationResult{}, operationErr
 	}
@@ -780,7 +797,7 @@ func validateResult(registry *contracts.Registry, result protocol.OperationResul
 	if err != nil {
 		return protocol.OperationResult{}, typedError("INTERNAL_ERROR", result.Operation, "cannot encode OperationResult", err)
 	}
-	if err := registry.Validate(contracts.SchemaOperationResult, raw); err != nil {
+	if err := schema.Validate(schemaOperationResult, raw); err != nil {
 		return protocol.OperationResult{}, typedError("INTERNAL_ERROR", result.Operation, "OperationResult violates its bundled schema", err)
 	}
 	for _, effect := range result.Effects {
@@ -788,7 +805,7 @@ func validateResult(registry *contracts.Registry, result protocol.OperationResul
 		if marshalErr != nil {
 			return protocol.OperationResult{}, typedError("INTERNAL_ERROR", result.Operation, "cannot encode EffectRecord", marshalErr)
 		}
-		if validateErr := registry.Validate(contracts.SchemaEffectRecord, rawEffect); validateErr != nil {
+		if validateErr := schema.Validate(schemaEffectRecord, rawEffect); validateErr != nil {
 			return protocol.OperationResult{}, typedError("INTERNAL_ERROR", result.Operation, "EffectRecord violates its bundled schema", validateErr)
 		}
 	}

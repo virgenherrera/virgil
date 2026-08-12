@@ -91,6 +91,8 @@ func invokeRepoDocsInit(registry *contracts.Registry, envelope wire.InvokeEnvelo
 		envelope.Bindings.Target.Root,
 		repodocs.ClockFunc(func() time.Time { return now }),
 		repodocs.JCSCanonicalizer{},
+		registry,
+		wire.ValidateUnambiguousJSON,
 	)
 	if err != nil {
 		var adapterError *repodocs.Error

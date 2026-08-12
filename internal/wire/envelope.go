@@ -55,7 +55,7 @@ type RunT0Envelope struct {
 	WorkspaceRoot   string    `json:"workspace_root"`
 	EvidenceRoot    string    `json:"evidence_root"`
 	Clock           Clock     `json:"clock"`
-	Limits          RunLimits `json:"limits,omitempty"`
+	Limits          RunLimits `json:"limits"`
 }
 
 func (RunT0Envelope) envelopeKind() string { return "run_t0" }

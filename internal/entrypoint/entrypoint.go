@@ -47,12 +47,14 @@ func Run(ctx context.Context, stdin io.Reader, stdout, stderr io.Writer) int {
 
 func writeError(stdout, stderr io.Writer, code, message string) int {
 	_, _ = fmt.Fprintf(stderr, "virgil: %s\n", code)
-	_ = writeJSON(stdout, wire.ErrorResult{
+	if err := writeJSON(stdout, wire.ErrorResult{
 		RuntimeProtocol: wire.RuntimeProtocol,
 		Kind:            "error",
 		Code:            code,
 		Message:         message,
-	})
+	}); err != nil {
+		_, _ = fmt.Fprintln(stderr, "virgil: WRITE_ERROR_FAILED")
+	}
 	return 2
 }
 

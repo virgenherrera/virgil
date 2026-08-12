@@ -460,7 +460,7 @@ func changedNonDirectoryEntries(before, after map[string]snapshotEntry) map[stri
 }
 
 func countProjectEvents(targetRoot, namespace string) (int, error) {
-	eventPath := filepath.Join(targetRoot, filepath.FromSlash(namespace), "events.jsonl")
+	eventPath := filepath.Join(targetRoot, filepath.FromSlash(namespace), protocol.RepoDocsEventsFile)
 	info, err := os.Lstat(eventPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		return 0, nil
@@ -557,8 +557,8 @@ func validateFreshInitResult(request protocol.OperationRequest, result protocol.
 		return fmt.Errorf("resolved_context does not preserve request refs with the real target binding path")
 	}
 	expectedResources := map[string]bool{
-		pathJoin(request.ArtifactStoreRef.Namespace, "project.json"): false,
-		pathJoin(request.ArtifactStoreRef.Namespace, "events.jsonl"): false,
+		pathJoin(request.ArtifactStoreRef.Namespace, protocol.RepoDocsProjectFile): false,
+		pathJoin(request.ArtifactStoreRef.Namespace, protocol.RepoDocsEventsFile): false,
 	}
 	for _, effect := range result.Effects {
 		if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" || effect.RequestID != request.RequestID ||
@@ -586,8 +586,8 @@ func validateFreshInitResult(request protocol.OperationRequest, result protocol.
 
 func validatePublishedTree(targetRoot, namespace string, snapshot map[string]snapshotEntry) error {
 	expectedFiles := map[string]struct{}{
-		pathJoin(namespace, "project.json"): {},
-		pathJoin(namespace, "events.jsonl"): {},
+		pathJoin(namespace, protocol.RepoDocsProjectFile): {},
+		pathJoin(namespace, protocol.RepoDocsEventsFile): {},
 	}
 	if len(snapshot) != len(expectedFiles) {
 		return fmt.Errorf("published target contains %d file/symlink entries, want exactly %d files", len(snapshot), len(expectedFiles))
@@ -607,8 +607,8 @@ func validateNoUnexpectedNodes(targetRoot, namespace string) error {
 		"docs/virgil":                       "dir",
 		"docs/virgil/projects":              "dir",
 		namespace:                           "dir",
-		pathJoin(namespace, "project.json"): "file",
-		pathJoin(namespace, "events.jsonl"): "file",
+		pathJoin(namespace, protocol.RepoDocsProjectFile): "file",
+		pathJoin(namespace, protocol.RepoDocsEventsFile): "file",
 	}
 	seen := make(map[string]bool, len(expected))
 	err := filepath.WalkDir(targetRoot, func(entryPath string, entry fs.DirEntry, walkErr error) error {
@@ -656,8 +656,8 @@ func validateEmptyTarget(targetRoot string) error {
 }
 
 func validatePublishedAuthority(registry *contracts.Registry, targetRoot string, request protocol.OperationRequest, result protocol.OperationResult) error {
-	projectPath := filepath.Join(targetRoot, filepath.FromSlash(request.ArtifactStoreRef.Namespace), "project.json")
-	eventPath := filepath.Join(targetRoot, filepath.FromSlash(request.ArtifactStoreRef.Namespace), "events.jsonl")
+	projectPath := filepath.Join(targetRoot, filepath.FromSlash(request.ArtifactStoreRef.Namespace), protocol.RepoDocsProjectFile)
+	eventPath := filepath.Join(targetRoot, filepath.FromSlash(request.ArtifactStoreRef.Namespace), protocol.RepoDocsEventsFile)
 	projectBytes, err := os.ReadFile(projectPath)
 	if err != nil {
 		return fmt.Errorf("read project authority: %w", err)
@@ -689,7 +689,7 @@ func validatePublishedAuthority(registry *contracts.Registry, targetRoot string,
 		return fmt.Errorf("OperationResult event pointer does not match the durable project_initialized event")
 	}
 	eventDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(eventBytes))
-	if result.Events[0].Resource.URI != pathJoin(request.ArtifactStoreRef.Namespace, "events.jsonl") || result.Events[0].Resource.Digest != eventDigest {
+	if result.Events[0].Resource.URI != pathJoin(request.ArtifactStoreRef.Namespace, protocol.RepoDocsEventsFile) || result.Events[0].Resource.Digest != eventDigest {
 		return fmt.Errorf("OperationResult event resource does not match the observed event log")
 	}
 	return nil

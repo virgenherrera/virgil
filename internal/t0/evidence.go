@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -702,13 +703,17 @@ func observedReportChecks(checks []wire.CheckResult) ([]reportCheckDocument, err
 }
 
 func observedProjectAuthority(targetRoot, namespace string) ([]byte, []byte, error) {
-	eventPath := filepath.Join(targetRoot, filepath.FromSlash(namespace), "events.jsonl")
-	projectPath := filepath.Join(targetRoot, filepath.FromSlash(namespace), "project.json")
-	events, eventFound, err := readObservedRegular(eventPath)
+	root, err := os.OpenRoot(targetRoot)
+	if err != nil {
+		return nil, nil, fmt.Errorf("open target root for authority observation: %w", err)
+	}
+	defer root.Close()
+	namespacePath := filepath.ToSlash(namespace)
+	events, eventFound, err := readObservedRegular(root, path.Join(namespacePath, protocol.RepoDocsEventsFile))
 	if err != nil {
 		return nil, nil, err
 	}
-	project, projectFound, err := readObservedRegular(projectPath)
+	project, projectFound, err := readObservedRegular(root, path.Join(namespacePath, protocol.RepoDocsProjectFile))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -718,15 +723,15 @@ func observedProjectAuthority(targetRoot, namespace string) ([]byte, []byte, err
 	return events, project, nil
 }
 
-func readObservedRegular(filePath string) ([]byte, bool, error) {
-	info, err := os.Lstat(filePath)
+func readObservedRegular(root *os.Root, name string) ([]byte, bool, error) {
+	info, err := root.Lstat(name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return []byte{}, false, nil
 	}
 	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
-		return nil, false, fmt.Errorf("observed authority %q is not a direct regular file", filePath)
+		return nil, false, fmt.Errorf("observed authority %q is not a direct regular file", name)
 	}
-	content, err := os.ReadFile(filePath)
+	content, err := root.ReadFile(name)
 	if err != nil {
 		return nil, false, err
 	}

@@ -9,6 +9,11 @@ import (
 
 const Version = "virgil.dev/planning-slice1/v1alpha1"
 
+const (
+	RepoDocsProjectFile = "project.json"
+	RepoDocsEventsFile  = "events.jsonl"
+)
+
 type ResourceRef struct {
 	URI      string `json:"uri"`
 	Revision string `json:"revision,omitempty"`
