@@ -40,6 +40,22 @@ var fixtureAssets = map[string]struct {
 		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-content-proposal-happy/fixture.json",
 		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-content-proposal-happy/actor-script.json",
 	},
+	"t0-continue-request-changes": {
+		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-request-changes/fixture.json",
+		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-request-changes/actor-script.json",
+	},
+	"t0-continue-idempotent-retry": {
+		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-idempotent-retry/fixture.json",
+		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-idempotent-retry/actor-script.json",
+	},
+	"t0-continue-out-of-scope-write-blocked": {
+		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-out-of-scope-write-blocked/fixture.json",
+		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-out-of-scope-write-blocked/actor-script.json",
+	},
+	"t0-continue-handoff-complete": {
+		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-handoff-complete/fixture.json",
+		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-handoff-complete/actor-script.json",
+	},
 }
 
 var FixtureOrder = []string{
@@ -49,6 +65,10 @@ var FixtureOrder = []string{
 	"t0-new-repo-docs-happy",
 	"t0-new-change-id-collision",
 	"t0-continue-content-proposal-happy",
+	"t0-continue-request-changes",
+	"t0-continue-idempotent-retry",
+	"t0-continue-out-of-scope-write-blocked",
+	"t0-continue-handoff-complete",
 }
 
 type Fixture struct {

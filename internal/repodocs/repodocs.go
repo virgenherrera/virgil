@@ -1834,9 +1834,13 @@ func upstreamRefsFor(root *os.Root, changePath, artifactKind string, schema Sche
 
 // appendLifecycleEvents durably appends candidate revision lifecycle events
 // to a change's events.jsonl using copy-rewrite-rename. Any candidate whose
-// (kind, revision_id) pair already exists in the log is silently skipped,
-// which makes this call idempotent: replays and crash-recovery retries that
-// present the same candidates converge without duplicating events. It
+// (kind, artifact_kind, revision_id) triple already exists in the log is
+// silently skipped, which makes this call idempotent: replays and
+// crash-recovery retries that present the same candidates converge without
+// duplicating events. artifact_kind must be part of the key because revision
+// numbering restarts at rev-000001 for every artifact kind — keying on
+// (kind, revision_id) alone would treat spec's first revision_drafted event
+// as a duplicate of idea's, since both carry revision_id "rev-000001". It
 // returns the events that were actually appended and the resulting full
 // file content.
 func appendLifecycleEvents(root *os.Root, changePath string, candidates []protocol.RevisionLifecycleEvent, schema SchemaValidator) ([]protocol.RevisionLifecycleEvent, []byte, error) {
@@ -1854,19 +1858,20 @@ func appendLifecycleEvents(root *os.Root, changePath string, candidates []protoc
 			continue
 		}
 		var probe struct {
-			Kind       string `json:"kind"`
-			RevisionID string `json:"revision_id"`
+			Kind         string `json:"kind"`
+			ArtifactKind string `json:"artifact_kind"`
+			RevisionID   string `json:"revision_id"`
 		}
 		if err := json.Unmarshal(line, &probe); err != nil {
 			return nil, nil, typedError("CORRUPT_LEDGER", eventsPath, "cannot decode existing lifecycle event", err)
 		}
-		existingKeys[probe.Kind+"\x00"+probe.RevisionID] = true
+		existingKeys[probe.Kind+"\x00"+probe.ArtifactKind+"\x00"+probe.RevisionID] = true
 	}
 
 	appended := make([]protocol.RevisionLifecycleEvent, 0, len(candidates))
 	updated := append([]byte(nil), existingBytes...)
 	for _, candidate := range candidates {
-		key := candidate.Kind + "\x00" + candidate.RevisionID
+		key := candidate.Kind + "\x00" + candidate.ArtifactKind + "\x00" + candidate.RevisionID
 		if existingKeys[key] {
 			continue
 		}
