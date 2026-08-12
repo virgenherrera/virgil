@@ -54,6 +54,12 @@ func (publisher *Publisher) publish(bundle preparedBundle) error {
 		return fmt.Errorf("open explicit evidence root: %w", err)
 	}
 	defer root.Close()
+	openedInfo, openedErr := root.Stat(".")
+	currentInfo, currentErr := os.Lstat(publisher.evidenceRoot)
+	if openedErr != nil || currentErr != nil || currentInfo.Mode()&os.ModeSymlink != 0 ||
+		!currentInfo.IsDir() || !os.SameFile(openedInfo, currentInfo) {
+		return fmt.Errorf("explicit evidence root changed before publication: %w", errors.Join(openedErr, currentErr))
+	}
 
 	finalName := filepath.Base(bundle.layout.BundleRoot)
 	if err := validateID(finalName, "bundle directory"); err != nil {

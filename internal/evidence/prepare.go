@@ -571,10 +571,10 @@ func (publisher *Publisher) crossCheckObservation(
 		return fmt.Errorf("runner report has no checkpoints")
 	}
 	lastCheckpoint := report.Checkpoints[len(report.Checkpoints)-1].CheckpointID
-	if err := crossCheckFinalDiff(finalTargetDiffID, "target", report.TargetRoot, lastCheckpoint, diffs, usedDiffs); err != nil {
+	if err := crossCheckFinalDiff(finalTargetDiffID, "target", report.TargetRoot, lastCheckpoint, snapshots, diffs, usedDiffs); err != nil {
 		return err
 	}
-	if err := crossCheckFinalDiff(finalStoreDiffID, "store", report.StoreRoot, lastCheckpoint, diffs, usedDiffs); err != nil {
+	if err := crossCheckFinalDiff(finalStoreDiffID, "store", report.StoreRoot, lastCheckpoint, snapshots, diffs, usedDiffs); err != nil {
 		return err
 	}
 	if len(usedSnapshots) != len(snapshots) {
@@ -614,13 +614,23 @@ func crossCheckInterval(
 		difference.diff.FromCheckpoint != checkpoint.RelativeTo || difference.diff.ToCheckpoint != checkpoint.CheckpointID {
 		return fmt.Errorf("checkpoint %s %s resources do not describe its interval and root", checkpoint.CheckpointID, kind)
 	}
+	if err := validateObservedDiff(*before.snapshot, *after.snapshot, *difference.diff); err != nil {
+		return fmt.Errorf("checkpoint %s %s diff does not match its snapshots: %w", checkpoint.CheckpointID, kind, err)
+	}
 	usedSnapshots[before.id] = struct{}{}
 	usedSnapshots[after.id] = struct{}{}
 	usedDiffs[difference.id] = struct{}{}
 	return nil
 }
 
-func crossCheckFinalDiff(id, kind string, root observedRoot, lastCheckpoint string, diffs map[string]preparedDocument, used map[string]struct{}) error {
+func crossCheckFinalDiff(
+	id, kind string,
+	root observedRoot,
+	lastCheckpoint string,
+	snapshots map[string]preparedDocument,
+	diffs map[string]preparedDocument,
+	used map[string]struct{},
+) error {
 	document, ok := diffs[id]
 	if !ok || document.diff == nil {
 		return fmt.Errorf("final %s diff %q is not supplied", kind, id)
@@ -628,7 +638,77 @@ func crossCheckFinalDiff(id, kind string, root observedRoot, lastCheckpoint stri
 	if document.root.Kind != kind || !reflect.DeepEqual(document.root, root) || document.diff.FromCheckpoint != "fixture_baseline" || document.diff.ToCheckpoint != lastCheckpoint {
 		return fmt.Errorf("final %s diff does not cover fixture_baseline through the last checkpoint", kind)
 	}
+	before, err := findSnapshotByRootCheckpoint(snapshots, root, "fixture_baseline")
+	if err != nil {
+		return fmt.Errorf("final %s diff baseline: %w", kind, err)
+	}
+	after, err := findSnapshotByRootCheckpoint(snapshots, root, lastCheckpoint)
+	if err != nil {
+		return fmt.Errorf("final %s diff last checkpoint: %w", kind, err)
+	}
+	if err := validateObservedDiff(*before.snapshot, *after.snapshot, *document.diff); err != nil {
+		return fmt.Errorf("final %s diff does not match its snapshots: %w", kind, err)
+	}
 	used[id] = struct{}{}
+	return nil
+}
+
+func findSnapshotByRootCheckpoint(documents map[string]preparedDocument, root observedRoot, checkpointID string) (preparedDocument, error) {
+	var found preparedDocument
+	count := 0
+	for _, document := range documents {
+		if document.snapshot != nil && document.snapshot.CheckpointID == checkpointID && reflect.DeepEqual(document.root, root) {
+			found = document
+			count++
+		}
+	}
+	if count != 1 {
+		return preparedDocument{}, fmt.Errorf("found %d snapshots for checkpoint %q and root %q", count, checkpointID, root.Kind)
+	}
+	return found, nil
+}
+
+func validateObservedDiff(before snapshotView, after snapshotView, difference diffView) error {
+	beforeEntries := make(map[string]nodeStateView, len(before.Entries))
+	afterEntries := make(map[string]nodeStateView, len(after.Entries))
+	paths := make(map[string]struct{}, len(before.Entries)+len(after.Entries))
+	for _, entry := range before.Entries {
+		beforeEntries[entry.Path] = entry.nodeStateView
+		paths[entry.Path] = struct{}{}
+	}
+	for _, entry := range after.Entries {
+		afterEntries[entry.Path] = entry.nodeStateView
+		paths[entry.Path] = struct{}{}
+	}
+	ordered := make([]string, 0, len(paths))
+	for entryPath := range paths {
+		ordered = append(ordered, entryPath)
+	}
+	sort.Strings(ordered)
+	expected := make([]changeView, 0, len(ordered))
+	for _, entryPath := range ordered {
+		beforeState, beforeFound := beforeEntries[entryPath]
+		afterState, afterFound := afterEntries[entryPath]
+		if beforeFound && afterFound && reflect.DeepEqual(beforeState, afterState) {
+			continue
+		}
+		change := changeView{Path: entryPath}
+		switch {
+		case !beforeFound:
+			state := afterState
+			change.ChangeType, change.After = "added", &state
+		case !afterFound:
+			state := beforeState
+			change.ChangeType, change.Before = "deleted", &state
+		default:
+			beforeCopy, afterCopy := beforeState, afterState
+			change.ChangeType, change.Before, change.After = "modified", &beforeCopy, &afterCopy
+		}
+		expected = append(expected, change)
+	}
+	if !reflect.DeepEqual(difference.Changes, expected) {
+		return fmt.Errorf("changes are not the exact snapshot delta")
+	}
 	return nil
 }
 

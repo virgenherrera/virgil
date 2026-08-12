@@ -346,7 +346,8 @@ func assertEvidence(t *testing.T, evidenceRoot, fixtureID string, processes []pr
 	if evidence == nil {
 		t.Fatal("passed scenario has no EvidenceReference")
 	}
-	content := readEvidenceResource(t, evidenceRoot, immutableResourceRef(*evidence))
+	manifestReference := immutableResourceRef{URI: evidence.URI, Digest: evidence.Digest}
+	content := readEvidenceResource(t, evidenceRoot, manifestReference)
 	assertSealedIntegrity(t, "EvidenceBundle manifest", content)
 	var manifest evidenceManifest
 	decodeOneJSONValue(t, "EvidenceBundle manifest", content, &manifest)
