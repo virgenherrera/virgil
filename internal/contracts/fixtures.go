@@ -36,6 +36,10 @@ var fixtureAssets = map[string]struct {
 		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-new-change-id-collision/fixture.json",
 		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-new-change-id-collision/actor-script.json",
 	},
+	"t0-new-after-completed-change": {
+		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-new-after-completed-change/fixture.json",
+		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-new-after-completed-change/actor-script.json",
+	},
 	"t0-continue-content-proposal-happy": {
 		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-content-proposal-happy/fixture.json",
 		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-content-proposal-happy/actor-script.json",
@@ -68,6 +72,7 @@ var FixtureOrder = []string{
 	"t0-init-idempotent-retry",
 	"t0-new-repo-docs-happy",
 	"t0-new-change-id-collision",
+	"t0-new-after-completed-change",
 	"t0-continue-content-proposal-happy",
 	"t0-continue-request-changes",
 	"t0-continue-idempotent-retry",

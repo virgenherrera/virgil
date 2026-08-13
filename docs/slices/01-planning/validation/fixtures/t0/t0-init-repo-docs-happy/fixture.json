@@ -217,6 +217,15 @@
         "process_id": "process-a"
       },
       {
+        "step_id": "agents-write",
+        "kind": "effect_observed",
+        "effect_kind": "write",
+        "policy_decision": "authorized",
+        "occurred": true,
+        "resource_pattern": "AGENTS.md",
+        "process_id": "process-a"
+      },
+      {
         "step_id": "result",
         "kind": "operation_decided",
         "operation": "virgil.init",
@@ -259,6 +268,10 @@
       },
       {
         "before": "config-write",
+        "after": "agents-write"
+      },
+      {
+        "before": "agents-write",
         "after": "result"
       },
       {
@@ -277,8 +290,8 @@
   "expected_effects": [
     {
       "kind": "write",
-      "min_count": 1,
-      "max_count": 1,
+      "min_count": 2,
+      "max_count": 2,
       "field_equals": {
         "/request_id": "init-happy-001",
         "/policy_decision": "authorized",
@@ -289,11 +302,16 @@
   "expected_target_diff": {
     "mode": "exact",
     "allowed_paths": [
-      "virgil.json"
+      "virgil.json",
+      "AGENTS.md"
     ],
     "expected_changes": [
       {
         "path": "virgil.json",
+        "change_type": "added"
+      },
+      {
+        "path": "AGENTS.md",
         "change_type": "added"
       }
     ]
@@ -306,11 +324,16 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "virgil.json"
+          "virgil.json",
+          "AGENTS.md"
         ],
         "expected_changes": [
           {
             "path": "virgil.json",
+            "change_type": "added"
+          },
+          {
+            "path": "AGENTS.md",
             "change_type": "added"
           }
         ]
@@ -349,6 +372,6 @@
   },
   "expected_outcome": {
     "status": "passed",
-    "reason": "Virgil initializes repo-docs atomically, publishing exactly virgil.json, without touching consumer-owned docs."
+    "reason": "Virgil initializes repo-docs atomically, publishing exactly virgil.json and AGENTS.md, without touching consumer-owned docs."
   }
 }

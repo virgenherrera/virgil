@@ -217,6 +217,15 @@
         "process_id": "process-a"
       },
       {
+        "step_id": "init-agents-write",
+        "kind": "effect_observed",
+        "effect_kind": "write",
+        "policy_decision": "authorized",
+        "occurred": true,
+        "resource_pattern": "AGENTS.md",
+        "process_id": "process-a"
+      },
+      {
         "step_id": "init-result",
         "kind": "operation_decided",
         "operation": "virgil.init",
@@ -343,6 +352,10 @@
       },
       {
         "before": "init-config-write",
+        "after": "init-agents-write"
+      },
+      {
+        "before": "init-agents-write",
         "after": "init-result"
       },
       {
@@ -411,8 +424,8 @@
   "expected_effects": [
     {
       "kind": "write",
-      "min_count": 3,
-      "max_count": 3,
+      "min_count": 4,
+      "max_count": 4,
       "field_equals": {
         "/policy_decision": "authorized",
         "/occurred": true
@@ -453,11 +466,16 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "virgil.json"
+          "virgil.json",
+          "AGENTS.md"
         ],
         "expected_changes": [
           {
             "path": "virgil.json",
+            "change_type": "added"
+          },
+          {
+            "path": "AGENTS.md",
             "change_type": "added"
           }
         ]

@@ -274,6 +274,13 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 		}
 		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-recovery-fresh-process-oracle", Status: "passed", Detail: "a brand-new operating-system process with no in-memory state derived the approved idea step from durable storage and proposed the spec file with the correct upstream_ref"})
 
+	case "t0-new-after-completed-change":
+		if err := validateNewAfterCompletedChangeScenario(runner.registry, targetRoot, executions); err != nil {
+			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "new-after-completed-change-oracle", Status: "failed", Detail: "virgil.new for a distinct change_id after a prior change completed did not free the active-change slot"})
+			return failScenario(scenario, "virgil_failure", "NEW_AFTER_COMPLETED_CHANGE_ORACLE_FAILED", err.Error())
+		}
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "new-after-completed-change-oracle", Status: "passed", Detail: "the first change's pipeline reached derived_step complete, active_change was durably cleared, and a second virgil.new for a distinct change_id succeeded"})
+
 	default:
 		return failScenario(scenario, "fixture_failure", "FIXTURE_ORACLE_MISSING", "runner has no operational oracle for fixture")
 	}
@@ -507,12 +514,17 @@ func changedNonDirectoryEntries(before, after map[string]snapshotEntry) map[stri
 // Result-shape oracles shared across scenarios
 // ---------------------------------------------------------------------------
 
+// agentsDocFile is the fixed AGENTS.md filename virgil.init publishes
+// alongside virgil.json. It mirrors protocol.VirgilConfigFile, which is the
+// public constant for the config file's own fixed name.
+const agentsDocFile = "AGENTS.md"
+
 func validateFreshInitResult(request protocol.OperationRequest, result protocol.OperationResult, snapshot map[string]snapshotEntry, targetRoot string) error {
 	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil || result.DerivedStep != "idea" || result.Next.Operation != "virgil.new" {
 		return fmt.Errorf("virgil.init did not return the required fresh success result")
 	}
-	if len(result.Diagnostics) != 0 || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 1 {
-		return fmt.Errorf("fresh init result does not expose exactly one write and zero events")
+	if len(result.Diagnostics) != 0 || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 2 {
+		return fmt.Errorf("fresh init result does not expose exactly two writes (virgil.json, AGENTS.md) and zero events")
 	}
 	resolvedTarget, err := filepath.EvalSymlinks(targetRoot)
 	if err != nil {
@@ -523,15 +535,35 @@ func validateFreshInitResult(request protocol.OperationRequest, result protocol.
 	if !reflect.DeepEqual(*result.ResolvedContext, expectedContext) {
 		return fmt.Errorf("resolved_context does not preserve request refs with the real target binding path")
 	}
-	effect := result.Effects[0]
-	if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" || effect.RequestID != request.RequestID ||
-		effect.CausationID != request.RequestID || effect.Capability != "artifact_store.write" || effect.Observed == nil || effect.StateBefore != nil ||
-		effect.StateAfter == nil || !reflect.DeepEqual(*effect.StateAfter, effect.Resource) || effect.Resource.URI != protocol.VirgilConfigFile {
-		return fmt.Errorf("fresh init returned a non-authorized or incomplete write effect")
+
+	var configEffect, agentsEffect *protocol.EffectRecord
+	for index := range result.Effects {
+		effect := &result.Effects[index]
+		switch effect.Resource.URI {
+		case protocol.VirgilConfigFile:
+			configEffect = effect
+		case agentsDocFile:
+			agentsEffect = effect
+		}
 	}
-	entry, found := snapshot[protocol.VirgilConfigFile]
-	if !found || !entry.Mode.IsRegular() || entry.Digest != effect.Resource.Digest {
+	if configEffect == nil || agentsEffect == nil {
+		return fmt.Errorf("fresh init result does not report writes for both virgil.json and AGENTS.md")
+	}
+	for _, effect := range []*protocol.EffectRecord{configEffect, agentsEffect} {
+		if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" || effect.RequestID != request.RequestID ||
+			effect.CausationID != request.RequestID || effect.Capability != "artifact_store.write" || effect.Observed == nil || effect.StateBefore != nil ||
+			effect.StateAfter == nil || !reflect.DeepEqual(*effect.StateAfter, effect.Resource) {
+			return fmt.Errorf("fresh init returned a non-authorized or incomplete write effect for %q", effect.Resource.URI)
+		}
+	}
+
+	configEntry, found := snapshot[protocol.VirgilConfigFile]
+	if !found || !configEntry.Mode.IsRegular() || configEntry.Digest != configEffect.Resource.Digest {
 		return fmt.Errorf("write effect does not match the observed virgil.json file")
+	}
+	agentsEntry, found := snapshot[agentsDocFile]
+	if !found || !agentsEntry.Mode.IsRegular() || agentsEntry.Digest != agentsEffect.Resource.Digest {
+		return fmt.Errorf("write effect does not match the observed AGENTS.md file")
 	}
 	return nil
 }
@@ -564,17 +596,21 @@ func validateFreshNewResult(request protocol.OperationRequest, result protocol.O
 }
 
 // validatePublishedTree confirms the target root contains exactly
-// virgil.json — the only durable object virgil.init or virgil.new (without
-// an active change yet drafted) ever publishes.
+// virgil.json and AGENTS.md — the only durable objects virgil.init or
+// virgil.new (without an active change yet drafted) ever publishes.
 func validatePublishedTree(targetRoot string, snapshot map[string]snapshotEntry) error {
-	if len(snapshot) != 1 {
-		return fmt.Errorf("published target contains %d file/symlink entries, want exactly 1 (virgil.json)", len(snapshot))
+	if len(snapshot) != 2 {
+		return fmt.Errorf("published target contains %d file/symlink entries, want exactly 2 (virgil.json, AGENTS.md)", len(snapshot))
 	}
 	entry, found := snapshot[protocol.VirgilConfigFile]
 	if !found || !entry.Mode.IsRegular() {
 		return fmt.Errorf("published target file virgil.json is missing or has the wrong kind")
 	}
-	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file"})
+	agentsEntry, found := snapshot[agentsDocFile]
+	if !found || !agentsEntry.Mode.IsRegular() {
+		return fmt.Errorf("published target file AGENTS.md is missing or has the wrong kind")
+	}
+	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file", agentsDocFile: "file"})
 }
 
 func validatePublishedAuthority(registry *contracts.Registry, targetRoot string, request protocol.OperationRequest, result protocol.OperationResult) error {
@@ -713,7 +749,7 @@ func validateNewHappyScenario(registry *contracts.Registry, targetRoot string, e
 	}
 
 	// virgil.new only rewrites virgil.json in place: no artifact file exists yet.
-	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file"})
+	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file", agentsDocFile: "file"})
 }
 
 func validateNewCollisionScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
@@ -765,7 +801,7 @@ func validateNewCollisionScenario(registry *contracts.Registry, targetRoot strin
 		return fmt.Errorf("first new request input does not contain a valid change_id")
 	}
 
-	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file"})
+	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file", agentsDocFile: "file"})
 }
 
 // validateContinueOutOfScopeWriteBlockedScenario proves that a
@@ -828,7 +864,7 @@ func validateContinueOutOfScopeWriteBlockedScenario(registry *contracts.Registry
 		return fmt.Errorf("out-of-scope content_proposal must not create docs/")
 	}
 
-	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file"})
+	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file", agentsDocFile: "file"})
 }
 
 func validateContentProposalResult(request protocol.OperationRequest, result protocol.OperationResult) error {
@@ -1051,7 +1087,7 @@ type artifactExpectation struct {
 // files, and the fixture's pre-seeded content_proposal source files living
 // outside the managed namespace.
 func validateWholeTree(targetRoot, changeID string, artifacts []artifactExpectation, seedPaths []string) error {
-	expected := map[string]string{protocol.VirgilConfigFile: "file"}
+	expected := map[string]string{protocol.VirgilConfigFile: "file", agentsDocFile: "file"}
 	if len(artifacts) > 0 {
 		expected["docs"] = "dir"
 		expected[path.Join("docs", changeID)] = "dir"
@@ -1253,6 +1289,110 @@ func validateHandoffCompleteScenario(registry *contracts.Registry, targetRoot st
 	return validateWholeTree(targetRoot, newInput.ChangeID, artifacts, seedPaths)
 }
 
+// validateNewAfterCompletedChangeScenario proves that once a change's
+// artifact pipeline reaches derived_step "complete" — clearing active_change
+// from virgil.json (see handleApprovalApproved) — a subsequent virgil.new
+// with a distinct change_id succeeds exactly like a fresh new, instead of
+// being blocked with PRECONDITION_FAILED "a different change is already
+// active for this project". It drives the same init -> new -> five
+// (content_proposal, approval) pairs as validateHandoffCompleteScenario,
+// then independently reads virgil.json to prove active_change is durably
+// absent before issuing the second virgil.new.
+func validateNewAfterCompletedChangeScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
+	const wantExecutions = 2 + 2*5 + 1
+	if len(executions) != wantExecutions {
+		return fmt.Errorf("new-after-completed-change fixture executed %d operations, want %d", len(executions), wantExecutions)
+	}
+	for _, execution := range executions {
+		if execution.Action.Kind != "invoke" {
+			return fmt.Errorf("new-after-completed-change fixture contains a non-invoke execution")
+		}
+	}
+	initExec, firstNewExec := executions[0], executions[1]
+
+	if err := validateFreshInitResult(initExec.Request, initExec.Child.Result, initExec.Checkpoint.Target, targetRoot); err != nil {
+		return fmt.Errorf("init phase: %w", err)
+	}
+	if err := validateFreshNewResult(firstNewExec.Request, firstNewExec.Child.Result, targetRoot); err != nil {
+		return fmt.Errorf("first new phase: %w", err)
+	}
+
+	var firstInput struct {
+		ChangeID string `json:"change_id"`
+	}
+	if err := json.Unmarshal(firstNewExec.Request.Input, &firstInput); err != nil || firstInput.ChangeID == "" {
+		return fmt.Errorf("first new request input does not contain a valid change_id")
+	}
+
+	seedPaths := make([]string, 0, len(handoffCompleteArtifactKinds))
+	artifacts := make([]artifactExpectation, 0, len(handoffCompleteArtifactKinds))
+	for index, kind := range handoffCompleteArtifactKinds {
+		proposeExec := executions[2+2*index]
+		approveExec := executions[2+2*index+1]
+
+		if err := validateContentProposalResultForStep(proposeExec.Request, proposeExec.Child.Result, kind); err != nil {
+			return fmt.Errorf("%s content_proposal phase: %w", kind, err)
+		}
+
+		nextDerivedStep := "complete"
+		nextOperation := "none"
+		if index+1 < len(handoffCompleteArtifactKinds) {
+			nextDerivedStep = handoffCompleteArtifactKinds[index+1]
+			nextOperation = "virgil.continue"
+		}
+		if err := validateApprovalResultForStep(approveExec.Request, approveExec.Child.Result, kind, nextDerivedStep, nextOperation); err != nil {
+			return fmt.Errorf("%s approval phase: %w", kind, err)
+		}
+
+		var proposeInput struct {
+			Entry struct {
+				Content struct {
+					URI string `json:"uri"`
+				} `json:"content"`
+			} `json:"entry"`
+		}
+		if err := json.Unmarshal(proposeExec.Request.Input, &proposeInput); err != nil || proposeInput.Entry.Content.URI == "" {
+			return fmt.Errorf("%s content_proposal request input does not contain a valid content uri", kind)
+		}
+		seedPaths = append(seedPaths, proposeInput.Entry.Content.URI)
+
+		if err := validateArtifactFile(registry, targetRoot, firstInput.ChangeID, kind, "rev-000001", statusApproved, true); err != nil {
+			return err
+		}
+		if err := validateUpstreamRef(registry, targetRoot, firstInput.ChangeID, kind, index); err != nil {
+			return err
+		}
+		artifacts = append(artifacts, artifactExpectation{Kind: kind, Status: statusApproved})
+	}
+
+	// The critical assertion: if active_change had not been durably cleared
+	// when the first change's pipeline reached derived_step "complete", this
+	// second virgil.new (a distinct change_id) would have hit the
+	// cfg.ActiveChange != nil branch in New() and returned blocked with
+	// PRECONDITION_FAILED instead of the fresh "success" result validated
+	// below. validateFreshNewResult succeeding is therefore itself the proof
+	// that the slot was freed.
+	secondNewExec := executions[wantExecutions-1]
+	if err := validateFreshNewResult(secondNewExec.Request, secondNewExec.Child.Result, targetRoot); err != nil {
+		return fmt.Errorf("second new phase: %w", err)
+	}
+	if err := validatePublishedChangeAuthority(registry, targetRoot, secondNewExec.Request, secondNewExec.Child.Result); err != nil {
+		return fmt.Errorf("second new phase: %w", err)
+	}
+
+	var secondInput struct {
+		ChangeID string `json:"change_id"`
+	}
+	if err := json.Unmarshal(secondNewExec.Request.Input, &secondInput); err != nil || secondInput.ChangeID == "" {
+		return fmt.Errorf("second new request input does not contain a valid change_id")
+	}
+	if secondInput.ChangeID == firstInput.ChangeID {
+		return fmt.Errorf("second new request must target a change_id distinct from the completed change")
+	}
+
+	return validateWholeTree(targetRoot, firstInput.ChangeID, artifacts, seedPaths)
+}
+
 func validateUpstreamRef(registry *contracts.Registry, targetRoot, changeID, kind string, index int) error {
 	relative := path.Join("docs", changeID, protocol.ArtifactFileName(kind))
 	raw, err := os.ReadFile(filepath.Join(targetRoot, filepath.FromSlash(relative)))
@@ -1308,6 +1448,8 @@ func validateContentProposalResultForStep(request protocol.OperationRequest, res
 // validateApprovalResultForStep validates the OperationResult of an approval
 // entry for artifactKind, asserting derived_step advances to
 // nextDerivedStep ("complete" with Next.Operation == "none" for handoff).
+// When nextDerivedStep is "complete", the approval also clears active_change
+// from virgil.json, so the result carries a second write effect for it.
 func validateApprovalResultForStep(request protocol.OperationRequest, result protocol.OperationResult, artifactKind, nextDerivedStep, nextOperation string) error {
 	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil ||
 		result.DerivedStep != nextDerivedStep || result.Next.Operation != nextOperation {
@@ -1316,13 +1458,21 @@ func validateApprovalResultForStep(request protocol.OperationRequest, result pro
 	if len(result.Artifacts) != 1 || result.Artifacts[0].Kind != "revision" || result.Artifacts[0].ObjectID != "rev-000001" {
 		return fmt.Errorf("approval for %s result does not reference the approved revision", artifactKind)
 	}
-	if len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 1 || len(result.Diagnostics) != 0 {
-		return fmt.Errorf("approval for %s result does not expose exactly one write and zero events", artifactKind)
+	wantEffects := 1
+	if nextDerivedStep == "complete" {
+		wantEffects = 2
 	}
-	effect := result.Effects[0]
-	if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" ||
-		effect.RequestID != request.RequestID || effect.CausationID != request.RequestID {
-		return fmt.Errorf("approval for %s effect is not an authorized write correlated to the request", artifactKind)
+	if len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != wantEffects || len(result.Diagnostics) != 0 {
+		return fmt.Errorf("approval for %s result does not expose exactly %d write(s) and zero events", artifactKind, wantEffects)
+	}
+	for _, effect := range result.Effects {
+		if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" ||
+			effect.RequestID != request.RequestID || effect.CausationID != request.RequestID {
+			return fmt.Errorf("approval for %s effect is not an authorized write correlated to the request", artifactKind)
+		}
+	}
+	if nextDerivedStep == "complete" && !strings.HasSuffix(result.Effects[1].Resource.URI, protocol.VirgilConfigFile) {
+		return fmt.Errorf("approval for %s completion effect does not target virgil.json", artifactKind)
 	}
 	return nil
 }

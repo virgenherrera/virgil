@@ -48,6 +48,50 @@ func TestApp_T0NewChangeIdCollision(t *testing.T) {
 	assertScenarioPassed(t, execution, "t0-new-change-id-collision")
 }
 
+// TestApp_T0NewAfterCompletedChange proves that once a change's artifact
+// pipeline reaches derived_step "complete" (every artifact has an effective
+// approved revision), active_change is cleared from virgil.json and a
+// subsequent virgil.new targeting a distinct change_id succeeds instead of
+// being blocked with PRECONDITION_FAILED "a different change is already
+// active for this project".
+func TestApp_T0NewAfterCompletedChange(t *testing.T) {
+	const fixtureID = "t0-new-after-completed-change"
+	execution := runT0Seeded(t, fixtureID, func(targetRoot string) error {
+		seedDir := filepath.Join(targetRoot, "seed")
+		if err := os.MkdirAll(seedDir, 0o700); err != nil {
+			return err
+		}
+		seeds := map[string]string{
+			"idea-proposal.md":    newAfterCompletedChangeIdeaSeed,
+			"spec-proposal.md":    newAfterCompletedChangeSpecSeed,
+			"design-proposal.md":  newAfterCompletedChangeDesignSeed,
+			"tasks-proposal.md":   newAfterCompletedChangeTasksSeed,
+			"handoff-proposal.md": newAfterCompletedChangeHandoffSeed,
+		}
+		for name, content := range seeds {
+			if err := os.WriteFile(filepath.Join(seedDir, name), []byte(content), 0o600); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	assertScenarioPassed(t, execution, fixtureID)
+}
+
+// The newAfterCompletedChange*Seed constants are the content_proposal source
+// files the T0 ActorScript for t0-new-after-completed-change references by
+// relative path (seed/{kind}-proposal.md), one per artifact_kind in the
+// idea -> spec -> design -> tasks -> handoff progression driven for
+// first-change before the second virgil.new targets second-change. See
+// continueContentProposalSeed for why the T0 harness must materialize them
+// directly on disk. Their bytes are fixed so the digests embedded in the
+// fixture's actor-script.json stay correlated.
+const newAfterCompletedChangeIdeaSeed = "# Idea Proposal\n\nThis is the initial idea proposal for first-change.\n"
+const newAfterCompletedChangeSpecSeed = "# Spec Proposal\n\nThis is the spec proposal for first-change.\n"
+const newAfterCompletedChangeDesignSeed = "# Design Proposal\n\nThis is the design proposal for first-change.\n"
+const newAfterCompletedChangeTasksSeed = "# Tasks Proposal\n\nThis is the tasks proposal for first-change.\n"
+const newAfterCompletedChangeHandoffSeed = "# Handoff Proposal\n\nThis is the handoff proposal for first-change.\n"
+
 func TestApp_T0ContinueContentProposalHappy(t *testing.T) {
 	const fixtureID = "t0-continue-content-proposal-happy"
 	execution := runT0Seeded(t, fixtureID, func(targetRoot string) error {
@@ -485,6 +529,8 @@ func assertProcesses(t *testing.T, fixtureID string, processes []processObservat
 		wantCount = 3
 	case "t0-continue-handoff-complete":
 		wantCount = 12
+	case "t0-new-after-completed-change":
+		wantCount = 13
 	case "t0-continue-recovery-fresh-process":
 		wantCount = 5
 	}
@@ -634,17 +680,18 @@ func assertTrace(t *testing.T, fixtureID, fixtureDigest string, processes []proc
 	}
 	entryPositions := make(map[string]int, len(trace.Entries))
 	requestRoots := map[string]struct{}{
-		"init-happy-001":            {},
-		"init-unmanaged-001":        {},
-		"init-retry-001-a":          {},
-		"init-new-happy-001":        {},
-		"init-collision-001":        {},
-		"init-continue-happy-001":   {},
-		"init-request-changes-001":  {},
-		"init-continue-retry-001":   {},
-		"init-blocked-001":          {},
-		"init-handoff-complete-001": {},
-		"init-recovery-001":         {},
+		"init-happy-001":               {},
+		"init-unmanaged-001":           {},
+		"init-retry-001-a":             {},
+		"init-new-happy-001":           {},
+		"init-collision-001":           {},
+		"init-new-after-completed-001": {},
+		"init-continue-happy-001":      {},
+		"init-request-changes-001":     {},
+		"init-continue-retry-001":      {},
+		"init-blocked-001":             {},
+		"init-handoff-complete-001":    {},
+		"init-recovery-001":            {},
 	}
 	for index, entry := range trace.Entries {
 		if entry.Sequence != index || entry.EntryID == "" || entry.Kind == "" {
@@ -955,13 +1002,14 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 		}
 		return
 	}
-	// Every non-blocked T0 scenario publishes exactly virgil.json at the
-	// target root (the repo-docs control file, not part of managed_root).
-	// Scenarios that reach virgil.continue additionally publish one
+	// Every non-blocked T0 scenario publishes exactly virgil.json and
+	// AGENTS.md at the target root (the repo-docs control file and the
+	// generated agent guide, neither part of managed_root). Scenarios that
+	// reach virgil.continue additionally publish one
 	// docs/{change_id}/{NN}-{kind}.md per artifact drafted, plus the
 	// fixture's seed file that content_proposal read.
 	prefix := filepath.Join(fixtureID, "target")
-	want := []string{filepath.Join(prefix, "virgil.json")}
+	want := []string{filepath.Join(prefix, "virgil.json"), filepath.Join(prefix, "AGENTS.md")}
 
 	artifactFileByKind := map[string]string{
 		"idea":    "00-idea.md",
@@ -987,6 +1035,10 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 	case "t0-continue-handoff-complete":
 		for _, kind := range []string{"idea", "spec", "design", "tasks", "handoff"} {
 			addArtifact("change-handoff-alpha", kind, kind+"-proposal.md")
+		}
+	case "t0-new-after-completed-change":
+		for _, kind := range []string{"idea", "spec", "design", "tasks", "handoff"} {
+			addArtifact("first-change", kind, kind+"-proposal.md")
 		}
 	case "t0-continue-recovery-fresh-process":
 		addArtifact("change-recovery-alpha", "idea", "idea-proposal.md")

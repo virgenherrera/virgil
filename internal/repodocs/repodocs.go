@@ -3,17 +3,23 @@
 // identity boundary explicitly; the package never derives a target or
 // project from the current directory.
 //
-// Layout: repo-docs keeps exactly two kinds of durable object at the target
-// root — virgil.json (the adapter control file, holding project identity and
-// the single active change) and, per change, up to five numbered artifact
-// files under managed_root's per-change subdirectory ("docs/{change_id}/"):
+// Layout: repo-docs keeps exactly three kinds of durable object at the
+// target root — virgil.json (the adapter control file, holding project
+// identity and the single active change), AGENTS.md (a generated guide for
+// AI agents interacting with the Virgil-managed repository) and, per change,
+// up to five numbered artifact files under managed_root's per-change
+// subdirectory ("docs/{change_id}/"):
 // docs/{change_id}/00-idea.md .. docs/{change_id}/04-handoff.md. This layout
 // leaves room for a project to accumulate multiple changes side by side
 // under docs/ over time, one subdirectory per change_id. There is no
 // project.json/events.jsonl/change.json ledger: git is the ledger.
 // derived_step is always recomputed by scanning docs/{change_id}/ for those
 // files and reading their JSON frontmatter, never cached or persisted
-// separately.
+// separately. active_change occupies a single slot at a time: once its
+// artifact pipeline reaches derived_step "complete" (every artifact has an
+// effective approved revision), the approving virgil.continue call clears
+// active_change from virgil.json, freeing the slot for a subsequent
+// virgil.new with a different change_id.
 package repodocs
 
 import (
@@ -39,6 +45,7 @@ import (
 const (
 	managedRoot      = "docs"
 	virgilConfigFile = protocol.VirgilConfigFile
+	agentsFile       = "AGENTS.md"
 
 	configSchemaVersion = "virgil.dev/config/v1alpha1"
 
@@ -180,7 +187,24 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 	if err != nil {
 		return protocol.OperationResult{}, typedError("INTERNAL_ERROR", request.Operation, "cannot encode virgil.json", err)
 	}
-	result := initSuccessResult(request, cfg, cfgBytes)
+
+	// AGENTS.md is written before virgil.json: virgil.json's existence is the
+	// idempotency signal for Init (loadExistingConfig above), so if it were
+	// written first and the process crashed before AGENTS.md landed, a later
+	// replay would never backfill AGENTS.md. Writing AGENTS.md first and
+	// tolerating its own publishError (already exists from a prior partial
+	// init) keeps both files reachable from any crash point.
+	agentsBytes := []byte(agentsTemplate)
+	if err := publishAgents(root, agentsBytes); err != nil {
+		var publicationError *publishError
+		if errors.As(err, &publicationError) {
+			// AGENTS.md already exists (e.g., previous partial init) — acceptable, continue.
+		} else {
+			return protocol.OperationResult{}, err
+		}
+	}
+
+	result := initSuccessResult(request, cfg, cfgBytes, agentsBytes)
 	if err := validateConfigPublication(schema, cfgBytes, result); err != nil {
 		return protocol.OperationResult{}, err
 	}
@@ -229,8 +253,9 @@ func buildConfig(request protocol.OperationRequest, digest, createdAt string, re
 	return cfg, cfgBytes, nil
 }
 
-func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilConfig, cfgBytes []byte) protocol.OperationResult {
+func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilConfig, cfgBytes, agentsBytes []byte) protocol.OperationResult {
 	cfgResource := withDigest(protocol.ResourceRef{URI: virgilConfigFile}, cfgBytes)
+	agentsResource := withDigest(protocol.ResourceRef{URI: agentsFile}, agentsBytes)
 	resolved := cfg.ResolvedContext
 	return protocol.OperationResult{
 		ProtocolVersion:  request.ProtocolVersion,
@@ -246,6 +271,7 @@ func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilCon
 		Events:           []protocol.ObjectPointer{},
 		Effects: []protocol.EffectRecord{
 			writeEffect(request, "virgil-config", cfgResource, cfgResource, len(cfgBytes)),
+			writeEffect(request, "agents-doc", agentsResource, agentsResource, len(agentsBytes)),
 		},
 		Next: protocol.NextAction{
 			Operation: "virgil.new",
@@ -400,6 +426,33 @@ func publishConfig(root *os.Root, cfgBytes []byte) error {
 	}()
 	if err := root.Rename(tempName, virgilConfigFile); err != nil {
 		return &publishError{Cause: err}
+	}
+	published = true
+	return syncDirectory(root, ".")
+}
+
+// publishAgents durably publishes AGENTS.md using create-exclusive-and-
+// rename, mirroring publishConfig. A pre-existing AGENTS.md (e.g., from a
+// crashed prior init that wrote AGENTS.md but not virgil.json) is reported
+// as a *publishError so Init can treat it as an acceptable no-op rather than
+// failing closed.
+func publishAgents(root *os.Root, content []byte) error {
+	tempName := ".agents-" + stableID("tmp", agentsFile, fmt.Sprintf("%x", sha256.Sum256(content)))
+	if err := writeExclusive(root, tempName, content); err != nil {
+		var pathErr *os.PathError
+		if errors.As(err, &pathErr) && errors.Is(pathErr.Err, fs.ErrExist) {
+			return &publishError{Path: agentsFile, Cause: pathErr}
+		}
+		return err
+	}
+	published := false
+	defer func() {
+		if !published {
+			_ = root.Remove(tempName)
+		}
+	}()
+	if err := root.Rename(tempName, agentsFile); err != nil {
+		return &publishError{Path: agentsFile, Cause: err}
 	}
 	published = true
 	return syncDirectory(root, ".")
@@ -1146,8 +1199,26 @@ func handleApprovalApproved(root *os.Root, request protocol.OperationRequest, in
 	newDerivedStep := computeDerivedStep(newState)
 
 	next := protocol.NextAction{Operation: "virgil.continue", Condition: "next artifact step is ready to propose"}
+	effects := []protocol.EffectRecord{writeEffect(request, "artifact-file", fileResource, fileResource, len(raw))}
 	if newDerivedStep == "complete" {
 		next = protocol.NextAction{Operation: "none", Condition: "all artifacts approved"}
+
+		// The pipeline just reached completion: clear active_change so the
+		// project's single change slot is free for a subsequent virgil.new.
+		cfg.ActiveChange = nil
+		cfgBytes, err := json.MarshalIndent(cfg, "", "  ")
+		if err != nil {
+			return protocol.OperationResult{}, typedError("INTERNAL_ERROR", request.Operation, "cannot encode virgil.json after completion", err)
+		}
+		cfgBytes = append(cfgBytes, '\n')
+		if err := schema.Validate(schemaVirgilConfig, cfgBytes); err != nil {
+			return protocol.OperationResult{}, typedError("INTERNAL_ERROR", request.Operation, "generated virgil.json violates its bundled schema", err)
+		}
+		if err := rewriteConfig(root, cfgBytes); err != nil {
+			return protocol.OperationResult{}, err
+		}
+		cfgResource := withDigest(protocol.ResourceRef{URI: virgilConfigFile}, cfgBytes)
+		effects = append(effects, writeEffect(request, "virgil-config", cfgResource, cfgResource, len(cfgBytes)))
 	}
 
 	resolved := resolvedContext(request, resolvedTarget)
@@ -1165,7 +1236,7 @@ func handleApprovalApproved(root *os.Root, request protocol.OperationRequest, in
 		},
 		Briefs:      []protocol.ObjectPointer{},
 		Events:      []protocol.ObjectPointer{},
-		Effects:     []protocol.EffectRecord{writeEffect(request, "artifact-file", fileResource, fileResource, len(raw))},
+		Effects:     effects,
 		Next:        next,
 		Diagnostics: []protocol.Diagnostic{},
 	}, nil
@@ -1347,6 +1418,7 @@ func decodeSingleJSON(document []byte, target any, validateJSON JSONValidator) e
 }
 
 type publishError struct {
+	Path  string
 	Cause error
 }
 
