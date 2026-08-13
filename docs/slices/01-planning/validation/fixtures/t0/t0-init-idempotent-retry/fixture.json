@@ -1,0 +1,456 @@
+{
+  "schema_version": "virgil.dev/validation-fixture/v1alpha1",
+  "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+  "fixture_id": "t0-init-idempotent-retry",
+  "fixture_revision": "v2",
+  "layer": "T0",
+  "target_repo": {
+    "uri": "fixture://targets/consumer-retry",
+    "canonical_path": "/fixtures/targets/consumer-retry",
+    "baseline": "baseline-v1"
+  },
+  "initial_request": {
+    "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+    "operation": "virgil.init",
+    "request_id": "init-retry-001-a",
+    "idempotency_key": "init-retry-v1",
+    "dogma_ref": {
+      "dogma_id": "virgil-dogma",
+      "version": "fixture-v1",
+      "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169",
+      "source": {
+        "uri": "fixture://dogma/virgil/v1",
+        "revision": "fixture-v1",
+        "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169"
+      },
+      "method_pack": {
+        "pack_id": "virgil",
+        "pack_version": "fixture-v1"
+      }
+    },
+    "project_ref": {
+      "project_id": "consumer-retry",
+      "target": {
+        "uri": "fixture://targets/consumer-retry",
+        "canonical_path": "/fixtures/targets/consumer-retry",
+        "baseline": "baseline-v1"
+      },
+      "dogma_ref_id": "virgil-dogma",
+      "artifact_store_ref_id": "store-consumer-retry"
+    },
+    "artifact_store_ref": {
+      "store_ref_id": "store-consumer-retry",
+      "adapter": {
+        "adapter_id": "repo-docs",
+        "adapter_version": "v1alpha1"
+      },
+      "project_id": "consumer-retry",
+      "namespace": "docs",
+      "policy": {
+        "policy_version": "repo-docs/v1alpha1",
+        "read_allowlist": [
+          "docs/**"
+        ],
+        "write_allowlist": [
+          "docs/**"
+        ]
+      }
+    },
+    "host": {
+      "adapter": {
+        "adapter_id": "generic-host",
+        "adapter_version": "v1alpha1"
+      },
+      "capabilities": {
+        "supported": [
+          "operation.invoke",
+          "effect.observe",
+          "trace.emit",
+          "fresh_process"
+        ],
+        "guarantees": [
+          "structured_envelope",
+          "deterministic_replay"
+        ]
+      }
+    },
+    "actor": {
+      "actor_id": "scripted-agent",
+      "kind": "agent",
+      "authority": [
+        "virgil.operation.invoke"
+      ]
+    },
+    "input": {
+      "project_id": "consumer-retry"
+    }
+  },
+  "actor_profile": {
+    "mode": "scripted",
+    "component": {
+      "adapter": {
+        "adapter_id": "scripted-actor",
+        "adapter_version": "v1alpha1"
+      },
+      "capabilities": [
+        "invoke",
+        "restart_process",
+        "retry",
+        "stop"
+      ]
+    },
+    "script": {
+      "uri": "fixture://validation/t0-init-idempotent-retry/actor-script.json",
+      "revision": "v2",
+      "digest": "sha256:aa3fbd9c20fa07402e666aa13f60fc62d4a3c4e4ae62d32d93f45cdfb5be36b7"
+    }
+  },
+  "adapter_profile": {
+    "host": {
+      "adapter": {
+        "adapter_id": "generic-host",
+        "adapter_version": "v1alpha1"
+      },
+      "capabilities": {
+        "supported": [
+          "operation.invoke",
+          "effect.observe",
+          "trace.emit",
+          "fresh_process"
+        ],
+        "guarantees": [
+          "structured_envelope",
+          "deterministic_replay"
+        ]
+      }
+    },
+    "artifact_store": {
+      "store_ref_id": "store-consumer-retry",
+      "adapter": {
+        "adapter_id": "repo-docs",
+        "adapter_version": "v1alpha1"
+      },
+      "project_id": "consumer-retry",
+      "namespace": "docs",
+      "policy": {
+        "policy_version": "repo-docs/v1alpha1",
+        "read_allowlist": [
+          "docs/**"
+        ],
+        "write_allowlist": [
+          "docs/**"
+        ]
+      }
+    },
+    "isolation": {
+      "adapter": {
+        "adapter_id": "process-isolation",
+        "adapter_version": "v1alpha1"
+      },
+      "capabilities": [
+        "fresh_process",
+        "snapshot"
+      ]
+    },
+    "model_provider": {
+      "adapter": {
+        "adapter_id": "replay-model",
+        "adapter_version": "v1alpha1"
+      },
+      "capabilities": [
+        "deterministic_response"
+      ]
+    }
+  },
+  "runtime_capabilities": {
+    "adapter": {
+      "adapter_id": "generic-host",
+      "adapter_version": "v1alpha1"
+    },
+    "capabilities": {
+      "supported": [
+        "operation.invoke",
+        "effect.observe",
+        "trace.emit",
+        "fresh_process"
+      ],
+      "guarantees": [
+        "structured_envelope",
+        "deterministic_replay"
+      ]
+    }
+  },
+  "expected_interaction": {
+    "required_steps": [
+      {
+        "step_id": "instructions",
+        "kind": "instructions_delivered",
+        "process_id": "process-a"
+      },
+      {
+        "step_id": "discovery",
+        "kind": "discovery_decision",
+        "process_id": "process-a"
+      },
+      {
+        "step_id": "activation",
+        "kind": "activation_decision",
+        "process_id": "process-a"
+      },
+      {
+        "step_id": "request-a",
+        "kind": "operation_requested",
+        "operation": "virgil.init",
+        "request_id": "init-retry-001-a",
+        "process_id": "process-a"
+      },
+      {
+        "step_id": "config-write",
+        "kind": "effect_observed",
+        "effect_kind": "write",
+        "policy_decision": "authorized",
+        "occurred": true,
+        "resource_pattern": "virgil.json",
+        "process_id": "process-a"
+      },
+      {
+        "step_id": "agents-write",
+        "kind": "effect_observed",
+        "effect_kind": "write",
+        "policy_decision": "authorized",
+        "occurred": true,
+        "resource_pattern": "AGENTS.md",
+        "process_id": "process-a"
+      },
+      {
+        "step_id": "result-a",
+        "kind": "operation_decided",
+        "operation": "virgil.init",
+        "request_id": "init-retry-001-a",
+        "operation_status": "success",
+        "process_id": "process-a",
+        "next_operation": "virgil.new"
+      },
+      {
+        "step_id": "recovery",
+        "kind": "recovery",
+        "process_id": "process-b"
+      },
+      {
+        "step_id": "retry",
+        "kind": "retry",
+        "request_id": "init-retry-001-b",
+        "process_id": "process-b"
+      },
+      {
+        "step_id": "request-b",
+        "kind": "operation_requested",
+        "operation": "virgil.init",
+        "request_id": "init-retry-001-b",
+        "process_id": "process-b"
+      },
+      {
+        "step_id": "idempotency-hit",
+        "kind": "guard_result",
+        "process_id": "process-b"
+      },
+      {
+        "step_id": "result-b",
+        "kind": "operation_decided",
+        "operation": "virgil.init",
+        "request_id": "init-retry-001-b",
+        "operation_status": "success",
+        "replayed_from_request_id": "init-retry-001-a",
+        "process_id": "process-b",
+        "next_operation": "virgil.new"
+      },
+      {
+        "step_id": "stop",
+        "kind": "stop",
+        "process_id": "process-b"
+      },
+      {
+        "step_id": "outcome",
+        "kind": "outcome",
+        "process_id": "process-b"
+      }
+    ],
+    "order_constraints": [
+      {
+        "before": "instructions",
+        "after": "discovery"
+      },
+      {
+        "before": "discovery",
+        "after": "activation"
+      },
+      {
+        "before": "activation",
+        "after": "request-a"
+      },
+      {
+        "before": "request-a",
+        "after": "config-write"
+      },
+      {
+        "before": "config-write",
+        "after": "agents-write"
+      },
+      {
+        "before": "agents-write",
+        "after": "result-a"
+      },
+      {
+        "before": "result-a",
+        "after": "recovery"
+      },
+      {
+        "before": "recovery",
+        "after": "retry"
+      },
+      {
+        "before": "retry",
+        "after": "request-b"
+      },
+      {
+        "before": "request-b",
+        "after": "idempotency-hit"
+      },
+      {
+        "before": "idempotency-hit",
+        "after": "result-b"
+      },
+      {
+        "before": "result-b",
+        "after": "stop"
+      },
+      {
+        "before": "stop",
+        "after": "outcome"
+      }
+    ],
+    "max_retries": 1
+  },
+  "expected_events": [],
+  "expected_artifacts": [],
+  "expected_effects": [
+    {
+      "kind": "write",
+      "min_count": 2,
+      "max_count": 2,
+      "field_equals": {
+        "/request_id": "init-retry-001-a",
+        "/policy_decision": "authorized",
+        "/occurred": true
+      }
+    },
+    {
+      "kind": "write",
+      "min_count": 0,
+      "max_count": 0,
+      "field_equals": {
+        "/request_id": "init-retry-001-b",
+        "/occurred": true
+      }
+    }
+  ],
+  "expected_target_diff": {
+    "mode": "exact",
+    "allowed_paths": [
+      "virgil.json",
+      "AGENTS.md"
+    ],
+    "expected_changes": [
+      {
+        "path": "virgil.json",
+        "change_type": "added"
+      },
+      {
+        "path": "AGENTS.md",
+        "change_type": "added"
+      }
+    ]
+  },
+  "expected_checkpoints": [
+    {
+      "checkpoint_id": "after-first-init",
+      "after_step": "result-a",
+      "relative_to": "fixture_baseline",
+      "target_diff": {
+        "mode": "exact",
+        "allowed_paths": [
+          "virgil.json",
+          "AGENTS.md"
+        ],
+        "expected_changes": [
+          {
+            "path": "virgil.json",
+            "change_type": "added"
+          },
+          {
+            "path": "AGENTS.md",
+            "change_type": "added"
+          }
+        ]
+      },
+      "store_diff": {
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
+      },
+      "expected_events": [],
+      "expected_artifacts": []
+    },
+    {
+      "checkpoint_id": "after-replay",
+      "after_step": "result-b",
+      "relative_to": "after-first-init",
+      "target_diff": {
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
+      },
+      "store_diff": {
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
+      },
+      "expected_events": [],
+      "expected_artifacts": []
+    }
+  ],
+  "prohibited_effects": [
+    {
+      "kind": "write",
+      "reason": "The retry may recover through reads but must not repeat writes.",
+      "scope": "by_request",
+      "request_id": "init-retry-001-b",
+      "resource_pattern": "**"
+    },
+    {
+      "kind": "write",
+      "reason": "Planning may only write below repo-docs managed_root or virgil.json.",
+      "scope": "outside_effective_policy"
+    },
+    {
+      "kind": "external_call",
+      "reason": "T0 retry is fully local and deterministic.",
+      "scope": "matching_resource_pattern",
+      "resource_pattern": "**"
+    }
+  ],
+  "context_budget": {
+    "read_allowlist": [],
+    "denylist": [
+      "conversation://history/**",
+      "fixture://targets/other-project/**"
+    ],
+    "required_sources": [],
+    "max_bytes": 0,
+    "max_tokens": 0
+  },
+  "expected_outcome": {
+    "status": "passed",
+    "reason": "A fresh process replays init with the same canonical intent (publishing virgil.json and AGENTS.md once) and creates no duplicate state."
+  }
+}

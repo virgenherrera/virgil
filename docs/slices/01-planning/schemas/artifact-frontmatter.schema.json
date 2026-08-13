@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.virgil.dev/planning-slice1/v1alpha1/artifact-frontmatter.schema.json",
+  "title": "Virgil Artifact Frontmatter",
+  "description": "JSON frontmatter embedded between --- markers at the top of docs/{NN}-{kind}.md, the flat replacement for the Slice 1 revision envelope.",
+  "type": "object",
+  "required": [
+    "schema",
+    "protocol_version",
+    "artifact_kind",
+    "change_id",
+    "project_id",
+    "status",
+    "revision",
+    "upstream_refs",
+    "content_digest",
+    "idempotency_key",
+    "request_id",
+    "created_at",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {
+      "const": "virgil.dev/artifact/v1alpha1"
+    },
+    "protocol_version": {
+      "const": "virgil.dev/planning-slice1/v1alpha1"
+    },
+    "artifact_kind": {
+      "enum": ["idea", "spec", "design", "tasks", "handoff"]
+    },
+    "change_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "project_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "status": {
+      "enum": ["awaiting_approval", "approved", "withdrawn"]
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^rev-[0-9]{6}$"
+    },
+    "upstream_refs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/UpstreamRef" },
+      "uniqueItems": true
+    },
+    "content_digest": {
+      "$ref": "common.schema.json#/$defs/SHA256"
+    },
+    "idempotency_key": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "request_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "provenance": {
+      "$ref": "common.schema.json#/$defs/SourceProvenance"
+    },
+    "approved_by": {
+      "$ref": "common.schema.json#/$defs/ActorRef"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "approved" } },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["approved_by", "approved_at"]
+      }
+    }
+  ],
+  "$defs": {
+    "UpstreamRef": {
+      "type": "object",
+      "required": ["revision_id", "artifact_kind"],
+      "properties": {
+        "revision_id": { "$ref": "common.schema.json#/$defs/NonEmptyString" },
+        "artifact_kind": { "enum": ["idea", "spec", "design", "tasks", "handoff"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.virgil.dev/planning-slice1/v1alpha1/operation-result.schema.json",
+  "title": "Virgil OperationResult",
+  "type": "object",
+  "required": [
+    "protocol_version",
+    "operation",
+    "request_id",
+    "idempotency_key",
+    "status",
+    "requested_context",
+    "artifacts",
+    "briefs",
+    "events",
+    "effects",
+    "next",
+    "diagnostics"
+  ],
+  "properties": {
+    "protocol_version": {
+      "const": "virgil.dev/planning-slice1/v1alpha1"
+    },
+    "operation": {
+      "enum": ["virgil.init", "virgil.new", "virgil.continue"]
+    },
+    "request_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "idempotency_key": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "replayed_from_request_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "status": {
+      "enum": ["success", "needs_input", "blocked", "unsupported", "error"]
+    },
+    "requested_context": {
+      "$ref": "#/$defs/Context"
+    },
+    "resolved_context": {
+      "$ref": "#/$defs/Context"
+    },
+    "derived_step": {
+      "enum": ["idea", "spec", "design", "tasks", "handoff", "complete"]
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/ObjectPointer"
+      }
+    },
+    "briefs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/ObjectPointer"
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/ObjectPointer"
+      }
+    },
+    "effects": {
+      "type": "array",
+      "items": {
+        "$ref": "effect-record.schema.json"
+      }
+    },
+    "next": {
+      "$ref": "common.schema.json#/$defs/NextAction"
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/Diagnostic"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": ["success", "needs_input"]
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["resolved_context"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": { "const": "success" }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "diagnostics": {
+            "items": {
+              "allOf": [
+                { "$ref": "common.schema.json#/$defs/Diagnostic" },
+                {
+                  "properties": {
+                    "severity": {
+                      "enum": ["info", "warning"]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "diagnostics": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "Context": {
+      "type": "object",
+      "required": ["dogma_ref", "project_ref", "artifact_store_ref", "host"],
+      "properties": {
+        "dogma_ref": {
+          "$ref": "common.schema.json#/$defs/DogmaRef"
+        },
+        "project_ref": {
+          "$ref": "common.schema.json#/$defs/ProjectRef"
+        },
+        "artifact_store_ref": {
+          "$ref": "common.schema.json#/$defs/ArtifactStoreRef"
+        },
+        "host": {
+          "$ref": "common.schema.json#/$defs/HostRef"
+        },
+        "run_ref": {
+          "$ref": "common.schema.json#/$defs/RunRef"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

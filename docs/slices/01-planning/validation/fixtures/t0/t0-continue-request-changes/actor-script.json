@@ -1,0 +1,387 @@
+{
+  "schema_version": "virgil.dev/scripted-actor/v1alpha1",
+  "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+  "script_id": "script-t0-continue-request-changes",
+  "script_revision": "v1",
+  "actor": {
+    "actor_id": "scripted-agent",
+    "kind": "agent",
+    "authority": [
+      "virgil.operation.invoke"
+    ]
+  },
+  "actions": [
+    {
+      "action_id": "invoke-init",
+      "sequence": 0,
+      "kind": "invoke",
+      "process_id": "process-a",
+      "after_trace_kind": "activation_decision",
+      "operation_request": {
+        "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+        "operation": "virgil.init",
+        "request_id": "init-request-changes-001",
+        "idempotency_key": "init-request-changes-v1",
+        "dogma_ref": {
+          "dogma_id": "virgil-dogma",
+          "version": "fixture-v1",
+          "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169",
+          "source": {
+            "uri": "fixture://dogma/virgil/v1",
+            "revision": "fixture-v1",
+            "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169"
+          },
+          "method_pack": {
+            "pack_id": "virgil",
+            "pack_version": "fixture-v1"
+          }
+        },
+        "project_ref": {
+          "project_id": "consumer-request-changes",
+          "target": {
+            "uri": "fixture://targets/consumer-request-changes",
+            "canonical_path": "/fixtures/targets/consumer-request-changes",
+            "baseline": "baseline-v1"
+          },
+          "dogma_ref_id": "virgil-dogma",
+          "artifact_store_ref_id": "store-consumer-request-changes"
+        },
+        "artifact_store_ref": {
+          "store_ref_id": "store-consumer-request-changes",
+          "adapter": {
+            "adapter_id": "repo-docs",
+            "adapter_version": "v1alpha1"
+          },
+          "project_id": "consumer-request-changes",
+          "namespace": "docs",
+          "policy": {
+            "policy_version": "repo-docs/v1alpha1",
+            "read_allowlist": [
+              "docs/**"
+            ],
+            "write_allowlist": [
+              "docs/**"
+            ]
+          }
+        },
+        "host": {
+          "adapter": {
+            "adapter_id": "generic-host",
+            "adapter_version": "v1alpha1"
+          },
+          "capabilities": {
+            "supported": [
+              "operation.invoke",
+              "effect.observe",
+              "trace.emit",
+              "fresh_process"
+            ],
+            "guarantees": [
+              "structured_envelope",
+              "deterministic_replay"
+            ]
+          }
+        },
+        "actor": {
+          "actor_id": "scripted-agent",
+          "kind": "agent",
+          "authority": [
+            "virgil.operation.invoke"
+          ]
+        },
+        "input": {
+          "project_id": "consumer-request-changes"
+        }
+      }
+    },
+    {
+      "action_id": "invoke-new",
+      "sequence": 1,
+      "kind": "invoke",
+      "process_id": "process-a",
+      "after_trace_kind": "operation_decided",
+      "operation_request": {
+        "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+        "operation": "virgil.new",
+        "request_id": "new-request-changes-001",
+        "idempotency_key": "new-request-changes-v1",
+        "dogma_ref": {
+          "dogma_id": "virgil-dogma",
+          "version": "fixture-v1",
+          "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169",
+          "source": {
+            "uri": "fixture://dogma/virgil/v1",
+            "revision": "fixture-v1",
+            "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169"
+          },
+          "method_pack": {
+            "pack_id": "virgil",
+            "pack_version": "fixture-v1"
+          }
+        },
+        "project_ref": {
+          "project_id": "consumer-request-changes",
+          "target": {
+            "uri": "fixture://targets/consumer-request-changes",
+            "canonical_path": "/fixtures/targets/consumer-request-changes",
+            "baseline": "baseline-v1"
+          },
+          "dogma_ref_id": "virgil-dogma",
+          "artifact_store_ref_id": "store-consumer-request-changes"
+        },
+        "artifact_store_ref": {
+          "store_ref_id": "store-consumer-request-changes",
+          "adapter": {
+            "adapter_id": "repo-docs",
+            "adapter_version": "v1alpha1"
+          },
+          "project_id": "consumer-request-changes",
+          "namespace": "docs",
+          "policy": {
+            "policy_version": "repo-docs/v1alpha1",
+            "read_allowlist": [
+              "docs/**"
+            ],
+            "write_allowlist": [
+              "docs/**"
+            ]
+          }
+        },
+        "host": {
+          "adapter": {
+            "adapter_id": "generic-host",
+            "adapter_version": "v1alpha1"
+          },
+          "capabilities": {
+            "supported": [
+              "operation.invoke",
+              "effect.observe",
+              "trace.emit",
+              "fresh_process"
+            ],
+            "guarantees": [
+              "structured_envelope",
+              "deterministic_replay"
+            ]
+          }
+        },
+        "actor": {
+          "actor_id": "scripted-agent",
+          "kind": "agent",
+          "authority": [
+            "virgil.operation.invoke"
+          ]
+        },
+        "input": {
+          "change_id": "change-request-changes",
+          "intent": "Draft the idea artifact for change-request-changes and withdraw it after requested changes",
+          "provenance": {
+            "kind": "human_input",
+            "captured_at": "2026-01-15T10:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "action_id": "invoke-continue-proposal",
+      "sequence": 2,
+      "kind": "invoke",
+      "process_id": "process-a",
+      "after_trace_kind": "operation_decided",
+      "operation_request": {
+        "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+        "operation": "virgil.continue",
+        "request_id": "continue-request-changes-proposal-001",
+        "idempotency_key": "continue-request-changes-proposal-v1",
+        "dogma_ref": {
+          "dogma_id": "virgil-dogma",
+          "version": "fixture-v1",
+          "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169",
+          "source": {
+            "uri": "fixture://dogma/virgil/v1",
+            "revision": "fixture-v1",
+            "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169"
+          },
+          "method_pack": {
+            "pack_id": "virgil",
+            "pack_version": "fixture-v1"
+          }
+        },
+        "project_ref": {
+          "project_id": "consumer-request-changes",
+          "target": {
+            "uri": "fixture://targets/consumer-request-changes",
+            "canonical_path": "/fixtures/targets/consumer-request-changes",
+            "baseline": "baseline-v1"
+          },
+          "dogma_ref_id": "virgil-dogma",
+          "artifact_store_ref_id": "store-consumer-request-changes"
+        },
+        "artifact_store_ref": {
+          "store_ref_id": "store-consumer-request-changes",
+          "adapter": {
+            "adapter_id": "repo-docs",
+            "adapter_version": "v1alpha1"
+          },
+          "project_id": "consumer-request-changes",
+          "namespace": "docs",
+          "policy": {
+            "policy_version": "repo-docs/v1alpha1",
+            "read_allowlist": [
+              "docs/**"
+            ],
+            "write_allowlist": [
+              "docs/**"
+            ]
+          }
+        },
+        "host": {
+          "adapter": {
+            "adapter_id": "generic-host",
+            "adapter_version": "v1alpha1"
+          },
+          "capabilities": {
+            "supported": [
+              "operation.invoke",
+              "effect.observe",
+              "trace.emit",
+              "fresh_process"
+            ],
+            "guarantees": [
+              "structured_envelope",
+              "deterministic_replay"
+            ]
+          }
+        },
+        "run_ref": {
+          "run_id": "sha256:6fe9b59b30d0335c7270d12fbf4980e87d42331a95429f3a6c364eea2da19da5",
+          "change_id": "change-request-changes",
+          "project_id": "consumer-request-changes",
+          "baseline": "baseline-v1"
+        },
+        "actor": {
+          "actor_id": "scripted-agent",
+          "kind": "agent",
+          "authority": [
+            "virgil.operation.invoke"
+          ]
+        },
+        "input": {
+          "change_id": "change-request-changes",
+          "entry": {
+            "kind": "content_proposal",
+            "artifact_kind": "idea",
+            "content": {
+              "uri": "seed/idea-proposal.md",
+              "digest": "sha256:cf5566053a90f3915bd69ff8c7fc0ed7f2d191c2640cfb1d5f8b09463ea9a832"
+            }
+          }
+        }
+      }
+    },
+    {
+      "action_id": "invoke-continue-request-changes",
+      "sequence": 3,
+      "kind": "invoke",
+      "process_id": "process-a",
+      "after_trace_kind": "operation_decided",
+      "operation_request": {
+        "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+        "operation": "virgil.continue",
+        "request_id": "continue-request-changes-001",
+        "idempotency_key": "continue-request-changes-v1",
+        "dogma_ref": {
+          "dogma_id": "virgil-dogma",
+          "version": "fixture-v1",
+          "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169",
+          "source": {
+            "uri": "fixture://dogma/virgil/v1",
+            "revision": "fixture-v1",
+            "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169"
+          },
+          "method_pack": {
+            "pack_id": "virgil",
+            "pack_version": "fixture-v1"
+          }
+        },
+        "project_ref": {
+          "project_id": "consumer-request-changes",
+          "target": {
+            "uri": "fixture://targets/consumer-request-changes",
+            "canonical_path": "/fixtures/targets/consumer-request-changes",
+            "baseline": "baseline-v1"
+          },
+          "dogma_ref_id": "virgil-dogma",
+          "artifact_store_ref_id": "store-consumer-request-changes"
+        },
+        "artifact_store_ref": {
+          "store_ref_id": "store-consumer-request-changes",
+          "adapter": {
+            "adapter_id": "repo-docs",
+            "adapter_version": "v1alpha1"
+          },
+          "project_id": "consumer-request-changes",
+          "namespace": "docs",
+          "policy": {
+            "policy_version": "repo-docs/v1alpha1",
+            "read_allowlist": [
+              "docs/**"
+            ],
+            "write_allowlist": [
+              "docs/**"
+            ]
+          }
+        },
+        "host": {
+          "adapter": {
+            "adapter_id": "generic-host",
+            "adapter_version": "v1alpha1"
+          },
+          "capabilities": {
+            "supported": [
+              "operation.invoke",
+              "effect.observe",
+              "trace.emit",
+              "fresh_process"
+            ],
+            "guarantees": [
+              "structured_envelope",
+              "deterministic_replay"
+            ]
+          }
+        },
+        "run_ref": {
+          "run_id": "sha256:6fe9b59b30d0335c7270d12fbf4980e87d42331a95429f3a6c364eea2da19da5",
+          "change_id": "change-request-changes",
+          "project_id": "consumer-request-changes",
+          "baseline": "baseline-v1"
+        },
+        "actor": {
+          "actor_id": "scripted-agent",
+          "kind": "agent",
+          "authority": [
+            "virgil.operation.invoke"
+          ]
+        },
+        "input": {
+          "change_id": "change-request-changes",
+          "entry": {
+            "kind": "approval",
+            "artifact_id": "idea",
+            "revision": "rev-000001",
+            "decision": "request_changes",
+            "rationale": "Idea needs more detail on security requirements."
+          }
+        }
+      }
+    },
+    {
+      "action_id": "stop-after-request-changes",
+      "sequence": 4,
+      "kind": "stop",
+      "process_id": "process-a",
+      "after_trace_kind": "operation_decided",
+      "reason": "Content proposal drafted, submitted, and withdrawn after the approver requested changes."
+    }
+  ]
+}

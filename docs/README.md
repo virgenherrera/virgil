@@ -1,46 +1,91 @@
----
-id: index
-title: "Índice de Documentación"
-mode: framework
-type: index
-tags: [navegación, índice, mapa]
----
+# Documentación canónica de Virgil
 
-# idea-to-mvp — Índice de Documentación
+## Estado normativo
 
-> Framework de desarrollo de software estructurado.
-> Desde la idea hasta el código operacional.
+Este directorio contiene el **dogma operativo canónico y normativo** de
+Virgil: protocolo, boundaries, Method Packs, quality y slices. Es read-only
+para proyectos consumidores. Por ahora se mantiene únicamente en español para
+evitar que una traducción se convierta en una segunda fuente de verdad.
 
----
+En estos documentos:
 
-## Mapa General
+- **DEBE** expresa una invariante obligatoria.
+- **NO DEBE** expresa una prohibición obligatoria.
+- **PUEDE** expresa una capacidad opcional.
+- El [roadmap](roadmap/vertical-slices.md) describe intención de entrega, no
+  capacidades ya implementadas.
 
-- [Vista general del framework](overview.md) — diagramas de alto nivel, entrada recomendada
-- [Glosario](glossary.md) — definiciones de términos especializados del framework
-- [Adaptaciones ágiles](agile-adaptations.md) — cómo el framework adapta los 12 principios del Manifiesto Ágil para agentes IA
-- [echo system](echo-system.md) — pipeline determinista de 5 pasos que garantiza homogeneidad entre ambientes
-- [artifact system](artifact-system.md) — convención de ubicación predecible para outputs de build
+## Alcance
 
----
+Virgil **es el project knowledge/control plane**, agnóstico de agente y
+metodología. Posee identidad, ledger, trazabilidad,
+context briefs y la aplicación y registro de transiciones. Busca acompañar un
+cambio desde una idea hasta su entrega y, cuando aplique, su operación.
 
-## Planning (idea → handoff)
+La ceremonia, los roles, el routing y los gates pertenecen a un **Method
+Pack**. Scrum Master no es infraestructura core de Virgil: es un rol opcional
+que puede definir el pack Scrum. Otros packs pueden definir roles diferentes o
+ninguno.
 
-- [Índice del modo](planning/README.md)
-- [Modelo operativo](planning/operational-model.md) — modos, ownership, adapters
-- [Artifacts](planning/artifacts/README.md) — 6 artefactos, TPM, state machine
-- [SM Behavior](planning/behavior/README.md) — fases, delegación, PDC, recovery
-- [Roles](planning/roles/README.md) — 5 roles default + ad-hoc
+Los Method Packs objetivo son:
 
-## Execution (handoff → código)
+- Scrum, como pack predeterminado inicial.
+- Waterfall.
+- Kanban.
+- Shape Up.
 
-- [Índice del modo](execution/README.md)
-- [Contratos](execution/contracts.md) — contract-first, desarrollo paralelo
-- [Fase Red](execution/red.md) — estrategia de testing
-- [Fase Green](execution/green.md) — implementación
-- [Fase Refactor](execution/refactor.md) — gate de calidad
-- [Fase Accept](execution/accept.md) — certificación QA
-- [Estrategia Git](execution/git-strategy.md) — Gitflow, worktrees, commits
+El kernel NO DEBE hardcodear sprints, roles Scrum, WIP limits, bets ni otra
+ceremonia particular.
 
-## Operation (opcional)
+## Dos namespaces `docs/`
 
-- [Índice del modo](operation/README.md) — el usuario consume el producto con asistencia del agente
+- `Virgil/docs/` es el dogma de Virgil y nunca funciona como store operativo
+  de un consumidor.
+- `{consumer}/docs/` es el corpus operativo y, con el adapter local
+  `repo-docs`, el artifact store del proyecto consumidor. Puede
+  leerse/indexarse según policy; el índice RAG es derivado y las escrituras se
+  limitan al namespace administrado, recomendado `{target}/docs/virgil/`.
+
+Skills y tools gobiernan la interoperabilidad principalmente desde el contexto
+del repo consumidor. Jira, Confluence, Basecamp, GitHub Projects/Issues y otros
+sistemas pueden ofrecer adapters equivalentes sin cambiar el kernel.
+
+## Invariantes centrales
+
+1. `DogmaRef`, proyecto objetivo, `ArtifactStoreRef` y cada run/change tienen
+   identidades explícitas y separadas; `method_source != target`.
+2. `global ownership != global context injection`: conocer y custodiar el
+   mapa completo no autoriza a copiar todo el contexto a cada agente.
+3. El RAG es una proyección de lectura reconstruible. No es la autoridad del
+   proceso.
+4. La ejecución NO redefine planificación aprobada. Si encuentra un vacío o
+   contradicción, emite `PlanningGapDetected`.
+5. Toda afirmación de progreso debe poder vincularse a artefactos o evidencia
+   con procedencia.
+6. Planning SOLO escribe mediante el ArtifactStoreAdapter configurado. En
+   `repo-docs`, el write scope predeterminado es `{target}/docs/virgil/`;
+   código, producto y configuración permanecen prohibidos.
+7. Virgil no asume ni finge un rol ceremonial definido por un Method Pack.
+8. HostAdapter y ArtifactStoreAdapter son concerns distintos: el primero
+   gobierna discovery/invocación del host; el segundo, persistencia y retrieval.
+9. Cada adapter declara capabilities y degradaciones; el kernel no presupone
+   subagentes, paralelismo, Git, shell ni acceso directo a un store.
+
+## Navegación
+
+- [Visión y fundamentos](foundations/vision.md)
+- [Límites del sistema](architecture/system-boundaries.md)
+- [Rol arquitectónico](architecture/role.md)
+- [Runtime Go T0 — contrato de implementación](architecture/go-runtime.md)
+- [Contratos conceptuales mínimos](protocol/core-contracts.md)
+- [Estrategia de validación](quality/validation-strategy.md)
+- [Production-Safe Green](quality/production-safe-green.md)
+- [Roadmap por vertical slices](roadmap/vertical-slices.md)
+- [Slice 1 — Planning: idea → handoff](slices/01-planning/README.md)
+
+## Lo que todavía no es normativo
+
+No son contratos vigentes los schemas exhaustivos, formatos no definidos por
+un slice, prompts de roles, thresholds de calidad ni estrategias de
+paralelismo. Se definirán dentro del slice que los necesite y con evidencia de
+implementación.
