@@ -4,6 +4,24 @@ Knowledge and control plane for agent-assisted development. Virgil guards owners
 
 ## Install
 
+### Script (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/virgenherrera/virgil/main/install.sh | sh
+```
+
+To install a specific version:
+
+```bash
+VIRGIL_VERSION=v0.2.0 curl -fsSL https://raw.githubusercontent.com/virgenherrera/virgil/main/install.sh | sh
+```
+
+### GitHub Releases
+
+Download precompiled binaries from [GitHub Releases](https://github.com/virgenherrera/virgil/releases).
+
+### From source (requires Go 1.26.5+)
+
 ```bash
 go install github.com/virgenherrera/virgil/cmd/virgil@latest
 ```
