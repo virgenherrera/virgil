@@ -1735,7 +1735,7 @@ func invokeFreshProcess(ctx context.Context, registry *contracts.Registry, envel
 		return wire.InvokeResult{}, wire.ProcessObservation{}, processCapture{}, fmt.Errorf("marshal invoke envelope: %w", err)
 	}
 
-	command := exec.CommandContext(childContext, executable)
+	command := exec.CommandContext(childContext, executable, "pipe")
 	command.Dir = envelope.WorkspaceRoot
 	command.Env = minimalEnvironment()
 	command.Stdin = bytes.NewReader(payload)

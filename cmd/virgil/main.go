@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/virgenherrera/virgil/internal/entrypoint"
 )
 
 // Version is overridden via -ldflags at build time.
@@ -18,19 +17,11 @@ var rootCmd = &cobra.Command{
 AI-assisted software development. It provides methodology docs,
 orchestration protocols, and a runtime for planning operations.
 
-When invoked with piped stdin (no subcommand), Virgil reads a JSON
-envelope from stdin and writes the result to stdout. This preserves
-backwards compatibility with the T0 test harness and any tooling
-that invokes virgil as a subprocess.`,
+Use the "pipe" subcommand to read a JSON envelope from stdin and
+write the result to stdout.`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		stat, _ := os.Stdin.Stat()
-		if (stat.Mode() & os.ModeCharDevice) == 0 {
-			// stdin is a pipe — run entrypoint for backwards compat
-			os.Exit(entrypoint.Run(cmd.Context(), os.Stdin, os.Stdout, os.Stderr))
-		}
-		// interactive terminal — show help
 		return cmd.Help()
 	},
 }

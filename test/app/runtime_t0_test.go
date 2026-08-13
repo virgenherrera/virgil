@@ -436,7 +436,7 @@ func runT0Seeded(t *testing.T, fixtureID string, seed func(targetRoot string) er
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	command := exec.CommandContext(ctx, binary)
+	command := exec.CommandContext(ctx, binary, "pipe")
 	command.Dir = isolationRoot
 	command.Env = appEnvironment()
 	command.Stdin = bytes.NewReader(payload)
