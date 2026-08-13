@@ -1,0 +1,24 @@
+# GoReleaser output
+dist/
+
+# Local binary at project root
+/virgil
+*.exe
+
+# Temporary handoff files
+.tmp-*
+
+# Go
+*.o
+*.a
+*.so
+*.test
+*.out
+vendor/
+
+# Env / IDE
+.env
+.env.*
+.DS_Store
+.idea/
+.vscode/
