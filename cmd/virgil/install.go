@@ -5,14 +5,17 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/virgenherrera/virgil/internal/install"
 )
 
 var installCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Install Virgil methodology into a project (not yet implemented)",
+	Short: "Install Virgil MCP integration for AI agents in the current project",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Fprintln(os.Stderr, "virgil install: not yet implemented")
-		os.Exit(1)
-		return nil // unreachable
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("get working directory: %w", err)
+		}
+		return install.Run(cwd, os.Stdout)
 	},
 }
