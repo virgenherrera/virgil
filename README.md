@@ -1,49 +1,92 @@
 # Virgil
 
-Virgil es el knowledge/control plane para desarrollo asistido por agentes: conserva ownership, contexto mínimo y trazabilidad
-desde una idea hasta el código, la evidencia de verificación, el deploy y la
-operación cuando aplique.
+Knowledge and control plane for agent-assisted development. Virgil guards ownership, minimal context, and traceability from idea to code.
 
-## Estado
+## Install
 
-El repositorio está reconstruyéndose desde sus contratos. Hoy contiene:
+```bash
+go install github.com/virgenherrera/virgil/cmd/virgil@latest
+```
 
-- el [dogma operativo canónico](docs/README.md);
-- el primer slice `idea → handoff` y sus contratos host-neutral;
-- schemas y fixtures Red para validar la interacción `Agent ↔ Virgil`.
+## Setup
 
-La existencia de documentación o fixtures no implica que el runtime ya esté
-implementado. Las capacidades reales se anuncian únicamente cuando producen
-evidencia app-level conforme al dogma.
+In your project directory:
 
-## Distribución
+```bash
+virgil install
+```
 
-Virgil se implementará y distribuirá como un **binario autocontenido en Go**.
-Un proyecto consumidor no debe instalar Node, Python ni Docker para usar el
-kernel o el adapter `repo-docs`.
+This detects your AI agent (Claude Code, Codex) and configures the MCP server. Restart your agent after installation.
 
-Skills, CLIs, MCP servers y adapters específicos de Codex, Claude u otros hosts
-pueden exponer una UX nativa, pero traducen al mismo protocolo; no duplican el
-kernel ni convierten herramientas del host en dependencias de la metodología.
+## Use
 
-## Boundaries
+Open your AI agent in the project. Virgil exposes 5 tools via MCP:
 
-- `Virgil/docs/` es dogma operativo versionado y read-only para consumidores.
-- `{consumer}/docs/` es el corpus operativo del consumidor.
-- `{consumer}/docs/virgil/` es el managed root del adapter `repo-docs` default.
-- `method_source`, target, proyecto, run y store siempre tienen identidad
-  explícita; nunca se infieren solamente desde cwd.
+| Tool | What it does |
+|------|-------------|
+| `virgil_init` | Initialize Virgil (creates `virgil.json` + `AGENTS.md`) |
+| `virgil_new` | Start a new planning change |
+| `virgil_propose` | Propose content for the current artifact stage |
+| `virgil_approve` | Approve the current artifact, advance the pipeline |
+| `virgil_status` | Show current project state |
 
-El RAG es una proyección reconstruible. La autoridad reside en referencias,
-revisiones, ledger, eventos y evidencia verificable.
+### Example
 
-## Validación
+```
+You:   Initialize this project with Virgil
+Agent: [calls virgil_init] Project initialized.
 
-Virgil se certifica con escenarios **app-level y black-box** que entran por su
-superficie pública y observan requests, guards, efectos, diffs, recovery y
-Evidence Bundles. El runner de Go puede seleccionar esos escenarios mediante
-paquete, nombre (`TestApp_*`) o tag (`applevel`); eso no los convierte en tests
-unitarios.
+You:   I want to add JWT authentication
+Agent: [calls virgil_new] Change created. Ready to propose the idea.
+       [calls virgil_propose] Idea proposed. Awaiting your approval.
 
-Los unit tests no son evidencia de certificación y no cierran Red, Green,
-Refactor ni Verify.
+You:   Looks good, approve it
+Agent: [calls virgil_approve] Idea approved. Next step: spec.
+```
+
+The agent drives the full pipeline. You review and approve each stage.
+
+## Artifact pipeline
+
+Each change goes through 5 stages:
+
+```
+idea -> spec -> design -> tasks -> handoff -> complete
+```
+
+Artifacts are markdown files in `docs/{change_id}/`:
+
+```
+docs/add-jwt-auth/
+  00-idea.md
+  01-spec.md
+  02-design.md
+  03-tasks.md
+  04-handoff.md
+```
+
+## Architecture
+
+Virgil is a stateless Go binary. Each invocation receives a complete JSON envelope and returns a result. The MCP server (`virgil serve`) wraps this protocol so agents interact with simple tool calls instead of raw JSON.
+
+- `docs/` in this repo is the operational dogma (read-only for consumers).
+- `docs/` in consumer repos is the managed artifact store.
+- `virgil.json` at the consumer root is the project config (auto-generated).
+
+## CLI
+
+```
+virgil              Show help
+virgil install      Install MCP integration for detected agents
+virgil serve        Start MCP server (stdio, used by agents)
+virgil pipe         Raw stdin/stdout JSON mode (scripting, CI)
+virgil version      Print version
+```
+
+## Validation
+
+Virgil is certified with app-level black-box scenarios (`TestApp_*`) that enter through the public surface and observe requests, guards, effects, diffs, and recovery. Unit tests are not certification evidence.
+
+```bash
+go test ./test/app -run '^TestApp_' -count=1
+```
