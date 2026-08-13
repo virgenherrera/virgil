@@ -1,8 +1,9 @@
-GO_IMAGE := golang:1.26.5
-BINARY   := virgil
-MOUNT    := -v $(CURDIR):/src -w /src
+GO_IMAGE        := golang:1.26.5
+GORELEASER_IMAGE := goreleaser/goreleaser:latest
+BINARY          := virgil
+MOUNT           := -v $(CURDIR):/src -w /src
 
-.PHONY: deps build test lint clean
+.PHONY: deps build test lint clean release-dry-run
 
 deps:
 	docker run --rm $(MOUNT) $(GO_IMAGE) go mod tidy
@@ -19,3 +20,6 @@ lint:
 
 clean:
 	docker rmi -f $(BINARY):build $(BINARY):test 2>/dev/null || true
+
+release-dry-run:
+	docker run --rm $(MOUNT) $(GORELEASER_IMAGE) release --snapshot --clean --skip=publish
