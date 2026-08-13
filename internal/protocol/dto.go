@@ -9,11 +9,32 @@ import (
 
 const Version = "virgil.dev/planning-slice1/v1alpha1"
 
-const (
-	RepoDocsProjectFile = "project.json"
-	RepoDocsEventsFile  = "events.jsonl"
-	RepoDocsChangeFile  = "change.json"
-)
+// VirgilConfigFile is the repo-docs adapter control file published at the
+// target root by virgil.init. It is not part of managed_root: it is the
+// adapter's own bootstrap state, analogous to .git/config.
+const VirgilConfigFile = "virgil.json"
+
+// artifactFileNames is the fixed, numbered filename for each Slice 1
+// artifact_kind, published directly under managed_root ("docs/"). The
+// numbering encodes the pipeline order so a plain directory listing shows the
+// change's progress without reading any file.
+var artifactFileNames = map[string]string{
+	"idea":    "00-idea.md",
+	"spec":    "01-spec.md",
+	"design":  "02-design.md",
+	"tasks":   "03-tasks.md",
+	"handoff": "04-handoff.md",
+}
+
+// ArtifactStepOrder is the fixed Slice 1 artifact sequence shared by the
+// repo-docs adapter and every T0 oracle that observes its durable output.
+var ArtifactStepOrder = []string{"idea", "spec", "design", "tasks", "handoff"}
+
+// ArtifactFileName returns the fixed docs/-relative filename for kind, or ""
+// if kind is not a recognized Slice 1 artifact_kind.
+func ArtifactFileName(kind string) string {
+	return artifactFileNames[kind]
+}
 
 type ResourceRef struct {
 	URI      string `json:"uri"`
@@ -157,47 +178,74 @@ type UpstreamRef struct {
 	ArtifactKind string `json:"artifact_kind"`
 }
 
-// RevisionEnvelope represents an artifact revision stored at
-// artifacts/{kind}/rev-{NNNNNN}/envelope.json.
-type RevisionEnvelope struct {
-	SchemaVersion   string           `json:"schema_version"`
+// IdempotencyRecord binds a caller's stable intent key to the canonical
+// request projection and the first request that published it. It is embedded
+// both in VirgilConfig (for virgil.init) and in ActiveChange (for
+// virgil.new), and is intentionally the same shape as the durable idempotency
+// authority repo-docs used to keep in project.json/change.json.
+type IdempotencyRecord struct {
+	Key               string `json:"key"`
+	RequestDigest     string `json:"request_digest"`
+	OriginalRequestID string `json:"original_request_id"`
+}
+
+// ActiveChange is the single change repo-docs tracks per project, published
+// under VirgilConfig.ActiveChange. The flat docs/{NN}-{kind}.md layout has no
+// namespace for more than one concurrent change: git history — not a second
+// change directory — is where prior changes live once superseded.
+type ActiveChange struct {
+	ChangeID        string            `json:"change_id"`
+	Intention       string            `json:"intention"`
+	RunID           string            `json:"run_id"`
+	CreatedAt       string            `json:"created_at"`
+	Provenance      SourceProvenance  `json:"provenance"`
+	Idempotency     IdempotencyRecord `json:"idempotency"`
+	OriginalRequest OperationRequest  `json:"original_request"`
+	ResolvedContext Context           `json:"resolved_context"`
+}
+
+// VirgilConfig is the durable authority published as virgil.json at the
+// target root by virgil.init, and updated in place by virgil.new to carry
+// ActiveChange. It replaces project.json, events.jsonl and change.json: git
+// is the ledger, so repo-docs keeps exactly one control file plus the
+// artifact files themselves.
+type VirgilConfig struct {
+	Schema          string            `json:"$schema"`
+	SchemaVersion   string            `json:"schema_version"`
+	ProtocolVersion string            `json:"protocol_version"`
+	ProjectID       string            `json:"project_id"`
+	DogmaRef        DogmaRef          `json:"dogma_ref"`
+	Adapter         AdapterRef        `json:"adapter"`
+	ManagedRoot     string            `json:"managed_root"`
+	CreatedAt       string            `json:"created_at"`
+	CreatedBy       ActorRef          `json:"created_by"`
+	Idempotency     IdempotencyRecord `json:"idempotency"`
+	OriginalRequest OperationRequest  `json:"original_request"`
+	ResolvedContext Context           `json:"resolved_context"`
+	ActiveChange    *ActiveChange     `json:"active_change,omitempty"`
+}
+
+// ArtifactFrontmatter is the JSON frontmatter embedded between the leading
+// "---json" / "---" markers of every docs/{NN}-{kind}.md file. It replaces
+// the Slice 1 RevisionEnvelope: there is no separate envelope.json, and there
+// is no revision_lifecycle_event log, because the file itself — rewritten in
+// place through drafts, withdrawals and approval — is the durable authority.
+type ArtifactFrontmatter struct {
+	Schema          string           `json:"schema"`
 	ProtocolVersion string           `json:"protocol_version"`
-	RevisionID      string           `json:"revision_id"`
 	ArtifactKind    string           `json:"artifact_kind"`
 	ChangeID        string           `json:"change_id"`
 	ProjectID       string           `json:"project_id"`
-	State           string           `json:"state"`
+	Status          string           `json:"status"`
+	Revision        string           `json:"revision"`
 	UpstreamRefs    []UpstreamRef    `json:"upstream_refs"`
-	Content         ResourceRef      `json:"content"`
-	Provenance      SourceProvenance `json:"provenance"`
-	CreatedAt       string           `json:"created_at"`
+	ContentDigest   string           `json:"content_digest"`
 	IdempotencyKey  string           `json:"idempotency_key"`
 	RequestID       string           `json:"request_id"`
+	CreatedAt       string           `json:"created_at"`
+	Provenance      SourceProvenance `json:"provenance"`
 	ApprovedBy      *ActorRef        `json:"approved_by,omitempty"`
 	ApprovedAt      string           `json:"approved_at,omitempty"`
-}
-
-// RevisionLifecycleEvent is appended to changes/{change_id}/events.jsonl for
-// revision lifecycle transitions.
-type RevisionLifecycleEvent struct {
-	SchemaVersion   string   `json:"schema_version"`
-	ProtocolVersion string   `json:"protocol_version"`
-	Kind            string   `json:"kind"`
-	RevisionID      string   `json:"revision_id"`
-	ArtifactKind    string   `json:"artifact_kind"`
-	ChangeID        string   `json:"change_id"`
-	ProjectID       string   `json:"project_id"`
-	Operation       string   `json:"operation"`
-	RequestID       string   `json:"request_id"`
-	IdempotencyKey  string   `json:"idempotency_key"`
-	Actor           ActorRef `json:"actor"`
-	Timestamp       string   `json:"timestamp"`
-	RunRef          RunRef   `json:"run_ref"`
-	// Conditional fields.
-	ApprovedBy   *ActorRef `json:"approved_by,omitempty"`
-	Rationale    string    `json:"rationale,omitempty"`
-	Reason       string    `json:"reason,omitempty"`
-	SupersededBy string    `json:"superseded_by,omitempty"`
 }
 
 // ContextBrief is compiled context for a specific step, stored at

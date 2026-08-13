@@ -20,7 +20,6 @@ const (
 	manifestFile     = "manifest.json"
 	traceFile        = "trace.json"
 	runnerReportFile = "runner-report.json"
-	eventLogFile     = "events.jsonl"
 	projectStateFile = "project-state.json"
 
 	mediaJSON   = "application/json"
@@ -84,7 +83,9 @@ type Input struct {
 	FinalTargetDiffID string
 	FinalStoreDiffID  string
 
-	EventLog     []byte
+	// ProjectState carries the observed virgil.json bytes, when the fixture's
+	// operations produced one. It is empty for scenarios blocked before
+	// virgil.init ever publishes virgil.json.
 	ProjectState []byte
 }
 
@@ -105,7 +106,6 @@ type Layout struct {
 	Manifest     string
 	Trace        string
 	RunnerReport string
-	EventLog     string
 	ProjectState string
 }
 
@@ -165,7 +165,6 @@ func (publisher *Publisher) PlanLayout(bundleID string) (Layout, error) {
 		Manifest:     filepath.Join(root, manifestFile),
 		Trace:        filepath.Join(root, traceFile),
 		RunnerReport: filepath.Join(root, runnerReportFile),
-		EventLog:     filepath.Join(root, eventLogFile),
 		ProjectState: filepath.Join(root, projectStateFile),
 	}, nil
 }

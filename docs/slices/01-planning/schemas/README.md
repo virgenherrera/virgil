@@ -15,10 +15,10 @@ no requiere acceso de red a `schemas.virgil.dev`.
   estructurados de `virgil.init`, `virgil.new` y `virgil.continue`.
 - [`effect-record.schema.json`](effect-record.schema.json): decisión de policy
   y efecto realmente observado.
-- [`project-initialized-event.schema.json`](project-initialized-event.schema.json):
-  forma de **cada línea** de `events.jsonl` para el evento inicial de Slice 1.
-- [`project-state.schema.json`](project-state.schema.json): estado durable mínimo
-  de `project.json`, incluidas identidad resuelta e intención idempotente.
+- [`virgil-config.schema.json`](virgil-config.schema.json): forma de
+  `virgil.json`, el archivo de control del adapter en la raíz del target —
+  identidad del proyecto, `dogma_ref`, `managed_root` y, mientras existe, el
+  cambio activo (`active_change`).
 - [`operation-result.schema.json`](operation-result.schema.json): resultado
   correlacionable, recuperable y no dependiente de prosa.
 - [`scenario-fixture.schema.json`](scenario-fixture.schema.json): actor,
@@ -35,13 +35,13 @@ no requiere acceso de red a `schemas.virgil.dev`.
   entre dos snapshots del mismo root.
 - [`runner-observation-report.schema.json`](runner-observation-report.schema.json):
   procesos reales, checkpoints y checks calculados por el harness externo.
-- [`revision-envelope.schema.json`](revision-envelope.schema.json): forma de
-  `artifacts/{kind}/rev-{NNNNNN}/envelope.json`, incluida su transición
-  `draft → awaiting_approval → approved` y la referencia a revisiones upstream.
-- [`revision-lifecycle-event.schema.json`](revision-lifecycle-event.schema.json):
-  forma de cada línea de `changes/{change_id}/events.jsonl` para las
-  transiciones de una revisión (`revision_drafted`, `revision_submitted`,
-  `revision_approved`, `revision_withdrawn`, `revision_superseded`).
+- [`artifact-frontmatter.schema.json`](artifact-frontmatter.schema.json): forma
+  del bloque JSON de frontmatter (`---json` … `---`) al inicio de cada
+  `docs/{NN}-{kind}.md`, incluida su transición
+  `awaiting_approval → approved | withdrawn` y la referencia al artefacto
+  upstream. Reemplaza el envelope y el event log de revisión: el archivo
+  reescrito en su lugar es la única autoridad, y git conserva el historial de
+  redrafts.
 - [`context-brief.schema.json`](context-brief.schema.json): forma de
   `briefs/{brief_id}.json`, el contexto compilado y presupuestado para un paso
   concreto de `virgil.continue`.
@@ -109,8 +109,10 @@ Cada entry conserva `type`, `mode`, `size` y `sha256`. Para archivos regulares,
 `size` y `sha256` corresponden a sus bytes. Para symlinks, corresponden a los
 bytes exactos del link target devueltos por `readlink`: el harness **no sigue**
 el symlink. Los directorios se recorren pero no se enumeran: así el diff lógico
-de init conserva exactamente `project.json` y `events.jsonl`, sin convertir sus
-parents en writes. El check obligatorio `no_unexpected_nodes` falla ante un
+de init conserva exactamente `virgil.json`, sin convertir sus parents en
+writes. Como `virgil.json` vive fuera de `managed_root`, el diff scoped al
+store (`/docs`) de un init nunca lo observa: solo el diff del target completo
+lo hace. El check obligatorio `no_unexpected_nodes` falla ante un
 directorio temporal/huérfano o cualquier nodo no explicado. `mode` son siempre
 los cuatro dígitos octales de permisos; el tipo vive en `type`. Cada path
 aparece una sola vez. Estas invariantes son semánticas y el harness las
@@ -136,36 +138,32 @@ hashean dentro del bundle.
 
 ## Contenidos obligatorios del EvidenceBundle
 
-El bundle contiene exactamente un trace y un runner report, un event log, y al
-menos los snapshots y diffs target/store requeridos por la corrida. Las
-referencias top-level `trace`, `runner_report` y `diffs` deben coincidir por URI
-y digest con sus respectivos contents; cada snapshot/diff citado por el runner
-report también debe estar enumerado. `checks` y `outcome` del manifest deben
+El bundle contiene exactamente un trace y un runner report, y al menos los
+snapshots y diffs target/store requeridos por la corrida. Las referencias
+top-level `trace`, `runner_report` y `diffs` deben coincidir por URI y digest
+con sus respectivos contents; cada snapshot/diff citado por el runner report
+también debe estar enumerado. `checks` y `outcome` del manifest deben
 coincidir con el runner report; los target/store diffs top-level siempre son el
 intervalo `fixture_baseline` → último checkpoint. Para un init exitoso se
-incluye además un `project_state`. En un scenario bloqueado sin `project.json`,
-ese rol no se inventa. Estas correspondencias y la cardinalidad condicional por
-outcome son oráculos semánticos del harness.
+incluye además un `project_state` (los bytes observados de `virgil.json`). En
+un scenario bloqueado antes de que `virgil.json` exista, ese rol no se
+inventa. Estas correspondencias y la cardinalidad condicional por outcome son
+oráculos semánticos del harness.
 
 Los tres fixtures T0 declaran cero ArtifactEnvelope y cero ContextBrief, por eso
 el bundle v1alpha1 no admite roles opacos para ellos. Una slice que produzca
 esos objetos debe publicar primero su schema exacto y versionar/ampliar este
 contrato; no puede esconderlos como `check_output` o JSON arbitrario.
 
-`events.jsonl` se valida línea por línea contra
-`project-initialized-event.schema.json`; el archivo vacío del scenario bloqueado
-es válido como stream de cero records. Cada record conserva el digest JCS del
-request canónico, excluyendo únicamente `request_id`, y debe coincidir con el
-registro de idempotencia y con `original_request` de `project.json`. La copia
-completa del request es evidencia durable; el harness recalcula su digest y
-verifica identidad, referencias y request ID original, no confía en los campos
-resumen.
-
-En `project-state`, `state` es siempre `initialized`,
-`idempotency.original_request_id` coincide con `original_request.request_id` y
-`idempotency.request_digest` se recalcula desde ese request por JCS RFC 8785
-excluyendo únicamente `request_id`. `project_ref`, `resolved_context` y el
-evento deben resolver las mismas identidades; una discrepancia falla cerrado.
+`project_state`, cuando presente, se valida contra
+`virgil-config.schema.json` como un único documento JSON — ya no hay un log de
+eventos NDJSON que validar línea por línea. `virgil.json` conserva su propia
+copia completa de `original_request`, que es la evidencia durable: el harness
+recalcula su digest JCS RFC 8785 (excluyendo únicamente `request_id`) y lo
+compara contra `idempotency.request_digest`; `idempotency.original_request_id`
+debe coincidir con `original_request.request_id`. `resolved_context` debe
+resolver la misma identidad que `original_request` con el `canonical_path`
+real del target; una discrepancia falla cerrado.
 
 `field_equals` usa JSON Pointers absolutos como keys y escalares como valores.
 El harness compara cada pointer contra el objeto observado antes de aplicar los

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -298,7 +297,7 @@ func (runner *Runner) publishScenarioEvidence(
 		return wire.EvidenceReference{}, fmt.Errorf("encode runner observation report: %w", err)
 	}
 
-	eventLog, projectState, err := observedProjectAuthority(targetRoot, fixture.Definition.AdapterProfile.ArtifactStore.Namespace)
+	projectState, err := observedProjectAuthority(targetRoot)
 	if err != nil {
 		return wire.EvidenceReference{}, err
 	}
@@ -323,7 +322,6 @@ func (runner *Runner) publishScenarioEvidence(
 		Diffs:             sortedDocuments(documents.diffs),
 		FinalTargetDiffID: documents.finalTargetID,
 		FinalStoreDiffID:  documents.finalStoreID,
-		EventLog:          eventLog,
 		ProjectState:      projectState,
 	})
 }
@@ -702,25 +700,21 @@ func observedReportChecks(checks []wire.CheckResult) ([]reportCheckDocument, err
 	return result, nil
 }
 
-func observedProjectAuthority(targetRoot, namespace string) ([]byte, []byte, error) {
+// observedProjectAuthority reads virgil.json at the target root, if it
+// exists. virgil.json is the adapter's control file, not part of
+// managed_root, so it is read directly at the target root rather than under
+// the artifact store namespace.
+func observedProjectAuthority(targetRoot string) ([]byte, error) {
 	root, err := os.OpenRoot(targetRoot)
 	if err != nil {
-		return nil, nil, fmt.Errorf("open target root for authority observation: %w", err)
+		return nil, fmt.Errorf("open target root for authority observation: %w", err)
 	}
 	defer root.Close()
-	namespacePath := filepath.ToSlash(namespace)
-	events, eventFound, err := readObservedRegular(root, path.Join(namespacePath, protocol.RepoDocsEventsFile))
+	config, _, err := readObservedRegular(root, protocol.VirgilConfigFile)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	project, projectFound, err := readObservedRegular(root, path.Join(namespacePath, protocol.RepoDocsProjectFile))
-	if err != nil {
-		return nil, nil, err
-	}
-	if eventFound != projectFound {
-		return nil, nil, fmt.Errorf("observed project authority is partial")
-	}
-	return events, project, nil
+	return config, nil
 }
 
 func readObservedRegular(root *os.Root, name string) ([]byte, bool, error) {

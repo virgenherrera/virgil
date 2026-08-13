@@ -209,21 +209,21 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-init-oracle", Status: "failed", Detail: "happy init violated the durable operation oracle"})
 			return failScenario(scenario, "virgil_failure", "INIT_ORACLE_FAILED", err.Error())
 		}
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-init-oracle", Status: "passed", Detail: "init published exactly project.json, events.jsonl, and one project_initialized event"})
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-init-oracle", Status: "passed", Detail: "init published exactly virgil.json"})
 
 	case "t0-init-idempotent-retry":
 		if err := validateRetryScenario(runner.registry, targetRoot, executions); err != nil {
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "fresh-process-replay-oracle", Status: "failed", Detail: "fresh-process retry violated the durable replay oracle"})
 			return failScenario(scenario, "virgil_failure", "RETRY_ORACLE_FAILED", err.Error())
 		}
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "fresh-process-replay-oracle", Status: "passed", Detail: "process B replayed process A from durable state with zero writes and no duplicate event"})
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "fresh-process-replay-oracle", Status: "passed", Detail: "process B replayed process A from durable state with zero writes"})
 
 	case "t0-new-repo-docs-happy":
 		if err := validateNewHappyScenario(runner.registry, targetRoot, executions); err != nil {
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-new-oracle", Status: "failed", Detail: "init+new happy path violated the durable operation oracle"})
 			return failScenario(scenario, "virgil_failure", "NEW_ORACLE_FAILED", err.Error())
 		}
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-new-oracle", Status: "passed", Detail: "init published project authority and new published change authority with one change_created event"})
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-new-oracle", Status: "passed", Detail: "init published virgil.json and new rewrote it in place with active_change"})
 
 	case "t0-new-change-id-collision":
 		if err := validateNewCollisionScenario(runner.registry, targetRoot, executions); err != nil {
@@ -237,42 +237,42 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-continue-oracle", Status: "failed", Detail: "content proposal and approval happy path violated the durable operation oracle"})
 			return failScenario(scenario, "virgil_failure", "CONTINUE_ORACLE_FAILED", err.Error())
 		}
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-continue-oracle", Status: "passed", Detail: "content proposal drafted and submitted a revision, and approval advanced the derived step"})
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-continue-oracle", Status: "passed", Detail: "content proposal drafted docs/00-idea.md and approval advanced the derived step"})
 
 	case "t0-continue-request-changes":
 		if err := validateRequestChangesScenario(runner.registry, targetRoot, executions); err != nil {
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-request-changes-oracle", Status: "failed", Detail: "content proposal and request_changes path violated the durable operation oracle"})
 			return failScenario(scenario, "virgil_failure", "REQUEST_CHANGES_ORACLE_FAILED", err.Error())
 		}
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-request-changes-oracle", Status: "passed", Detail: "content proposal drafted and submitted a revision, and a request_changes approval withdrew it without advancing the derived step"})
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-request-changes-oracle", Status: "passed", Detail: "content proposal drafted docs/00-idea.md and a request_changes approval withdrew it without advancing the derived step"})
 
 	case "t0-continue-idempotent-retry":
 		if err := validateContinueIdempotentRetryScenario(runner.registry, targetRoot, executions); err != nil {
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-idempotent-retry-oracle", Status: "failed", Detail: "repeated content_proposal violated the durable replay oracle"})
 			return failScenario(scenario, "virgil_failure", "CONTINUE_RETRY_ORACLE_FAILED", err.Error())
 		}
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-idempotent-retry-oracle", Status: "passed", Detail: "the second content_proposal replayed the first revision with zero writes and no duplicate events"})
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-idempotent-retry-oracle", Status: "passed", Detail: "the second content_proposal replayed the first draft with zero writes"})
 
 	case "t0-continue-out-of-scope-write-blocked":
 		if err := validateContinueOutOfScopeWriteBlockedScenario(runner.registry, targetRoot, executions); err != nil {
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-out-of-scope-oracle", Status: "failed", Detail: "content_proposal escaping the managed root did not produce the expected blocked result"})
 			return failScenario(scenario, "virgil_failure", "CONTINUE_OUT_OF_SCOPE_ORACLE_FAILED", err.Error())
 		}
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-out-of-scope-oracle", Status: "passed", Detail: "content_proposal targeting a path outside the managed root was blocked without drafting a revision or producing any write"})
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-out-of-scope-oracle", Status: "passed", Detail: "content_proposal targeting a path outside the managed root was blocked without drafting a file or producing any write"})
 
 	case "t0-continue-handoff-complete":
 		if err := validateHandoffCompleteScenario(runner.registry, targetRoot, executions); err != nil {
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-handoff-complete-oracle", Status: "failed", Detail: "the full idea-through-handoff approval pipeline violated the durable operation oracle"})
 			return failScenario(scenario, "virgil_failure", "CONTINUE_HANDOFF_COMPLETE_ORACLE_FAILED", err.Error())
 		}
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-handoff-complete-oracle", Status: "passed", Detail: "all five artifact kinds were drafted, submitted, and approved in order, advancing derived_step to complete"})
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-handoff-complete-oracle", Status: "passed", Detail: "all five artifact files were drafted, approved in order, advancing derived_step to complete"})
 
 	case "t0-continue-recovery-fresh-process":
 		if err := validateRecoveryFreshProcessScenario(runner.registry, targetRoot, executions); err != nil {
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-recovery-fresh-process-oracle", Status: "failed", Detail: "a fresh process failed to recover derived state and continue the change durably"})
 			return failScenario(scenario, "virgil_failure", "CONTINUE_RECOVERY_FRESH_PROCESS_ORACLE_FAILED", err.Error())
 		}
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-recovery-fresh-process-oracle", Status: "passed", Detail: "a brand-new operating-system process with no in-memory state derived the approved idea step from durable storage and proposed the spec revision with the correct upstream_ref"})
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "continue-recovery-fresh-process-oracle", Status: "passed", Detail: "a brand-new operating-system process with no in-memory state derived the approved idea step from durable storage and proposed the spec file with the correct upstream_ref"})
 
 	default:
 		return failScenario(scenario, "fixture_failure", "FIXTURE_ORACLE_MISSING", "runner has no operational oracle for fixture")
@@ -301,10 +301,13 @@ type operationExecution struct {
 	Checkpoint checkpointCapture
 }
 
+// checkpointCapture is an independent, point-in-time observation of the
+// target root (unscoped) and the store (scoped to the artifact store
+// namespace, "docs"). repo-docs' own virgil.json lives outside that
+// namespace, so store-scoped diffs never include it; target-scoped diffs do.
 type checkpointCapture struct {
-	Target     map[string]snapshotEntry
-	Store      map[string]snapshotEntry
-	EventCount int
+	Target map[string]snapshotEntry
+	Store  map[string]snapshotEntry
 }
 
 func actorInvokeEnvelope(fixture contracts.Fixture, targetRoot string, clock wire.Clock, action protocol.ActorAction) wire.InvokeEnvelope {
@@ -342,11 +345,7 @@ func captureCheckpoint(targetRoot, namespace string) (checkpointCapture, error) 
 	if err != nil {
 		return checkpointCapture{}, err
 	}
-	eventCount, err := countProjectEvents(targetRoot, namespace)
-	if err != nil {
-		return checkpointCapture{}, err
-	}
-	return checkpointCapture{Target: target, Store: store, EventCount: eventCount}, nil
+	return checkpointCapture{Target: target, Store: store}, nil
 }
 
 func operationDecisionStep(fixture contracts.Fixture, requestID, processID string) (string, bool) {
@@ -443,18 +442,6 @@ func validateCheckpointCaptures(fixture contracts.Fixture, baseline checkpointCa
 		if err := validateSnapshotDiff(expectation.StoreDiff, reference.Store, execution.Checkpoint.Store); err != nil {
 			return fmt.Errorf("checkpoint %q store diff: %w", expectation.CheckpointID, err)
 		}
-		eventDelta := execution.Checkpoint.EventCount - reference.EventCount
-		if eventDelta < 0 {
-			return fmt.Errorf("checkpoint %q removed durable events", expectation.CheckpointID)
-		}
-		if len(expectation.ExpectedEvents) == 0 && eventDelta != 0 {
-			return fmt.Errorf("checkpoint %q published %d unexpected events", expectation.CheckpointID, eventDelta)
-		}
-		for _, expected := range expectation.ExpectedEvents {
-			if eventDelta < expected.MinCount || eventDelta > expected.MaxCount {
-				return fmt.Errorf("checkpoint %q event delta %d violates %s [%d,%d]", expectation.CheckpointID, eventDelta, expected.Kind, expected.MinCount, expected.MaxCount)
-			}
-		}
 		if len(expectation.ExpectedArtifacts) == 0 && len(execution.Child.Result.Artifacts) != 0 {
 			return fmt.Errorf("checkpoint %q referenced unexpected artifacts", expectation.CheckpointID)
 		}
@@ -516,33 +503,135 @@ func changedNonDirectoryEntries(before, after map[string]snapshotEntry) map[stri
 	return changes
 }
 
-func countProjectEvents(targetRoot, namespace string) (int, error) {
-	eventPath := filepath.Join(targetRoot, filepath.FromSlash(namespace), protocol.RepoDocsEventsFile)
-	info, err := os.Lstat(eventPath)
-	if errors.Is(err, fs.ErrNotExist) {
-		return 0, nil
+// ---------------------------------------------------------------------------
+// Result-shape oracles shared across scenarios
+// ---------------------------------------------------------------------------
+
+func validateFreshInitResult(request protocol.OperationRequest, result protocol.OperationResult, snapshot map[string]snapshotEntry, targetRoot string) error {
+	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil || result.DerivedStep != "idea" || result.Next.Operation != "virgil.new" {
+		return fmt.Errorf("virgil.init did not return the required fresh success result")
 	}
-	if err != nil || !info.Mode().IsRegular() {
-		return 0, fmt.Errorf("event log is not a regular file")
+	if len(result.Diagnostics) != 0 || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 1 {
+		return fmt.Errorf("fresh init result does not expose exactly one write and zero events")
 	}
-	content, err := os.ReadFile(eventPath)
+	resolvedTarget, err := filepath.EvalSymlinks(targetRoot)
 	if err != nil {
-		return 0, err
+		return fmt.Errorf("resolve explicit target binding: %w", err)
 	}
-	if len(content) == 0 || content[len(content)-1] != '\n' {
-		return 0, fmt.Errorf("event log is not newline terminated")
+	expectedContext := protocol.ContextFromRequest(request)
+	expectedContext.ProjectRef.Target.CanonicalPath = resolvedTarget
+	if !reflect.DeepEqual(*result.ResolvedContext, expectedContext) {
+		return fmt.Errorf("resolved_context does not preserve request refs with the real target binding path")
 	}
-	lines := bytes.Split(content[:len(content)-1], []byte{'\n'})
-	for _, line := range lines {
-		if len(line) == 0 {
-			return 0, fmt.Errorf("event log contains an empty record")
-		}
-		if err := wire.ValidateUnambiguousJSON(line); err != nil {
-			return 0, fmt.Errorf("event log contains ambiguous JSON: %w", err)
-		}
+	effect := result.Effects[0]
+	if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" || effect.RequestID != request.RequestID ||
+		effect.CausationID != request.RequestID || effect.Capability != "artifact_store.write" || effect.Observed == nil || effect.StateBefore != nil ||
+		effect.StateAfter == nil || !reflect.DeepEqual(*effect.StateAfter, effect.Resource) || effect.Resource.URI != protocol.VirgilConfigFile {
+		return fmt.Errorf("fresh init returned a non-authorized or incomplete write effect")
 	}
-	return len(lines), nil
+	entry, found := snapshot[protocol.VirgilConfigFile]
+	if !found || !entry.Mode.IsRegular() || entry.Digest != effect.Resource.Digest {
+		return fmt.Errorf("write effect does not match the observed virgil.json file")
+	}
+	return nil
 }
+
+func validateFreshNewResult(request protocol.OperationRequest, result protocol.OperationResult, targetRoot string) error {
+	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil || result.DerivedStep != "idea" || result.Next.Operation != "virgil.continue" {
+		return fmt.Errorf("virgil.new did not return the required fresh success result")
+	}
+	if len(result.Diagnostics) != 0 || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 1 {
+		return fmt.Errorf("fresh new result does not expose exactly one write and zero events")
+	}
+	resolvedTarget, err := filepath.EvalSymlinks(targetRoot)
+	if err != nil {
+		return fmt.Errorf("resolve explicit target binding: %w", err)
+	}
+	if result.ResolvedContext.RunRef == nil {
+		return fmt.Errorf("virgil.new resolved_context must include a RunRef")
+	}
+	expectedContext := protocol.ContextFromRequest(request)
+	expectedContext.ProjectRef.Target.CanonicalPath = resolvedTarget
+	expectedContext.RunRef = result.ResolvedContext.RunRef
+	if !reflect.DeepEqual(*result.ResolvedContext, expectedContext) {
+		return fmt.Errorf("resolved_context does not preserve request refs with the real target binding path and RunRef")
+	}
+	effect := result.Effects[0]
+	if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" || effect.Resource.URI != protocol.VirgilConfigFile {
+		return fmt.Errorf("fresh new did not report the required virgil.json rewrite effect")
+	}
+	return nil
+}
+
+// validatePublishedTree confirms the target root contains exactly
+// virgil.json — the only durable object virgil.init or virgil.new (without
+// an active change yet drafted) ever publishes.
+func validatePublishedTree(targetRoot string, snapshot map[string]snapshotEntry) error {
+	if len(snapshot) != 1 {
+		return fmt.Errorf("published target contains %d file/symlink entries, want exactly 1 (virgil.json)", len(snapshot))
+	}
+	entry, found := snapshot[protocol.VirgilConfigFile]
+	if !found || !entry.Mode.IsRegular() {
+		return fmt.Errorf("published target file virgil.json is missing or has the wrong kind")
+	}
+	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file"})
+}
+
+func validatePublishedAuthority(registry *contracts.Registry, targetRoot string, request protocol.OperationRequest, result protocol.OperationResult) error {
+	configPath := filepath.Join(targetRoot, protocol.VirgilConfigFile)
+	configBytes, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("read virgil.json: %w", err)
+	}
+	if err := registry.Validate(contracts.SchemaVirgilConfig, configBytes); err != nil {
+		return fmt.Errorf("virgil.json schema: %w", err)
+	}
+	var config struct {
+		ProjectID string `json:"project_id"`
+	}
+	if err := json.Unmarshal(configBytes, &config); err != nil {
+		return fmt.Errorf("decode virgil.json: %w", err)
+	}
+	if config.ProjectID != request.ProjectRef.ProjectID {
+		return fmt.Errorf("virgil.json project_id does not match the request")
+	}
+	if len(result.Events) != 0 {
+		return fmt.Errorf("OperationResult must not report durable events: git is the ledger")
+	}
+	return nil
+}
+
+func validatePublishedChangeAuthority(registry *contracts.Registry, targetRoot string, request protocol.OperationRequest, result protocol.OperationResult) error {
+	var input struct {
+		ChangeID string `json:"change_id"`
+	}
+	if err := json.Unmarshal(request.Input, &input); err != nil || input.ChangeID == "" {
+		return fmt.Errorf("new request input does not contain a valid change_id")
+	}
+	configBytes, err := os.ReadFile(filepath.Join(targetRoot, protocol.VirgilConfigFile))
+	if err != nil {
+		return fmt.Errorf("read virgil.json: %w", err)
+	}
+	if err := registry.Validate(contracts.SchemaVirgilConfig, configBytes); err != nil {
+		return fmt.Errorf("virgil.json schema: %w", err)
+	}
+	var config struct {
+		ActiveChange *struct {
+			ChangeID string `json:"change_id"`
+		} `json:"active_change"`
+	}
+	if err := json.Unmarshal(configBytes, &config); err != nil {
+		return fmt.Errorf("decode virgil.json: %w", err)
+	}
+	if config.ActiveChange == nil || config.ActiveChange.ChangeID != input.ChangeID {
+		return fmt.Errorf("virgil.json active_change does not match the new request")
+	}
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// Fixture-specific oracles
+// ---------------------------------------------------------------------------
 
 func validateHappyScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
 	if len(executions) != 1 || executions[0].Action.Kind != "invoke" {
@@ -552,16 +641,10 @@ func validateHappyScenario(registry *contracts.Registry, targetRoot string, exec
 	if err := validateFreshInitResult(execution.Request, execution.Child.Result, execution.Checkpoint.Target, targetRoot); err != nil {
 		return err
 	}
-	if err := validatePublishedTree(targetRoot, execution.Request.ArtifactStoreRef.Namespace, execution.Checkpoint.Target); err != nil {
+	if err := validatePublishedTree(targetRoot, execution.Checkpoint.Target); err != nil {
 		return err
 	}
-	if err := validatePublishedAuthority(registry, targetRoot, execution.Request, execution.Child.Result); err != nil {
-		return err
-	}
-	if execution.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("happy init published %d durable events, want one", execution.Checkpoint.EventCount)
-	}
-	return nil
+	return validatePublishedAuthority(registry, targetRoot, execution.Request, execution.Child.Result)
 }
 
 func validateRetryScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
@@ -575,7 +658,7 @@ func validateRetryScenario(registry *contracts.Registry, targetRoot string, exec
 	if err := validateFreshInitResult(first.Request, first.Child.Result, first.Checkpoint.Target, targetRoot); err != nil {
 		return fmt.Errorf("process A: %w", err)
 	}
-	if err := validatePublishedTree(targetRoot, first.Request.ArtifactStoreRef.Namespace, first.Checkpoint.Target); err != nil {
+	if err := validatePublishedTree(targetRoot, first.Checkpoint.Target); err != nil {
 		return fmt.Errorf("process A: %w", err)
 	}
 	if err := validatePublishedAuthority(registry, targetRoot, first.Request, first.Child.Result); err != nil {
@@ -586,19 +669,15 @@ func validateRetryScenario(registry *contracts.Registry, targetRoot string, exec
 		result.Next.Operation != "virgil.new" || len(result.Diagnostics) != 0 || len(result.Effects) != 0 {
 		return fmt.Errorf("process B did not return a successful zero-write replay of process A")
 	}
-	if result.ResolvedContext == nil || result.DerivedStep != "idea" || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 1 {
+	if result.ResolvedContext == nil || result.DerivedStep != "idea" || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 0 {
 		return fmt.Errorf("process B replay result is incomplete")
 	}
-	if !reflect.DeepEqual(first.Child.Result.Events, result.Events) ||
-		!reflect.DeepEqual(first.Child.Result.ResolvedContext, result.ResolvedContext) ||
+	if !reflect.DeepEqual(first.Child.Result.ResolvedContext, result.ResolvedContext) ||
 		!reflect.DeepEqual(first.Child.Result.Next, result.Next) {
 		return fmt.Errorf("process B did not recover the durable semantic result from process A")
 	}
 	if !reflect.DeepEqual(first.Checkpoint.Target, replay.Checkpoint.Target) || !reflect.DeepEqual(first.Checkpoint.Store, replay.Checkpoint.Store) {
 		return fmt.Errorf("process B changed target or store during replay")
-	}
-	if replay.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("retry left %d durable events, want exactly one", replay.Checkpoint.EventCount)
 	}
 	return nil
 }
@@ -612,14 +691,11 @@ func validateNewHappyScenario(registry *contracts.Registry, targetRoot string, e
 	if err := validateFreshInitResult(initExec.Request, initExec.Child.Result, initExec.Checkpoint.Target, targetRoot); err != nil {
 		return fmt.Errorf("init phase: %w", err)
 	}
-	if err := validatePublishedTree(targetRoot, initExec.Request.ArtifactStoreRef.Namespace, initExec.Checkpoint.Target); err != nil {
+	if err := validatePublishedTree(targetRoot, initExec.Checkpoint.Target); err != nil {
 		return fmt.Errorf("init phase: %w", err)
 	}
 	if err := validatePublishedAuthority(registry, targetRoot, initExec.Request, initExec.Child.Result); err != nil {
 		return fmt.Errorf("init phase: %w", err)
-	}
-	if initExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("init published %d project events, want one", initExec.Checkpoint.EventCount)
 	}
 
 	if err := validateFreshNewResult(newExec.Request, newExec.Child.Result, targetRoot); err != nil {
@@ -627,9 +703,6 @@ func validateNewHappyScenario(registry *contracts.Registry, targetRoot string, e
 	}
 	if err := validatePublishedChangeAuthority(registry, targetRoot, newExec.Request, newExec.Child.Result); err != nil {
 		return fmt.Errorf("new phase: %w", err)
-	}
-	if newExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("new phase changed project event count to %d, want 1", newExec.Checkpoint.EventCount)
 	}
 
 	var input struct {
@@ -639,7 +712,8 @@ func validateNewHappyScenario(registry *contracts.Registry, targetRoot string, e
 		return fmt.Errorf("new request input does not contain a valid change_id")
 	}
 
-	return validateNoUnexpectedNodesWithChanges(targetRoot, newExec.Request.ArtifactStoreRef.Namespace, []string{input.ChangeID})
+	// virgil.new only rewrites virgil.json in place: no artifact file exists yet.
+	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file"})
 }
 
 func validateNewCollisionScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
@@ -651,11 +725,8 @@ func validateNewCollisionScenario(registry *contracts.Registry, targetRoot strin
 	if err := validateFreshInitResult(initExec.Request, initExec.Child.Result, initExec.Checkpoint.Target, targetRoot); err != nil {
 		return fmt.Errorf("init phase: %w", err)
 	}
-	if err := validatePublishedTree(targetRoot, initExec.Request.ArtifactStoreRef.Namespace, initExec.Checkpoint.Target); err != nil {
+	if err := validatePublishedTree(targetRoot, initExec.Checkpoint.Target); err != nil {
 		return fmt.Errorf("init phase: %w", err)
-	}
-	if initExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("init published %d project events, want one", initExec.Checkpoint.EventCount)
 	}
 
 	if err := validateFreshNewResult(firstNew.Request, firstNew.Child.Result, targetRoot); err != nil {
@@ -694,19 +765,13 @@ func validateNewCollisionScenario(registry *contracts.Registry, targetRoot strin
 		return fmt.Errorf("first new request input does not contain a valid change_id")
 	}
 
-	return validateNoUnexpectedNodesWithChanges(targetRoot, firstNew.Request.ArtifactStoreRef.Namespace, []string{input.ChangeID})
+	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file"})
 }
 
 // validateContinueOutOfScopeWriteBlockedScenario proves that a
 // content_proposal whose content.uri attempts to escape the managed target
 // root (a path traversal like "../outside-target.md") is rejected before any
-// revision is drafted or any durable write occurs. repo-docs rejects the
-// unsafe relative path deep inside handleContentProposal — via
-// safeRelativeResourcePath — before os.Root.ReadFile is ever attempted, so
-// the resulting OperationResult carries zero effects. This differs from the
-// namespace-level STORE_POLICY_VIOLATION in t0-init-unmanaged-write-blocked,
-// which is caught earlier at the dispatch layer (before the repo-docs
-// adapter runs at all) and reports one explicit denied write effect.
+// artifact file is drafted or any durable write occurs.
 func validateContinueOutOfScopeWriteBlockedScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
 	if len(executions) != 3 ||
 		executions[0].Action.Kind != "invoke" || executions[1].Action.Kind != "invoke" || executions[2].Action.Kind != "invoke" {
@@ -717,14 +782,8 @@ func validateContinueOutOfScopeWriteBlockedScenario(registry *contracts.Registry
 	if err := validateFreshInitResult(initExec.Request, initExec.Child.Result, initExec.Checkpoint.Target, targetRoot); err != nil {
 		return fmt.Errorf("init phase: %w", err)
 	}
-	if err := validatePublishedTree(targetRoot, initExec.Request.ArtifactStoreRef.Namespace, initExec.Checkpoint.Target); err != nil {
-		return fmt.Errorf("init phase: %w", err)
-	}
 	if err := validatePublishedAuthority(registry, targetRoot, initExec.Request, initExec.Child.Result); err != nil {
 		return fmt.Errorf("init phase: %w", err)
-	}
-	if initExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("init published %d project events, want one", initExec.Checkpoint.EventCount)
 	}
 
 	if err := validateFreshNewResult(newExec.Request, newExec.Child.Result, targetRoot); err != nil {
@@ -732,9 +791,6 @@ func validateContinueOutOfScopeWriteBlockedScenario(registry *contracts.Registry
 	}
 	if err := validatePublishedChangeAuthority(registry, targetRoot, newExec.Request, newExec.Child.Result); err != nil {
 		return fmt.Errorf("new phase: %w", err)
-	}
-	if newExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("new phase changed project event count to %d, want 1", newExec.Checkpoint.EventCount)
 	}
 
 	var newInput struct {
@@ -767,27 +823,20 @@ func validateContinueOutOfScopeWriteBlockedScenario(registry *contracts.Registry
 	if !reflect.DeepEqual(newExec.Checkpoint.Store, continueExec.Checkpoint.Store) {
 		return fmt.Errorf("out-of-scope content_proposal changed the store")
 	}
-	if continueExec.Checkpoint.EventCount != newExec.Checkpoint.EventCount {
-		return fmt.Errorf("out-of-scope content_proposal changed the durable project event count")
+
+	if _, err := os.Lstat(filepath.Join(targetRoot, "docs")); !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("out-of-scope content_proposal must not create docs/")
 	}
 
-	namespace := newExec.Request.ArtifactStoreRef.Namespace
-	changePath := filepath.Join(targetRoot, filepath.FromSlash(pathJoin(namespace, "changes", newInput.ChangeID)))
-	if _, err := os.Lstat(filepath.Join(changePath, "artifacts")); !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("out-of-scope content_proposal must not create an artifacts directory")
-	}
+	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file"})
+}
 
-	changeEventsPath := filepath.Join(changePath, protocol.RepoDocsEventsFile)
-	eventBytes, err := os.ReadFile(changeEventsPath)
-	if err != nil {
-		return fmt.Errorf("read change event log: %w", err)
-	}
-	lines := bytes.Split(bytes.TrimSpace(eventBytes), []byte{'\n'})
-	if len(lines) != 1 {
-		return fmt.Errorf("change event log has %d lines, want exactly 1 (change_created) — the blocked proposal must not append lifecycle events", len(lines))
-	}
+func validateContentProposalResult(request protocol.OperationRequest, result protocol.OperationResult) error {
+	return validateContentProposalResultForStep(request, result, "idea")
+}
 
-	return validateNoUnexpectedNodesWithChanges(targetRoot, namespace, []string{newInput.ChangeID})
+func validateApprovalResult(request protocol.OperationRequest, result protocol.OperationResult) error {
+	return validateApprovalResultForStep(request, result, "idea", "spec", "virgil.continue")
 }
 
 func validateContinueHappyScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
@@ -804,21 +853,9 @@ func validateContinueHappyScenario(registry *contracts.Registry, targetRoot stri
 	if err := validatePublishedAuthority(registry, targetRoot, initExec.Request, initExec.Child.Result); err != nil {
 		return fmt.Errorf("init phase: %w", err)
 	}
-	if initExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("init published %d project events, want one", initExec.Checkpoint.EventCount)
-	}
 
 	if err := validateFreshNewResult(newExec.Request, newExec.Child.Result, targetRoot); err != nil {
 		return fmt.Errorf("new phase: %w", err)
-	}
-	// validatePublishedChangeAuthority is not reusable here: it requires the
-	// change's events.jsonl to contain exactly one line, which only holds
-	// immediately after virgil.new. By the time this whole-scenario oracle
-	// runs, virgil.continue has already appended revision lifecycle events to
-	// that same file, so change.json and the change_created line are instead
-	// schema-validated individually further below.
-	if newExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("new phase changed project event count to %d, want 1", newExec.Checkpoint.EventCount)
 	}
 
 	var newInput struct {
@@ -831,143 +868,26 @@ func validateContinueHappyScenario(registry *contracts.Registry, targetRoot stri
 	if err := validateContentProposalResult(proposalExec.Request, proposalExec.Child.Result); err != nil {
 		return fmt.Errorf("content_proposal phase: %w", err)
 	}
-	if proposalExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("content_proposal phase changed project event count to %d, want 1", proposalExec.Checkpoint.EventCount)
-	}
-
 	if err := validateApprovalResult(approvalExec.Request, approvalExec.Child.Result); err != nil {
 		return fmt.Errorf("approval phase: %w", err)
 	}
-	if approvalExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("approval phase changed project event count to %d, want 1", approvalExec.Checkpoint.EventCount)
+
+	if err := validateArtifactFile(registry, targetRoot, "idea", "rev-000001", statusApproved, true); err != nil {
+		return err
 	}
 
-	namespace := newExec.Request.ArtifactStoreRef.Namespace
-	changePath := filepath.Join(targetRoot, filepath.FromSlash(pathJoin(namespace, "changes", newInput.ChangeID)))
-	changeStateBytes, err := os.ReadFile(filepath.Join(changePath, protocol.RepoDocsChangeFile))
-	if err != nil {
-		return fmt.Errorf("read change authority: %w", err)
+	var proposeInput struct {
+		Entry struct {
+			Content struct {
+				URI string `json:"uri"`
+			} `json:"content"`
+		} `json:"entry"`
 	}
-	if err := registry.Validate(contracts.SchemaChangeState, changeStateBytes); err != nil {
-		return fmt.Errorf("change state violates schema: %w", err)
-	}
-
-	revisionRelative := pathJoin(namespace, "changes", newInput.ChangeID, "artifacts", "idea", "rev-000001")
-	revisionPath := filepath.Join(targetRoot, filepath.FromSlash(revisionRelative))
-	envelopeBytes, err := os.ReadFile(filepath.Join(revisionPath, "envelope.json"))
-	if err != nil {
-		return fmt.Errorf("read revision envelope: %w", err)
-	}
-	if err := registry.Validate(contracts.SchemaRevisionEnvelope, envelopeBytes); err != nil {
-		return fmt.Errorf("revision envelope schema: %w", err)
-	}
-	var envelope struct {
-		RevisionID string `json:"revision_id"`
-		State      string `json:"state"`
-		ApprovedBy *struct {
-			ActorID string `json:"actor_id"`
-		} `json:"approved_by"`
-		ApprovedAt string `json:"approved_at"`
-		Content    struct {
-			URI    string `json:"uri"`
-			Digest string `json:"digest"`
-		} `json:"content"`
-	}
-	if err := json.Unmarshal(envelopeBytes, &envelope); err != nil {
-		return fmt.Errorf("decode revision envelope: %w", err)
-	}
-	if envelope.RevisionID != "rev-000001" || envelope.State != "approved" || envelope.ApprovedBy == nil || envelope.ApprovedBy.ActorID == "" || envelope.ApprovedAt == "" {
-		return fmt.Errorf("revision envelope is not durably approved")
+	if err := json.Unmarshal(proposalExec.Request.Input, &proposeInput); err != nil || proposeInput.Entry.Content.URI == "" {
+		return fmt.Errorf("content_proposal request input does not contain a valid content uri")
 	}
 
-	contentBytes, err := os.ReadFile(filepath.Join(revisionPath, "content.md"))
-	if err != nil {
-		return fmt.Errorf("read revision content: %w", err)
-	}
-	if wantDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(contentBytes)); envelope.Content.Digest != wantDigest {
-		return fmt.Errorf("revision content digest does not match the durable envelope")
-	}
-
-	changeEventsPath := filepath.Join(targetRoot, filepath.FromSlash(pathJoin(namespace, "changes", newInput.ChangeID, protocol.RepoDocsEventsFile)))
-	eventBytes, err := os.ReadFile(changeEventsPath)
-	if err != nil {
-		return fmt.Errorf("read change event log: %w", err)
-	}
-	if len(eventBytes) == 0 || eventBytes[len(eventBytes)-1] != '\n' {
-		return fmt.Errorf("change event log is not newline terminated")
-	}
-	lines := bytes.Split(bytes.TrimSpace(eventBytes), []byte{'\n'})
-	wantKinds := []string{"change_created", "revision_drafted", "revision_submitted", "revision_approved"}
-	if len(lines) != len(wantKinds) {
-		return fmt.Errorf("change event log has %d lines, want %d (created, drafted, submitted, approved)", len(lines), len(wantKinds))
-	}
-	for index, line := range lines {
-		if index == 0 {
-			if err := registry.Validate(contracts.SchemaChangeCreated, line); err != nil {
-				return fmt.Errorf("change_created event violates schema: %w", err)
-			}
-		} else if err := registry.Validate(contracts.SchemaRevisionLifecycleEvent, line); err != nil {
-			return fmt.Errorf("revision lifecycle event %d violates schema: %w", index, err)
-		}
-		var probe struct {
-			Kind         string `json:"kind"`
-			RevisionID   string `json:"revision_id"`
-			ArtifactKind string `json:"artifact_kind"`
-		}
-		if err := json.Unmarshal(line, &probe); err != nil {
-			return fmt.Errorf("decode change event %d: %w", index, err)
-		}
-		if probe.Kind != wantKinds[index] {
-			return fmt.Errorf("change event %d has kind %q, want %q", index, probe.Kind, wantKinds[index])
-		}
-		if index > 0 && (probe.RevisionID != "rev-000001" || probe.ArtifactKind != "idea") {
-			return fmt.Errorf("change event %d does not correlate to the drafted idea revision", index)
-		}
-	}
-
-	return validateContinueHappyTree(targetRoot, namespace, newInput.ChangeID, "idea", "rev-000001", "seed/idea-proposal.md")
-}
-
-func validateContentProposalResult(request protocol.OperationRequest, result protocol.OperationResult) error {
-	if result.Status != "needs_input" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil ||
-		result.DerivedStep != "idea" || result.Next.Operation != "virgil.continue" {
-		return fmt.Errorf("content_proposal did not return the required needs_input result")
-	}
-	if len(result.Artifacts) != 1 || result.Artifacts[0].Kind != "revision" || result.Artifacts[0].ObjectID != "rev-000001" {
-		return fmt.Errorf("content_proposal result does not reference the drafted revision")
-	}
-	if len(result.Briefs) != 0 || len(result.Events) != 2 || len(result.Effects) != 3 {
-		return fmt.Errorf("content_proposal result does not expose exactly two events and three writes")
-	}
-	if len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != "APPROVAL_REQUIRED" || result.Diagnostics[0].Severity != "info" {
-		return fmt.Errorf("content_proposal result does not carry the approval-required diagnostic")
-	}
-	for _, effect := range result.Effects {
-		if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" ||
-			effect.RequestID != request.RequestID || effect.CausationID != request.RequestID {
-			return fmt.Errorf("content_proposal effect is not an authorized write correlated to the request")
-		}
-	}
-	return nil
-}
-
-func validateApprovalResult(request protocol.OperationRequest, result protocol.OperationResult) error {
-	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil ||
-		result.DerivedStep != "spec" || result.Next.Operation != "virgil.continue" {
-		return fmt.Errorf("approval did not return the required success result advancing the derived step")
-	}
-	if len(result.Artifacts) != 1 || result.Artifacts[0].Kind != "revision" || result.Artifacts[0].ObjectID != "rev-000001" {
-		return fmt.Errorf("approval result does not reference the approved revision")
-	}
-	if len(result.Briefs) != 0 || len(result.Events) != 1 || len(result.Effects) != 1 || len(result.Diagnostics) != 0 {
-		return fmt.Errorf("approval result does not expose exactly one event and one write")
-	}
-	effect := result.Effects[0]
-	if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" ||
-		effect.RequestID != request.RequestID || effect.CausationID != request.RequestID {
-		return fmt.Errorf("approval effect is not an authorized write correlated to the request")
-	}
-	return nil
+	return validateWholeTree(targetRoot, []artifactExpectation{{Kind: "idea", Status: statusApproved}}, []string{proposeInput.Entry.Content.URI})
 }
 
 func validateRequestChangesScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
@@ -981,24 +901,8 @@ func validateRequestChangesScenario(registry *contracts.Registry, targetRoot str
 	if err := validateFreshInitResult(initExec.Request, initExec.Child.Result, initExec.Checkpoint.Target, targetRoot); err != nil {
 		return fmt.Errorf("init phase: %w", err)
 	}
-	if err := validatePublishedAuthority(registry, targetRoot, initExec.Request, initExec.Child.Result); err != nil {
-		return fmt.Errorf("init phase: %w", err)
-	}
-	if initExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("init published %d project events, want one", initExec.Checkpoint.EventCount)
-	}
-
 	if err := validateFreshNewResult(newExec.Request, newExec.Child.Result, targetRoot); err != nil {
 		return fmt.Errorf("new phase: %w", err)
-	}
-	// validatePublishedChangeAuthority is not reusable here: it requires the
-	// change's events.jsonl to contain exactly one line, which only holds
-	// immediately after virgil.new. By the time this whole-scenario oracle
-	// runs, virgil.continue has already appended revision lifecycle events to
-	// that same file, so change.json and the change_created line are instead
-	// schema-validated individually further below.
-	if newExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("new phase changed project event count to %d, want 1", newExec.Checkpoint.EventCount)
 	}
 
 	var newInput struct {
@@ -1011,97 +915,26 @@ func validateRequestChangesScenario(registry *contracts.Registry, targetRoot str
 	if err := validateContentProposalResult(proposalExec.Request, proposalExec.Child.Result); err != nil {
 		return fmt.Errorf("content_proposal phase: %w", err)
 	}
-	if proposalExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("content_proposal phase changed project event count to %d, want 1", proposalExec.Checkpoint.EventCount)
-	}
-
 	if err := validateRequestChangesResult(requestChangesExec.Request, requestChangesExec.Child.Result); err != nil {
 		return fmt.Errorf("request_changes phase: %w", err)
 	}
-	if requestChangesExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("request_changes phase changed project event count to %d, want 1", requestChangesExec.Checkpoint.EventCount)
+
+	if err := validateArtifactFile(registry, targetRoot, "idea", "rev-000001", statusWithdrawn, false); err != nil {
+		return err
 	}
 
-	namespace := newExec.Request.ArtifactStoreRef.Namespace
-	changePath := filepath.Join(targetRoot, filepath.FromSlash(pathJoin(namespace, "changes", newInput.ChangeID)))
-	changeStateBytes, err := os.ReadFile(filepath.Join(changePath, protocol.RepoDocsChangeFile))
-	if err != nil {
-		return fmt.Errorf("read change authority: %w", err)
+	var proposeInput struct {
+		Entry struct {
+			Content struct {
+				URI string `json:"uri"`
+			} `json:"content"`
+		} `json:"entry"`
 	}
-	if err := registry.Validate(contracts.SchemaChangeState, changeStateBytes); err != nil {
-		return fmt.Errorf("change state violates schema: %w", err)
-	}
-
-	revisionRelative := pathJoin(namespace, "changes", newInput.ChangeID, "artifacts", "idea", "rev-000001")
-	revisionPath := filepath.Join(targetRoot, filepath.FromSlash(revisionRelative))
-	envelopeBytes, err := os.ReadFile(filepath.Join(revisionPath, "envelope.json"))
-	if err != nil {
-		return fmt.Errorf("read revision envelope: %w", err)
-	}
-	if err := registry.Validate(contracts.SchemaRevisionEnvelope, envelopeBytes); err != nil {
-		return fmt.Errorf("revision envelope schema: %w", err)
-	}
-	var envelope struct {
-		RevisionID string `json:"revision_id"`
-		State      string `json:"state"`
-		Content    struct {
-			URI    string `json:"uri"`
-			Digest string `json:"digest"`
-		} `json:"content"`
-	}
-	if err := json.Unmarshal(envelopeBytes, &envelope); err != nil {
-		return fmt.Errorf("decode revision envelope: %w", err)
-	}
-	if envelope.RevisionID != "rev-000001" || envelope.State != "withdrawn" {
-		return fmt.Errorf("revision envelope is not durably withdrawn")
+	if err := json.Unmarshal(proposalExec.Request.Input, &proposeInput); err != nil || proposeInput.Entry.Content.URI == "" {
+		return fmt.Errorf("content_proposal request input does not contain a valid content uri")
 	}
 
-	contentBytes, err := os.ReadFile(filepath.Join(revisionPath, "content.md"))
-	if err != nil {
-		return fmt.Errorf("read revision content: %w", err)
-	}
-	if wantDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(contentBytes)); envelope.Content.Digest != wantDigest {
-		return fmt.Errorf("revision content digest does not match the durable envelope")
-	}
-
-	changeEventsPath := filepath.Join(targetRoot, filepath.FromSlash(pathJoin(namespace, "changes", newInput.ChangeID, protocol.RepoDocsEventsFile)))
-	eventBytes, err := os.ReadFile(changeEventsPath)
-	if err != nil {
-		return fmt.Errorf("read change event log: %w", err)
-	}
-	if len(eventBytes) == 0 || eventBytes[len(eventBytes)-1] != '\n' {
-		return fmt.Errorf("change event log is not newline terminated")
-	}
-	lines := bytes.Split(bytes.TrimSpace(eventBytes), []byte{'\n'})
-	wantKinds := []string{"change_created", "revision_drafted", "revision_submitted", "revision_withdrawn"}
-	if len(lines) != len(wantKinds) {
-		return fmt.Errorf("change event log has %d lines, want %d (created, drafted, submitted, withdrawn)", len(lines), len(wantKinds))
-	}
-	for index, line := range lines {
-		if index == 0 {
-			if err := registry.Validate(contracts.SchemaChangeCreated, line); err != nil {
-				return fmt.Errorf("change_created event violates schema: %w", err)
-			}
-		} else if err := registry.Validate(contracts.SchemaRevisionLifecycleEvent, line); err != nil {
-			return fmt.Errorf("revision lifecycle event %d violates schema: %w", index, err)
-		}
-		var probe struct {
-			Kind         string `json:"kind"`
-			RevisionID   string `json:"revision_id"`
-			ArtifactKind string `json:"artifact_kind"`
-		}
-		if err := json.Unmarshal(line, &probe); err != nil {
-			return fmt.Errorf("decode change event %d: %w", index, err)
-		}
-		if probe.Kind != wantKinds[index] {
-			return fmt.Errorf("change event %d has kind %q, want %q", index, probe.Kind, wantKinds[index])
-		}
-		if index > 0 && (probe.RevisionID != "rev-000001" || probe.ArtifactKind != "idea") {
-			return fmt.Errorf("change event %d does not correlate to the drafted idea revision", index)
-		}
-	}
-
-	return validateContinueHappyTree(targetRoot, namespace, newInput.ChangeID, "idea", "rev-000001", "seed/idea-proposal.md")
+	return validateWholeTree(targetRoot, []artifactExpectation{{Kind: "idea", Status: statusWithdrawn}}, []string{proposeInput.Entry.Content.URI})
 }
 
 func validateRequestChangesResult(request protocol.OperationRequest, result protocol.OperationResult) error {
@@ -1112,8 +945,8 @@ func validateRequestChangesResult(request protocol.OperationRequest, result prot
 	if len(result.Artifacts) != 1 || result.Artifacts[0].Kind != "revision" || result.Artifacts[0].ObjectID != "rev-000001" {
 		return fmt.Errorf("request_changes result does not reference the withdrawn revision")
 	}
-	if len(result.Briefs) != 0 || len(result.Events) != 1 || len(result.Effects) != 1 {
-		return fmt.Errorf("request_changes result does not expose exactly one event and one write")
+	if len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 1 {
+		return fmt.Errorf("request_changes result does not expose exactly one write and zero events")
 	}
 	if len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != "REVISION_WITHDRAWN" || result.Diagnostics[0].Severity != "info" {
 		return fmt.Errorf("request_changes result does not carry the revision-withdrawn diagnostic")
@@ -1128,9 +961,7 @@ func validateRequestChangesResult(request protocol.OperationRequest, result prot
 
 // validateContinueIdempotentRetryScenario proves that sending the same
 // content_proposal twice — same idempotency_key, same content digest,
-// distinct request_id — is a durable no-op the second time: the reply must
-// be recognized as a replay of the first request, and neither the revision
-// directory nor the change event log may grow.
+// distinct request_id — is a durable no-op the second time.
 func validateContinueIdempotentRetryScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
 	if len(executions) != 4 ||
 		executions[0].Action.Kind != "invoke" || executions[1].Action.Kind != "invoke" ||
@@ -1142,18 +973,8 @@ func validateContinueIdempotentRetryScenario(registry *contracts.Registry, targe
 	if err := validateFreshInitResult(initExec.Request, initExec.Child.Result, initExec.Checkpoint.Target, targetRoot); err != nil {
 		return fmt.Errorf("init phase: %w", err)
 	}
-	if err := validatePublishedAuthority(registry, targetRoot, initExec.Request, initExec.Child.Result); err != nil {
-		return fmt.Errorf("init phase: %w", err)
-	}
-	if initExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("init published %d project events, want one", initExec.Checkpoint.EventCount)
-	}
-
 	if err := validateFreshNewResult(newExec.Request, newExec.Child.Result, targetRoot); err != nil {
 		return fmt.Errorf("new phase: %w", err)
-	}
-	if newExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("new phase changed project event count to %d, want 1", newExec.Checkpoint.EventCount)
 	}
 
 	var newInput struct {
@@ -1166,18 +987,12 @@ func validateContinueIdempotentRetryScenario(registry *contracts.Registry, targe
 	if err := validateContentProposalResult(firstExec.Request, firstExec.Child.Result); err != nil {
 		return fmt.Errorf("first content_proposal phase: %w", err)
 	}
-	if firstExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("first content_proposal phase changed project event count to %d, want 1", firstExec.Checkpoint.EventCount)
-	}
 
 	if firstExec.Request.IdempotencyKey != retryExec.Request.IdempotencyKey || firstExec.Request.RequestID == retryExec.Request.RequestID {
 		return fmt.Errorf("retry content_proposal did not reuse the idempotency_key with a distinct request_id")
 	}
 	if err := validateContentProposalReplayResult(retryExec.Request, retryExec.Child.Result, firstExec.Request.RequestID); err != nil {
 		return fmt.Errorf("retry content_proposal phase: %w", err)
-	}
-	if retryExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("retry content_proposal phase changed project event count to %d, want 1", retryExec.Checkpoint.EventCount)
 	}
 	if !reflect.DeepEqual(firstExec.Checkpoint.Target, retryExec.Checkpoint.Target) || !reflect.DeepEqual(firstExec.Checkpoint.Store, retryExec.Checkpoint.Store) {
 		return fmt.Errorf("retry content_proposal changed target or store despite being a durable replay")
@@ -1186,64 +1001,24 @@ func validateContinueIdempotentRetryScenario(registry *contracts.Registry, targe
 		return fmt.Errorf("retry content_proposal did not reference the same durable revision as the first proposal")
 	}
 
-	namespace := newExec.Request.ArtifactStoreRef.Namespace
-	changePath := filepath.Join(targetRoot, filepath.FromSlash(pathJoin(namespace, "changes", newInput.ChangeID)))
-
-	revisionsRoot := filepath.Join(changePath, "artifacts", "idea")
-	revisionEntries, err := os.ReadDir(revisionsRoot)
-	if err != nil {
-		return fmt.Errorf("read revision directory: %w", err)
-	}
-	if len(revisionEntries) != 1 || revisionEntries[0].Name() != "rev-000001" {
-		return fmt.Errorf("idempotent retry left %d revision directories, want exactly rev-000001", len(revisionEntries))
+	if err := validateArtifactFile(registry, targetRoot, "idea", "rev-000001", statusAwaitingApproval, false); err != nil {
+		return err
 	}
 
-	changeEventsPath := filepath.Join(changePath, protocol.RepoDocsEventsFile)
-	eventBytes, err := os.ReadFile(changeEventsPath)
-	if err != nil {
-		return fmt.Errorf("read change event log: %w", err)
+	var proposeInput struct {
+		Entry struct {
+			Content struct {
+				URI string `json:"uri"`
+			} `json:"content"`
+		} `json:"entry"`
 	}
-	if len(eventBytes) == 0 || eventBytes[len(eventBytes)-1] != '\n' {
-		return fmt.Errorf("change event log is not newline terminated")
-	}
-	lines := bytes.Split(bytes.TrimSpace(eventBytes), []byte{'\n'})
-	wantKinds := []string{"change_created", "revision_drafted", "revision_submitted"}
-	if len(lines) != len(wantKinds) {
-		return fmt.Errorf("change event log has %d lines, want %d (created, drafted, submitted) — the retry must not duplicate lifecycle events", len(lines), len(wantKinds))
-	}
-	for index, line := range lines {
-		if index == 0 {
-			if err := registry.Validate(contracts.SchemaChangeCreated, line); err != nil {
-				return fmt.Errorf("change_created event violates schema: %w", err)
-			}
-		} else if err := registry.Validate(contracts.SchemaRevisionLifecycleEvent, line); err != nil {
-			return fmt.Errorf("revision lifecycle event %d violates schema: %w", index, err)
-		}
-		var probe struct {
-			Kind         string `json:"kind"`
-			RevisionID   string `json:"revision_id"`
-			ArtifactKind string `json:"artifact_kind"`
-		}
-		if err := json.Unmarshal(line, &probe); err != nil {
-			return fmt.Errorf("decode change event %d: %w", index, err)
-		}
-		if probe.Kind != wantKinds[index] {
-			return fmt.Errorf("change event %d has kind %q, want %q", index, probe.Kind, wantKinds[index])
-		}
-		if index > 0 && (probe.RevisionID != "rev-000001" || probe.ArtifactKind != "idea") {
-			return fmt.Errorf("change event %d does not correlate to the drafted idea revision", index)
-		}
+	if err := json.Unmarshal(firstExec.Request.Input, &proposeInput); err != nil || proposeInput.Entry.Content.URI == "" {
+		return fmt.Errorf("content_proposal request input does not contain a valid content uri")
 	}
 
-	return validateContinueHappyTree(targetRoot, namespace, newInput.ChangeID, "idea", "rev-000001", "seed/idea-proposal.md")
+	return validateWholeTree(targetRoot, []artifactExpectation{{Kind: "idea", Status: statusAwaitingApproval}}, []string{proposeInput.Entry.Content.URI})
 }
 
-// validateContentProposalReplayResult validates the OperationResult of a
-// content_proposal that carries the same idempotency_key and content digest
-// as an earlier request. Virgil recognizes the durable revision instead of
-// drafting a new one: the result must reference that same revision, must
-// report zero new events and zero writes, and must expose
-// replayed_from_request_id pointing back at the original request.
 func validateContentProposalReplayResult(request protocol.OperationRequest, result protocol.OperationResult, originalRequestID string) error {
 	if result.Status != "needs_input" || result.ReplayedFromRequest != originalRequestID || result.ResolvedContext == nil ||
 		result.DerivedStep != "idea" || result.Next.Operation != "virgil.continue" {
@@ -1253,7 +1028,7 @@ func validateContentProposalReplayResult(request protocol.OperationRequest, resu
 		return fmt.Errorf("retried content_proposal result does not reference the existing revision")
 	}
 	if len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 0 {
-		return fmt.Errorf("retried content_proposal result must not report new events or writes")
+		return fmt.Errorf("retried content_proposal result must not report new writes")
 	}
 	if len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != "APPROVAL_REQUIRED" || result.Diagnostics[0].Severity != "info" {
 		return fmt.Errorf("retried content_proposal result does not carry the approval-required diagnostic")
@@ -1264,40 +1039,35 @@ func validateContentProposalReplayResult(request protocol.OperationRequest, resu
 	return nil
 }
 
-// validateContinueHappyTree walks the entire target repository and confirms
-// it contains exactly the repo-docs managed tree for one approved idea
-// revision, plus the fixture's pre-seeded content_proposal source file living
-// outside the managed namespace. Unlike validateNoUnexpectedNodesWithChanges,
-// this fixture's target root is not empty before the first invoke: the T0
-// harness materializes the proposed content at seedPath so content_proposal
-// has a real file to read, since ActorScript actions cannot themselves write
-// arbitrary target files.
-func validateContinueHappyTree(targetRoot, namespace, changeID, artifactKind, revisionID, seedPath string) error {
-	changePath := pathJoin(namespace, "changes", changeID)
-	kindPath := pathJoin(changePath, "artifacts", artifactKind)
-	revisionPath := pathJoin(kindPath, revisionID)
-	expected := map[string]string{
-		"docs":                 "dir",
-		"docs/virgil":          "dir",
-		"docs/virgil/projects": "dir",
-		namespace:              "dir",
-		pathJoin(namespace, protocol.RepoDocsProjectFile): "file",
-		pathJoin(namespace, protocol.RepoDocsEventsFile):  "file",
-		pathJoin(namespace, "changes"):                    "dir",
-		changePath:                                        "dir",
-		pathJoin(changePath, protocol.RepoDocsChangeFile): "file",
-		pathJoin(changePath, protocol.RepoDocsEventsFile): "file",
-		pathJoin(changePath, "artifacts"):                 "dir",
-		kindPath:                                          "dir",
-		revisionPath:                                      "dir",
-		pathJoin(revisionPath, "envelope.json"):           "file",
-		pathJoin(revisionPath, "content.md"):              "file",
-	}
-	for directory := path.Dir(seedPath); directory != "." && directory != "/"; directory = path.Dir(directory) {
-		expected[directory] = "dir"
-	}
-	expected[seedPath] = "file"
+// artifactExpectation names one docs/{NN}-{kind}.md file expected to exist in
+// the final tree, along with its frontmatter status.
+type artifactExpectation struct {
+	Kind   string
+	Status string
+}
 
+// validateWholeTree walks the entire target repository and confirms it
+// contains exactly virgil.json, the expected docs/{NN}-{kind}.md files, and
+// the fixture's pre-seeded content_proposal source files living outside the
+// managed namespace.
+func validateWholeTree(targetRoot string, artifacts []artifactExpectation, seedPaths []string) error {
+	expected := map[string]string{protocol.VirgilConfigFile: "file"}
+	if len(artifacts) > 0 {
+		expected["docs"] = "dir"
+	}
+	for _, artifact := range artifacts {
+		expected[path.Join("docs", protocol.ArtifactFileName(artifact.Kind))] = "file"
+	}
+	for _, seedPath := range seedPaths {
+		for directory := path.Dir(seedPath); directory != "." && directory != "/"; directory = path.Dir(directory) {
+			expected[directory] = "dir"
+		}
+		expected[seedPath] = "file"
+	}
+	return validateExactTree(targetRoot, expected)
+}
+
+func validateExactTree(targetRoot string, expected map[string]string) error {
 	seen := make(map[string]bool, len(expected))
 	err := filepath.WalkDir(targetRoot, func(entryPath string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -1331,12 +1101,80 @@ func validateContinueHappyTree(targetRoot, namespace, changeID, artifactKind, re
 	return nil
 }
 
+// validateArtifactFile reads docs/{NN}-{kind}.md, validates its frontmatter
+// against the bundled schema, and asserts revision, status, content digest
+// and (when requireApproval is true) approved_by/approved_at.
+func validateArtifactFile(registry *contracts.Registry, targetRoot, kind, wantRevision, wantStatus string, requireApproval bool) error {
+	relative := path.Join("docs", protocol.ArtifactFileName(kind))
+	raw, err := os.ReadFile(filepath.Join(targetRoot, filepath.FromSlash(relative)))
+	if err != nil {
+		return fmt.Errorf("read %s artifact file: %w", kind, err)
+	}
+	frontmatter, content, err := splitFrontmatterForOracle(raw)
+	if err != nil {
+		return fmt.Errorf("%s artifact file: %w", kind, err)
+	}
+	if err := registry.Validate(contracts.SchemaArtifactFrontmatter, frontmatter); err != nil {
+		return fmt.Errorf("%s artifact frontmatter schema: %w", kind, err)
+	}
+	var probe artifactFrontmatterProbe
+	if err := json.Unmarshal(frontmatter, &probe); err != nil {
+		return fmt.Errorf("decode %s artifact frontmatter: %w", kind, err)
+	}
+	if probe.ArtifactKind != kind || probe.Revision != wantRevision || probe.Status != wantStatus {
+		return fmt.Errorf("%s artifact frontmatter is %+v, want kind=%s revision=%s status=%s", kind, probe, kind, wantRevision, wantStatus)
+	}
+	if wantDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(content)); probe.ContentDigest != wantDigest {
+		return fmt.Errorf("%s artifact content does not match its frontmatter digest", kind)
+	}
+	if requireApproval && (probe.ApprovedBy == nil || probe.ApprovedBy.ActorID == "" || probe.ApprovedAt == "") {
+		return fmt.Errorf("%s artifact is not durably approved", kind)
+	}
+	return nil
+}
+
+type artifactFrontmatterProbe struct {
+	ArtifactKind  string `json:"artifact_kind"`
+	Status        string `json:"status"`
+	Revision      string `json:"revision"`
+	ContentDigest string `json:"content_digest"`
+	UpstreamRefs  []struct {
+		RevisionID   string `json:"revision_id"`
+		ArtifactKind string `json:"artifact_kind"`
+	} `json:"upstream_refs"`
+	ApprovedBy *struct {
+		ActorID string `json:"actor_id"`
+	} `json:"approved_by"`
+	ApprovedAt string `json:"approved_at"`
+}
+
+const (
+	frontmatterOpen        = "---json\n"
+	frontmatterClose       = "\n---\n\n"
+	statusAwaitingApproval = "awaiting_approval"
+	statusApproved         = "approved"
+	statusWithdrawn        = "withdrawn"
+)
+
+// splitFrontmatterForOracle is the independent, oracle-side counterpart of
+// repodocs.parseArtifactFrontmatter: it re-derives the same split from raw
+// bytes without importing the internal repodocs package, so the T0 oracle
+// observes the artifact file exactly as any other reader would.
+func splitFrontmatterForOracle(raw []byte) ([]byte, []byte, error) {
+	if !bytes.HasPrefix(raw, []byte(frontmatterOpen)) {
+		return nil, nil, fmt.Errorf("artifact file does not start with %q", frontmatterOpen)
+	}
+	rest := raw[len(frontmatterOpen):]
+	closeIndex := bytes.Index(rest, []byte(frontmatterClose))
+	if closeIndex < 0 {
+		return nil, nil, fmt.Errorf("artifact file has no closing frontmatter marker")
+	}
+	return rest[:closeIndex], rest[closeIndex+len(frontmatterClose):], nil
+}
+
 // handoffCompleteArtifactKinds is the ordered artifact_kind progression the
 // t0-continue-handoff-complete fixture drives end to end: idea -> spec ->
-// design -> tasks -> handoff -> complete. It mirrors repodocs'
-// artifactStepOrder without importing that package, since this oracle only
-// ever observes repo-docs through its durable filesystem output and public
-// OperationResult contract.
+// design -> tasks -> handoff -> complete.
 var handoffCompleteArtifactKinds = []string{"idea", "spec", "design", "tasks", "handoff"}
 
 // validateHandoffCompleteScenario proves the full T0 handoff-complete
@@ -1359,18 +1197,8 @@ func validateHandoffCompleteScenario(registry *contracts.Registry, targetRoot st
 	if err := validateFreshInitResult(initExec.Request, initExec.Child.Result, initExec.Checkpoint.Target, targetRoot); err != nil {
 		return fmt.Errorf("init phase: %w", err)
 	}
-	if err := validatePublishedAuthority(registry, targetRoot, initExec.Request, initExec.Child.Result); err != nil {
-		return fmt.Errorf("init phase: %w", err)
-	}
-	if initExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("init published %d project events, want one", initExec.Checkpoint.EventCount)
-	}
-
 	if err := validateFreshNewResult(newExec.Request, newExec.Child.Result, targetRoot); err != nil {
 		return fmt.Errorf("new phase: %w", err)
-	}
-	if newExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("new phase changed project event count to %d, want 1", newExec.Checkpoint.EventCount)
 	}
 
 	var newInput struct {
@@ -1379,19 +1207,15 @@ func validateHandoffCompleteScenario(registry *contracts.Registry, targetRoot st
 	if err := json.Unmarshal(newExec.Request.Input, &newInput); err != nil || newInput.ChangeID == "" {
 		return fmt.Errorf("new request input does not contain a valid change_id")
 	}
-	namespace := newExec.Request.ArtifactStoreRef.Namespace
-	changePath := filepath.Join(targetRoot, filepath.FromSlash(pathJoin(namespace, "changes", newInput.ChangeID)))
 
 	seedPaths := make([]string, 0, len(handoffCompleteArtifactKinds))
+	artifacts := make([]artifactExpectation, 0, len(handoffCompleteArtifactKinds))
 	for index, kind := range handoffCompleteArtifactKinds {
 		proposeExec := executions[2+2*index]
 		approveExec := executions[2+2*index+1]
 
 		if err := validateContentProposalResultForStep(proposeExec.Request, proposeExec.Child.Result, kind); err != nil {
 			return fmt.Errorf("%s content_proposal phase: %w", kind, err)
-		}
-		if proposeExec.Checkpoint.EventCount != 1 {
-			return fmt.Errorf("%s content_proposal phase changed project event count to %d, want 1", kind, proposeExec.Checkpoint.EventCount)
 		}
 
 		nextDerivedStep := "complete"
@@ -1402,9 +1226,6 @@ func validateHandoffCompleteScenario(registry *contracts.Registry, targetRoot st
 		}
 		if err := validateApprovalResultForStep(approveExec.Request, approveExec.Child.Result, kind, nextDerivedStep, nextOperation); err != nil {
 			return fmt.Errorf("%s approval phase: %w", kind, err)
-		}
-		if approveExec.Checkpoint.EventCount != 1 {
-			return fmt.Errorf("%s approval phase changed project event count to %d, want 1", kind, approveExec.Checkpoint.EventCount)
 		}
 
 		var proposeInput struct {
@@ -1419,119 +1240,47 @@ func validateHandoffCompleteScenario(registry *contracts.Registry, targetRoot st
 		}
 		seedPaths = append(seedPaths, proposeInput.Entry.Content.URI)
 
-		revisionPath := filepath.Join(changePath, "artifacts", kind, "rev-000001")
-		envelopeBytes, err := os.ReadFile(filepath.Join(revisionPath, "envelope.json"))
-		if err != nil {
-			return fmt.Errorf("read %s revision envelope: %w", kind, err)
+		if err := validateArtifactFile(registry, targetRoot, kind, "rev-000001", statusApproved, true); err != nil {
+			return err
 		}
-		if err := registry.Validate(contracts.SchemaRevisionEnvelope, envelopeBytes); err != nil {
-			return fmt.Errorf("%s revision envelope schema: %w", kind, err)
+		if err := validateUpstreamRef(registry, targetRoot, kind, index); err != nil {
+			return err
 		}
-		var envelope struct {
-			RevisionID   string `json:"revision_id"`
-			ArtifactKind string `json:"artifact_kind"`
-			State        string `json:"state"`
-			UpstreamRefs []struct {
-				RevisionID   string `json:"revision_id"`
-				ArtifactKind string `json:"artifact_kind"`
-			} `json:"upstream_refs"`
-			ApprovedBy *struct {
-				ActorID string `json:"actor_id"`
-			} `json:"approved_by"`
-			ApprovedAt string `json:"approved_at"`
-			Content    struct {
-				URI    string `json:"uri"`
-				Digest string `json:"digest"`
-			} `json:"content"`
-		}
-		if err := json.Unmarshal(envelopeBytes, &envelope); err != nil {
-			return fmt.Errorf("decode %s revision envelope: %w", kind, err)
-		}
-		if envelope.RevisionID != "rev-000001" || envelope.ArtifactKind != kind || envelope.State != "approved" ||
-			envelope.ApprovedBy == nil || envelope.ApprovedBy.ActorID == "" || envelope.ApprovedAt == "" {
-			return fmt.Errorf("%s revision envelope is not durably approved", kind)
-		}
-		if index == 0 {
-			if len(envelope.UpstreamRefs) != 0 {
-				return fmt.Errorf("idea revision must not carry an upstream_refs entry, got %d", len(envelope.UpstreamRefs))
-			}
-		} else {
-			previousKind := handoffCompleteArtifactKinds[index-1]
-			if len(envelope.UpstreamRefs) != 1 || envelope.UpstreamRefs[0].ArtifactKind != previousKind || envelope.UpstreamRefs[0].RevisionID != "rev-000001" {
-				return fmt.Errorf("%s revision upstream_refs does not point at the approved %s revision", kind, previousKind)
-			}
-		}
-
-		contentBytes, err := os.ReadFile(filepath.Join(revisionPath, "content.md"))
-		if err != nil {
-			return fmt.Errorf("read %s revision content: %w", kind, err)
-		}
-		if wantDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(contentBytes)); envelope.Content.Digest != wantDigest {
-			return fmt.Errorf("%s revision content digest does not match the durable envelope", kind)
-		}
+		artifacts = append(artifacts, artifactExpectation{Kind: kind, Status: statusApproved})
 	}
 
-	changeStateBytes, err := os.ReadFile(filepath.Join(changePath, protocol.RepoDocsChangeFile))
+	return validateWholeTree(targetRoot, artifacts, seedPaths)
+}
+
+func validateUpstreamRef(registry *contracts.Registry, targetRoot, kind string, index int) error {
+	relative := path.Join("docs", protocol.ArtifactFileName(kind))
+	raw, err := os.ReadFile(filepath.Join(targetRoot, filepath.FromSlash(relative)))
 	if err != nil {
-		return fmt.Errorf("read change authority: %w", err)
+		return err
 	}
-	if err := registry.Validate(contracts.SchemaChangeState, changeStateBytes); err != nil {
-		return fmt.Errorf("change state violates schema: %w", err)
-	}
-
-	changeEventsPath := filepath.Join(changePath, protocol.RepoDocsEventsFile)
-	eventBytes, err := os.ReadFile(changeEventsPath)
+	frontmatter, _, err := splitFrontmatterForOracle(raw)
 	if err != nil {
-		return fmt.Errorf("read change event log: %w", err)
+		return err
 	}
-	if len(eventBytes) == 0 || eventBytes[len(eventBytes)-1] != '\n' {
-		return fmt.Errorf("change event log is not newline terminated")
+	var probe artifactFrontmatterProbe
+	if err := json.Unmarshal(frontmatter, &probe); err != nil {
+		return err
 	}
-	lines := bytes.Split(bytes.TrimSpace(eventBytes), []byte{'\n'})
-	wantKinds := make([]string, 0, 1+3*len(handoffCompleteArtifactKinds))
-	wantArtifactKinds := make([]string, 0, cap(wantKinds))
-	wantKinds = append(wantKinds, "change_created")
-	wantArtifactKinds = append(wantArtifactKinds, "")
-	for _, kind := range handoffCompleteArtifactKinds {
-		for _, eventKind := range []string{"revision_drafted", "revision_submitted", "revision_approved"} {
-			wantKinds = append(wantKinds, eventKind)
-			wantArtifactKinds = append(wantArtifactKinds, kind)
+	if index == 0 {
+		if len(probe.UpstreamRefs) != 0 {
+			return fmt.Errorf("idea artifact must not carry an upstream_refs entry, got %d", len(probe.UpstreamRefs))
 		}
+		return nil
 	}
-	if len(lines) != len(wantKinds) {
-		return fmt.Errorf("change event log has %d lines, want %d (created plus drafted/submitted/approved per artifact kind)", len(lines), len(wantKinds))
+	previousKind := handoffCompleteArtifactKinds[index-1]
+	if len(probe.UpstreamRefs) != 1 || probe.UpstreamRefs[0].ArtifactKind != previousKind || probe.UpstreamRefs[0].RevisionID != "rev-000001" {
+		return fmt.Errorf("%s artifact upstream_refs does not point at the approved %s artifact", kind, previousKind)
 	}
-	for index, line := range lines {
-		if index == 0 {
-			if err := registry.Validate(contracts.SchemaChangeCreated, line); err != nil {
-				return fmt.Errorf("change_created event violates schema: %w", err)
-			}
-		} else if err := registry.Validate(contracts.SchemaRevisionLifecycleEvent, line); err != nil {
-			return fmt.Errorf("revision lifecycle event %d violates schema: %w", index, err)
-		}
-		var probe struct {
-			Kind         string `json:"kind"`
-			RevisionID   string `json:"revision_id"`
-			ArtifactKind string `json:"artifact_kind"`
-		}
-		if err := json.Unmarshal(line, &probe); err != nil {
-			return fmt.Errorf("decode change event %d: %w", index, err)
-		}
-		if probe.Kind != wantKinds[index] {
-			return fmt.Errorf("change event %d has kind %q, want %q", index, probe.Kind, wantKinds[index])
-		}
-		if index > 0 && (probe.RevisionID != "rev-000001" || probe.ArtifactKind != wantArtifactKinds[index]) {
-			return fmt.Errorf("change event %d does not correlate to the %s revision", index, wantArtifactKinds[index])
-		}
-	}
-
-	return validateHandoffCompleteTree(targetRoot, namespace, newInput.ChangeID, seedPaths)
+	return nil
 }
 
 // validateContentProposalResultForStep validates the OperationResult of a
-// content_proposal targeting artifactKind, generalizing
-// validateContentProposalResult across all five handoff-complete artifact
-// kinds instead of just "idea".
+// content_proposal targeting artifactKind.
 func validateContentProposalResultForStep(request protocol.OperationRequest, result protocol.OperationResult, artifactKind string) error {
 	if result.Status != "needs_input" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil ||
 		result.DerivedStep != artifactKind || result.Next.Operation != "virgil.continue" {
@@ -1540,8 +1289,8 @@ func validateContentProposalResultForStep(request protocol.OperationRequest, res
 	if len(result.Artifacts) != 1 || result.Artifacts[0].Kind != "revision" || result.Artifacts[0].ObjectID != "rev-000001" {
 		return fmt.Errorf("content_proposal result does not reference the drafted revision")
 	}
-	if len(result.Briefs) != 0 || len(result.Events) != 2 || len(result.Effects) != 3 {
-		return fmt.Errorf("content_proposal result does not expose exactly two events and three writes")
+	if len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 1 {
+		return fmt.Errorf("content_proposal result does not expose exactly one write and zero events")
 	}
 	if len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != "APPROVAL_REQUIRED" || result.Diagnostics[0].Severity != "info" {
 		return fmt.Errorf("content_proposal result does not carry the approval-required diagnostic")
@@ -1556,9 +1305,8 @@ func validateContentProposalResultForStep(request protocol.OperationRequest, res
 }
 
 // validateApprovalResultForStep validates the OperationResult of an approval
-// entry for artifactKind, generalizing validateApprovalResult so it can
-// assert the derived_step advances to nextDerivedStep (which is "complete"
-// with Next.Operation == "none" for the final, handoff, approval).
+// entry for artifactKind, asserting derived_step advances to
+// nextDerivedStep ("complete" with Next.Operation == "none" for handoff).
 func validateApprovalResultForStep(request protocol.OperationRequest, result protocol.OperationResult, artifactKind, nextDerivedStep, nextOperation string) error {
 	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil ||
 		result.DerivedStep != nextDerivedStep || result.Next.Operation != nextOperation {
@@ -1567,8 +1315,8 @@ func validateApprovalResultForStep(request protocol.OperationRequest, result pro
 	if len(result.Artifacts) != 1 || result.Artifacts[0].Kind != "revision" || result.Artifacts[0].ObjectID != "rev-000001" {
 		return fmt.Errorf("approval for %s result does not reference the approved revision", artifactKind)
 	}
-	if len(result.Briefs) != 0 || len(result.Events) != 1 || len(result.Effects) != 1 || len(result.Diagnostics) != 0 {
-		return fmt.Errorf("approval for %s result does not expose exactly one event and one write", artifactKind)
+	if len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 1 || len(result.Diagnostics) != 0 {
+		return fmt.Errorf("approval for %s result does not expose exactly one write and zero events", artifactKind)
 	}
 	effect := result.Effects[0]
 	if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" ||
@@ -1583,14 +1331,11 @@ func validateApprovalResultForStep(request protocol.OperationRequest, result pro
 // invocation, can correctly recover a change's derived state purely from
 // durable storage and continue the pipeline. Process A drives init, new, and
 // the idea content_proposal/approval pair to completion (advancing
-// derived_step to "spec") and then stops. The ActorScript then issues a
-// restart_process action and process B — a distinct fresh OS process — issues
-// only the spec content_proposal. Because repo-docs' derived_step and
-// upstream_refs are always recomputed as queries over durable revisions
-// (never cached in memory, see computeDerivedStep and upstreamRefsFor), the
-// only way process B can correctly target "spec" and link its revision's
-// upstream_refs to the approved idea revision is by reading the durable
-// change authority from disk.
+// derived_step to "spec") and then stops. process-b then issues only the
+// spec content_proposal. Because repo-docs' derived_step and upstream_refs
+// are always recomputed as queries over durable artifact files, the only way
+// process B can correctly target "spec" and link its upstream_refs to the
+// approved idea file is by reading durable state from disk.
 func validateRecoveryFreshProcessScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
 	if len(executions) != 5 {
 		return fmt.Errorf("recovery-fresh-process fixture executed %d operations, want 5", len(executions))
@@ -1616,18 +1361,8 @@ func validateRecoveryFreshProcessScenario(registry *contracts.Registry, targetRo
 	if err := validateFreshInitResult(initExec.Request, initExec.Child.Result, initExec.Checkpoint.Target, targetRoot); err != nil {
 		return fmt.Errorf("init phase: %w", err)
 	}
-	if err := validatePublishedAuthority(registry, targetRoot, initExec.Request, initExec.Child.Result); err != nil {
-		return fmt.Errorf("init phase: %w", err)
-	}
-	if initExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("init published %d project events, want one", initExec.Checkpoint.EventCount)
-	}
-
 	if err := validateFreshNewResult(newExec.Request, newExec.Child.Result, targetRoot); err != nil {
 		return fmt.Errorf("new phase: %w", err)
-	}
-	if newExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("new phase changed project event count to %d, want 1", newExec.Checkpoint.EventCount)
 	}
 
 	var newInput struct {
@@ -1640,454 +1375,54 @@ func validateRecoveryFreshProcessScenario(registry *contracts.Registry, targetRo
 	if err := validateContentProposalResultForStep(ideaProposeExec.Request, ideaProposeExec.Child.Result, "idea"); err != nil {
 		return fmt.Errorf("idea content_proposal phase: %w", err)
 	}
-	if ideaProposeExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("idea content_proposal phase changed project event count to %d, want 1", ideaProposeExec.Checkpoint.EventCount)
-	}
-
 	if err := validateApprovalResultForStep(ideaApproveExec.Request, ideaApproveExec.Child.Result, "idea", "spec", "virgil.continue"); err != nil {
 		return fmt.Errorf("idea approval phase: %w", err)
-	}
-	if ideaApproveExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("idea approval phase changed project event count to %d, want 1", ideaApproveExec.Checkpoint.EventCount)
 	}
 
 	// The critical recovery assertion: process B — a fresh OS process that
 	// never observed process A's in-memory results — must still resolve
-	// derived_step to "spec" (not "idea") purely from durable revisions.
+	// derived_step to "spec" (not "idea") purely from durable state.
 	if err := validateContentProposalResultForStep(specProposeExec.Request, specProposeExec.Child.Result, "spec"); err != nil {
 		return fmt.Errorf("spec content_proposal phase (process B, fresh process): %w", err)
 	}
-	if specProposeExec.Checkpoint.EventCount != 1 {
-		return fmt.Errorf("spec content_proposal phase changed project event count to %d, want 1", specProposeExec.Checkpoint.EventCount)
-	}
 
-	namespace := newExec.Request.ArtifactStoreRef.Namespace
-	changePath := filepath.Join(targetRoot, filepath.FromSlash(pathJoin(namespace, "changes", newInput.ChangeID)))
-
-	changeStateBytes, err := os.ReadFile(filepath.Join(changePath, protocol.RepoDocsChangeFile))
-	if err != nil {
-		return fmt.Errorf("read change authority: %w", err)
-	}
-	if err := registry.Validate(contracts.SchemaChangeState, changeStateBytes); err != nil {
-		return fmt.Errorf("change state violates schema: %w", err)
-	}
-
-	ideaEnvelope, err := readRevisionEnvelope(registry, changePath, "idea")
-	if err != nil {
-		return fmt.Errorf("idea revision: %w", err)
-	}
-	if ideaEnvelope.State != "approved" || ideaEnvelope.ApprovedBy == nil || ideaEnvelope.ApprovedBy.ActorID == "" || ideaEnvelope.ApprovedAt == "" {
-		return fmt.Errorf("idea revision is not durably approved")
-	}
-	if len(ideaEnvelope.UpstreamRefs) != 0 {
-		return fmt.Errorf("idea revision must not carry an upstream_refs entry, got %d", len(ideaEnvelope.UpstreamRefs))
-	}
-
-	specEnvelope, err := readRevisionEnvelope(registry, changePath, "spec")
-	if err != nil {
-		return fmt.Errorf("spec revision: %w", err)
-	}
-	if specEnvelope.State != "awaiting_approval" {
-		return fmt.Errorf("spec revision state is %q, want awaiting_approval", specEnvelope.State)
-	}
-	// This is the durable proof that process B recovered the current step
-	// from disk rather than from any cached or default state: the spec
-	// revision drafted by the fresh process links back to the exact idea
-	// revision that process A approved.
-	if len(specEnvelope.UpstreamRefs) != 1 || specEnvelope.UpstreamRefs[0].ArtifactKind != "idea" || specEnvelope.UpstreamRefs[0].RevisionID != "rev-000001" {
-		return fmt.Errorf("spec revision upstream_refs does not point at the approved idea revision")
-	}
-
-	for kind, envelope := range map[string]revisionEnvelopeProbe{"idea": ideaEnvelope, "spec": specEnvelope} {
-		contentBytes, err := os.ReadFile(filepath.Join(changePath, "artifacts", kind, "rev-000001", "content.md"))
-		if err != nil {
-			return fmt.Errorf("read %s revision content: %w", kind, err)
-		}
-		if wantDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(contentBytes)); envelope.Content.Digest != wantDigest {
-			return fmt.Errorf("%s revision content digest does not match the durable envelope", kind)
-		}
-	}
-
-	changeEventsPath := filepath.Join(changePath, protocol.RepoDocsEventsFile)
-	eventBytes, err := os.ReadFile(changeEventsPath)
-	if err != nil {
-		return fmt.Errorf("read change event log: %w", err)
-	}
-	if len(eventBytes) == 0 || eventBytes[len(eventBytes)-1] != '\n' {
-		return fmt.Errorf("change event log is not newline terminated")
-	}
-	lines := bytes.Split(bytes.TrimSpace(eventBytes), []byte{'\n'})
-	wantKinds := []string{"change_created", "revision_drafted", "revision_submitted", "revision_approved", "revision_drafted", "revision_submitted"}
-	wantArtifactKinds := []string{"", "idea", "idea", "idea", "spec", "spec"}
-	if len(lines) != len(wantKinds) {
-		return fmt.Errorf("change event log has %d lines, want %d (created, idea drafted/submitted/approved, spec drafted/submitted)", len(lines), len(wantKinds))
-	}
-	for index, line := range lines {
-		if index == 0 {
-			if err := registry.Validate(contracts.SchemaChangeCreated, line); err != nil {
-				return fmt.Errorf("change_created event violates schema: %w", err)
-			}
-		} else if err := registry.Validate(contracts.SchemaRevisionLifecycleEvent, line); err != nil {
-			return fmt.Errorf("revision lifecycle event %d violates schema: %w", index, err)
-		}
-		var probe struct {
-			Kind         string `json:"kind"`
-			RevisionID   string `json:"revision_id"`
-			ArtifactKind string `json:"artifact_kind"`
-		}
-		if err := json.Unmarshal(line, &probe); err != nil {
-			return fmt.Errorf("decode change event %d: %w", index, err)
-		}
-		if probe.Kind != wantKinds[index] {
-			return fmt.Errorf("change event %d has kind %q, want %q", index, probe.Kind, wantKinds[index])
-		}
-		if index > 0 && (probe.RevisionID != "rev-000001" || probe.ArtifactKind != wantArtifactKinds[index]) {
-			return fmt.Errorf("change event %d does not correlate to the %s revision", index, wantArtifactKinds[index])
-		}
-	}
-
-	return validateRecoveryFreshProcessTree(targetRoot, namespace, newInput.ChangeID, "seed/idea-proposal.md", "seed/spec-proposal.md")
-}
-
-// revisionEnvelopeProbe decodes just the RevisionEnvelope fields the recovery
-// oracle needs to cross-check: durable state, approval, upstream linkage, and
-// content digest.
-type revisionEnvelopeProbe struct {
-	RevisionID   string `json:"revision_id"`
-	ArtifactKind string `json:"artifact_kind"`
-	State        string `json:"state"`
-	UpstreamRefs []struct {
-		RevisionID   string `json:"revision_id"`
-		ArtifactKind string `json:"artifact_kind"`
-	} `json:"upstream_refs"`
-	ApprovedBy *struct {
-		ActorID string `json:"actor_id"`
-	} `json:"approved_by"`
-	ApprovedAt string `json:"approved_at"`
-	Content    struct {
-		URI    string `json:"uri"`
-		Digest string `json:"digest"`
-	} `json:"content"`
-}
-
-func readRevisionEnvelope(registry *contracts.Registry, changePath, artifactKind string) (revisionEnvelopeProbe, error) {
-	revisionPath := filepath.Join(changePath, "artifacts", artifactKind, "rev-000001")
-	envelopeBytes, err := os.ReadFile(filepath.Join(revisionPath, "envelope.json"))
-	if err != nil {
-		return revisionEnvelopeProbe{}, fmt.Errorf("read revision envelope: %w", err)
-	}
-	if err := registry.Validate(contracts.SchemaRevisionEnvelope, envelopeBytes); err != nil {
-		return revisionEnvelopeProbe{}, fmt.Errorf("revision envelope schema: %w", err)
-	}
-	var envelope revisionEnvelopeProbe
-	if err := json.Unmarshal(envelopeBytes, &envelope); err != nil {
-		return revisionEnvelopeProbe{}, fmt.Errorf("decode revision envelope: %w", err)
-	}
-	if envelope.RevisionID != "rev-000001" || envelope.ArtifactKind != artifactKind {
-		return revisionEnvelopeProbe{}, fmt.Errorf("revision envelope identity does not match its path")
-	}
-	return envelope, nil
-}
-
-// validateRecoveryFreshProcessTree walks the entire target repository and
-// confirms it contains exactly the repo-docs managed tree for one approved
-// idea revision and one awaiting-approval spec revision, plus the fixture's
-// two pre-seeded content_proposal source files living outside the managed
-// namespace.
-func validateRecoveryFreshProcessTree(targetRoot, namespace, changeID, ideaSeedPath, specSeedPath string) error {
-	changePath := pathJoin(namespace, "changes", changeID)
-	expected := map[string]string{
-		"docs":                 "dir",
-		"docs/virgil":          "dir",
-		"docs/virgil/projects": "dir",
-		namespace:              "dir",
-		pathJoin(namespace, protocol.RepoDocsProjectFile): "file",
-		pathJoin(namespace, protocol.RepoDocsEventsFile):  "file",
-		pathJoin(namespace, "changes"):                    "dir",
-		changePath:                                        "dir",
-		pathJoin(changePath, protocol.RepoDocsChangeFile): "file",
-		pathJoin(changePath, protocol.RepoDocsEventsFile): "file",
-		pathJoin(changePath, "artifacts"):                 "dir",
-	}
-	for _, kind := range []string{"idea", "spec"} {
-		kindPath := pathJoin(changePath, "artifacts", kind)
-		revisionPath := pathJoin(kindPath, "rev-000001")
-		expected[kindPath] = "dir"
-		expected[revisionPath] = "dir"
-		expected[pathJoin(revisionPath, "envelope.json")] = "file"
-		expected[pathJoin(revisionPath, "content.md")] = "file"
-	}
-	for _, seedPath := range []string{ideaSeedPath, specSeedPath} {
-		for directory := path.Dir(seedPath); directory != "." && directory != "/"; directory = path.Dir(directory) {
-			expected[directory] = "dir"
-		}
-		expected[seedPath] = "file"
-	}
-
-	seen := make(map[string]bool, len(expected))
-	err := filepath.WalkDir(targetRoot, func(entryPath string, entry fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if entryPath == targetRoot {
-			return nil
-		}
-		relative, err := filepath.Rel(targetRoot, entryPath)
-		if err != nil {
-			return err
-		}
-		relative = filepath.ToSlash(relative)
-		kind, found := expected[relative]
-		if !found {
-			return fmt.Errorf("unexpected target node %q", relative)
-		}
-		info, err := os.Lstat(entryPath)
-		if err != nil || info.Mode()&os.ModeSymlink != 0 || (kind == "dir" && !info.IsDir()) || (kind == "file" && !info.Mode().IsRegular()) {
-			return fmt.Errorf("target node %q has an unexpected kind", relative)
-		}
-		seen[relative] = true
-		return nil
-	})
-	if err != nil {
+	if err := validateArtifactFile(registry, targetRoot, "idea", "rev-000001", statusApproved, true); err != nil {
 		return err
 	}
-	if len(seen) != len(expected) {
-		return fmt.Errorf("target node set is incomplete")
-	}
-	return nil
-}
-
-// validateHandoffCompleteTree walks the entire target repository and
-// confirms it contains exactly the repo-docs managed tree for all five
-// approved artifact-kind revisions, plus the fixture's pre-seeded
-// content_proposal source files living outside the managed namespace.
-func validateHandoffCompleteTree(targetRoot, namespace, changeID string, seedPaths []string) error {
-	changePath := pathJoin(namespace, "changes", changeID)
-	expected := map[string]string{
-		"docs":                 "dir",
-		"docs/virgil":          "dir",
-		"docs/virgil/projects": "dir",
-		namespace:              "dir",
-		pathJoin(namespace, protocol.RepoDocsProjectFile): "file",
-		pathJoin(namespace, protocol.RepoDocsEventsFile):  "file",
-		pathJoin(namespace, "changes"):                    "dir",
-		changePath:                                        "dir",
-		pathJoin(changePath, protocol.RepoDocsChangeFile): "file",
-		pathJoin(changePath, protocol.RepoDocsEventsFile): "file",
-		pathJoin(changePath, "artifacts"):                 "dir",
-	}
-	for _, kind := range handoffCompleteArtifactKinds {
-		kindPath := pathJoin(changePath, "artifacts", kind)
-		revisionPath := pathJoin(kindPath, "rev-000001")
-		expected[kindPath] = "dir"
-		expected[revisionPath] = "dir"
-		expected[pathJoin(revisionPath, "envelope.json")] = "file"
-		expected[pathJoin(revisionPath, "content.md")] = "file"
-	}
-	for _, seedPath := range seedPaths {
-		for directory := path.Dir(seedPath); directory != "." && directory != "/"; directory = path.Dir(directory) {
-			expected[directory] = "dir"
-		}
-		expected[seedPath] = "file"
-	}
-
-	seen := make(map[string]bool, len(expected))
-	err := filepath.WalkDir(targetRoot, func(entryPath string, entry fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if entryPath == targetRoot {
-			return nil
-		}
-		relative, err := filepath.Rel(targetRoot, entryPath)
-		if err != nil {
-			return err
-		}
-		relative = filepath.ToSlash(relative)
-		kind, found := expected[relative]
-		if !found {
-			return fmt.Errorf("unexpected target node %q", relative)
-		}
-		info, err := os.Lstat(entryPath)
-		if err != nil || info.Mode()&os.ModeSymlink != 0 || (kind == "dir" && !info.IsDir()) || (kind == "file" && !info.Mode().IsRegular()) {
-			return fmt.Errorf("target node %q has an unexpected kind", relative)
-		}
-		seen[relative] = true
-		return nil
-	})
-	if err != nil {
+	if err := validateUpstreamRef(registry, targetRoot, "idea", 0); err != nil {
 		return err
 	}
-	if len(seen) != len(expected) {
-		return fmt.Errorf("target node set is incomplete")
-	}
-	return nil
-}
-
-func validateFreshInitResult(request protocol.OperationRequest, result protocol.OperationResult, snapshot map[string]snapshotEntry, targetRoot string) error {
-	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil || result.DerivedStep != "idea" || result.Next.Operation != "virgil.new" {
-		return fmt.Errorf("virgil.init did not return the required fresh success result")
-	}
-	if len(result.Diagnostics) != 0 || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 1 || len(result.Effects) != 2 {
-		return fmt.Errorf("fresh init result does not expose exactly one event and two writes")
-	}
-	resolvedTarget, err := filepath.EvalSymlinks(targetRoot)
-	if err != nil {
-		return fmt.Errorf("resolve explicit target binding: %w", err)
-	}
-	expectedContext := protocol.ContextFromRequest(request)
-	expectedContext.ProjectRef.Target.CanonicalPath = resolvedTarget
-	if !reflect.DeepEqual(*result.ResolvedContext, expectedContext) {
-		return fmt.Errorf("resolved_context does not preserve request refs with the real target binding path")
-	}
-	expectedResources := map[string]bool{
-		pathJoin(request.ArtifactStoreRef.Namespace, protocol.RepoDocsProjectFile): false,
-		pathJoin(request.ArtifactStoreRef.Namespace, protocol.RepoDocsEventsFile):  false,
-	}
-	for _, effect := range result.Effects {
-		if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" || effect.RequestID != request.RequestID ||
-			effect.CausationID != request.RequestID || effect.Capability != "artifact_store.write" || effect.Observed == nil || effect.StateBefore != nil ||
-			effect.StateAfter == nil || !reflect.DeepEqual(*effect.StateAfter, effect.Resource) {
-			return fmt.Errorf("fresh init returned a non-authorized or incomplete write effect")
-		}
-		seen, expected := expectedResources[effect.Resource.URI]
-		if !expected || seen {
-			return fmt.Errorf("fresh init wrote unexpected or duplicate resource %q", effect.Resource.URI)
-		}
-		entry, found := snapshot[effect.Resource.URI]
-		if !found || !entry.Mode.IsRegular() || entry.Digest != effect.Resource.Digest {
-			return fmt.Errorf("write effect %q does not match the observed file", effect.Resource.URI)
-		}
-		expectedResources[effect.Resource.URI] = true
-	}
-	for resource, seen := range expectedResources {
-		if !seen {
-			return fmt.Errorf("fresh init did not report write effect %q", resource)
-		}
-	}
-	return nil
-}
-
-func validateFreshNewResult(request protocol.OperationRequest, result protocol.OperationResult, targetRoot string) error {
-	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil || result.DerivedStep != "idea" || result.Next.Operation != "virgil.continue" {
-		return fmt.Errorf("virgil.new did not return the required fresh success result")
-	}
-	if len(result.Diagnostics) != 0 || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 1 || len(result.Effects) != 2 {
-		return fmt.Errorf("fresh new result does not expose exactly one event and two writes")
-	}
-	resolvedTarget, err := filepath.EvalSymlinks(targetRoot)
-	if err != nil {
-		return fmt.Errorf("resolve explicit target binding: %w", err)
-	}
-	if result.ResolvedContext.RunRef == nil {
-		return fmt.Errorf("virgil.new resolved_context must include a RunRef")
-	}
-	expectedContext := protocol.ContextFromRequest(request)
-	expectedContext.ProjectRef.Target.CanonicalPath = resolvedTarget
-	expectedContext.RunRef = result.ResolvedContext.RunRef
-	if !reflect.DeepEqual(*result.ResolvedContext, expectedContext) {
-		return fmt.Errorf("resolved_context does not preserve request refs with the real target binding path and RunRef")
-	}
-	return nil
-}
-
-func validatePublishedTree(targetRoot, namespace string, snapshot map[string]snapshotEntry) error {
-	expectedFiles := map[string]struct{}{
-		pathJoin(namespace, protocol.RepoDocsProjectFile): {},
-		pathJoin(namespace, protocol.RepoDocsEventsFile):  {},
-	}
-	if len(snapshot) != len(expectedFiles) {
-		return fmt.Errorf("published target contains %d file/symlink entries, want exactly %d files", len(snapshot), len(expectedFiles))
-	}
-	for entryPath := range expectedFiles {
-		entry, found := snapshot[entryPath]
-		if !found || !entry.Mode.IsRegular() {
-			return fmt.Errorf("published target file %q is missing or has the wrong kind", entryPath)
-		}
-	}
-	return validateNoUnexpectedNodes(targetRoot, namespace, snapshot)
-}
-
-// validateNoUnexpectedNodes validates the immutable point-in-time snapshot
-// captured right after the operation under test, not the live target tree.
-// The live tree may have already been mutated by later operations in the
-// same ActorScript (e.g. init followed by new), so walking targetRoot here
-// would incorrectly attribute a later operation's writes to this checkpoint.
-// The ancestor directories are safe to confirm against the live tree because
-// repo-docs never removes them once created.
-func validateNoUnexpectedNodes(targetRoot, namespace string, snapshot map[string]snapshotEntry) error {
-	expectedFiles := map[string]struct{}{
-		pathJoin(namespace, protocol.RepoDocsProjectFile): {},
-		pathJoin(namespace, protocol.RepoDocsEventsFile):  {},
-	}
-	if len(snapshot) != len(expectedFiles) {
-		return fmt.Errorf("target node set is incomplete")
-	}
-	for relative, entry := range snapshot {
-		if _, expected := expectedFiles[relative]; !expected || !entry.Mode.IsRegular() {
-			return fmt.Errorf("unexpected target node %q", relative)
-		}
-	}
-	expectedDirectories := []string{"docs", "docs/virgil", "docs/virgil/projects", namespace}
-	for _, relative := range expectedDirectories {
-		info, err := os.Lstat(filepath.Join(targetRoot, filepath.FromSlash(relative)))
-		if err != nil || info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
-			return fmt.Errorf("target node %q has an unexpected kind", relative)
-		}
-	}
-	return nil
-}
-
-func validateNoUnexpectedNodesWithChanges(targetRoot, namespace string, changeIDs []string) error {
-	expected := map[string]string{
-		"docs":                 "dir",
-		"docs/virgil":          "dir",
-		"docs/virgil/projects": "dir",
-		namespace:              "dir",
-		pathJoin(namespace, protocol.RepoDocsProjectFile): "file",
-		pathJoin(namespace, protocol.RepoDocsEventsFile):  "file",
-	}
-	if len(changeIDs) > 0 {
-		expected[pathJoin(namespace, "changes")] = "dir"
-	}
-	for _, changeID := range changeIDs {
-		changePath := pathJoin(namespace, "changes", changeID)
-		expected[changePath] = "dir"
-		expected[pathJoin(changePath, protocol.RepoDocsChangeFile)] = "file"
-		expected[pathJoin(changePath, protocol.RepoDocsEventsFile)] = "file"
-	}
-	seen := make(map[string]bool, len(expected))
-	err := filepath.WalkDir(targetRoot, func(entryPath string, entry fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if entryPath == targetRoot {
-			return nil
-		}
-		relative, err := filepath.Rel(targetRoot, entryPath)
-		if err != nil {
-			return err
-		}
-		relative = filepath.ToSlash(relative)
-		kind, found := expected[relative]
-		if !found {
-			return fmt.Errorf("unexpected target node %q", relative)
-		}
-		info, err := os.Lstat(entryPath)
-		if err != nil || info.Mode()&os.ModeSymlink != 0 || (kind == "dir" && !info.IsDir()) || (kind == "file" && !info.Mode().IsRegular()) {
-			return fmt.Errorf("target node %q has an unexpected kind", relative)
-		}
-		seen[relative] = true
-		return nil
-	})
-	if err != nil {
+	if err := validateArtifactFile(registry, targetRoot, "spec", "rev-000001", statusAwaitingApproval, false); err != nil {
 		return err
 	}
-	if len(seen) != len(expected) {
-		return fmt.Errorf("target node set is incomplete")
+	if err := validateUpstreamRef(registry, targetRoot, "spec", 1); err != nil {
+		return err
 	}
-	return nil
+
+	var ideaInput, specInput struct {
+		Entry struct {
+			Content struct {
+				URI string `json:"uri"`
+			} `json:"content"`
+		} `json:"entry"`
+	}
+	if err := json.Unmarshal(ideaProposeExec.Request.Input, &ideaInput); err != nil || ideaInput.Entry.Content.URI == "" {
+		return fmt.Errorf("idea content_proposal request input does not contain a valid content uri")
+	}
+	if err := json.Unmarshal(specProposeExec.Request.Input, &specInput); err != nil || specInput.Entry.Content.URI == "" {
+		return fmt.Errorf("spec content_proposal request input does not contain a valid content uri")
+	}
+
+	artifacts := []artifactExpectation{
+		{Kind: "idea", Status: statusApproved},
+		{Kind: "spec", Status: statusAwaitingApproval},
+	}
+	return validateWholeTree(targetRoot, artifacts, []string{ideaInput.Entry.Content.URI, specInput.Entry.Content.URI})
 }
+
+// ---------------------------------------------------------------------------
+// Blocked-policy and generic child-process oracles (layout independent)
+// ---------------------------------------------------------------------------
 
 func validateEmptyTarget(targetRoot string) error {
 	return filepath.WalkDir(targetRoot, func(entryPath string, entry fs.DirEntry, walkErr error) error {
@@ -2099,77 +1434,6 @@ func validateEmptyTarget(targetRoot string) error {
 		}
 		return nil
 	})
-}
-
-func validatePublishedAuthority(registry *contracts.Registry, targetRoot string, request protocol.OperationRequest, result protocol.OperationResult) error {
-	projectPath := filepath.Join(targetRoot, filepath.FromSlash(request.ArtifactStoreRef.Namespace), protocol.RepoDocsProjectFile)
-	eventPath := filepath.Join(targetRoot, filepath.FromSlash(request.ArtifactStoreRef.Namespace), protocol.RepoDocsEventsFile)
-	projectBytes, err := os.ReadFile(projectPath)
-	if err != nil {
-		return fmt.Errorf("read project authority: %w", err)
-	}
-	eventBytes, err := os.ReadFile(eventPath)
-	if err != nil {
-		return fmt.Errorf("read project event log: %w", err)
-	}
-	if err := registry.Validate(contracts.SchemaProjectState, projectBytes); err != nil {
-		return fmt.Errorf("project authority schema: %w", err)
-	}
-	if err := registry.Validate(contracts.SchemaProjectInitialized, eventBytes); err != nil {
-		return fmt.Errorf("project event schema: %w", err)
-	}
-	if len(eventBytes) == 0 || eventBytes[len(eventBytes)-1] != '\n' || bytes.Count(eventBytes, []byte{'\n'}) != 1 {
-		return fmt.Errorf("event log does not contain exactly one newline-terminated event")
-	}
-	var event struct {
-		EventID   string `json:"event_id"`
-		Kind      string `json:"kind"`
-		ProjectID string `json:"project_id"`
-		RequestID string `json:"request_id"`
-	}
-	if err := json.Unmarshal(eventBytes, &event); err != nil {
-		return fmt.Errorf("decode project event: %w", err)
-	}
-	if event.Kind != "project_initialized" || event.ProjectID != request.ProjectRef.ProjectID || event.RequestID != request.RequestID ||
-		len(result.Events) != 1 || result.Events[0].ObjectID != event.EventID || result.Events[0].Kind != event.Kind || result.Events[0].Resource == nil {
-		return fmt.Errorf("OperationResult event pointer does not match the durable project_initialized event")
-	}
-	eventDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(eventBytes))
-	if result.Events[0].Resource.URI != pathJoin(request.ArtifactStoreRef.Namespace, protocol.RepoDocsEventsFile) || result.Events[0].Resource.Digest != eventDigest {
-		return fmt.Errorf("OperationResult event resource does not match the observed event log")
-	}
-	return nil
-}
-
-func validatePublishedChangeAuthority(registry *contracts.Registry, targetRoot string, request protocol.OperationRequest, result protocol.OperationResult) error {
-	var input struct {
-		ChangeID string `json:"change_id"`
-	}
-	if err := json.Unmarshal(request.Input, &input); err != nil || input.ChangeID == "" {
-		return fmt.Errorf("new request input does not contain a valid change_id")
-	}
-	changePath := filepath.Join(targetRoot, filepath.FromSlash(request.ArtifactStoreRef.Namespace), "changes", input.ChangeID)
-	changeFile := filepath.Join(changePath, protocol.RepoDocsChangeFile)
-	eventFile := filepath.Join(changePath, protocol.RepoDocsEventsFile)
-	changeBytes, err := os.ReadFile(changeFile)
-	if err != nil {
-		return fmt.Errorf("read change authority: %w", err)
-	}
-	eventBytes, err := os.ReadFile(eventFile)
-	if err != nil {
-		return fmt.Errorf("read change event log: %w", err)
-	}
-	if err := registry.Validate(contracts.SchemaChangeState, changeBytes); err != nil {
-		return fmt.Errorf("change state violates schema: %w", err)
-	}
-	if err := registry.Validate(contracts.SchemaChangeCreated, eventBytes); err != nil {
-		return fmt.Errorf("change event violates schema: %w", err)
-	}
-	trimmed := bytes.TrimSpace(eventBytes)
-	if len(trimmed) == 0 || bytes.Contains(trimmed, []byte{'\n'}) {
-		return fmt.Errorf("change event log must contain exactly one event record")
-	}
-	return nil
 }
 
 func pathJoin(elements ...string) string {

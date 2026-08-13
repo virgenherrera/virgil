@@ -2,7 +2,7 @@
   "schema_version": "virgil.dev/validation-fixture/v1alpha1",
   "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
   "fixture_id": "t0-init-repo-docs-happy",
-  "fixture_revision": "v1",
+  "fixture_revision": "v2",
   "layer": "T0",
   "target_repo": {
     "uri": "fixture://targets/consumer-init-happy",
@@ -45,14 +45,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-init-happy",
-      "namespace": "docs/virgil/projects/consumer-init-happy",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -99,8 +99,8 @@
     },
     "script": {
       "uri": "fixture://validation/t0-init-repo-docs-happy/actor-script.json",
-      "revision": "v1",
-      "digest": "sha256:cf793a0b2dea417bf6d963c362e2767decfe56ac903095f69b506a71752fec44"
+      "revision": "v2",
+      "digest": "sha256:3932abfb8fc652f1ccfd56a062e888caa3920faa3d49e895d65f850e042c377b"
     }
   },
   "adapter_profile": {
@@ -129,14 +129,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-init-happy",
-      "namespace": "docs/virgil/projects/consumer-init-happy",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -208,21 +208,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "project-write",
+        "step_id": "config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-init-happy/project.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-init-happy/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -264,14 +255,10 @@
       },
       {
         "before": "guard",
-        "after": "project-write"
+        "after": "config-write"
       },
       {
-        "before": "project-write",
-        "after": "event-write"
-      },
-      {
-        "before": "event-write",
+        "before": "config-write",
         "after": "result"
       },
       {
@@ -285,22 +272,13 @@
     ],
     "max_retries": 0
   },
-  "expected_events": [
-    {
-      "kind": "project_initialized",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-init-happy"
-      }
-    }
-  ],
+  "expected_events": [],
   "expected_artifacts": [],
   "expected_effects": [
     {
       "kind": "write",
-      "min_count": 2,
-      "max_count": 2,
+      "min_count": 1,
+      "max_count": 1,
       "field_equals": {
         "/request_id": "init-happy-001",
         "/policy_decision": "authorized",
@@ -311,15 +289,11 @@
   "expected_target_diff": {
     "mode": "exact",
     "allowed_paths": [
-      "docs/virgil/projects/consumer-init-happy/**"
+      "virgil.json"
     ],
     "expected_changes": [
       {
-        "path": "docs/virgil/projects/consumer-init-happy/project.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-init-happy/events.jsonl",
+        "path": "virgil.json",
         "change_type": "added"
       }
     ]
@@ -332,52 +306,28 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-init-happy/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-init-happy/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-init-happy/events.jsonl",
+            "path": "virgil.json",
             "change_type": "added"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-init-happy/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-init-happy/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-init-happy/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
-      "expected_events": [
-        {
-          "kind": "project_initialized",
-          "min_count": 1,
-          "max_count": 1,
-          "field_equals": {
-            "/project_id": "consumer-init-happy"
-          }
-        }
-      ],
+      "expected_events": [],
       "expected_artifacts": []
     }
   ],
   "prohibited_effects": [
     {
       "kind": "write",
-      "reason": "Planning may only write below repo-docs managed_root.",
+      "reason": "Planning may only write below repo-docs managed_root or virgil.json.",
       "scope": "outside_effective_policy"
     },
     {
@@ -399,6 +349,6 @@
   },
   "expected_outcome": {
     "status": "passed",
-    "reason": "Virgil initializes repo-docs atomically without touching consumer-owned docs."
+    "reason": "Virgil initializes repo-docs atomically, publishing exactly virgil.json, without touching consumer-owned docs."
   }
 }

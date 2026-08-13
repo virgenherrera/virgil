@@ -2,7 +2,7 @@
   "schema_version": "virgil.dev/validation-fixture/v1alpha1",
   "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
   "fixture_id": "t0-continue-handoff-complete",
-  "fixture_revision": "v1",
+  "fixture_revision": "v2",
   "layer": "T0",
   "target_repo": {
     "uri": "fixture://targets/consumer-handoff-complete",
@@ -45,14 +45,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-handoff-complete",
-      "namespace": "docs/virgil/projects/consumer-handoff-complete",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -99,8 +99,8 @@
     },
     "script": {
       "uri": "fixture://validation/t0-continue-handoff-complete/actor-script.json",
-      "revision": "v1",
-      "digest": "sha256:c6d9ee3339d511b1adb18a43a80a164a75ed304b353f49680589c41a94831b66"
+      "revision": "v2",
+      "digest": "sha256:4fdb822f2efbe2b3521993a194466bda04280e7e3e652ffee942a4d9713f7a1f"
     }
   },
   "adapter_profile": {
@@ -129,14 +129,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-handoff-complete",
-      "namespace": "docs/virgil/projects/consumer-handoff-complete",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -208,21 +208,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "init-project-write",
+        "step_id": "init-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/project.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "init-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -231,8 +222,8 @@
         "operation": "virgil.init",
         "request_id": "init-handoff-complete-001",
         "operation_status": "success",
-        "process_id": "process-a",
-        "next_operation": "virgil.new"
+        "next_operation": "virgil.new",
+        "process_id": "process-a"
       },
       {
         "step_id": "new-request",
@@ -247,21 +238,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "new-change-write",
+        "step_id": "new-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/change.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "new-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -270,8 +252,8 @@
         "operation": "virgil.new",
         "request_id": "new-handoff-complete-001",
         "operation_status": "success",
-        "process_id": "process-a",
-        "next_operation": "virgil.continue"
+        "next_operation": "virgil.continue",
+        "process_id": "process-a"
       },
       {
         "step_id": "propose-idea-request",
@@ -286,30 +268,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "propose-idea-envelope-write",
+        "step_id": "propose-idea-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/idea/rev-000001/envelope.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "propose-idea-content-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/idea/rev-000001/content.md",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "propose-idea-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "resource_pattern": "docs/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -319,8 +283,8 @@
         "request_id": "continue-propose-idea-001",
         "operation_status": "needs_input",
         "diagnostic_code": "APPROVAL_REQUIRED",
-        "process_id": "process-a",
-        "next_operation": "virgil.continue"
+        "next_operation": "virgil.continue",
+        "process_id": "process-a"
       },
       {
         "step_id": "approve-idea-request",
@@ -335,12 +299,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "approve-idea-event-write",
+        "step_id": "approve-idea-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "resource_pattern": "docs/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -349,8 +313,8 @@
         "operation": "virgil.continue",
         "request_id": "continue-approve-idea-001",
         "operation_status": "success",
-        "process_id": "process-a",
-        "next_operation": "virgil.continue"
+        "next_operation": "virgil.continue",
+        "process_id": "process-a"
       },
       {
         "step_id": "propose-spec-request",
@@ -365,30 +329,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "propose-spec-envelope-write",
+        "step_id": "propose-spec-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/spec/rev-000001/envelope.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "propose-spec-content-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/spec/rev-000001/content.md",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "propose-spec-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "resource_pattern": "docs/01-spec.md",
         "process_id": "process-a"
       },
       {
@@ -398,8 +344,8 @@
         "request_id": "continue-propose-spec-001",
         "operation_status": "needs_input",
         "diagnostic_code": "APPROVAL_REQUIRED",
-        "process_id": "process-a",
-        "next_operation": "virgil.continue"
+        "next_operation": "virgil.continue",
+        "process_id": "process-a"
       },
       {
         "step_id": "approve-spec-request",
@@ -414,12 +360,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "approve-spec-event-write",
+        "step_id": "approve-spec-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "resource_pattern": "docs/01-spec.md",
         "process_id": "process-a"
       },
       {
@@ -428,8 +374,8 @@
         "operation": "virgil.continue",
         "request_id": "continue-approve-spec-001",
         "operation_status": "success",
-        "process_id": "process-a",
-        "next_operation": "virgil.continue"
+        "next_operation": "virgil.continue",
+        "process_id": "process-a"
       },
       {
         "step_id": "propose-design-request",
@@ -444,30 +390,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "propose-design-envelope-write",
+        "step_id": "propose-design-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/design/rev-000001/envelope.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "propose-design-content-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/design/rev-000001/content.md",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "propose-design-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "resource_pattern": "docs/02-design.md",
         "process_id": "process-a"
       },
       {
@@ -477,8 +405,8 @@
         "request_id": "continue-propose-design-001",
         "operation_status": "needs_input",
         "diagnostic_code": "APPROVAL_REQUIRED",
-        "process_id": "process-a",
-        "next_operation": "virgil.continue"
+        "next_operation": "virgil.continue",
+        "process_id": "process-a"
       },
       {
         "step_id": "approve-design-request",
@@ -493,12 +421,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "approve-design-event-write",
+        "step_id": "approve-design-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "resource_pattern": "docs/02-design.md",
         "process_id": "process-a"
       },
       {
@@ -507,8 +435,8 @@
         "operation": "virgil.continue",
         "request_id": "continue-approve-design-001",
         "operation_status": "success",
-        "process_id": "process-a",
-        "next_operation": "virgil.continue"
+        "next_operation": "virgil.continue",
+        "process_id": "process-a"
       },
       {
         "step_id": "propose-tasks-request",
@@ -523,30 +451,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "propose-tasks-envelope-write",
+        "step_id": "propose-tasks-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/tasks/rev-000001/envelope.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "propose-tasks-content-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/tasks/rev-000001/content.md",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "propose-tasks-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "resource_pattern": "docs/03-tasks.md",
         "process_id": "process-a"
       },
       {
@@ -556,8 +466,8 @@
         "request_id": "continue-propose-tasks-001",
         "operation_status": "needs_input",
         "diagnostic_code": "APPROVAL_REQUIRED",
-        "process_id": "process-a",
-        "next_operation": "virgil.continue"
+        "next_operation": "virgil.continue",
+        "process_id": "process-a"
       },
       {
         "step_id": "approve-tasks-request",
@@ -572,12 +482,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "approve-tasks-event-write",
+        "step_id": "approve-tasks-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "resource_pattern": "docs/03-tasks.md",
         "process_id": "process-a"
       },
       {
@@ -586,8 +496,8 @@
         "operation": "virgil.continue",
         "request_id": "continue-approve-tasks-001",
         "operation_status": "success",
-        "process_id": "process-a",
-        "next_operation": "virgil.continue"
+        "next_operation": "virgil.continue",
+        "process_id": "process-a"
       },
       {
         "step_id": "propose-handoff-request",
@@ -602,30 +512,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "propose-handoff-envelope-write",
+        "step_id": "propose-handoff-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/handoff/rev-000001/envelope.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "propose-handoff-content-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/handoff/rev-000001/content.md",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "propose-handoff-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "resource_pattern": "docs/04-handoff.md",
         "process_id": "process-a"
       },
       {
@@ -635,8 +527,8 @@
         "request_id": "continue-propose-handoff-001",
         "operation_status": "needs_input",
         "diagnostic_code": "APPROVAL_REQUIRED",
-        "process_id": "process-a",
-        "next_operation": "virgil.continue"
+        "next_operation": "virgil.continue",
+        "process_id": "process-a"
       },
       {
         "step_id": "approve-handoff-request",
@@ -651,12 +543,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "approve-handoff-event-write",
+        "step_id": "approve-handoff-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "resource_pattern": "docs/04-handoff.md",
         "process_id": "process-a"
       },
       {
@@ -665,8 +557,8 @@
         "operation": "virgil.continue",
         "request_id": "continue-approve-handoff-001",
         "operation_status": "success",
-        "process_id": "process-a",
-        "next_operation": "none"
+        "next_operation": "none",
+        "process_id": "process-a"
       },
       {
         "step_id": "stop",
@@ -698,14 +590,10 @@
       },
       {
         "before": "init-guard",
-        "after": "init-project-write"
+        "after": "init-config-write"
       },
       {
-        "before": "init-project-write",
-        "after": "init-event-write"
-      },
-      {
-        "before": "init-event-write",
+        "before": "init-config-write",
         "after": "init-result"
       },
       {
@@ -718,14 +606,10 @@
       },
       {
         "before": "new-guard",
-        "after": "new-change-write"
+        "after": "new-config-write"
       },
       {
-        "before": "new-change-write",
-        "after": "new-event-write"
-      },
-      {
-        "before": "new-event-write",
+        "before": "new-config-write",
         "after": "new-result"
       },
       {
@@ -738,18 +622,10 @@
       },
       {
         "before": "propose-idea-guard",
-        "after": "propose-idea-envelope-write"
+        "after": "propose-idea-write"
       },
       {
-        "before": "propose-idea-envelope-write",
-        "after": "propose-idea-content-write"
-      },
-      {
-        "before": "propose-idea-content-write",
-        "after": "propose-idea-event-write"
-      },
-      {
-        "before": "propose-idea-event-write",
+        "before": "propose-idea-write",
         "after": "propose-idea-result"
       },
       {
@@ -762,10 +638,10 @@
       },
       {
         "before": "approve-idea-guard",
-        "after": "approve-idea-event-write"
+        "after": "approve-idea-write"
       },
       {
-        "before": "approve-idea-event-write",
+        "before": "approve-idea-write",
         "after": "approve-idea-result"
       },
       {
@@ -778,18 +654,10 @@
       },
       {
         "before": "propose-spec-guard",
-        "after": "propose-spec-envelope-write"
+        "after": "propose-spec-write"
       },
       {
-        "before": "propose-spec-envelope-write",
-        "after": "propose-spec-content-write"
-      },
-      {
-        "before": "propose-spec-content-write",
-        "after": "propose-spec-event-write"
-      },
-      {
-        "before": "propose-spec-event-write",
+        "before": "propose-spec-write",
         "after": "propose-spec-result"
       },
       {
@@ -802,10 +670,10 @@
       },
       {
         "before": "approve-spec-guard",
-        "after": "approve-spec-event-write"
+        "after": "approve-spec-write"
       },
       {
-        "before": "approve-spec-event-write",
+        "before": "approve-spec-write",
         "after": "approve-spec-result"
       },
       {
@@ -818,18 +686,10 @@
       },
       {
         "before": "propose-design-guard",
-        "after": "propose-design-envelope-write"
+        "after": "propose-design-write"
       },
       {
-        "before": "propose-design-envelope-write",
-        "after": "propose-design-content-write"
-      },
-      {
-        "before": "propose-design-content-write",
-        "after": "propose-design-event-write"
-      },
-      {
-        "before": "propose-design-event-write",
+        "before": "propose-design-write",
         "after": "propose-design-result"
       },
       {
@@ -842,10 +702,10 @@
       },
       {
         "before": "approve-design-guard",
-        "after": "approve-design-event-write"
+        "after": "approve-design-write"
       },
       {
-        "before": "approve-design-event-write",
+        "before": "approve-design-write",
         "after": "approve-design-result"
       },
       {
@@ -858,18 +718,10 @@
       },
       {
         "before": "propose-tasks-guard",
-        "after": "propose-tasks-envelope-write"
+        "after": "propose-tasks-write"
       },
       {
-        "before": "propose-tasks-envelope-write",
-        "after": "propose-tasks-content-write"
-      },
-      {
-        "before": "propose-tasks-content-write",
-        "after": "propose-tasks-event-write"
-      },
-      {
-        "before": "propose-tasks-event-write",
+        "before": "propose-tasks-write",
         "after": "propose-tasks-result"
       },
       {
@@ -882,10 +734,10 @@
       },
       {
         "before": "approve-tasks-guard",
-        "after": "approve-tasks-event-write"
+        "after": "approve-tasks-write"
       },
       {
-        "before": "approve-tasks-event-write",
+        "before": "approve-tasks-write",
         "after": "approve-tasks-result"
       },
       {
@@ -898,18 +750,10 @@
       },
       {
         "before": "propose-handoff-guard",
-        "after": "propose-handoff-envelope-write"
+        "after": "propose-handoff-write"
       },
       {
-        "before": "propose-handoff-envelope-write",
-        "after": "propose-handoff-content-write"
-      },
-      {
-        "before": "propose-handoff-content-write",
-        "after": "propose-handoff-event-write"
-      },
-      {
-        "before": "propose-handoff-event-write",
+        "before": "propose-handoff-write",
         "after": "propose-handoff-result"
       },
       {
@@ -922,10 +766,10 @@
       },
       {
         "before": "approve-handoff-guard",
-        "after": "approve-handoff-event-write"
+        "after": "approve-handoff-write"
       },
       {
-        "before": "approve-handoff-event-write",
+        "before": "approve-handoff-write",
         "after": "approve-handoff-result"
       },
       {
@@ -939,175 +783,7 @@
     ],
     "max_retries": 0
   },
-  "expected_events": [
-    {
-      "kind": "project_initialized",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete"
-      }
-    },
-    {
-      "kind": "change_created",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha"
-      }
-    },
-    {
-      "kind": "revision_drafted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "idea"
-      }
-    },
-    {
-      "kind": "revision_submitted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "idea"
-      }
-    },
-    {
-      "kind": "revision_approved",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "idea"
-      }
-    },
-    {
-      "kind": "revision_drafted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "spec"
-      }
-    },
-    {
-      "kind": "revision_submitted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "spec"
-      }
-    },
-    {
-      "kind": "revision_approved",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "spec"
-      }
-    },
-    {
-      "kind": "revision_drafted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "design"
-      }
-    },
-    {
-      "kind": "revision_submitted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "design"
-      }
-    },
-    {
-      "kind": "revision_approved",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "design"
-      }
-    },
-    {
-      "kind": "revision_drafted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "tasks"
-      }
-    },
-    {
-      "kind": "revision_submitted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "tasks"
-      }
-    },
-    {
-      "kind": "revision_approved",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "tasks"
-      }
-    },
-    {
-      "kind": "revision_drafted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "handoff"
-      }
-    },
-    {
-      "kind": "revision_submitted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "handoff"
-      }
-    },
-    {
-      "kind": "revision_approved",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-handoff-complete",
-        "/change_id": "change-handoff-alpha",
-        "/artifact_kind": "handoff"
-      }
-    }
-  ],
+  "expected_events": [],
   "expected_artifacts": [
     {
       "kind": "revision",
@@ -1118,8 +794,8 @@
   "expected_effects": [
     {
       "kind": "write",
-      "min_count": 24,
-      "max_count": 24,
+      "min_count": 12,
+      "max_count": 12,
       "field_equals": {
         "/policy_decision": "authorized",
         "/occurred": true
@@ -1129,63 +805,32 @@
   "expected_target_diff": {
     "mode": "exact",
     "allowed_paths": [
-      "docs/virgil/projects/consumer-handoff-complete/**"
+      "virgil.json",
+      "docs/**"
     ],
     "expected_changes": [
       {
-        "path": "docs/virgil/projects/consumer-handoff-complete/project.json",
+        "path": "virgil.json",
         "change_type": "added"
       },
       {
-        "path": "docs/virgil/projects/consumer-handoff-complete/events.jsonl",
+        "path": "docs/00-idea.md",
         "change_type": "added"
       },
       {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/change.json",
+        "path": "docs/01-spec.md",
         "change_type": "added"
       },
       {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+        "path": "docs/02-design.md",
         "change_type": "added"
       },
       {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/idea/rev-000001/envelope.json",
+        "path": "docs/03-tasks.md",
         "change_type": "added"
       },
       {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/idea/rev-000001/content.md",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/spec/rev-000001/envelope.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/spec/rev-000001/content.md",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/design/rev-000001/envelope.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/design/rev-000001/content.md",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/tasks/rev-000001/envelope.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/tasks/rev-000001/content.md",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/handoff/rev-000001/envelope.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/handoff/rev-000001/content.md",
+        "path": "docs/04-handoff.md",
         "change_type": "added"
       }
     ]
@@ -1198,45 +843,21 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/events.jsonl",
+            "path": "virgil.json",
             "change_type": "added"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
-      "expected_events": [
-        {
-          "kind": "project_initialized",
-          "min_count": 1,
-          "max_count": 1,
-          "field_equals": {
-            "/project_id": "consumer-handoff-complete"
-          }
-        }
-      ],
+      "expected_events": [],
       "expected_artifacts": []
     },
     {
@@ -1246,34 +867,19 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "added"
+            "path": "virgil.json",
+            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
       "expected_events": [],
       "expected_artifacts": []
@@ -1285,40 +891,24 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/idea/rev-000001/envelope.json",
+            "path": "docs/00-idea.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/idea/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/idea/rev-000001/envelope.json",
+            "path": "docs/00-idea.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/idea/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
@@ -1338,15 +928,11 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/idea/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+            "path": "docs/00-idea.md",
             "change_type": "modified"
           }
         ]
@@ -1354,15 +940,11 @@
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/idea/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+            "path": "docs/00-idea.md",
             "change_type": "modified"
           }
         ]
@@ -1383,40 +965,24 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/spec/rev-000001/envelope.json",
+            "path": "docs/01-spec.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/spec/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/spec/rev-000001/envelope.json",
+            "path": "docs/01-spec.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/spec/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
@@ -1436,15 +1002,11 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/spec/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+            "path": "docs/01-spec.md",
             "change_type": "modified"
           }
         ]
@@ -1452,15 +1014,11 @@
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/spec/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+            "path": "docs/01-spec.md",
             "change_type": "modified"
           }
         ]
@@ -1481,40 +1039,24 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/design/rev-000001/envelope.json",
+            "path": "docs/02-design.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/design/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/design/rev-000001/envelope.json",
+            "path": "docs/02-design.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/design/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
@@ -1534,15 +1076,11 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/design/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+            "path": "docs/02-design.md",
             "change_type": "modified"
           }
         ]
@@ -1550,15 +1088,11 @@
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/design/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+            "path": "docs/02-design.md",
             "change_type": "modified"
           }
         ]
@@ -1579,40 +1113,24 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/tasks/rev-000001/envelope.json",
+            "path": "docs/03-tasks.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/tasks/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/tasks/rev-000001/envelope.json",
+            "path": "docs/03-tasks.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/tasks/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
@@ -1632,15 +1150,11 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/tasks/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+            "path": "docs/03-tasks.md",
             "change_type": "modified"
           }
         ]
@@ -1648,15 +1162,11 @@
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/tasks/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+            "path": "docs/03-tasks.md",
             "change_type": "modified"
           }
         ]
@@ -1677,40 +1187,24 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/handoff/rev-000001/envelope.json",
+            "path": "docs/04-handoff.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/handoff/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/handoff/rev-000001/envelope.json",
+            "path": "docs/04-handoff.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/handoff/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
@@ -1730,15 +1224,11 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/handoff/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+            "path": "docs/04-handoff.md",
             "change_type": "modified"
           }
         ]
@@ -1746,15 +1236,11 @@
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-handoff-complete/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/artifacts/handoff/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-handoff-complete/changes/change-handoff-alpha/events.jsonl",
+            "path": "docs/04-handoff.md",
             "change_type": "modified"
           }
         ]

@@ -53,14 +53,14 @@
             "adapter_version": "v1alpha1"
           },
           "project_id": "consumer-continue-happy",
-          "namespace": "docs/virgil/projects/consumer-continue-happy",
+          "namespace": "docs",
           "policy": {
             "policy_version": "repo-docs/v1alpha1",
             "read_allowlist": [
               "docs/**"
             ],
             "write_allowlist": [
-              "docs/virgil/**"
+              "docs/**"
             ]
           }
         },
@@ -136,14 +136,14 @@
             "adapter_version": "v1alpha1"
           },
           "project_id": "consumer-continue-happy",
-          "namespace": "docs/virgil/projects/consumer-continue-happy",
+          "namespace": "docs",
           "policy": {
             "policy_version": "repo-docs/v1alpha1",
             "read_allowlist": [
               "docs/**"
             ],
             "write_allowlist": [
-              "docs/virgil/**"
+              "docs/**"
             ]
           }
         },
@@ -224,14 +224,14 @@
             "adapter_version": "v1alpha1"
           },
           "project_id": "consumer-continue-happy",
-          "namespace": "docs/virgil/projects/consumer-continue-happy",
+          "namespace": "docs",
           "policy": {
             "policy_version": "repo-docs/v1alpha1",
             "read_allowlist": [
               "docs/**"
             ],
             "write_allowlist": [
-              "docs/virgil/**"
+              "docs/**"
             ]
           }
         },
@@ -321,14 +321,14 @@
             "adapter_version": "v1alpha1"
           },
           "project_id": "consumer-continue-happy",
-          "namespace": "docs/virgil/projects/consumer-continue-happy",
+          "namespace": "docs",
           "policy": {
             "policy_version": "repo-docs/v1alpha1",
             "read_allowlist": [
               "docs/**"
             ],
             "write_allowlist": [
-              "docs/virgil/**"
+              "docs/**"
             ]
           }
         },

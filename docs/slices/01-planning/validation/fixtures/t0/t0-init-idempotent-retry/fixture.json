@@ -2,7 +2,7 @@
   "schema_version": "virgil.dev/validation-fixture/v1alpha1",
   "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
   "fixture_id": "t0-init-idempotent-retry",
-  "fixture_revision": "v1",
+  "fixture_revision": "v2",
   "layer": "T0",
   "target_repo": {
     "uri": "fixture://targets/consumer-retry",
@@ -45,14 +45,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-retry",
-      "namespace": "docs/virgil/projects/consumer-retry",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -101,8 +101,8 @@
     },
     "script": {
       "uri": "fixture://validation/t0-init-idempotent-retry/actor-script.json",
-      "revision": "v1",
-      "digest": "sha256:3f034c7248892bc2cc22d2221c2e4b34428ba929210e5ec762aa49023df1c19f"
+      "revision": "v2",
+      "digest": "sha256:aa3fbd9c20fa07402e666aa13f60fc62d4a3c4e4ae62d32d93f45cdfb5be36b7"
     }
   },
   "adapter_profile": {
@@ -131,14 +131,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-retry",
-      "namespace": "docs/virgil/projects/consumer-retry",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -205,19 +205,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "project-write",
+        "step_id": "config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -288,14 +281,10 @@
       },
       {
         "before": "request-a",
-        "after": "project-write"
+        "after": "config-write"
       },
       {
-        "before": "project-write",
-        "after": "event-write"
-      },
-      {
-        "before": "event-write",
+        "before": "config-write",
         "after": "result-a"
       },
       {
@@ -329,22 +318,13 @@
     ],
     "max_retries": 1
   },
-  "expected_events": [
-    {
-      "kind": "project_initialized",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-retry"
-      }
-    }
-  ],
+  "expected_events": [],
   "expected_artifacts": [],
   "expected_effects": [
     {
       "kind": "write",
-      "min_count": 2,
-      "max_count": 2,
+      "min_count": 1,
+      "max_count": 1,
       "field_equals": {
         "/request_id": "init-retry-001-a",
         "/policy_decision": "authorized",
@@ -364,15 +344,11 @@
   "expected_target_diff": {
     "mode": "exact",
     "allowed_paths": [
-      "docs/virgil/projects/consumer-retry/**"
+      "virgil.json"
     ],
     "expected_changes": [
       {
-        "path": "docs/virgil/projects/consumer-retry/project.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-retry/events.jsonl",
+        "path": "virgil.json",
         "change_type": "added"
       }
     ]
@@ -385,45 +361,21 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-retry/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-retry/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-retry/events.jsonl",
+            "path": "virgil.json",
             "change_type": "added"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-retry/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-retry/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-retry/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
-      "expected_events": [
-        {
-          "kind": "project_initialized",
-          "min_count": 1,
-          "max_count": 1,
-          "field_equals": {
-            "/project_id": "consumer-retry"
-          }
-        }
-      ],
+      "expected_events": [],
       "expected_artifacts": []
     },
     {
@@ -440,13 +392,7 @@
         "allowed_paths": [],
         "expected_changes": []
       },
-      "expected_events": [
-        {
-          "kind": "project_initialized",
-          "min_count": 0,
-          "max_count": 0
-        }
-      ],
+      "expected_events": [],
       "expected_artifacts": []
     }
   ],
@@ -460,7 +406,7 @@
     },
     {
       "kind": "write",
-      "reason": "Planning may only write below repo-docs managed_root.",
+      "reason": "Planning may only write below repo-docs managed_root or virgil.json.",
       "scope": "outside_effective_policy"
     },
     {

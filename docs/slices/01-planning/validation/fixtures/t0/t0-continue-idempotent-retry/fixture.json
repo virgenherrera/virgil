@@ -45,14 +45,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-continue-retry",
-      "namespace": "docs/virgil/projects/consumer-continue-retry",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -100,7 +100,7 @@
     "script": {
       "uri": "fixture://validation/t0-continue-idempotent-retry/actor-script.json",
       "revision": "v1",
-      "digest": "sha256:8becea992a04700072ebd2c8f1fac7ff721655ace3a2fabb211ab177b5b869f8"
+      "digest": "sha256:272a388216ae40b5cc9bab9d2b530ecdf38cf727333a74c7a077a236ef828ca6"
     }
   },
   "adapter_profile": {
@@ -129,14 +129,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-continue-retry",
-      "namespace": "docs/virgil/projects/consumer-continue-retry",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -208,21 +208,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "init-project-write",
+        "step_id": "init-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-continue-retry/project.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "init-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-continue-retry/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -247,21 +238,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "new-change-write",
+        "step_id": "new-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/change.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "new-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -286,30 +268,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "first-proposal-envelope-write",
+        "step_id": "first-proposal-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/artifacts/idea/rev-000001/envelope.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "first-proposal-content-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/artifacts/idea/rev-000001/content.md",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "first-proposal-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/events.jsonl",
+        "resource_pattern": "docs/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -375,14 +339,10 @@
       },
       {
         "before": "init-guard",
-        "after": "init-project-write"
+        "after": "init-config-write"
       },
       {
-        "before": "init-project-write",
-        "after": "init-event-write"
-      },
-      {
-        "before": "init-event-write",
+        "before": "init-config-write",
         "after": "init-result"
       },
       {
@@ -395,14 +355,10 @@
       },
       {
         "before": "new-guard",
-        "after": "new-change-write"
+        "after": "new-config-write"
       },
       {
-        "before": "new-change-write",
-        "after": "new-event-write"
-      },
-      {
-        "before": "new-event-write",
+        "before": "new-config-write",
         "after": "new-result"
       },
       {
@@ -415,18 +371,10 @@
       },
       {
         "before": "first-proposal-guard",
-        "after": "first-proposal-envelope-write"
+        "after": "first-proposal-write"
       },
       {
-        "before": "first-proposal-envelope-write",
-        "after": "first-proposal-content-write"
-      },
-      {
-        "before": "first-proposal-content-write",
-        "after": "first-proposal-event-write"
-      },
-      {
-        "before": "first-proposal-event-write",
+        "before": "first-proposal-write",
         "after": "first-proposal-result"
       },
       {
@@ -452,45 +400,7 @@
     ],
     "max_retries": 0
   },
-  "expected_events": [
-    {
-      "kind": "project_initialized",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-continue-retry"
-      }
-    },
-    {
-      "kind": "change_created",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-continue-retry",
-        "/change_id": "change-retry-alpha"
-      }
-    },
-    {
-      "kind": "revision_drafted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-continue-retry",
-        "/change_id": "change-retry-alpha",
-        "/artifact_kind": "idea"
-      }
-    },
-    {
-      "kind": "revision_submitted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-continue-retry",
-        "/change_id": "change-retry-alpha",
-        "/artifact_kind": "idea"
-      }
-    }
-  ],
+  "expected_events": [],
   "expected_artifacts": [
     {
       "kind": "revision",
@@ -501,8 +411,8 @@
   "expected_effects": [
     {
       "kind": "write",
-      "min_count": 7,
-      "max_count": 7,
+      "min_count": 3,
+      "max_count": 3,
       "field_equals": {
         "/policy_decision": "authorized",
         "/occurred": true
@@ -521,31 +431,16 @@
   "expected_target_diff": {
     "mode": "exact",
     "allowed_paths": [
-      "docs/virgil/projects/consumer-continue-retry/**"
+      "virgil.json",
+      "docs/**"
     ],
     "expected_changes": [
       {
-        "path": "docs/virgil/projects/consumer-continue-retry/project.json",
+        "path": "virgil.json",
         "change_type": "added"
       },
       {
-        "path": "docs/virgil/projects/consumer-continue-retry/events.jsonl",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/change.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/events.jsonl",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/artifacts/idea/rev-000001/envelope.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/artifacts/idea/rev-000001/content.md",
+        "path": "docs/00-idea.md",
         "change_type": "added"
       }
     ]
@@ -558,45 +453,21 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-continue-retry/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-continue-retry/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-continue-retry/events.jsonl",
+            "path": "virgil.json",
             "change_type": "added"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-continue-retry/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-continue-retry/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-continue-retry/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
-      "expected_events": [
-        {
-          "kind": "project_initialized",
-          "min_count": 1,
-          "max_count": 1,
-          "field_equals": {
-            "/project_id": "consumer-continue-retry"
-          }
-        }
-      ],
+      "expected_events": [],
       "expected_artifacts": []
     },
     {
@@ -606,34 +477,19 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-continue-retry/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/events.jsonl",
-            "change_type": "added"
+            "path": "virgil.json",
+            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-continue-retry/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
       "expected_events": [],
       "expected_artifacts": []
@@ -645,40 +501,24 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-continue-retry/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/artifacts/idea/rev-000001/envelope.json",
+            "path": "docs/00-idea.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/artifacts/idea/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-continue-retry/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/artifacts/idea/rev-000001/envelope.json",
+            "path": "docs/00-idea.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/artifacts/idea/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-continue-retry/changes/change-retry-alpha/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },

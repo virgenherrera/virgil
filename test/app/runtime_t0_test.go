@@ -1,7 +1,6 @@
 package app_test
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -355,6 +354,17 @@ func runT0Seeded(t *testing.T, fixtureID string, seed func(targetRoot string) er
 	}
 	if err := os.Mkdir(evidenceRoot, 0o700); err != nil {
 		t.Fatalf("create isolated evidence root: %v", err)
+	}
+	// t.TempDir() may return a path through a platform symlink (e.g. macOS
+	// /var -> /private/var). The publisher canonicalizes evidenceRoot via
+	// EvalSymlinks before embedding it in evidence URIs, so the test harness
+	// must compare against the same canonical path or every evidence
+	// resource URI will appear to live outside evidenceRoot.
+	if resolved, err := filepath.EvalSymlinks(workspaceRoot); err == nil {
+		workspaceRoot = resolved
+	}
+	if resolved, err := filepath.EvalSymlinks(evidenceRoot); err == nil {
+		evidenceRoot = resolved
 	}
 	if seed != nil {
 		targetRoot := filepath.Join(workspaceRoot, fixtureID, "target")
@@ -766,8 +776,7 @@ func assertOneJSONValue(t *testing.T, label string, content []byte) {
 func validContentContract(role, schemaID, mediaType string) bool {
 	contracts := map[string][2]string{
 		"trace":               {"https://schemas.virgil.dev/planning-slice1/v1alpha1/agent-interaction-trace.schema.json", "application/json"},
-		"event_log":           {"https://schemas.virgil.dev/planning-slice1/v1alpha1/project-initialized-event.schema.json", "application/x-ndjson"},
-		"project_state":       {"https://schemas.virgil.dev/planning-slice1/v1alpha1/project-state.schema.json", "application/json"},
+		"project_state":       {"https://schemas.virgil.dev/planning-slice1/v1alpha1/virgil-config.schema.json", "application/json"},
 		"filesystem_snapshot": {"https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-snapshot.schema.json", "application/json"},
 		"filesystem_diff":     {"https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-diff.schema.json", "application/json"},
 		"runner_report":       {"https://schemas.virgil.dev/planning-slice1/v1alpha1/runner-observation-report.schema.json", "application/json"},
@@ -778,7 +787,7 @@ func validContentContract(role, schemaID, mediaType string) bool {
 
 func assertContentCardinality(t *testing.T, fixtureID string, counts map[string]int) {
 	t.Helper()
-	for _, role := range []string{"trace", "event_log", "runner_report"} {
+	for _, role := range []string{"trace", "runner_report"} {
 		if counts[role] != 1 {
 			t.Fatalf("EvidenceBundle has %d %s resources, want one", counts[role], role)
 		}
@@ -946,94 +955,47 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 		}
 		return
 	}
-	projectByFixture := map[string]string{
-		"t0-init-repo-docs-happy":                "consumer-init-happy",
-		"t0-init-idempotent-retry":               "consumer-retry",
-		"t0-new-repo-docs-happy":                 "consumer-new-happy",
-		"t0-new-change-id-collision":             "consumer-collision",
-		"t0-continue-content-proposal-happy":     "consumer-continue-happy",
-		"t0-continue-request-changes":            "consumer-request-changes",
-		"t0-continue-idempotent-retry":           "consumer-continue-retry",
-		"t0-continue-out-of-scope-write-blocked": "consumer-out-of-scope",
-		"t0-continue-handoff-complete":           "consumer-handoff-complete",
-		"t0-continue-recovery-fresh-process":     "consumer-recovery",
+	// Every non-blocked T0 scenario publishes exactly virgil.json at the
+	// target root (the repo-docs control file, not part of managed_root).
+	// Scenarios that reach virgil.continue additionally publish one
+	// docs/{NN}-{kind}.md per artifact drafted, plus the fixture's seed file
+	// that content_proposal read.
+	prefix := filepath.Join(fixtureID, "target")
+	want := []string{filepath.Join(prefix, "virgil.json")}
+
+	artifactFileByKind := map[string]string{
+		"idea":    "00-idea.md",
+		"spec":    "01-spec.md",
+		"design":  "02-design.md",
+		"tasks":   "03-tasks.md",
+		"handoff": "04-handoff.md",
 	}
-	projectID, ok := projectByFixture[fixtureID]
-	if !ok {
-		t.Fatalf("no workspace oracle for fixture %q", fixtureID)
-	}
-	prefix := filepath.Join(fixtureID, "target", "docs", "virgil", "projects", projectID)
-	want := []string{
-		filepath.Join(prefix, "events.jsonl"),
-		filepath.Join(prefix, "project.json"),
-	}
-	changeByFixture := map[string]string{
-		"t0-new-repo-docs-happy":                 "change-alpha",
-		"t0-new-change-id-collision":             "change-beta",
-		"t0-continue-content-proposal-happy":     "change-continue-alpha",
-		"t0-continue-request-changes":            "change-request-changes",
-		"t0-continue-idempotent-retry":           "change-retry-alpha",
-		"t0-continue-out-of-scope-write-blocked": "change-blocked-alpha",
-		"t0-continue-handoff-complete":           "change-handoff-alpha",
-		"t0-continue-recovery-fresh-process":     "change-recovery-alpha",
-	}
-	if changeID, hasChange := changeByFixture[fixtureID]; hasChange {
-		changePrefix := filepath.Join(prefix, "changes", changeID)
+	addArtifact := func(kind, seedName string) {
 		want = append(want,
-			filepath.Join(changePrefix, "change.json"),
-			filepath.Join(changePrefix, "events.jsonl"),
+			filepath.Join(prefix, "docs", artifactFileByKind[kind]),
+			filepath.Join(prefix, "seed", seedName),
 		)
 	}
-	if fixtureID == "t0-continue-content-proposal-happy" {
-		revisionPrefix := filepath.Join(prefix, "changes", "change-continue-alpha", "artifacts", "idea", "rev-000001")
-		want = append(want,
-			filepath.Join(revisionPrefix, "envelope.json"),
-			filepath.Join(revisionPrefix, "content.md"),
-			filepath.Join(fixtureID, "target", "seed", "idea-proposal.md"),
-		)
-	}
-	if fixtureID == "t0-continue-request-changes" {
-		revisionPrefix := filepath.Join(prefix, "changes", "change-request-changes", "artifacts", "idea", "rev-000001")
-		want = append(want,
-			filepath.Join(revisionPrefix, "envelope.json"),
-			filepath.Join(revisionPrefix, "content.md"),
-			filepath.Join(fixtureID, "target", "seed", "idea-proposal.md"),
-		)
-	}
-	if fixtureID == "t0-continue-idempotent-retry" {
-		revisionPrefix := filepath.Join(prefix, "changes", "change-retry-alpha", "artifacts", "idea", "rev-000001")
-		want = append(want,
-			filepath.Join(revisionPrefix, "envelope.json"),
-			filepath.Join(revisionPrefix, "content.md"),
-			filepath.Join(fixtureID, "target", "seed", "idea-proposal.md"),
-		)
-	}
-	if fixtureID == "t0-continue-handoff-complete" {
+
+	switch fixtureID {
+	case "t0-continue-content-proposal-happy":
+		addArtifact("idea", "idea-proposal.md")
+	case "t0-continue-request-changes":
+		addArtifact("idea", "idea-proposal.md")
+	case "t0-continue-idempotent-retry":
+		addArtifact("idea", "idea-proposal.md")
+	case "t0-continue-handoff-complete":
 		for _, kind := range []string{"idea", "spec", "design", "tasks", "handoff"} {
-			revisionPrefix := filepath.Join(prefix, "changes", "change-handoff-alpha", "artifacts", kind, "rev-000001")
-			want = append(want,
-				filepath.Join(revisionPrefix, "envelope.json"),
-				filepath.Join(revisionPrefix, "content.md"),
-				filepath.Join(fixtureID, "target", "seed", kind+"-proposal.md"),
-			)
+			addArtifact(kind, kind+"-proposal.md")
 		}
+	case "t0-continue-recovery-fresh-process":
+		addArtifact("idea", "idea-proposal.md")
+		addArtifact("spec", "spec-proposal.md")
 	}
-	if fixtureID == "t0-continue-recovery-fresh-process" {
-		for _, kind := range []string{"idea", "spec"} {
-			revisionPrefix := filepath.Join(prefix, "changes", "change-recovery-alpha", "artifacts", kind, "rev-000001")
-			want = append(want,
-				filepath.Join(revisionPrefix, "envelope.json"),
-				filepath.Join(revisionPrefix, "content.md"),
-				filepath.Join(fixtureID, "target", "seed", kind+"-proposal.md"),
-			)
-		}
-	}
+
 	sort.Strings(want)
 	if !equalStrings(files, want) {
 		t.Fatalf("scenario %q workspace files: got %v want %v", fixtureID, files, want)
-	}
-	if fixtureID == "t0-init-idempotent-retry" {
-		assertOneEvent(t, filepath.Join(workspaceRoot, prefix, "events.jsonl"))
 	}
 }
 
@@ -1070,33 +1032,6 @@ func equalStrings(actual, expected []string) bool {
 		}
 	}
 	return true
-}
-
-func assertOneEvent(t *testing.T, eventsPath string) {
-	t.Helper()
-	file, err := os.Open(eventsPath)
-	if err != nil {
-		t.Fatalf("open retry event log: %v", err)
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	count := 0
-	for scanner.Scan() {
-		line := bytes.TrimSpace(scanner.Bytes())
-		if len(line) == 0 {
-			continue
-		}
-		if !json.Valid(line) {
-			t.Fatalf("retry event %d is not valid JSON", count+1)
-		}
-		count++
-	}
-	if err := scanner.Err(); err != nil {
-		t.Fatalf("scan retry event log: %v", err)
-	}
-	if count != 1 {
-		t.Fatalf("retry event log contains %d events, want 1", count)
-	}
 }
 
 func appEnvironment() []string {

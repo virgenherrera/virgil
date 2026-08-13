@@ -2,7 +2,7 @@
   "schema_version": "virgil.dev/validation-fixture/v1alpha1",
   "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
   "fixture_id": "t0-new-change-id-collision",
-  "fixture_revision": "v1",
+  "fixture_revision": "v2",
   "layer": "T0",
   "target_repo": {
     "uri": "fixture://targets/consumer-collision",
@@ -45,14 +45,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-collision",
-      "namespace": "docs/virgil/projects/consumer-collision",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -99,8 +99,8 @@
     },
     "script": {
       "uri": "fixture://validation/t0-new-change-id-collision/actor-script.json",
-      "revision": "v1",
-      "digest": "sha256:bc456dcd6cd7db0347d2452d42df26e011b3be810c8132af27299295b4b10314"
+      "revision": "v2",
+      "digest": "sha256:0a2fc685c1d3bf3cb25a566e7545906a5d8e00b8271c1ba100b241458635348f"
     }
   },
   "adapter_profile": {
@@ -129,14 +129,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-collision",
-      "namespace": "docs/virgil/projects/consumer-collision",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -208,21 +208,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "init-project-write",
+        "step_id": "init-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-collision/project.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "init-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-collision/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -247,21 +238,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "new1-change-write",
+        "step_id": "new1-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-collision/changes/change-beta/change.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "new1-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-collision/changes/change-beta/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -326,14 +308,10 @@
       },
       {
         "before": "init-guard",
-        "after": "init-project-write"
+        "after": "init-config-write"
       },
       {
-        "before": "init-project-write",
-        "after": "init-event-write"
-      },
-      {
-        "before": "init-event-write",
+        "before": "init-config-write",
         "after": "init-result"
       },
       {
@@ -346,14 +324,10 @@
       },
       {
         "before": "new1-guard",
-        "after": "new1-change-write"
+        "after": "new1-config-write"
       },
       {
-        "before": "new1-change-write",
-        "after": "new1-event-write"
-      },
-      {
-        "before": "new1-event-write",
+        "before": "new1-config-write",
         "after": "new1-result"
       },
       {
@@ -379,31 +353,13 @@
     ],
     "max_retries": 0
   },
-  "expected_events": [
-    {
-      "kind": "project_initialized",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-collision"
-      }
-    },
-    {
-      "kind": "change_created",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-collision",
-        "/change_id": "change-beta"
-      }
-    }
-  ],
+  "expected_events": [],
   "expected_artifacts": [],
   "expected_effects": [
     {
       "kind": "write",
-      "min_count": 4,
-      "max_count": 4,
+      "min_count": 2,
+      "max_count": 2,
       "field_equals": {
         "/policy_decision": "authorized",
         "/occurred": true
@@ -413,24 +369,12 @@
   "expected_target_diff": {
     "mode": "exact",
     "allowed_paths": [
-      "docs/virgil/projects/consumer-collision/**"
+      "virgil.json"
     ],
     "expected_changes": [
       {
-        "path": "docs/virgil/projects/consumer-collision/project.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-collision/events.jsonl",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-collision/changes/change-beta/change.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-collision/changes/change-beta/events.jsonl",
-        "change_type": "added"
+        "path": "virgil.json",
+        "change_type": "modified"
       }
     ]
   },
@@ -442,45 +386,21 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-collision/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-collision/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-collision/events.jsonl",
+            "path": "virgil.json",
             "change_type": "added"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-collision/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-collision/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-collision/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
-      "expected_events": [
-        {
-          "kind": "project_initialized",
-          "min_count": 1,
-          "max_count": 1,
-          "field_equals": {
-            "/project_id": "consumer-collision"
-          }
-        }
-      ],
+      "expected_events": [],
       "expected_artifacts": []
     },
     {
@@ -490,34 +410,19 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-collision/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-collision/changes/change-beta/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-collision/changes/change-beta/events.jsonl",
-            "change_type": "added"
+            "path": "virgil.json",
+            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-collision/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-collision/changes/change-beta/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-collision/changes/change-beta/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
       "expected_events": [],
       "expected_artifacts": []
@@ -550,7 +455,7 @@
     },
     {
       "kind": "write",
-      "reason": "Planning may only write below repo-docs managed_root.",
+      "reason": "Planning may only write below repo-docs managed_root or virgil.json.",
       "scope": "outside_effective_policy"
     },
     {

@@ -2,7 +2,7 @@
   "schema_version": "virgil.dev/scripted-actor/v1alpha1",
   "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
   "script_id": "script-t0-init-idempotent-retry",
-  "script_revision": "v1",
+  "script_revision": "v2",
   "actor": {
     "actor_id": "scripted-agent",
     "kind": "agent",
@@ -53,14 +53,14 @@
             "adapter_version": "v1alpha1"
           },
           "project_id": "consumer-retry",
-          "namespace": "docs/virgil/projects/consumer-retry",
+          "namespace": "docs",
           "policy": {
             "policy_version": "repo-docs/v1alpha1",
             "read_allowlist": [
               "docs/**"
             ],
             "write_allowlist": [
-              "docs/virgil/**"
+              "docs/**"
             ]
           }
         },
@@ -145,14 +145,14 @@
             "adapter_version": "v1alpha1"
           },
           "project_id": "consumer-retry",
-          "namespace": "docs/virgil/projects/consumer-retry",
+          "namespace": "docs",
           "policy": {
             "policy_version": "repo-docs/v1alpha1",
             "read_allowlist": [
               "docs/**"
             ],
             "write_allowlist": [
-              "docs/virgil/**"
+              "docs/**"
             ]
           }
         },

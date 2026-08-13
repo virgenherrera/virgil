@@ -2,7 +2,7 @@
   "schema_version": "virgil.dev/validation-fixture/v1alpha1",
   "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
   "fixture_id": "t0-new-repo-docs-happy",
-  "fixture_revision": "v1",
+  "fixture_revision": "v2",
   "layer": "T0",
   "target_repo": {
     "uri": "fixture://targets/consumer-new-happy",
@@ -45,14 +45,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-new-happy",
-      "namespace": "docs/virgil/projects/consumer-new-happy",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -99,8 +99,8 @@
     },
     "script": {
       "uri": "fixture://validation/t0-new-repo-docs-happy/actor-script.json",
-      "revision": "v1",
-      "digest": "sha256:e8a01b5db571701e601279103f7f744aa2cf63f7e51a8b38df9b50b712e342c9"
+      "revision": "v2",
+      "digest": "sha256:b2cd137c41ccf0452f670fc8488e09f550c21254c8bd6456958abc9cb33b50a7"
     }
   },
   "adapter_profile": {
@@ -129,14 +129,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-new-happy",
-      "namespace": "docs/virgil/projects/consumer-new-happy",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -208,21 +208,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "init-project-write",
+        "step_id": "init-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-new-happy/project.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "init-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-new-happy/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -247,21 +238,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "new-change-write",
+        "step_id": "new-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-new-happy/changes/change-alpha/change.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "new-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-new-happy/changes/change-alpha/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -303,14 +285,10 @@
       },
       {
         "before": "init-guard",
-        "after": "init-project-write"
+        "after": "init-config-write"
       },
       {
-        "before": "init-project-write",
-        "after": "init-event-write"
-      },
-      {
-        "before": "init-event-write",
+        "before": "init-config-write",
         "after": "init-result"
       },
       {
@@ -323,14 +301,10 @@
       },
       {
         "before": "new-guard",
-        "after": "new-change-write"
+        "after": "new-config-write"
       },
       {
-        "before": "new-change-write",
-        "after": "new-event-write"
-      },
-      {
-        "before": "new-event-write",
+        "before": "new-config-write",
         "after": "new-result"
       },
       {
@@ -344,31 +318,13 @@
     ],
     "max_retries": 0
   },
-  "expected_events": [
-    {
-      "kind": "project_initialized",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-new-happy"
-      }
-    },
-    {
-      "kind": "change_created",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-new-happy",
-        "/change_id": "change-alpha"
-      }
-    }
-  ],
+  "expected_events": [],
   "expected_artifacts": [],
   "expected_effects": [
     {
       "kind": "write",
-      "min_count": 4,
-      "max_count": 4,
+      "min_count": 2,
+      "max_count": 2,
       "field_equals": {
         "/policy_decision": "authorized",
         "/occurred": true
@@ -378,24 +334,12 @@
   "expected_target_diff": {
     "mode": "exact",
     "allowed_paths": [
-      "docs/virgil/projects/consumer-new-happy/**"
+      "virgil.json"
     ],
     "expected_changes": [
       {
-        "path": "docs/virgil/projects/consumer-new-happy/project.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-new-happy/events.jsonl",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-new-happy/changes/change-alpha/change.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-new-happy/changes/change-alpha/events.jsonl",
-        "change_type": "added"
+        "path": "virgil.json",
+        "change_type": "modified"
       }
     ]
   },
@@ -407,45 +351,21 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-new-happy/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-new-happy/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-new-happy/events.jsonl",
+            "path": "virgil.json",
             "change_type": "added"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-new-happy/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-new-happy/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-new-happy/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
-      "expected_events": [
-        {
-          "kind": "project_initialized",
-          "min_count": 1,
-          "max_count": 1,
-          "field_equals": {
-            "/project_id": "consumer-new-happy"
-          }
-        }
-      ],
+      "expected_events": [],
       "expected_artifacts": []
     },
     {
@@ -455,34 +375,19 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-new-happy/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-new-happy/changes/change-alpha/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-new-happy/changes/change-alpha/events.jsonl",
-            "change_type": "added"
+            "path": "virgil.json",
+            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-new-happy/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-new-happy/changes/change-alpha/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-new-happy/changes/change-alpha/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
       "expected_events": [],
       "expected_artifacts": []
@@ -491,7 +396,7 @@
   "prohibited_effects": [
     {
       "kind": "write",
-      "reason": "Planning may only write below repo-docs managed_root.",
+      "reason": "Planning may only write below repo-docs managed_root or virgil.json.",
       "scope": "outside_effective_policy"
     },
     {

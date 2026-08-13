@@ -116,47 +116,21 @@ type diffView struct {
 	Changes        []changeView `json:"changes"`
 }
 
-type eventPointerView struct {
-	EventID    string             `json:"event_id"`
-	Kind       string             `json:"kind"`
-	LineNumber int                `json:"line_number"`
-	Resource   ImmutableReference `json:"resource"`
-}
-
 type idempotencyView struct {
 	Key               string `json:"key"`
 	RequestDigest     string `json:"request_digest"`
 	OriginalRequestID string `json:"original_request_id"`
 }
 
-type projectResourceView struct {
-	Role     string             `json:"role"`
-	Resource ImmutableReference `json:"resource"`
-}
-
-type projectStateView struct {
-	ProjectRef      protocol.ProjectRef       `json:"project_ref"`
-	Operation       string                    `json:"operation"`
-	State           string                    `json:"state"`
+// virgilConfigView decodes just the virgil.json fields the evidence
+// cross-checker needs: idempotency authority and identity coherence with the
+// fixture that produced it. virgil.json replaces the old project.json +
+// events.jsonl pair, so there is no separate event to cross-reference.
+type virgilConfigView struct {
+	ProjectID       string                    `json:"project_id"`
 	Idempotency     idempotencyView           `json:"idempotency"`
 	OriginalRequest protocol.OperationRequest `json:"original_request"`
 	ResolvedContext protocol.Context          `json:"resolved_context"`
-	Event           eventPointerView          `json:"event"`
-	Resources       []projectResourceView     `json:"resources"`
-}
-
-type eventView struct {
-	EventID          string                    `json:"event_id"`
-	Kind             string                    `json:"kind"`
-	ProjectID        string                    `json:"project_id"`
-	Operation        string                    `json:"operation"`
-	IdempotencyKey   string                    `json:"idempotency_key"`
-	RequestDigest    string                    `json:"request_digest"`
-	RequestID        string                    `json:"request_id"`
-	Actor            protocol.ActorRef         `json:"actor"`
-	DogmaRef         protocol.DogmaRef         `json:"dogma_ref"`
-	ProjectRef       protocol.ProjectRef       `json:"project_ref"`
-	ArtifactStoreRef protocol.ArtifactStoreRef `json:"artifact_store_ref"`
 }
 
 type preparedDocument struct {
@@ -206,31 +180,15 @@ func (publisher *Publisher) prepare(input Input) (preparedBundle, error) {
 		return preparedBundle{}, err
 	}
 
-	eventRecords, err := validateNDJSON(publisher.registry, contracts.SchemaProjectInitialized, input.EventLog)
-	if err != nil {
-		return preparedBundle{}, fmt.Errorf("event log: %w", err)
-	}
-	eventBytes := bytes.Clone(input.EventLog)
-	eventRef := Reference(layout.EventLog, fixture.FixtureRevision, eventBytes)
-
 	var stateRef *ImmutableReference
 	if len(input.ProjectState) > 0 {
-		if err := validateJSON(publisher.registry, contracts.SchemaProjectState, input.ProjectState); err != nil {
+		if err := validateJSON(publisher.registry, contracts.SchemaVirgilConfig, input.ProjectState); err != nil {
 			return preparedBundle{}, fmt.Errorf("project state: %w", err)
 		}
 		reference := Reference(layout.ProjectState, fixture.FixtureRevision, input.ProjectState)
 		stateRef = &reference
 	}
-	requiresProjectAuthority := false
-	for _, expectation := range fixture.ExpectedEvents {
-		if expectation.Kind == "project_initialized" && expectation.MinCount > 0 {
-			requiresProjectAuthority = true
-		}
-	}
-	if requiresProjectAuthority != (stateRef != nil) {
-		return preparedBundle{}, fmt.Errorf("project state presence does not match fixture event authority")
-	}
-	if err := crossCheckProjectAuthority(fixture, publisher.targetRoot, input.ProjectState, eventRecords, eventBytes); err != nil {
+	if err := crossCheckProjectAuthority(fixture, publisher.targetRoot, input.ProjectState); err != nil {
 		return preparedBundle{}, err
 	}
 
@@ -254,10 +212,9 @@ func (publisher *Publisher) prepare(input Input) (preparedBundle, error) {
 
 	contents := []bundleContent{
 		content("trace", contracts.SchemaAgentInteractionTrace, mediaJSON, traceRef),
-		content("event_log", contracts.SchemaProjectInitialized, mediaNDJSON, eventRef),
 	}
 	if stateRef != nil {
-		contents = append(contents, content("project_state", contracts.SchemaProjectState, mediaJSON, *stateRef))
+		contents = append(contents, content("project_state", contracts.SchemaVirgilConfig, mediaJSON, *stateRef))
 	}
 	for _, id := range sortedDocumentIDs(snapshots) {
 		contents = append(contents, content("filesystem_snapshot", contracts.SchemaFilesystemSnapshot, mediaJSON, snapshots[id].reference))
@@ -310,7 +267,6 @@ func (publisher *Publisher) prepare(input Input) (preparedBundle, error) {
 
 	files := []preparedFile{
 		{relative: traceFile, content: traceBytes},
-		{relative: eventLogFile, content: eventBytes},
 	}
 	if stateRef != nil {
 		files = append(files, preparedFile{relative: projectStateFile, content: bytes.Clone(input.ProjectState)})
@@ -318,7 +274,7 @@ func (publisher *Publisher) prepare(input Input) (preparedBundle, error) {
 	files = append(files, snapshotFiles...)
 	files = append(files, diffFiles...)
 	files = append(files, preparedFile{relative: runnerReportFile, content: reportBytes})
-	if err := publisher.scanAll(files, manifestBytes, eventRecords); err != nil {
+	if err := publisher.scanAll(files, manifestBytes); err != nil {
 		return preparedBundle{}, err
 	}
 	return preparedBundle{layout: layout, files: files, manifest: manifestBytes}, nil
@@ -772,55 +728,34 @@ func findDocumentByReference(documents map[string]preparedDocument, reference Im
 	return preparedDocument{}, fmt.Errorf("reference %q/%q is not an exact supplied resource", reference.URI, reference.Digest)
 }
 
-func crossCheckProjectAuthority(fixture protocol.ScenarioFixture, targetRoot string, stateRaw []byte, records [][]byte, eventBytes []byte) error {
+// crossCheckProjectAuthority validates the observed virgil.json (if any)
+// against the fixture that produced it. virgil.json replaces the old
+// project.json + events.jsonl pair, so there is no separate durable event to
+// cross-reference: the file's own idempotency record and resolved_context
+// are the entire authority.
+func crossCheckProjectAuthority(fixture protocol.ScenarioFixture, targetRoot string, stateRaw []byte) error {
 	if len(stateRaw) == 0 {
-		if len(records) != 0 {
-			return fmt.Errorf("event log without project state is not valid T0 init authority")
-		}
 		return nil
 	}
-	if len(records) != 1 {
-		return fmt.Errorf("project state requires exactly one project_initialized event")
-	}
-	var state projectStateView
+	var state virgilConfigView
 	if err := json.Unmarshal(stateRaw, &state); err != nil {
-		return fmt.Errorf("decode project state authority: %w", err)
-	}
-	var event eventView
-	if err := json.Unmarshal(records[0], &event); err != nil {
-		return fmt.Errorf("decode project event authority: %w", err)
+		return fmt.Errorf("decode virgil.json authority: %w", err)
 	}
 	requestDigest, err := canonicalRequestDigest(state.OriginalRequest)
 	if err != nil {
 		return err
 	}
-	if state.State != "initialized" || state.Operation != "virgil.init" ||
-		state.Idempotency.Key != state.OriginalRequest.IdempotencyKey ||
+	if state.Idempotency.Key != state.OriginalRequest.IdempotencyKey ||
 		state.Idempotency.OriginalRequestID != state.OriginalRequest.RequestID ||
-		state.Idempotency.RequestDigest != requestDigest ||
-		event.RequestDigest != requestDigest || event.RequestID != state.OriginalRequest.RequestID ||
-		event.IdempotencyKey != state.OriginalRequest.IdempotencyKey ||
-		state.Event.EventID != event.EventID || state.Event.Kind != event.Kind || state.Event.LineNumber != 1 ||
-		state.Event.Resource.Digest != digest(eventBytes) {
-		return fmt.Errorf("project state and event log idempotency authority differ")
+		state.Idempotency.RequestDigest != requestDigest {
+		return fmt.Errorf("virgil.json idempotency authority is inconsistent")
 	}
 	expectedContext := protocol.ContextFromRequest(fixture.InitialRequest)
 	expectedContext.ProjectRef.Target.CanonicalPath = targetRoot
 	if !reflect.DeepEqual(state.OriginalRequest, fixture.InitialRequest) ||
 		!reflect.DeepEqual(state.ResolvedContext, expectedContext) ||
-		!reflect.DeepEqual(state.ProjectRef, expectedContext.ProjectRef) ||
-		!reflect.DeepEqual(state.ResolvedContext.ProjectRef, event.ProjectRef) ||
-		!reflect.DeepEqual(state.ResolvedContext.DogmaRef, event.DogmaRef) ||
-		!reflect.DeepEqual(state.ResolvedContext.ArtifactStoreRef, event.ArtifactStoreRef) ||
-		!reflect.DeepEqual(state.OriginalRequest.Actor, event.Actor) || event.ProjectID != state.ProjectRef.ProjectID {
-		return fmt.Errorf("project state, fixture and event identities differ")
-	}
-	roles := make(map[string]ImmutableReference, len(state.Resources))
-	for _, resource := range state.Resources {
-		roles[resource.Role] = resource.Resource
-	}
-	if len(roles) != 2 || roles["event_log"].Digest != digest(eventBytes) || roles["dogma"].Digest != state.ResolvedContext.DogmaRef.Digest {
-		return fmt.Errorf("project state resources do not bind dogma and event log authority")
+		state.ProjectID != expectedContext.ProjectRef.ProjectID {
+		return fmt.Errorf("virgil.json and fixture identities differ")
 	}
 	return nil
 }
@@ -973,14 +908,8 @@ func sortedDocumentIDs(documents map[string]preparedDocument) []string {
 	return ids
 }
 
-func (publisher *Publisher) scanAll(files []preparedFile, manifestBytes []byte, eventRecords [][]byte) error {
+func (publisher *Publisher) scanAll(files []preparedFile, manifestBytes []byte) error {
 	for _, file := range files {
-		if file.relative == eventLogFile {
-			if err := scanNDJSONSecrets(file.relative, eventRecords, publisher.secretPolicy); err != nil {
-				return err
-			}
-			continue
-		}
 		if err := scanJSONSecrets(file.relative, file.content, publisher.secretPolicy); err != nil {
 			return err
 		}

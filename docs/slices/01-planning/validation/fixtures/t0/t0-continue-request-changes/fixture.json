@@ -45,14 +45,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-request-changes",
-      "namespace": "docs/virgil/projects/consumer-request-changes",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -100,7 +100,7 @@
     "script": {
       "uri": "fixture://validation/t0-continue-request-changes/actor-script.json",
       "revision": "v1",
-      "digest": "sha256:c50123a22a8d1eddbf29276fe0980310279a37579dbaa01ba04a08d9f30ed306"
+      "digest": "sha256:2bf235295711c93d2500040d6727ef5d109357c8a00b525381bb99995bb66507"
     }
   },
   "adapter_profile": {
@@ -129,14 +129,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-request-changes",
-      "namespace": "docs/virgil/projects/consumer-request-changes",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -208,21 +208,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "init-project-write",
+        "step_id": "init-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-request-changes/project.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "init-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-request-changes/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -247,21 +238,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "new-change-write",
+        "step_id": "new-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/change.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "new-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -286,30 +268,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "proposal-envelope-write",
+        "step_id": "proposal-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/artifacts/idea/rev-000001/envelope.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "proposal-content-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/artifacts/idea/rev-000001/content.md",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "proposal-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/events.jsonl",
+        "resource_pattern": "docs/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -335,12 +299,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "request-changes-event-write",
+        "step_id": "request-changes-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/events.jsonl",
+        "resource_pattern": "docs/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -383,14 +347,10 @@
       },
       {
         "before": "init-guard",
-        "after": "init-project-write"
+        "after": "init-config-write"
       },
       {
-        "before": "init-project-write",
-        "after": "init-event-write"
-      },
-      {
-        "before": "init-event-write",
+        "before": "init-config-write",
         "after": "init-result"
       },
       {
@@ -403,14 +363,10 @@
       },
       {
         "before": "new-guard",
-        "after": "new-change-write"
+        "after": "new-config-write"
       },
       {
-        "before": "new-change-write",
-        "after": "new-event-write"
-      },
-      {
-        "before": "new-event-write",
+        "before": "new-config-write",
         "after": "new-result"
       },
       {
@@ -423,18 +379,10 @@
       },
       {
         "before": "proposal-guard",
-        "after": "proposal-envelope-write"
+        "after": "proposal-write"
       },
       {
-        "before": "proposal-envelope-write",
-        "after": "proposal-content-write"
-      },
-      {
-        "before": "proposal-content-write",
-        "after": "proposal-event-write"
-      },
-      {
-        "before": "proposal-event-write",
+        "before": "proposal-write",
         "after": "proposal-result"
       },
       {
@@ -447,10 +395,10 @@
       },
       {
         "before": "request-changes-guard",
-        "after": "request-changes-event-write"
+        "after": "request-changes-write"
       },
       {
-        "before": "request-changes-event-write",
+        "before": "request-changes-write",
         "after": "request-changes-result"
       },
       {
@@ -464,55 +412,7 @@
     ],
     "max_retries": 0
   },
-  "expected_events": [
-    {
-      "kind": "project_initialized",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-request-changes"
-      }
-    },
-    {
-      "kind": "change_created",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-request-changes",
-        "/change_id": "change-request-changes"
-      }
-    },
-    {
-      "kind": "revision_drafted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-request-changes",
-        "/change_id": "change-request-changes",
-        "/artifact_kind": "idea"
-      }
-    },
-    {
-      "kind": "revision_submitted",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-request-changes",
-        "/change_id": "change-request-changes",
-        "/artifact_kind": "idea"
-      }
-    },
-    {
-      "kind": "revision_withdrawn",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-request-changes",
-        "/change_id": "change-request-changes",
-        "/artifact_kind": "idea"
-      }
-    }
-  ],
+  "expected_events": [],
   "expected_artifacts": [
     {
       "kind": "revision",
@@ -523,8 +423,8 @@
   "expected_effects": [
     {
       "kind": "write",
-      "min_count": 8,
-      "max_count": 8,
+      "min_count": 4,
+      "max_count": 4,
       "field_equals": {
         "/policy_decision": "authorized",
         "/occurred": true
@@ -534,31 +434,16 @@
   "expected_target_diff": {
     "mode": "exact",
     "allowed_paths": [
-      "docs/virgil/projects/consumer-request-changes/**"
+      "virgil.json",
+      "docs/**"
     ],
     "expected_changes": [
       {
-        "path": "docs/virgil/projects/consumer-request-changes/project.json",
+        "path": "virgil.json",
         "change_type": "added"
       },
       {
-        "path": "docs/virgil/projects/consumer-request-changes/events.jsonl",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/change.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/events.jsonl",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/artifacts/idea/rev-000001/envelope.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/artifacts/idea/rev-000001/content.md",
+        "path": "docs/00-idea.md",
         "change_type": "added"
       }
     ]
@@ -571,45 +456,21 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-request-changes/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-request-changes/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/events.jsonl",
+            "path": "virgil.json",
             "change_type": "added"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-request-changes/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
-      "expected_events": [
-        {
-          "kind": "project_initialized",
-          "min_count": 1,
-          "max_count": 1,
-          "field_equals": {
-            "/project_id": "consumer-request-changes"
-          }
-        }
-      ],
+      "expected_events": [],
       "expected_artifacts": []
     },
     {
@@ -619,34 +480,19 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-request-changes/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/events.jsonl",
-            "change_type": "added"
+            "path": "virgil.json",
+            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-request-changes/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
       "expected_events": [],
       "expected_artifacts": []
@@ -658,40 +504,24 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-request-changes/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/artifacts/idea/rev-000001/envelope.json",
+            "path": "docs/00-idea.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/artifacts/idea/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-request-changes/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/artifacts/idea/rev-000001/envelope.json",
+            "path": "docs/00-idea.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/artifacts/idea/rev-000001/content.md",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/events.jsonl",
-            "change_type": "modified"
           }
         ]
       },
@@ -711,15 +541,11 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-request-changes/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/artifacts/idea/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/events.jsonl",
+            "path": "docs/00-idea.md",
             "change_type": "modified"
           }
         ]
@@ -727,15 +553,11 @@
       "store_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-request-changes/**"
+          "docs/**"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/artifacts/idea/rev-000001/envelope.json",
-            "change_type": "modified"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-request-changes/changes/change-request-changes/events.jsonl",
+            "path": "docs/00-idea.md",
             "change_type": "modified"
           }
         ]

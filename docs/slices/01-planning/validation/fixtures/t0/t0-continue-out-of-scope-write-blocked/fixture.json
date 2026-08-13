@@ -2,7 +2,7 @@
   "schema_version": "virgil.dev/validation-fixture/v1alpha1",
   "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
   "fixture_id": "t0-continue-out-of-scope-write-blocked",
-  "fixture_revision": "v1",
+  "fixture_revision": "v2",
   "layer": "T0",
   "target_repo": {
     "uri": "fixture://targets/consumer-out-of-scope",
@@ -45,14 +45,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-out-of-scope",
-      "namespace": "docs/virgil/projects/consumer-out-of-scope",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -99,8 +99,8 @@
     },
     "script": {
       "uri": "fixture://validation/t0-continue-out-of-scope-write-blocked/actor-script.json",
-      "revision": "v1",
-      "digest": "sha256:4c6745e05316d9cf781078e0872c05c4400a4002f91aba1249ca1bb93f6b73d5"
+      "revision": "v2",
+      "digest": "sha256:cc3e2c11ce85db90dea7c2752f50b7d7d8df23b5a82c778b50afa1acd2cd3a15"
     }
   },
   "adapter_profile": {
@@ -129,14 +129,14 @@
         "adapter_version": "v1alpha1"
       },
       "project_id": "consumer-out-of-scope",
-      "namespace": "docs/virgil/projects/consumer-out-of-scope",
+      "namespace": "docs",
       "policy": {
         "policy_version": "repo-docs/v1alpha1",
         "read_allowlist": [
           "docs/**"
         ],
         "write_allowlist": [
-          "docs/virgil/**"
+          "docs/**"
         ]
       }
     },
@@ -208,21 +208,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "init-project-write",
+        "step_id": "init-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-out-of-scope/project.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "init-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-out-of-scope/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -231,8 +222,8 @@
         "operation": "virgil.init",
         "request_id": "init-blocked-001",
         "operation_status": "success",
-        "process_id": "process-a",
-        "next_operation": "virgil.new"
+        "next_operation": "virgil.new",
+        "process_id": "process-a"
       },
       {
         "step_id": "new-request",
@@ -247,21 +238,12 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "new-change-write",
+        "step_id": "new-config-write",
         "kind": "effect_observed",
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-out-of-scope/changes/change-blocked-alpha/change.json",
-        "process_id": "process-a"
-      },
-      {
-        "step_id": "new-event-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/virgil/projects/consumer-out-of-scope/changes/change-blocked-alpha/events.jsonl",
+        "resource_pattern": "virgil.json",
         "process_id": "process-a"
       },
       {
@@ -270,8 +252,8 @@
         "operation": "virgil.new",
         "request_id": "new-blocked-001",
         "operation_status": "success",
-        "process_id": "process-a",
-        "next_operation": "virgil.continue"
+        "next_operation": "virgil.continue",
+        "process_id": "process-a"
       },
       {
         "step_id": "continue-request",
@@ -293,8 +275,8 @@
         "request_id": "continue-blocked-uri-001",
         "operation_status": "blocked",
         "diagnostic_code": "STORE_POLICY_VIOLATION",
-        "process_id": "process-a",
-        "next_operation": "none"
+        "next_operation": "none",
+        "process_id": "process-a"
       },
       {
         "step_id": "stop",
@@ -326,14 +308,10 @@
       },
       {
         "before": "init-guard",
-        "after": "init-project-write"
+        "after": "init-config-write"
       },
       {
-        "before": "init-project-write",
-        "after": "init-event-write"
-      },
-      {
-        "before": "init-event-write",
+        "before": "init-config-write",
         "after": "init-result"
       },
       {
@@ -346,14 +324,10 @@
       },
       {
         "before": "new-guard",
-        "after": "new-change-write"
+        "after": "new-config-write"
       },
       {
-        "before": "new-change-write",
-        "after": "new-event-write"
-      },
-      {
-        "before": "new-event-write",
+        "before": "new-config-write",
         "after": "new-result"
       },
       {
@@ -379,31 +353,13 @@
     ],
     "max_retries": 0
   },
-  "expected_events": [
-    {
-      "kind": "project_initialized",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-out-of-scope"
-      }
-    },
-    {
-      "kind": "change_created",
-      "min_count": 1,
-      "max_count": 1,
-      "field_equals": {
-        "/project_id": "consumer-out-of-scope",
-        "/change_id": "change-blocked-alpha"
-      }
-    }
-  ],
+  "expected_events": [],
   "expected_artifacts": [],
   "expected_effects": [
     {
       "kind": "write",
-      "min_count": 4,
-      "max_count": 4,
+      "min_count": 2,
+      "max_count": 2,
       "field_equals": {
         "/policy_decision": "authorized",
         "/occurred": true
@@ -413,23 +369,11 @@
   "expected_target_diff": {
     "mode": "exact",
     "allowed_paths": [
-      "docs/virgil/projects/consumer-out-of-scope/**"
+      "virgil.json"
     ],
     "expected_changes": [
       {
-        "path": "docs/virgil/projects/consumer-out-of-scope/project.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-out-of-scope/events.jsonl",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-out-of-scope/changes/change-blocked-alpha/change.json",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/virgil/projects/consumer-out-of-scope/changes/change-blocked-alpha/events.jsonl",
+        "path": "virgil.json",
         "change_type": "added"
       }
     ]
@@ -442,45 +386,21 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-out-of-scope/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-out-of-scope/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-out-of-scope/events.jsonl",
+            "path": "virgil.json",
             "change_type": "added"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-out-of-scope/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-out-of-scope/project.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-out-of-scope/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
-      "expected_events": [
-        {
-          "kind": "project_initialized",
-          "min_count": 1,
-          "max_count": 1,
-          "field_equals": {
-            "/project_id": "consumer-out-of-scope"
-          }
-        }
-      ],
+      "expected_events": [],
       "expected_artifacts": []
     },
     {
@@ -490,34 +410,19 @@
       "target_diff": {
         "mode": "exact",
         "allowed_paths": [
-          "docs/virgil/projects/consumer-out-of-scope/**"
+          "virgil.json"
         ],
         "expected_changes": [
           {
-            "path": "docs/virgil/projects/consumer-out-of-scope/changes/change-blocked-alpha/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-out-of-scope/changes/change-blocked-alpha/events.jsonl",
-            "change_type": "added"
+            "path": "virgil.json",
+            "change_type": "modified"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/virgil/projects/consumer-out-of-scope/**"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/virgil/projects/consumer-out-of-scope/changes/change-blocked-alpha/change.json",
-            "change_type": "added"
-          },
-          {
-            "path": "docs/virgil/projects/consumer-out-of-scope/changes/change-blocked-alpha/events.jsonl",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
       "expected_events": [],
       "expected_artifacts": []

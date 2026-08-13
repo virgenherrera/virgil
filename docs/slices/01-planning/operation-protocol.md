@@ -109,11 +109,14 @@ explicable por revisiones, briefs o eventos publicados. Con un adapter externo,
 el target diff de planning permanece vacío.
 
 Un `EffectRecord` describe un **efecto lógico sobre un recurso del adapter**, no
-cada syscall usada para publicarlo. En el init T0 hay exactamente dos writes
-lógicos: la publicación de `project.json` y la de `events.jsonl`. Temporales,
-`fsync` y el rename del directorio son mecanismos internos cuya atomicidad se
-demuestra mediante snapshots y evidencia filesystem; no agregan EffectRecords
-ni inflan los conteos del fixture.
+cada syscall usada para publicarlo. En el init T0 con `repo-docs` hay
+exactamente un write lógico: la publicación de `virgil.json`. `virgil.new` y
+`virgil.continue` publican, del mismo modo, exactamente un write lógico cada
+uno — la reescritura de `virgil.json` o de un único
+`docs/{NN}-{kind}.md` — porque no existe un event log paralelo que publicar
+junto al recurso. Temporales, `fsync` y el rename son mecanismos internos
+cuya atomicidad se demuestra mediante snapshots y evidencia filesystem; no
+agregan EffectRecords ni inflan los conteos del fixture.
 
 Las reglas `prohibited_effects` del harness se evalúan solo sobre registros con
 `occurred = true`. Los intentos denegados permanecen auditables como

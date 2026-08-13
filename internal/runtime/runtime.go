@@ -320,8 +320,8 @@ func blockedStorePolicyResult(registry *contracts.Registry, envelope wire.Invoke
 				Code:       "STORE_POLICY_VIOLATION",
 				Severity:   "error",
 				Scope:      request.ArtifactStoreRef.Namespace,
-				Condition:  "artifact store namespace is outside docs/virgil/**",
-				NextAction: "select a repo-docs namespace below docs/virgil/projects/{project_id}",
+				Condition:  "artifact store namespace is outside docs/**",
+				NextAction: "select a repo-docs namespace equal to docs",
 			},
 		},
 	}
@@ -431,8 +431,7 @@ func namespaceIsManaged(request protocol.OperationRequest) bool {
 	if !ok {
 		return false
 	}
-	expected := path.Join("docs", "virgil", "projects", request.ProjectRef.ProjectID)
-	if namespace != expected {
+	if namespace != "docs" {
 		return false
 	}
 	for _, pattern := range request.ArtifactStoreRef.Policy.WriteAllowlist {

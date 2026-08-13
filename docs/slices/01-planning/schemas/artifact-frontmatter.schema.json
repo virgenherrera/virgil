@@ -1,32 +1,30 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.virgil.dev/planning-slice1/v1alpha1/revision-envelope.schema.json",
-  "title": "Virgil Revision Envelope",
+  "$id": "https://schemas.virgil.dev/planning-slice1/v1alpha1/artifact-frontmatter.schema.json",
+  "title": "Virgil Artifact Frontmatter",
+  "description": "JSON frontmatter embedded between --- markers at the top of docs/{NN}-{kind}.md, the flat replacement for the Slice 1 revision envelope.",
   "type": "object",
   "required": [
-    "schema_version",
+    "schema",
     "protocol_version",
-    "revision_id",
     "artifact_kind",
     "change_id",
     "project_id",
-    "state",
+    "status",
+    "revision",
     "upstream_refs",
-    "content",
-    "provenance",
-    "created_at",
+    "content_digest",
     "idempotency_key",
-    "request_id"
+    "request_id",
+    "created_at",
+    "provenance"
   ],
   "properties": {
-    "schema_version": {
-      "const": "virgil.dev/revision-envelope/v1alpha1"
+    "schema": {
+      "const": "virgil.dev/artifact/v1alpha1"
     },
     "protocol_version": {
       "const": "virgil.dev/planning-slice1/v1alpha1"
-    },
-    "revision_id": {
-      "$ref": "common.schema.json#/$defs/NonEmptyString"
     },
     "artifact_kind": {
       "enum": ["idea", "spec", "design", "tasks", "handoff"]
@@ -37,31 +35,33 @@
     "project_id": {
       "$ref": "common.schema.json#/$defs/NonEmptyString"
     },
-    "state": {
-      "enum": ["draft", "awaiting_approval", "approved", "withdrawn", "superseded"]
+    "status": {
+      "enum": ["awaiting_approval", "approved", "withdrawn"]
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^rev-[0-9]{6}$"
     },
     "upstream_refs": {
       "type": "array",
-      "items": {
-        "$ref": "#/$defs/UpstreamRef"
-      },
+      "items": { "$ref": "#/$defs/UpstreamRef" },
       "uniqueItems": true
     },
-    "content": {
-      "$ref": "common.schema.json#/$defs/ResourceRef"
-    },
-    "provenance": {
-      "$ref": "common.schema.json#/$defs/SourceProvenance"
-    },
-    "created_at": {
-      "type": "string",
-      "format": "date-time"
+    "content_digest": {
+      "$ref": "common.schema.json#/$defs/SHA256"
     },
     "idempotency_key": {
       "$ref": "common.schema.json#/$defs/NonEmptyString"
     },
     "request_id": {
       "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "provenance": {
+      "$ref": "common.schema.json#/$defs/SourceProvenance"
     },
     "approved_by": {
       "$ref": "common.schema.json#/$defs/ActorRef"
@@ -74,10 +74,8 @@
   "allOf": [
     {
       "if": {
-        "properties": {
-          "state": { "const": "approved" }
-        },
-        "required": ["state"]
+        "properties": { "status": { "const": "approved" } },
+        "required": ["status"]
       },
       "then": {
         "required": ["approved_by", "approved_at"]
@@ -89,12 +87,8 @@
       "type": "object",
       "required": ["revision_id", "artifact_kind"],
       "properties": {
-        "revision_id": {
-          "$ref": "common.schema.json#/$defs/NonEmptyString"
-        },
-        "artifact_kind": {
-          "enum": ["idea", "spec", "design", "tasks", "handoff"]
-        }
+        "revision_id": { "$ref": "common.schema.json#/$defs/NonEmptyString" },
+        "artifact_kind": { "enum": ["idea", "spec", "design", "tasks", "handoff"] }
       },
       "additionalProperties": false
     }

@@ -31,96 +31,150 @@ La inicialización recibe:
 - `ProjectRef` con identidad y target explícitos;
 - `ArtifactStoreRef` con `adapter_id = repo-docs`, versión y policy;
 - `corpus_root`, por defecto `{target}/docs/`;
-- `managed_root`, recomendado `{target}/docs/virgil/`;
-- `project_id`;
-- `change_id` al crear un cambio.
+- `managed_root`, `docs/` — el mismo árbol que `corpus_root`, no un
+  subdirectorio separado;
+- `project_id`.
 
 El adapter resuelve rutas canónicas, incluidos symlinks, y valida:
 
 1. `method_source != target`;
-2. `managed_root` pertenece al `corpus_root` configurado;
-3. el namespace persistido incluye `project_id`;
-4. `change_id` solo es único dentro de ese proyecto;
-5. la policy de lectura y escritura está versionada;
-6. el HostAdapter ofrece las capabilities necesarias para los efectos
+2. el namespace declarado es exactamente `docs`;
+3. la policy de lectura y escritura está versionada;
+4. el HostAdapter ofrece las capabilities necesarias para los efectos
    solicitados.
 
-Ni `ProjectRef` ni `ArtifactStoreRef` se infieren únicamente desde el cwd.
+Ni `ProjectRef` ni `ArtifactStoreRef` se infieren únicamente desde el cwd. La
+identidad del proyecto (`project_id`) y el cambio activo (`change_id`) no
+viven en un path anidado: se leen de `virgil.json`, en la raíz del target.
 
 ## Policy de lectura y escritura
 
 Por defecto:
 
 - el adapter PUEDE leer o indexar `corpus_root` según una allowlist explícita;
-- solo PUEDE escribir dentro de `managed_root`;
-- los documentos existentes fuera de `managed_root` son read-only;
+- solo PUEDE escribir `virgil.json` (raíz del target) y los archivos de
+  artefacto `docs/{NN}-{kind}.md` que él mismo administra;
+- los documentos existentes en `docs/` fuera de esos nombres exactos son
+  read-only y no producen `CORRUPT_LEDGER`: conviven con el corpus del
+  consumidor en el mismo árbol;
 - código, producto y configuración permanecen fuera del write scope de
   planning.
 
-Una escritura fuera de `managed_root` requiere un opt-in explícito, acotado a
-paths concretos y registrado en la policy y en el ledger. No existe un permiso
-implícito por estar dentro de `docs/`.
+`write_allowlist` sigue siendo `["docs/**"]` como cota de policy, pero el
+adapter mismo restringe sus escrituras a los nombres de archivo conocidos
+(`{NN}-{kind}.md`), nunca a un archivo arbitrario bajo `docs/`. `virgil.json`
+es el archivo de control del adapter (análogo a `.git/config`) y vive fuera de
+`corpus_root`/`managed_root`; su escritura por `virgil.init` no requiere que
+`docs/` exista todavía.
 
-Cada operación registra:
+Una escritura fuera de `managed_root` requiere un opt-in explícito, acotado a
+paths concretos y registrado en la policy. No existe un permiso implícito por
+estar dentro de `docs/`.
+
+Cada operación registra en el `OperationResult`:
 
 - ID y versión del ArtifactStoreAdapter;
-- `DogmaRef`, `ProjectRef` y `ArtifactStoreRef`;
-- roots canónicos resueltos;
-- allowlist de lectura y escritura efectiva;
-- artefactos/eventos que justifican los efectos;
+- `DogmaRef`, `ProjectRef` y `ArtifactStoreRef` resueltos;
+- el o los `EffectRecord` que describen exactamente qué archivo se escribió;
 - diff observado y cualquier intento rechazado.
 
 ## Layout conceptual
 
 ```text
-{target}/docs/                         # corpus_root
-  ... documentación existente ...     # read-only por defecto
-  virgil/                              # managed_root
-    projects/
-      {project_id}/
-        project.json
-        events.jsonl
-        changes/
-          {change_id}/
-            change.json
-            events.jsonl
-            artifacts/
-              idea/
-                rev-000001/
-                  envelope.json
-                  content.md
-              spec/
-              design/
-              tasks/
-              handoff/
-            briefs/
-              {brief_id}.json
+{target}/
+  virgil.json                          # control file del adapter (raíz)
+  docs/                                 # corpus_root == managed_root
+    ... documentación existente ...    # read-only por defecto
+    00-idea.md                          # frontmatter JSON + contenido
+    01-spec.md
+    02-design.md
+    03-tasks.md
+    04-handoff.md
 ```
+
+`virgil.json` es la única autoridad de proyecto: identidad, `dogma_ref`,
+`adapter`, `managed_root`, y — mientras existe — el cambio activo bajo
+`active_change` (`change_id`, `intention`, `run_id`, `created_at`). Slice 1
+sostiene un único cambio activo por proyecto: los nombres de archivo fijos
+`{NN}-{kind}.md` no dejan espacio de namespace para más de un cambio
+concurrente. Ese es el límite explícito de este layout, no un accidente.
+
+Cada archivo de artefacto es Markdown con frontmatter delimitado por `---`,
+pero el contenido del frontmatter es **JSON**, no YAML — así el adapter
+reutiliza `encoding/json` sin sumar una dependencia de parsing YAML:
+
+```text
+---json
+{
+  "schema": "virgil.dev/artifact/v1alpha1",
+  "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+  "artifact_kind": "idea",
+  "change_id": "...",
+  "project_id": "...",
+  "status": "awaiting_approval",
+  "revision": "rev-000001",
+  "upstream_refs": [],
+  "content_digest": "sha256:...",
+  "idempotency_key": "...",
+  "request_id": "...",
+  "created_at": "...",
+  "provenance": { "kind": "agent_generated", "captured_at": "..." }
+}
+---
+
+# Contenido en Markdown a partir de aquí...
+```
+
+Al aprobar, el adapter reescribe el mismo archivo (mismo contenido, nuevo
+frontmatter): agrega `approved_by` y `approved_at`, y cambia `status` a
+`approved`. Un `request_changes` cambia `status` a `withdrawn`; una nueva
+propuesta para el mismo `artifact_kind` reutiliza el mismo archivo, incrementa
+`revision` (`rev-000002`, ...) y sobrescribe el contenido. El historial de
+revisiones anteriores no vive en el filesystem administrado: vive en el
+historial de git del repositorio consumidor, si el consumidor commitea. Este
+es el punto central del refactor: **git es el ledger**, no un `events.jsonl`
+paralelo.
 
 El layout es un contrato del adapter `repo-docs` para Slice 1, no el schema
 universal de ArtifactStore. Un adapter Jira, Confluence, Basecamp, GitHub
 Projects/Issues u otro sistema puede representar la misma semántica con IDs y
 operaciones propios.
 
+## Estado derivado
+
+`repo-docs` no persiste `derived_step` ni el estado de un cambio en ningún
+archivo propio: los recalcula en cada operación escaneando `docs/` en busca
+de `00-idea.md` .. `04-handoff.md` y leyendo el `status` de cada frontmatter
+encontrado. El primer artefacto de la secuencia `idea -> spec -> design ->
+tasks -> handoff` que no está en `status: approved` (porque no existe todavía,
+está `awaiting_approval` o fue `withdrawn`) es el `derived_step` actual. Si
+los cinco están `approved`, `derived_step` es `complete`.
+
+Esto es lo que permite que un proceso nuevo, sin estado en memoria, recupere
+exactamente el mismo `derived_step` que un proceso anterior: la única fuente
+de verdad es el contenido durable de `docs/` y `virgil.json`.
+
 ## Inmutabilidad y atomicidad
 
 Dentro del baseline single-writer:
 
-1. un proyecto o cambio nuevo se prepara completo en un temporal dentro de
-   `managed_root`, incluido su evento de creación;
-2. una revisión o brief se completa antes de publicarse;
+1. `virgil.json` se escribe con create-exclusivo-y-rename en la inicialización
+   y con copy-rewrite-rename en actualizaciones posteriores (por ejemplo,
+   fijar `active_change`);
+2. cada archivo de artefacto (`{NN}-{kind}.md`) se publica completo antes de
+   quedar visible: create-exclusivo-y-rename cuando no existe, o
+   copy-rewrite-rename cuando se reescribe (retirar, aprobar, o redraft tras
+   `request_changes`);
 3. la publicación usa rename atómico del mismo filesystem cuando está
-   disponible;
-4. un evento completo incorpora el objeto al estado derivado;
-5. cada evento tiene identidad idempotente.
+   disponible.
 
 Si el HostAdapter no puede garantizar la atomicidad/durabilidad requerida, la
-operación responde `unsupported`; no degrada a last-write-wins. Un objeto
-publicado sin evento completo es huérfano y recovery lo ignora.
+operación responde `unsupported`; no degrada a last-write-wins.
 
 El diff permitido de planning bajo `repo-docs` debe ser exactamente explicable
-por revisiones, briefs y eventos registrados. Un archivo adicional, aunque
-quede dentro de `managed_root`, es un efecto no autorizado.
+por `virgil.json` y los archivos de artefacto administrados. Un archivo
+adicional bajo esos nombres exactos, sin corresponder a una operación válida,
+es un efecto no autorizado.
 
 ## Concurrencia
 

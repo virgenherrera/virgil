@@ -130,20 +130,6 @@
         "contents": {
           "contains": {
             "properties": {
-              "role": { "const": "event_log" }
-            },
-            "required": ["role"]
-          },
-          "minContains": 1,
-          "maxContains": 1
-        }
-      }
-    },
-    {
-      "properties": {
-        "contents": {
-          "contains": {
-            "properties": {
               "role": { "const": "runner_report" }
             },
             "required": ["role"]
@@ -210,7 +196,6 @@
         "role": {
           "enum": [
             "trace",
-            "event_log",
             "project_state",
             "filesystem_snapshot",
             "filesystem_diff",
@@ -220,8 +205,7 @@
         "schema_id": {
           "enum": [
             "https://schemas.virgil.dev/planning-slice1/v1alpha1/agent-interaction-trace.schema.json",
-            "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-initialized-event.schema.json",
-            "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-state.schema.json",
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/virgil-config.schema.json",
             "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-snapshot.schema.json",
             "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-diff.schema.json",
             "https://schemas.virgil.dev/planning-slice1/v1alpha1/runner-observation-report.schema.json"
@@ -254,22 +238,6 @@
         {
           "if": {
             "properties": {
-              "role": { "const": "event_log" }
-            },
-            "required": ["role"]
-          },
-          "then": {
-            "properties": {
-              "schema_id": {
-                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-initialized-event.schema.json"
-              },
-              "media_type": { "const": "application/x-ndjson" }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
               "role": { "const": "project_state" }
             },
             "required": ["role"]
@@ -277,7 +245,7 @@
           "then": {
             "properties": {
               "schema_id": {
-                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/project-state.schema.json"
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/virgil-config.schema.json"
               },
               "media_type": { "const": "application/json" }
             }
