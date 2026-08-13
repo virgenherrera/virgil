@@ -5,7 +5,6 @@
   "description": "virgil.json, the repo-docs adapter control file published at the target root by virgil.init and updated by virgil.new to carry the active change.",
   "type": "object",
   "required": [
-    "$schema",
     "schema_version",
     "protocol_version",
     "project_id",
@@ -19,9 +18,6 @@
     "resolved_context"
   ],
   "properties": {
-    "$schema": {
-      "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/virgil-config.schema.json"
-    },
     "schema_version": {
       "const": "virgil.dev/config/v1alpha1"
     },

@@ -5,11 +5,15 @@
 //
 // Layout: repo-docs keeps exactly two kinds of durable object at the target
 // root — virgil.json (the adapter control file, holding project identity and
-// the single active change) and up to five numbered artifact files directly
-// under managed_root ("docs/"): docs/00-idea.md .. docs/04-handoff.md. There
-// is no project.json/events.jsonl/change.json ledger: git is the ledger.
-// derived_step is always recomputed by scanning docs/ for those files and
-// reading their JSON frontmatter, never cached or persisted separately.
+// the single active change) and, per change, up to five numbered artifact
+// files under managed_root's per-change subdirectory ("docs/{change_id}/"):
+// docs/{change_id}/00-idea.md .. docs/{change_id}/04-handoff.md. This layout
+// leaves room for a project to accumulate multiple changes side by side
+// under docs/ over time, one subdirectory per change_id. There is no
+// project.json/events.jsonl/change.json ledger: git is the ledger.
+// derived_step is always recomputed by scanning docs/{change_id}/ for those
+// files and reading their JSON frontmatter, never cached or persisted
+// separately.
 package repodocs
 
 import (
@@ -36,7 +40,6 @@ const (
 	managedRoot      = "docs"
 	virgilConfigFile = protocol.VirgilConfigFile
 
-	configSchemaID      = "https://schemas.virgil.dev/planning-slice1/v1alpha1/virgil-config.schema.json"
 	configSchemaVersion = "virgil.dev/config/v1alpha1"
 
 	artifactFrontmatterSchema = "virgil.dev/artifact/v1alpha1"
@@ -130,7 +133,7 @@ type NewInput struct {
 	Evidence   []protocol.ResourceRef    `json:"evidence,omitempty"`
 }
 
-// artifactRecord is a parsed docs/{NN}-{kind}.md file: its relative path, its
+// artifactRecord is a parsed docs/{change_id}/{NN}-{kind}.md file: its relative path, its
 // decoded frontmatter, and its content body (everything after the closing
 // frontmatter marker).
 type artifactRecord struct {
@@ -202,7 +205,6 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 
 func buildConfig(request protocol.OperationRequest, digest, createdAt string, resolved protocol.Context) (protocol.VirgilConfig, []byte, error) {
 	cfg := protocol.VirgilConfig{
-		Schema:          configSchemaID,
 		SchemaVersion:   configSchemaVersion,
 		ProtocolVersion: request.ProtocolVersion,
 		ProjectID:       request.ProjectRef.ProjectID,
@@ -346,7 +348,7 @@ func loadExistingConfig(root *os.Root, resolvedTarget string, canonicalizer Cano
 	}
 	expectedResolved := protocol.ContextFromRequest(cfg.OriginalRequest)
 	expectedResolved.ProjectRef.Target.CanonicalPath = resolvedTarget
-	if cfg.Schema != configSchemaID || cfg.SchemaVersion != configSchemaVersion || cfg.ProtocolVersion != protocol.Version ||
+	if cfg.SchemaVersion != configSchemaVersion || cfg.ProtocolVersion != protocol.Version ||
 		cfg.ProjectID == "" || cfg.ProjectID != cfg.OriginalRequest.ProjectRef.ProjectID || cfg.ManagedRoot != managedRoot+"/" ||
 		cfg.Idempotency.RequestDigest != durableDigest ||
 		cfg.Idempotency.Key != cfg.OriginalRequest.IdempotencyKey ||
@@ -775,18 +777,18 @@ func validArtifactKind(kind string) bool {
 }
 
 // ---------------------------------------------------------------------------
-// Durable artifact state: docs/{NN}-{kind}.md
+// Durable artifact state: docs/{change_id}/{NN}-{kind}.md
 // ---------------------------------------------------------------------------
 
-// loadExistingState scans managed_root for the fixed docs/{NN}-{kind}.md
-// filenames and parses whichever ones exist. Any other file in docs/ is
-// pre-existing consumer content and is silently ignored: managed_root and
-// corpus_root are the same tree in the flat layout, so unrecognized entries
-// are not corruption.
-func loadExistingState(root *os.Root, schema SchemaValidator, validateJSON JSONValidator) (map[string]artifactRecord, error) {
+// loadExistingState scans managed_root's per-change subdirectory for the
+// fixed docs/{change_id}/{NN}-{kind}.md filenames and parses whichever ones
+// exist. Any other file under docs/ is pre-existing consumer content and is
+// silently ignored: managed_root and corpus_root are the same tree, so
+// unrecognized entries are not corruption.
+func loadExistingState(root *os.Root, changeID string, schema SchemaValidator, validateJSON JSONValidator) (map[string]artifactRecord, error) {
 	state := make(map[string]artifactRecord, len(artifactStepOrder))
 	for _, kind := range artifactStepOrder {
-		relative := path.Join(managedRoot, protocol.ArtifactFileName(kind))
+		relative := path.Join(managedRoot, changeID, protocol.ArtifactFileName(kind))
 		info, statErr := root.Lstat(relative)
 		if errors.Is(statErr, fs.ErrNotExist) {
 			continue
@@ -858,7 +860,7 @@ func nextRevision(current string) string {
 }
 
 // serializeArtifactFile renders frontmatter and content into the on-disk
-// docs/{NN}-{kind}.md representation: a "---json" / "---" delimited JSON
+// docs/{change_id}/{NN}-{kind}.md representation: a "---json" / "---" delimited JSON
 // block followed by the Markdown content body. JSON frontmatter (not YAML)
 // is a deliberate choice: it lets the adapter reuse encoding/json instead of
 // adding a YAML parsing dependency.
@@ -875,7 +877,7 @@ func serializeArtifactFile(frontmatter protocol.ArtifactFrontmatter, content []b
 	return buffer.Bytes(), nil
 }
 
-// parseArtifactFrontmatter splits a docs/{NN}-{kind}.md file into its decoded
+// parseArtifactFrontmatter splits a docs/{change_id}/{NN}-{kind}.md file into its decoded
 // JSON frontmatter and its content body.
 func parseArtifactFrontmatter(raw []byte) (protocol.ArtifactFrontmatter, []byte, error) {
 	if !bytes.HasPrefix(raw, []byte(frontmatterOpen)) {
@@ -904,18 +906,21 @@ func parseArtifactFrontmatter(raw []byte) (protocol.ArtifactFrontmatter, []byte,
 	return frontmatter, content, nil
 }
 
-// writeArtifactFile publishes a brand-new docs/{NN}-{kind}.md using
-// create-exclusive-and-rename.
+// writeArtifactFile publishes a brand-new docs/{change_id}/{NN}-{kind}.md
+// using create-exclusive-and-rename. The artifact's change_id subdirectory is
+// derived from relative and created (with its full managed_root chain) if it
+// does not already exist.
 func writeArtifactFile(root *os.Root, relative string, frontmatter protocol.ArtifactFrontmatter, content []byte) ([]byte, error) {
 	raw, err := serializeArtifactFile(frontmatter, content)
 	if err != nil {
 		return nil, typedError("INTERNAL_ERROR", relative, "cannot encode artifact file", err)
 	}
-	tempName := path.Join(managedRoot, ".artifact-"+stableID("tmp", relative, fmt.Sprintf("%x", sha256.Sum256(raw))))
-	if err := createDirectoryChain(root, managedRoot); err != nil {
+	parentDir := path.Dir(relative)
+	tempName := path.Join(parentDir, ".artifact-"+stableID("tmp", relative, fmt.Sprintf("%x", sha256.Sum256(raw))))
+	if err := createDirectoryChain(root, parentDir); err != nil {
 		return nil, err
 	}
-	if err := syncDirectoryChain(root, managedRoot); err != nil {
+	if err := syncDirectoryChain(root, parentDir); err != nil {
 		return nil, err
 	}
 	if err := writeExclusive(root, tempName, raw); err != nil {
@@ -931,21 +936,22 @@ func writeArtifactFile(root *os.Root, relative string, frontmatter protocol.Arti
 		return nil, typedError("ATOMICITY_UNSUPPORTED", relative, "cannot atomically publish artifact file", err)
 	}
 	published = true
-	if err := syncDirectory(root, managedRoot); err != nil {
+	if err := syncDirectory(root, parentDir); err != nil {
 		return nil, err
 	}
 	return raw, nil
 }
 
-// rewriteArtifactFile durably replaces an existing docs/{NN}-{kind}.md using
-// copy-rewrite-rename. Used to redraft (after request_changes), approve or
-// withdraw an artifact in place.
+// rewriteArtifactFile durably replaces an existing docs/{change_id}/{NN}-
+// {kind}.md using copy-rewrite-rename. Used to redraft (after
+// request_changes), approve or withdraw an artifact in place.
 func rewriteArtifactFile(root *os.Root, relative string, frontmatter protocol.ArtifactFrontmatter, content []byte) ([]byte, error) {
 	raw, err := serializeArtifactFile(frontmatter, content)
 	if err != nil {
 		return nil, typedError("INTERNAL_ERROR", relative, "cannot encode artifact file", err)
 	}
-	tempName := path.Join(managedRoot, ".artifact-"+stableID("tmp", relative, fmt.Sprintf("%x", sha256.Sum256(raw))))
+	parentDir := path.Dir(relative)
+	tempName := path.Join(parentDir, ".artifact-"+stableID("tmp", relative, fmt.Sprintf("%x", sha256.Sum256(raw))))
 	if err := root.Remove(tempName); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, typedError("ATOMICITY_UNSUPPORTED", tempName, "cannot clear crashed staging file", err)
 	}
@@ -956,7 +962,7 @@ func rewriteArtifactFile(root *os.Root, relative string, frontmatter protocol.Ar
 		_ = root.Remove(tempName)
 		return nil, typedError("ATOMICITY_UNSUPPORTED", relative, "cannot atomically replace artifact file", err)
 	}
-	if err := syncDirectory(root, managedRoot); err != nil {
+	if err := syncDirectory(root, parentDir); err != nil {
 		return nil, err
 	}
 	return raw, nil
@@ -970,7 +976,7 @@ func rewriteArtifactFile(root *os.Root, relative string, frontmatter protocol.Ar
 func handleContentProposal(root *os.Root, request protocol.OperationRequest, input protocol.ContinueInput, cfg protocol.VirgilConfig, resolvedTarget, nowStr string, schema SchemaValidator, validateJSON JSONValidator) (protocol.OperationResult, error) {
 	entry := input.Entry
 
-	state, err := loadExistingState(root, schema, validateJSON)
+	state, err := loadExistingState(root, input.ChangeID, schema, validateJSON)
 	if err != nil {
 		return protocol.OperationResult{}, err
 	}
@@ -994,7 +1000,7 @@ func handleContentProposal(root *os.Root, request protocol.OperationRequest, inp
 		return protocol.OperationResult{}, typedError("CORRUPT_LEDGER", entry.Content.URI, "content resource digest does not match its declared reference", nil)
 	}
 
-	relative := path.Join(managedRoot, protocol.ArtifactFileName(entry.ArtifactKind))
+	relative := path.Join(managedRoot, input.ChangeID, protocol.ArtifactFileName(entry.ArtifactKind))
 	existing, found := state[entry.ArtifactKind]
 
 	replay := false
@@ -1101,7 +1107,7 @@ func handleContentProposal(root *os.Root, request protocol.OperationRequest, inp
 func handleApprovalApproved(root *os.Root, request protocol.OperationRequest, input protocol.ContinueInput, cfg protocol.VirgilConfig, resolvedTarget, nowStr string, schema SchemaValidator, validateJSON JSONValidator) (protocol.OperationResult, error) {
 	entry := input.Entry
 
-	state, err := loadExistingState(root, schema, validateJSON)
+	state, err := loadExistingState(root, input.ChangeID, schema, validateJSON)
 	if err != nil {
 		return protocol.OperationResult{}, err
 	}
@@ -1172,7 +1178,7 @@ func handleApprovalApproved(root *os.Root, request protocol.OperationRequest, in
 func handleRequestChanges(root *os.Root, request protocol.OperationRequest, input protocol.ContinueInput, cfg protocol.VirgilConfig, resolvedTarget, nowStr string, schema SchemaValidator, validateJSON JSONValidator) (protocol.OperationResult, error) {
 	entry := input.Entry
 
-	state, err := loadExistingState(root, schema, validateJSON)
+	state, err := loadExistingState(root, input.ChangeID, schema, validateJSON)
 	if err != nil {
 		return protocol.OperationResult{}, err
 	}

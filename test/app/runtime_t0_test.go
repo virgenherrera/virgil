@@ -958,8 +958,8 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 	// Every non-blocked T0 scenario publishes exactly virgil.json at the
 	// target root (the repo-docs control file, not part of managed_root).
 	// Scenarios that reach virgil.continue additionally publish one
-	// docs/{NN}-{kind}.md per artifact drafted, plus the fixture's seed file
-	// that content_proposal read.
+	// docs/{change_id}/{NN}-{kind}.md per artifact drafted, plus the
+	// fixture's seed file that content_proposal read.
 	prefix := filepath.Join(fixtureID, "target")
 	want := []string{filepath.Join(prefix, "virgil.json")}
 
@@ -970,27 +970,27 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 		"tasks":   "03-tasks.md",
 		"handoff": "04-handoff.md",
 	}
-	addArtifact := func(kind, seedName string) {
+	addArtifact := func(changeID, kind, seedName string) {
 		want = append(want,
-			filepath.Join(prefix, "docs", artifactFileByKind[kind]),
+			filepath.Join(prefix, "docs", changeID, artifactFileByKind[kind]),
 			filepath.Join(prefix, "seed", seedName),
 		)
 	}
 
 	switch fixtureID {
 	case "t0-continue-content-proposal-happy":
-		addArtifact("idea", "idea-proposal.md")
+		addArtifact("change-continue-alpha", "idea", "idea-proposal.md")
 	case "t0-continue-request-changes":
-		addArtifact("idea", "idea-proposal.md")
+		addArtifact("change-request-changes", "idea", "idea-proposal.md")
 	case "t0-continue-idempotent-retry":
-		addArtifact("idea", "idea-proposal.md")
+		addArtifact("change-retry-alpha", "idea", "idea-proposal.md")
 	case "t0-continue-handoff-complete":
 		for _, kind := range []string{"idea", "spec", "design", "tasks", "handoff"} {
-			addArtifact(kind, kind+"-proposal.md")
+			addArtifact("change-handoff-alpha", kind, kind+"-proposal.md")
 		}
 	case "t0-continue-recovery-fresh-process":
-		addArtifact("idea", "idea-proposal.md")
-		addArtifact("spec", "spec-proposal.md")
+		addArtifact("change-recovery-alpha", "idea", "idea-proposal.md")
+		addArtifact("change-recovery-alpha", "spec", "spec-proposal.md")
 	}
 
 	sort.Strings(want)

@@ -15,9 +15,9 @@ const Version = "virgil.dev/planning-slice1/v1alpha1"
 const VirgilConfigFile = "virgil.json"
 
 // artifactFileNames is the fixed, numbered filename for each Slice 1
-// artifact_kind, published directly under managed_root ("docs/"). The
-// numbering encodes the pipeline order so a plain directory listing shows the
-// change's progress without reading any file.
+// artifact_kind, published under managed_root's per-change subdirectory
+// ("docs/{change_id}/"). The numbering encodes the pipeline order so a plain
+// directory listing shows the change's progress without reading any file.
 var artifactFileNames = map[string]string{
 	"idea":    "00-idea.md",
 	"spec":    "01-spec.md",
@@ -190,9 +190,10 @@ type IdempotencyRecord struct {
 }
 
 // ActiveChange is the single change repo-docs tracks per project, published
-// under VirgilConfig.ActiveChange. The flat docs/{NN}-{kind}.md layout has no
-// namespace for more than one concurrent change: git history — not a second
-// change directory — is where prior changes live once superseded.
+// under VirgilConfig.ActiveChange. Its artifacts live under their own
+// docs/{change_id}/{NN}-{kind}.md subdirectory; there is still only one
+// active change per project, so git history — not a second active_change
+// slot — is where prior changes live once superseded.
 type ActiveChange struct {
 	ChangeID        string            `json:"change_id"`
 	Intention       string            `json:"intention"`
@@ -210,7 +211,6 @@ type ActiveChange struct {
 // is the ledger, so repo-docs keeps exactly one control file plus the
 // artifact files themselves.
 type VirgilConfig struct {
-	Schema          string            `json:"$schema"`
 	SchemaVersion   string            `json:"schema_version"`
 	ProtocolVersion string            `json:"protocol_version"`
 	ProjectID       string            `json:"project_id"`
@@ -226,10 +226,11 @@ type VirgilConfig struct {
 }
 
 // ArtifactFrontmatter is the JSON frontmatter embedded between the leading
-// "---json" / "---" markers of every docs/{NN}-{kind}.md file. It replaces
-// the Slice 1 RevisionEnvelope: there is no separate envelope.json, and there
-// is no revision_lifecycle_event log, because the file itself — rewritten in
-// place through drafts, withdrawals and approval — is the durable authority.
+// "---json" / "---" markers of every docs/{change_id}/{NN}-{kind}.md file.
+// It replaces the Slice 1 RevisionEnvelope: there is no separate
+// envelope.json, and there is no revision_lifecycle_event log, because the
+// file itself — rewritten in place through drafts, withdrawals and approval
+// — is the durable authority.
 type ArtifactFrontmatter struct {
 	Schema          string           `json:"schema"`
 	ProtocolVersion string           `json:"protocol_version"`

@@ -53,7 +53,7 @@ Por defecto:
 
 - el adapter PUEDE leer o indexar `corpus_root` según una allowlist explícita;
 - solo PUEDE escribir `virgil.json` (raíz del target) y los archivos de
-  artefacto `docs/{NN}-{kind}.md` que él mismo administra;
+  artefacto `docs/{change_id}/{NN}-{kind}.md` que él mismo administra;
 - los documentos existentes en `docs/` fuera de esos nombres exactos son
   read-only y no producen `CORRUPT_LEDGER`: conviven con el corpus del
   consumidor en el mismo árbol;
@@ -61,7 +61,8 @@ Por defecto:
   planning.
 
 `write_allowlist` sigue siendo `["docs/**"]` como cota de policy, pero el
-adapter mismo restringe sus escrituras a los nombres de archivo conocidos
+adapter mismo restringe sus escrituras al subdirectorio del cambio activo
+(`docs/{change_id}/`) y a los nombres de archivo conocidos dentro de él
 (`{NN}-{kind}.md`), nunca a un archivo arbitrario bajo `docs/`. `virgil.json`
 es el archivo de control del adapter (análogo a `.git/config`) y vive fuera de
 `corpus_root`/`managed_root`; su escritura por `virgil.init` no requiere que
@@ -85,19 +86,27 @@ Cada operación registra en el `OperationResult`:
   virgil.json                          # control file del adapter (raíz)
   docs/                                 # corpus_root == managed_root
     ... documentación existente ...    # read-only por defecto
-    00-idea.md                          # frontmatter JSON + contenido
-    01-spec.md
-    02-design.md
-    03-tasks.md
-    04-handoff.md
+    {change_id}/                        # subdirectorio por cambio
+      00-idea.md                        # frontmatter JSON + contenido
+      01-spec.md
+      02-design.md
+      03-tasks.md
+      04-handoff.md
 ```
+
+Cada cambio publica sus cinco artefactos bajo su propio subdirectorio
+`docs/{change_id}/`, en vez de directamente bajo `docs/`. Esto permite que un
+proyecto acumule los artefactos de varios cambios (épicas, módulos) uno al
+lado del otro en el árbol, por ejemplo `docs/users-rbac/` y
+`docs/pokemon-module/`, sin que sus archivos numerados colisionen entre sí.
 
 `virgil.json` es la única autoridad de proyecto: identidad, `dogma_ref`,
 `adapter`, `managed_root`, y — mientras existe — el cambio activo bajo
 `active_change` (`change_id`, `intention`, `run_id`, `created_at`). Slice 1
-sostiene un único cambio activo por proyecto: los nombres de archivo fijos
-`{NN}-{kind}.md` no dejan espacio de namespace para más de un cambio
-concurrente. Ese es el límite explícito de este layout, no un accidente.
+sostiene un único cambio activo por proyecto a la vez: `active_change` no es
+una lista. El subdirectorio por `change_id` resuelve la colisión de nombres
+de archivo en el filesystem, pero no introduce concurrencia de cambios
+activos — eso permanece fuera de scope de Slice 1.
 
 Cada archivo de artefacto es Markdown con frontmatter delimitado por `---`,
 pero el contenido del frontmatter es **JSON**, no YAML — así el adapter
@@ -143,16 +152,17 @@ operaciones propios.
 ## Estado derivado
 
 `repo-docs` no persiste `derived_step` ni el estado de un cambio en ningún
-archivo propio: los recalcula en cada operación escaneando `docs/` en busca
-de `00-idea.md` .. `04-handoff.md` y leyendo el `status` de cada frontmatter
-encontrado. El primer artefacto de la secuencia `idea -> spec -> design ->
-tasks -> handoff` que no está en `status: approved` (porque no existe todavía,
-está `awaiting_approval` o fue `withdrawn`) es el `derived_step` actual. Si
-los cinco están `approved`, `derived_step` es `complete`.
+archivo propio: los recalcula en cada operación escaneando
+`docs/{change_id}/` en busca de `00-idea.md` .. `04-handoff.md` y leyendo el
+`status` de cada frontmatter encontrado. El primer artefacto de la secuencia
+`idea -> spec -> design -> tasks -> handoff` que no está en `status: approved`
+(porque no existe todavía, está `awaiting_approval` o fue `withdrawn`) es el
+`derived_step` actual. Si los cinco están `approved`, `derived_step` es
+`complete`.
 
 Esto es lo que permite que un proceso nuevo, sin estado en memoria, recupere
 exactamente el mismo `derived_step` que un proceso anterior: la única fuente
-de verdad es el contenido durable de `docs/` y `virgil.json`.
+de verdad es el contenido durable de `docs/{change_id}/` y `virgil.json`.
 
 ## Inmutabilidad y atomicidad
 

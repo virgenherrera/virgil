@@ -273,7 +273,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/00-idea.md",
+        "resource_pattern": "docs/change-handoff-alpha/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -304,7 +304,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/00-idea.md",
+        "resource_pattern": "docs/change-handoff-alpha/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -334,7 +334,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/01-spec.md",
+        "resource_pattern": "docs/change-handoff-alpha/01-spec.md",
         "process_id": "process-a"
       },
       {
@@ -365,7 +365,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/01-spec.md",
+        "resource_pattern": "docs/change-handoff-alpha/01-spec.md",
         "process_id": "process-a"
       },
       {
@@ -395,7 +395,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/02-design.md",
+        "resource_pattern": "docs/change-handoff-alpha/02-design.md",
         "process_id": "process-a"
       },
       {
@@ -426,7 +426,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/02-design.md",
+        "resource_pattern": "docs/change-handoff-alpha/02-design.md",
         "process_id": "process-a"
       },
       {
@@ -456,7 +456,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/03-tasks.md",
+        "resource_pattern": "docs/change-handoff-alpha/03-tasks.md",
         "process_id": "process-a"
       },
       {
@@ -487,7 +487,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/03-tasks.md",
+        "resource_pattern": "docs/change-handoff-alpha/03-tasks.md",
         "process_id": "process-a"
       },
       {
@@ -517,7 +517,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/04-handoff.md",
+        "resource_pattern": "docs/change-handoff-alpha/04-handoff.md",
         "process_id": "process-a"
       },
       {
@@ -548,7 +548,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/04-handoff.md",
+        "resource_pattern": "docs/change-handoff-alpha/04-handoff.md",
         "process_id": "process-a"
       },
       {
@@ -814,23 +814,23 @@
         "change_type": "added"
       },
       {
-        "path": "docs/00-idea.md",
+        "path": "docs/change-handoff-alpha/00-idea.md",
         "change_type": "added"
       },
       {
-        "path": "docs/01-spec.md",
+        "path": "docs/change-handoff-alpha/01-spec.md",
         "change_type": "added"
       },
       {
-        "path": "docs/02-design.md",
+        "path": "docs/change-handoff-alpha/02-design.md",
         "change_type": "added"
       },
       {
-        "path": "docs/03-tasks.md",
+        "path": "docs/change-handoff-alpha/03-tasks.md",
         "change_type": "added"
       },
       {
-        "path": "docs/04-handoff.md",
+        "path": "docs/change-handoff-alpha/04-handoff.md",
         "change_type": "added"
       }
     ]
@@ -895,7 +895,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/00-idea.md",
+            "path": "docs/change-handoff-alpha/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -907,7 +907,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/00-idea.md",
+            "path": "docs/change-handoff-alpha/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -932,7 +932,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/00-idea.md",
+            "path": "docs/change-handoff-alpha/00-idea.md",
             "change_type": "modified"
           }
         ]
@@ -944,7 +944,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/00-idea.md",
+            "path": "docs/change-handoff-alpha/00-idea.md",
             "change_type": "modified"
           }
         ]
@@ -969,7 +969,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/01-spec.md",
+            "path": "docs/change-handoff-alpha/01-spec.md",
             "change_type": "added"
           }
         ]
@@ -981,7 +981,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/01-spec.md",
+            "path": "docs/change-handoff-alpha/01-spec.md",
             "change_type": "added"
           }
         ]
@@ -1006,7 +1006,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/01-spec.md",
+            "path": "docs/change-handoff-alpha/01-spec.md",
             "change_type": "modified"
           }
         ]
@@ -1018,7 +1018,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/01-spec.md",
+            "path": "docs/change-handoff-alpha/01-spec.md",
             "change_type": "modified"
           }
         ]
@@ -1043,7 +1043,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/02-design.md",
+            "path": "docs/change-handoff-alpha/02-design.md",
             "change_type": "added"
           }
         ]
@@ -1055,7 +1055,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/02-design.md",
+            "path": "docs/change-handoff-alpha/02-design.md",
             "change_type": "added"
           }
         ]
@@ -1080,7 +1080,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/02-design.md",
+            "path": "docs/change-handoff-alpha/02-design.md",
             "change_type": "modified"
           }
         ]
@@ -1092,7 +1092,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/02-design.md",
+            "path": "docs/change-handoff-alpha/02-design.md",
             "change_type": "modified"
           }
         ]
@@ -1117,7 +1117,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/03-tasks.md",
+            "path": "docs/change-handoff-alpha/03-tasks.md",
             "change_type": "added"
           }
         ]
@@ -1129,7 +1129,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/03-tasks.md",
+            "path": "docs/change-handoff-alpha/03-tasks.md",
             "change_type": "added"
           }
         ]
@@ -1154,7 +1154,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/03-tasks.md",
+            "path": "docs/change-handoff-alpha/03-tasks.md",
             "change_type": "modified"
           }
         ]
@@ -1166,7 +1166,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/03-tasks.md",
+            "path": "docs/change-handoff-alpha/03-tasks.md",
             "change_type": "modified"
           }
         ]
@@ -1191,7 +1191,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/04-handoff.md",
+            "path": "docs/change-handoff-alpha/04-handoff.md",
             "change_type": "added"
           }
         ]
@@ -1203,7 +1203,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/04-handoff.md",
+            "path": "docs/change-handoff-alpha/04-handoff.md",
             "change_type": "added"
           }
         ]
@@ -1228,7 +1228,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/04-handoff.md",
+            "path": "docs/change-handoff-alpha/04-handoff.md",
             "change_type": "modified"
           }
         ]
@@ -1240,7 +1240,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/04-handoff.md",
+            "path": "docs/change-handoff-alpha/04-handoff.md",
             "change_type": "modified"
           }
         ]

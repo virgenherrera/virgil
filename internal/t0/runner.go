@@ -872,7 +872,7 @@ func validateContinueHappyScenario(registry *contracts.Registry, targetRoot stri
 		return fmt.Errorf("approval phase: %w", err)
 	}
 
-	if err := validateArtifactFile(registry, targetRoot, "idea", "rev-000001", statusApproved, true); err != nil {
+	if err := validateArtifactFile(registry, targetRoot, newInput.ChangeID, "idea", "rev-000001", statusApproved, true); err != nil {
 		return err
 	}
 
@@ -887,7 +887,7 @@ func validateContinueHappyScenario(registry *contracts.Registry, targetRoot stri
 		return fmt.Errorf("content_proposal request input does not contain a valid content uri")
 	}
 
-	return validateWholeTree(targetRoot, []artifactExpectation{{Kind: "idea", Status: statusApproved}}, []string{proposeInput.Entry.Content.URI})
+	return validateWholeTree(targetRoot, newInput.ChangeID, []artifactExpectation{{Kind: "idea", Status: statusApproved}}, []string{proposeInput.Entry.Content.URI})
 }
 
 func validateRequestChangesScenario(registry *contracts.Registry, targetRoot string, executions []operationExecution) error {
@@ -919,7 +919,7 @@ func validateRequestChangesScenario(registry *contracts.Registry, targetRoot str
 		return fmt.Errorf("request_changes phase: %w", err)
 	}
 
-	if err := validateArtifactFile(registry, targetRoot, "idea", "rev-000001", statusWithdrawn, false); err != nil {
+	if err := validateArtifactFile(registry, targetRoot, newInput.ChangeID, "idea", "rev-000001", statusWithdrawn, false); err != nil {
 		return err
 	}
 
@@ -934,7 +934,7 @@ func validateRequestChangesScenario(registry *contracts.Registry, targetRoot str
 		return fmt.Errorf("content_proposal request input does not contain a valid content uri")
 	}
 
-	return validateWholeTree(targetRoot, []artifactExpectation{{Kind: "idea", Status: statusWithdrawn}}, []string{proposeInput.Entry.Content.URI})
+	return validateWholeTree(targetRoot, newInput.ChangeID, []artifactExpectation{{Kind: "idea", Status: statusWithdrawn}}, []string{proposeInput.Entry.Content.URI})
 }
 
 func validateRequestChangesResult(request protocol.OperationRequest, result protocol.OperationResult) error {
@@ -1001,7 +1001,7 @@ func validateContinueIdempotentRetryScenario(registry *contracts.Registry, targe
 		return fmt.Errorf("retry content_proposal did not reference the same durable revision as the first proposal")
 	}
 
-	if err := validateArtifactFile(registry, targetRoot, "idea", "rev-000001", statusAwaitingApproval, false); err != nil {
+	if err := validateArtifactFile(registry, targetRoot, newInput.ChangeID, "idea", "rev-000001", statusAwaitingApproval, false); err != nil {
 		return err
 	}
 
@@ -1016,7 +1016,7 @@ func validateContinueIdempotentRetryScenario(registry *contracts.Registry, targe
 		return fmt.Errorf("content_proposal request input does not contain a valid content uri")
 	}
 
-	return validateWholeTree(targetRoot, []artifactExpectation{{Kind: "idea", Status: statusAwaitingApproval}}, []string{proposeInput.Entry.Content.URI})
+	return validateWholeTree(targetRoot, newInput.ChangeID, []artifactExpectation{{Kind: "idea", Status: statusAwaitingApproval}}, []string{proposeInput.Entry.Content.URI})
 }
 
 func validateContentProposalReplayResult(request protocol.OperationRequest, result protocol.OperationResult, originalRequestID string) error {
@@ -1039,24 +1039,25 @@ func validateContentProposalReplayResult(request protocol.OperationRequest, resu
 	return nil
 }
 
-// artifactExpectation names one docs/{NN}-{kind}.md file expected to exist in
-// the final tree, along with its frontmatter status.
+// artifactExpectation names one docs/{change_id}/{NN}-{kind}.md file expected
+// to exist in the final tree, along with its frontmatter status.
 type artifactExpectation struct {
 	Kind   string
 	Status string
 }
 
 // validateWholeTree walks the entire target repository and confirms it
-// contains exactly virgil.json, the expected docs/{NN}-{kind}.md files, and
-// the fixture's pre-seeded content_proposal source files living outside the
-// managed namespace.
-func validateWholeTree(targetRoot string, artifacts []artifactExpectation, seedPaths []string) error {
+// contains exactly virgil.json, the expected docs/{change_id}/{NN}-{kind}.md
+// files, and the fixture's pre-seeded content_proposal source files living
+// outside the managed namespace.
+func validateWholeTree(targetRoot, changeID string, artifacts []artifactExpectation, seedPaths []string) error {
 	expected := map[string]string{protocol.VirgilConfigFile: "file"}
 	if len(artifacts) > 0 {
 		expected["docs"] = "dir"
+		expected[path.Join("docs", changeID)] = "dir"
 	}
 	for _, artifact := range artifacts {
-		expected[path.Join("docs", protocol.ArtifactFileName(artifact.Kind))] = "file"
+		expected[path.Join("docs", changeID, protocol.ArtifactFileName(artifact.Kind))] = "file"
 	}
 	for _, seedPath := range seedPaths {
 		for directory := path.Dir(seedPath); directory != "." && directory != "/"; directory = path.Dir(directory) {
@@ -1101,11 +1102,11 @@ func validateExactTree(targetRoot string, expected map[string]string) error {
 	return nil
 }
 
-// validateArtifactFile reads docs/{NN}-{kind}.md, validates its frontmatter
-// against the bundled schema, and asserts revision, status, content digest
-// and (when requireApproval is true) approved_by/approved_at.
-func validateArtifactFile(registry *contracts.Registry, targetRoot, kind, wantRevision, wantStatus string, requireApproval bool) error {
-	relative := path.Join("docs", protocol.ArtifactFileName(kind))
+// validateArtifactFile reads docs/{change_id}/{NN}-{kind}.md, validates its
+// frontmatter against the bundled schema, and asserts revision, status,
+// content digest and (when requireApproval is true) approved_by/approved_at.
+func validateArtifactFile(registry *contracts.Registry, targetRoot, changeID, kind, wantRevision, wantStatus string, requireApproval bool) error {
+	relative := path.Join("docs", changeID, protocol.ArtifactFileName(kind))
 	raw, err := os.ReadFile(filepath.Join(targetRoot, filepath.FromSlash(relative)))
 	if err != nil {
 		return fmt.Errorf("read %s artifact file: %w", kind, err)
@@ -1240,20 +1241,20 @@ func validateHandoffCompleteScenario(registry *contracts.Registry, targetRoot st
 		}
 		seedPaths = append(seedPaths, proposeInput.Entry.Content.URI)
 
-		if err := validateArtifactFile(registry, targetRoot, kind, "rev-000001", statusApproved, true); err != nil {
+		if err := validateArtifactFile(registry, targetRoot, newInput.ChangeID, kind, "rev-000001", statusApproved, true); err != nil {
 			return err
 		}
-		if err := validateUpstreamRef(registry, targetRoot, kind, index); err != nil {
+		if err := validateUpstreamRef(registry, targetRoot, newInput.ChangeID, kind, index); err != nil {
 			return err
 		}
 		artifacts = append(artifacts, artifactExpectation{Kind: kind, Status: statusApproved})
 	}
 
-	return validateWholeTree(targetRoot, artifacts, seedPaths)
+	return validateWholeTree(targetRoot, newInput.ChangeID, artifacts, seedPaths)
 }
 
-func validateUpstreamRef(registry *contracts.Registry, targetRoot, kind string, index int) error {
-	relative := path.Join("docs", protocol.ArtifactFileName(kind))
+func validateUpstreamRef(registry *contracts.Registry, targetRoot, changeID, kind string, index int) error {
+	relative := path.Join("docs", changeID, protocol.ArtifactFileName(kind))
 	raw, err := os.ReadFile(filepath.Join(targetRoot, filepath.FromSlash(relative)))
 	if err != nil {
 		return err
@@ -1386,16 +1387,16 @@ func validateRecoveryFreshProcessScenario(registry *contracts.Registry, targetRo
 		return fmt.Errorf("spec content_proposal phase (process B, fresh process): %w", err)
 	}
 
-	if err := validateArtifactFile(registry, targetRoot, "idea", "rev-000001", statusApproved, true); err != nil {
+	if err := validateArtifactFile(registry, targetRoot, newInput.ChangeID, "idea", "rev-000001", statusApproved, true); err != nil {
 		return err
 	}
-	if err := validateUpstreamRef(registry, targetRoot, "idea", 0); err != nil {
+	if err := validateUpstreamRef(registry, targetRoot, newInput.ChangeID, "idea", 0); err != nil {
 		return err
 	}
-	if err := validateArtifactFile(registry, targetRoot, "spec", "rev-000001", statusAwaitingApproval, false); err != nil {
+	if err := validateArtifactFile(registry, targetRoot, newInput.ChangeID, "spec", "rev-000001", statusAwaitingApproval, false); err != nil {
 		return err
 	}
-	if err := validateUpstreamRef(registry, targetRoot, "spec", 1); err != nil {
+	if err := validateUpstreamRef(registry, targetRoot, newInput.ChangeID, "spec", 1); err != nil {
 		return err
 	}
 
@@ -1417,7 +1418,7 @@ func validateRecoveryFreshProcessScenario(registry *contracts.Registry, targetRo
 		{Kind: "idea", Status: statusApproved},
 		{Kind: "spec", Status: statusAwaitingApproval},
 	}
-	return validateWholeTree(targetRoot, artifacts, []string{ideaInput.Entry.Content.URI, specInput.Entry.Content.URI})
+	return validateWholeTree(targetRoot, newInput.ChangeID, artifacts, []string{ideaInput.Entry.Content.URI, specInput.Entry.Content.URI})
 }
 
 // ---------------------------------------------------------------------------

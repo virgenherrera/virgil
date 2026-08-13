@@ -273,7 +273,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/00-idea.md",
+        "resource_pattern": "docs/change-request-changes/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -304,7 +304,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/00-idea.md",
+        "resource_pattern": "docs/change-request-changes/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -443,7 +443,7 @@
         "change_type": "added"
       },
       {
-        "path": "docs/00-idea.md",
+        "path": "docs/change-request-changes/00-idea.md",
         "change_type": "added"
       }
     ]
@@ -508,7 +508,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/00-idea.md",
+            "path": "docs/change-request-changes/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -520,7 +520,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/00-idea.md",
+            "path": "docs/change-request-changes/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -545,7 +545,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/00-idea.md",
+            "path": "docs/change-request-changes/00-idea.md",
             "change_type": "modified"
           }
         ]
@@ -557,7 +557,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/00-idea.md",
+            "path": "docs/change-request-changes/00-idea.md",
             "change_type": "modified"
           }
         ]

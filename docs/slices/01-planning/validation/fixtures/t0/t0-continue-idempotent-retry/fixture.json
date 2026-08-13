@@ -273,7 +273,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/00-idea.md",
+        "resource_pattern": "docs/change-retry-alpha/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -440,7 +440,7 @@
         "change_type": "added"
       },
       {
-        "path": "docs/00-idea.md",
+        "path": "docs/change-retry-alpha/00-idea.md",
         "change_type": "added"
       }
     ]
@@ -505,7 +505,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/00-idea.md",
+            "path": "docs/change-retry-alpha/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -517,7 +517,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/00-idea.md",
+            "path": "docs/change-retry-alpha/00-idea.md",
             "change_type": "added"
           }
         ]
