@@ -33,5 +33,5 @@ jobs:
             exit 1
           fi
 
-      - name: T0 tests (app-level certification)
-        run: go test ./test/app -run '^TestApp_' -v -count=1
+      - name: Tests
+        run: go test ./... -v -count=1
