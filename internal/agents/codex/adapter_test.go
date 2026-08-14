@@ -289,10 +289,22 @@ func TestWriteSkill(t *testing.T) {
 	}
 }
 
-func TestWriteCommand_Unsupported(t *testing.T) {
+func TestWriteCommand_WritesAsSkill(t *testing.T) {
+	home := t.TempDir()
 	a := New()
-	if err := a.WriteCommand("/tmp/commands", "test-cmd", []byte("body")); err == nil {
-		t.Fatal("WriteCommand() want error, got nil (Codex does not support commands)")
+	commandsDir := a.CommandsDir(home)
+	content := []byte("---\nname: test-cmd\n---\n\nCommand body.\n")
+
+	if err := a.WriteCommand(commandsDir, "test-cmd", content); err != nil {
+		t.Fatalf("WriteCommand() error = %v", err)
+	}
+
+	got, err := os.ReadFile(filepath.Join(commandsDir, "test-cmd", "SKILL.md"))
+	if err != nil {
+		t.Fatalf("read written command: %v", err)
+	}
+	if string(got) != string(content) {
+		t.Fatalf("command content = %q, want %q", got, content)
 	}
 }
 
@@ -341,8 +353,8 @@ func TestPaths(t *testing.T) {
 	if got, want := a.SkillsDir(home), filepath.Join(home, ".codex", "skills"); got != want {
 		t.Errorf("SkillsDir() = %q, want %q", got, want)
 	}
-	if got := a.CommandsDir(home); got != "" {
-		t.Errorf("CommandsDir() = %q, want \"\"", got)
+	if got, want := a.CommandsDir(home), a.SkillsDir(home); got != want {
+		t.Errorf("CommandsDir() = %q, want %q (same as SkillsDir)", got, want)
 	}
 	if got, want := a.SystemPromptPath(home), filepath.Join(home, ".codex", "AGENTS.md"); got != want {
 		t.Errorf("SystemPromptPath() = %q, want %q", got, want)
@@ -372,8 +384,8 @@ func TestCapabilitiesAndStrategies(t *testing.T) {
 	if !a.SupportsSkills() {
 		t.Error("SupportsSkills() = false, want true (verified against live ~/.codex/skills)")
 	}
-	if a.SupportsCommands() {
-		t.Error("SupportsCommands() = true, want false")
+	if !a.SupportsCommands() {
+		t.Error("SupportsCommands() = false, want true (Codex surfaces skills as slash commands)")
 	}
 	if !a.SupportsMCP() {
 		t.Error("SupportsMCP() = false, want true")

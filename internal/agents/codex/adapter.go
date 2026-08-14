@@ -14,8 +14,8 @@
 //   - ~/.codex/AGENTS.md is Codex's system prompt file. Codex requires the
 //     exact uppercase filename; a lowercase "agents.md" is silently ignored
 //     on case-sensitive filesystems.
-//   - Codex has no slash-command directory equivalent, so SupportsCommands
-//     stays false.
+//   - Codex has no separate slash-command directory; skills serve as slash
+//     commands, so SupportsCommands routes through WriteSkill.
 package codex
 
 import (
@@ -86,9 +86,10 @@ func (a *Adapter) SkillsDir(homeDir string) string {
 	return filepath.Join(homeDir, ".codex", "skills")
 }
 
-// CommandsDir returns "" — Codex has no slash-command directory.
-func (a *Adapter) CommandsDir(_ string) string {
-	return ""
+// CommandsDir returns the skills directory — Codex surfaces skills as slash
+// commands, so commands are written as skills.
+func (a *Adapter) CommandsDir(homeDir string) string {
+	return a.SkillsDir(homeDir)
 }
 
 // SystemPromptPath returns ~/.codex/AGENTS.md. The uppercase filename is
@@ -116,8 +117,9 @@ func (a *Adapter) SystemPromptStrategy() agents.SystemPromptStrategy {
 // ~/.codex/skills/<id>/SKILL.md installation.
 func (a *Adapter) SupportsSkills() bool { return true }
 
-// SupportsCommands returns false — Codex has no slash-command mechanism.
-func (a *Adapter) SupportsCommands() bool { return false }
+// SupportsCommands returns true — Codex surfaces skills as slash commands,
+// so WriteCommand writes to the skills directory.
+func (a *Adapter) SupportsCommands() bool { return true }
 
 // SupportsMCP returns true — Codex supports MCP via config.toml.
 func (a *Adapter) SupportsMCP() bool { return true }
@@ -186,9 +188,10 @@ func (a *Adapter) WriteSkill(skillsDir string, skillID string, content []byte) e
 	return os.WriteFile(filepath.Join(dir, "SKILL.md"), content, 0o644)
 }
 
-// WriteCommand always fails: Codex does not support commands.
-func (a *Adapter) WriteCommand(_ string, _ string, _ []byte) error {
-	return fmt.Errorf("codex does not support commands")
+// WriteCommand writes a command as a skill — Codex surfaces skills as slash
+// commands, so commands land in {commandsDir}/{cmdID}/SKILL.md.
+func (a *Adapter) WriteCommand(commandsDir string, cmdID string, content []byte) error {
+	return a.WriteSkill(commandsDir, cmdID, content)
 }
 
 // InjectSystemPrompt implements StrategyFileReplace by overwriting
