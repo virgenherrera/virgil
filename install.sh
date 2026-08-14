@@ -6,13 +6,27 @@
 #
 # Env vars:
 #   VIRGIL_VERSION      Version tag to install (e.g. v0.2.0). Default: latest release.
-#   VIRGIL_INSTALL_DIR  Directory to install the binary into. Default: /usr/local/bin
+#   VIRGIL_INSTALL_DIR  Directory to install the binary into. Default: /usr/local/bin,
+#                        falling back to ~/.local/bin when /usr/local/bin is not
+#                        writable. Setting this var explicitly disables the fallback.
 set -eu
 
 REPO="virgenherrera/virgil"
 BIN_NAME="virgil"
-INSTALL_DIR="${VIRGIL_INSTALL_DIR:-/usr/local/bin}"
 VERSION="${VIRGIL_VERSION:-}"
+
+# INSTALL_DIR resolution:
+#   - VIRGIL_INSTALL_DIR set by the user -> use it verbatim, no fallback.
+#   - otherwise default to /usr/local/bin; if that is not writable (and not
+#     creatable), fall back to ~/.local/bin so the install still succeeds
+#     without requiring sudo.
+INSTALL_DIR_EXPLICIT=0
+if [ -n "${VIRGIL_INSTALL_DIR:-}" ]; then
+  INSTALL_DIR="$VIRGIL_INSTALL_DIR"
+  INSTALL_DIR_EXPLICIT=1
+else
+  INSTALL_DIR="/usr/local/bin"
+fi
 
 err() {
   echo "error: $1" >&2
@@ -155,20 +169,46 @@ main() {
   [ -f "${tmp_dir}/${BIN_NAME}" ] || err "extracted binary '${BIN_NAME}' not found in archive"
   chmod +x "${tmp_dir}/${BIN_NAME}"
 
-  if [ ! -d "$INSTALL_DIR" ]; then
-    info "creating install directory ${INSTALL_DIR}"
-    mkdir -p "$INSTALL_DIR" 2>/dev/null || {
-      command -v sudo >/dev/null 2>&1 && sudo mkdir -p "$INSTALL_DIR"
-    } || err "failed to create install directory ${INSTALL_DIR}"
-  fi
+  if [ "$INSTALL_DIR_EXPLICIT" -eq 1 ]; then
+    # User explicitly set VIRGIL_INSTALL_DIR: honor it exactly, no fallback.
+    # Preserve the original behavior of trying sudo before giving up.
+    if [ ! -d "$INSTALL_DIR" ]; then
+      info "creating install directory ${INSTALL_DIR}"
+      mkdir -p "$INSTALL_DIR" 2>/dev/null || {
+        command -v sudo >/dev/null 2>&1 && sudo mkdir -p "$INSTALL_DIR"
+      } || err "failed to create install directory ${INSTALL_DIR}"
+    fi
 
-  if [ -w "$INSTALL_DIR" ]; then
-    mv "${tmp_dir}/${BIN_NAME}" "${INSTALL_DIR}/${BIN_NAME}"
-  elif command -v sudo >/dev/null 2>&1; then
-    info "elevated permissions required to write to ${INSTALL_DIR}"
-    sudo mv "${tmp_dir}/${BIN_NAME}" "${INSTALL_DIR}/${BIN_NAME}"
+    if [ -w "$INSTALL_DIR" ]; then
+      mv "${tmp_dir}/${BIN_NAME}" "${INSTALL_DIR}/${BIN_NAME}"
+    elif command -v sudo >/dev/null 2>&1; then
+      info "elevated permissions required to write to ${INSTALL_DIR}"
+      sudo mv "${tmp_dir}/${BIN_NAME}" "${INSTALL_DIR}/${BIN_NAME}"
+    else
+      err "no write permission for ${INSTALL_DIR} and 'sudo' is not available; set VIRGIL_INSTALL_DIR to a writable location"
+    fi
   else
-    err "no write permission for ${INSTALL_DIR} and 'sudo' is not available; set VIRGIL_INSTALL_DIR to a writable location"
+    # Default target (/usr/local/bin): if it's already writable -- the
+    # common case on most systems -- use it as-is, matching existing
+    # installs. Otherwise, avoid prompting for sudo in a `curl | sh` pipe
+    # and fall back to a per-user directory instead.
+    if [ ! -d "$INSTALL_DIR" ]; then
+      mkdir -p "$INSTALL_DIR" 2>/dev/null || true
+    fi
+
+    if [ ! -d "$INSTALL_DIR" ] || [ ! -w "$INSTALL_DIR" ]; then
+      fallback_dir="${HOME}/.local/bin"
+      info "${INSTALL_DIR} is not writable; falling back to ${fallback_dir}"
+      mkdir -p "$fallback_dir" || err "failed to create fallback install directory ${fallback_dir}"
+      INSTALL_DIR="$fallback_dir"
+
+      case ":${PATH}:" in
+        *":${INSTALL_DIR}:"*) ;;
+        *) info "warning: ${INSTALL_DIR} is not on your PATH -- add it, e.g. export PATH=\"${INSTALL_DIR}:\$PATH\"" ;;
+      esac
+    fi
+
+    mv "${tmp_dir}/${BIN_NAME}" "${INSTALL_DIR}/${BIN_NAME}"
   fi
 
   info "virgil ${VERSION} installed to ${INSTALL_DIR}/${BIN_NAME}"
