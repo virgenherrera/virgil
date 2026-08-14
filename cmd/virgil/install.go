@@ -148,14 +148,17 @@ func installSteps(adapter agents.Adapter, homeDir string) []pipeline.Step {
 }
 
 // syncSteps builds the pipeline steps that (re-)apply embedded assets --
-// skills and system prompt -- without touching MCP configuration. Shared by
-// `virgil install` (as part of the full pipeline) and `virgil sync` (on its
-// own, since MCP registration does not need to change on sync).
+// skills, commands, and system prompt -- without touching MCP configuration.
+// Shared by `virgil install` (as part of the full pipeline) and `virgil sync`
+// (on its own, since MCP registration does not need to change on sync).
 func syncSteps(adapter agents.Adapter, homeDir string) []pipeline.Step {
 	var steps []pipeline.Step
 
 	if adapter.SupportsSkills() {
 		steps = append(steps, skillsStep(adapter, homeDir))
+	}
+	if adapter.SupportsCommands() {
+		steps = append(steps, commandsStep(adapter, homeDir))
 	}
 	if adapter.SupportsSystemPrompt() {
 		steps = append(steps, systemPromptStep(adapter, homeDir))
@@ -210,6 +213,43 @@ func skillsStep(adapter agents.Adapter, homeDir string) pipeline.Step {
 		},
 		Rollback: func() error {
 			fmt.Fprintf(os.Stderr, "warning: could not automatically roll back skills written to %s; please remove manually if needed\n", skillsDir)
+			return nil
+		},
+	}
+}
+
+// commandIDs lists the embedded skills that double as slash commands.
+// virgil-workflow is excluded: it is a contextual skill, not a user-invoked
+// command.
+var commandIDs = []string{
+	"virgil-init",
+	"virgil-new",
+	"virgil-propose",
+	"virgil-approve",
+	"virgil-status",
+}
+
+func commandsStep(adapter agents.Adapter, homeDir string) pipeline.Step {
+	commandsDir := adapter.CommandsDir(homeDir)
+	return pipeline.Step{
+		Name: "write-commands",
+		Prepare: func() error {
+			return ensureAccessibleDir(commandsDir)
+		},
+		Apply: func() error {
+			for _, id := range commandIDs {
+				content, err := skills.Get(id)
+				if err != nil {
+					return fmt.Errorf("get command %q: %w", id, err)
+				}
+				if err := adapter.WriteCommand(commandsDir, id, content); err != nil {
+					return fmt.Errorf("write command %q: %w", id, err)
+				}
+			}
+			return nil
+		},
+		Rollback: func() error {
+			fmt.Fprintf(os.Stderr, "warning: could not automatically roll back commands written to %s; please remove manually if needed\n", commandsDir)
 			return nil
 		},
 	}
