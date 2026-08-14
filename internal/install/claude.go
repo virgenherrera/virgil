@@ -4,13 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
-// virgilMCPConfig is the MCP server entry Virgil writes into Claude settings.
-var virgilMCPConfig = map[string]any{
-	"command": "virgil",
-	"args":    []any{"serve"},
+func virgilMCPConfig() map[string]any {
+	cmd := "virgil"
+	if abs, err := exec.LookPath("virgil"); err == nil {
+		cmd = abs
+	}
+	return map[string]any{
+		"command": cmd,
+		"args":    []any{"serve"},
+	}
 }
 
 // InstallClaude writes the Virgil MCP server configuration into the
@@ -27,7 +33,7 @@ func InstallClaude(settingsPath string) error {
 	if !ok {
 		mcpServers = make(map[string]any)
 	}
-	mcpServers["virgil"] = virgilMCPConfig
+	mcpServers["virgil"] = virgilMCPConfig()
 	settings["mcpServers"] = mcpServers
 
 	return writeSettings(settingsPath, settings)
