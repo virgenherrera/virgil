@@ -30,6 +30,7 @@ func init() {
 	rootCmd.AddCommand(pipeCmd)
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(installCmd)
+	rootCmd.AddCommand(syncCmd)
 	rootCmd.AddCommand(versionCmd)
 }
 

@@ -130,8 +130,8 @@ func (a *Adapter) SupportsSystemPrompt() bool { return true }
 // launches servers directly rather than through a shell, so it does not
 // resolve bare command names against PATH itself — a bare "virgil" entry
 // silently fails to start. This was fixed for the standalone installer in
-// v0.2.1 (internal/install/claude.go) and is preserved here so every future
-// MCP server registered through this adapter gets the same treatment.
+// v0.2.1 and is preserved here so every future MCP server registered
+// through this adapter gets the same treatment.
 func (a *Adapter) WriteMCPConfig(settingsPath string, serverName string, config map[string]any) error {
 	settings, err := readOrCreateSettings(settingsPath)
 	if err != nil {
