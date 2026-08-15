@@ -14,7 +14,7 @@ import (
 
 var syncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "Re-apply Virgil skills and system prompt to already-installed agents",
+	Short: "Re-apply Virgil skills, commands, and system prompt to installed agents",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runSync(cmd.OutOrStdout())
 	},
