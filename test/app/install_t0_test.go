@@ -507,3 +507,283 @@ func TestApp_T0InstallPreservesExistingConfig(t *testing.T) {
 
 	assertMCPConfigClaude(t, homeDir)
 }
+
+// agentManifest mirrors the per-agent manifest block that state.json is
+// expected to persist under "manifest.{agentID}" once install/upgrade
+// tracks which skills and commands it wrote, so a later upgrade can diff
+// against it and remove artifacts that are no longer part of the release.
+// Declared locally rather than imported from internal/state so this file
+// stays a black-box consumer of the persisted JSON contract.
+type agentManifest struct {
+	Skills              []string `json:"skills"`
+	Commands            []string `json:"commands"`
+	SystemPromptPath    string   `json:"system_prompt_path"`
+	SystemPromptSection string   `json:"system_prompt_section"`
+}
+
+// manifestStateFile extends installStateFile with the "manifest" field.
+// Declared locally for the same black-box reasons as agentManifest.
+type manifestStateFile struct {
+	Version         string                   `json:"version"`
+	InstalledAgents []string                 `json:"installed_agents"`
+	LastSync        string                   `json:"last_sync"`
+	Manifest        map[string]agentManifest `json:"manifest"`
+}
+
+// writeManifestStateFile seeds {homeDir}/.virgil/state.json with a manifest
+// state file, so tests can simulate a previous install/upgrade run.
+func writeManifestStateFile(t *testing.T, homeDir string, st manifestStateFile) {
+	t.Helper()
+
+	path := filepath.Join(homeDir, ".virgil", "state.json")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("create %s parent: %v", filepath.Dir(path), err)
+	}
+
+	data, err := json.MarshalIndent(st, "", "  ")
+	if err != nil {
+		t.Fatalf("marshal seed state: %v", err)
+	}
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		t.Fatalf("write seed state: %v", err)
+	}
+}
+
+// readManifestStateFile reads and parses {homeDir}/.virgil/state.json as a
+// manifestStateFile.
+func readManifestStateFile(t *testing.T, homeDir string) manifestStateFile {
+	t.Helper()
+
+	path := filepath.Join(homeDir, ".virgil", "state.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+
+	var st manifestStateFile
+	if err := json.Unmarshal(data, &st); err != nil {
+		t.Fatalf("parse %s: %v; content=%q", path, err, string(data))
+	}
+	return st
+}
+
+// seedSkillDir creates {skillsDir}/{id}/SKILL.md with placeholder content,
+// so pre-existing (stale) skills can be simulated on disk before install.
+func seedSkillDir(t *testing.T, skillsDir, id string) {
+	t.Helper()
+
+	dir := filepath.Join(skillsDir, id)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatalf("seed skill dir %s: %v", dir, err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("# stale skill\n"), 0o644); err != nil {
+		t.Fatalf("seed skill file %s: %v", dir, err)
+	}
+}
+
+// seedCommandDir creates {commandsDir}/{id}/SKILL.md with placeholder
+// content, so pre-existing (stale) commands can be simulated on disk before
+// install.
+func seedCommandDir(t *testing.T, commandsDir, id string) {
+	t.Helper()
+
+	dir := filepath.Join(commandsDir, id)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatalf("seed command dir %s: %v", dir, err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("# stale command\n"), 0o644); err != nil {
+		t.Fatalf("seed command file %s: %v", dir, err)
+	}
+}
+
+// assertDirAbsent fails the test if path still exists on disk.
+func assertDirAbsent(t *testing.T, path string) {
+	t.Helper()
+
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatalf("expected %s to be removed, stat returned: %v", path, err)
+	}
+}
+
+// TestApp_T0InstallUpgradeCleansPreviousSkills proves that upgrading over a
+// previous install whose state.json manifest lists skills/commands that are
+// no longer part of the current release removes the stale artifacts from
+// disk, installs the current release's artifacts, and rewrites the manifest
+// to reflect only what is now installed.
+func TestApp_T0InstallUpgradeCleansPreviousSkills(t *testing.T) {
+	homeDir := t.TempDir()
+	claudeDir := filepath.Join(homeDir, ".claude")
+	if err := os.MkdirAll(claudeDir, 0o755); err != nil {
+		t.Fatalf("seed ~/.claude: %v", err)
+	}
+
+	skillsDir := filepath.Join(claudeDir, "skills")
+	commandsDir := filepath.Join(claudeDir, "commands")
+
+	staleSkills := []string{"old-skill-a", "old-skill-b"}
+	staleCommands := []string{"old-cmd-a"}
+	for _, id := range staleSkills {
+		seedSkillDir(t, skillsDir, id)
+	}
+	for _, id := range staleCommands {
+		seedCommandDir(t, commandsDir, id)
+	}
+
+	writeManifestStateFile(t, homeDir, manifestStateFile{
+		Version:         "0.0.1-previous",
+		InstalledAgents: []string{"claude-code"},
+		LastSync:        "2026-01-01T00:00:00Z",
+		Manifest: map[string]agentManifest{
+			"claude-code": {
+				Skills:              staleSkills,
+				Commands:            staleCommands,
+				SystemPromptPath:    filepath.Join(claudeDir, "CLAUDE.md"),
+				SystemPromptSection: "methodology",
+			},
+		},
+	})
+
+	stdout, stderr, exitCode := runCLI(t, homeDir, "install")
+	if exitCode != 0 {
+		t.Fatalf("virgil install exited %d; stdout=%q stderr=%q", exitCode, stdout, stderr)
+	}
+
+	for _, id := range staleSkills {
+		assertDirAbsent(t, filepath.Join(skillsDir, id))
+	}
+	for _, id := range staleCommands {
+		assertDirAbsent(t, filepath.Join(commandsDir, id))
+	}
+
+	assertSkillsInstalled(t, skillsDir)
+	assertCommandsInstalled(t, commandsDir)
+
+	st := readManifestStateFile(t, homeDir)
+	claudeManifest, ok := st.Manifest["claude-code"]
+	if !ok {
+		t.Fatalf("state.json manifest missing claude-code entry: %+v", st)
+	}
+
+	gotSkills := append([]string{}, claudeManifest.Skills...)
+	sort.Strings(gotSkills)
+	wantSkills := append([]string{}, embeddedSkillIDs...)
+	sort.Strings(wantSkills)
+	if strings.Join(gotSkills, ",") != strings.Join(wantSkills, ",") {
+		t.Fatalf("state.json manifest.claude-code.skills = %v, want %v", claudeManifest.Skills, wantSkills)
+	}
+
+	gotCommands := append([]string{}, claudeManifest.Commands...)
+	sort.Strings(gotCommands)
+	wantCommands := append([]string{}, commandIDs...)
+	sort.Strings(wantCommands)
+	if strings.Join(gotCommands, ",") != strings.Join(wantCommands, ",") {
+		t.Fatalf("state.json manifest.claude-code.commands = %v, want %v", claudeManifest.Commands, wantCommands)
+	}
+}
+
+// TestApp_T0InstallFreshNoManifest proves that a fresh install (no
+// pre-existing ~/.virgil/state.json) installs every current skill and
+// command and writes a state.json whose manifest lists them all.
+func TestApp_T0InstallFreshNoManifest(t *testing.T) {
+	homeDir := t.TempDir()
+	claudeDir := filepath.Join(homeDir, ".claude")
+	if err := os.MkdirAll(claudeDir, 0o755); err != nil {
+		t.Fatalf("seed ~/.claude: %v", err)
+	}
+
+	statePath := filepath.Join(homeDir, ".virgil", "state.json")
+	if _, err := os.Stat(statePath); !os.IsNotExist(err) {
+		t.Fatalf("expected no pre-existing state file at %s, stat returned: %v", statePath, err)
+	}
+
+	stdout, stderr, exitCode := runCLI(t, homeDir, "install")
+	if exitCode != 0 {
+		t.Fatalf("virgil install exited %d; stdout=%q stderr=%q", exitCode, stdout, stderr)
+	}
+
+	skillsDir := filepath.Join(claudeDir, "skills")
+	commandsDir := filepath.Join(claudeDir, "commands")
+	assertSkillsInstalled(t, skillsDir)
+	assertCommandsInstalled(t, commandsDir)
+
+	st := readManifestStateFile(t, homeDir)
+	claudeManifest, ok := st.Manifest["claude-code"]
+	if !ok {
+		t.Fatalf("state.json manifest missing claude-code entry: %+v", st)
+	}
+
+	gotSkills := append([]string{}, claudeManifest.Skills...)
+	sort.Strings(gotSkills)
+	wantSkills := append([]string{}, embeddedSkillIDs...)
+	sort.Strings(wantSkills)
+	if strings.Join(gotSkills, ",") != strings.Join(wantSkills, ",") {
+		t.Fatalf("state.json manifest.claude-code.skills = %v, want %v", claudeManifest.Skills, wantSkills)
+	}
+
+	gotCommands := append([]string{}, claudeManifest.Commands...)
+	sort.Strings(gotCommands)
+	wantCommands := append([]string{}, commandIDs...)
+	sort.Strings(wantCommands)
+	if strings.Join(gotCommands, ",") != strings.Join(wantCommands, ",") {
+		t.Fatalf("state.json manifest.claude-code.commands = %v, want %v", claudeManifest.Commands, wantCommands)
+	}
+}
+
+// TestApp_T0InstallReinstallSameVersion proves that reinstalling when
+// state.json's manifest already matches the current release's skills and
+// commands overwrites the artifacts in place (no orphaned files) and leaves
+// the manifest contents unchanged.
+func TestApp_T0InstallReinstallSameVersion(t *testing.T) {
+	homeDir := t.TempDir()
+	claudeDir := filepath.Join(homeDir, ".claude")
+	if err := os.MkdirAll(claudeDir, 0o755); err != nil {
+		t.Fatalf("seed ~/.claude: %v", err)
+	}
+
+	skillsDir := filepath.Join(claudeDir, "skills")
+	commandsDir := filepath.Join(claudeDir, "commands")
+
+	writeManifestStateFile(t, homeDir, manifestStateFile{
+		Version:         "dev",
+		InstalledAgents: []string{"claude-code"},
+		LastSync:        "2026-08-17T18:00:00Z",
+		Manifest: map[string]agentManifest{
+			"claude-code": {
+				Skills:              append([]string{}, embeddedSkillIDs...),
+				Commands:            append([]string{}, commandIDs...),
+				SystemPromptPath:    filepath.Join(claudeDir, "CLAUDE.md"),
+				SystemPromptSection: "methodology",
+			},
+		},
+	})
+
+	stdout, stderr, exitCode := runCLI(t, homeDir, "install")
+	if exitCode != 0 {
+		t.Fatalf("virgil install exited %d; stdout=%q stderr=%q", exitCode, stdout, stderr)
+	}
+
+	assertSkillsInstalled(t, skillsDir)
+	assertCommandsInstalled(t, commandsDir)
+
+	st := readManifestStateFile(t, homeDir)
+	claudeManifest, ok := st.Manifest["claude-code"]
+	if !ok {
+		t.Fatalf("state.json manifest missing claude-code entry: %+v", st)
+	}
+
+	gotSkills := append([]string{}, claudeManifest.Skills...)
+	sort.Strings(gotSkills)
+	wantSkills := append([]string{}, embeddedSkillIDs...)
+	sort.Strings(wantSkills)
+	if strings.Join(gotSkills, ",") != strings.Join(wantSkills, ",") {
+		t.Fatalf("state.json manifest.claude-code.skills = %v, want %v (should remain unchanged)", claudeManifest.Skills, wantSkills)
+	}
+
+	gotCommands := append([]string{}, claudeManifest.Commands...)
+	sort.Strings(gotCommands)
+	wantCommands := append([]string{}, commandIDs...)
+	sort.Strings(wantCommands)
+	if strings.Join(gotCommands, ",") != strings.Join(wantCommands, ",") {
+		t.Fatalf("state.json manifest.claude-code.commands = %v, want %v (should remain unchanged)", claudeManifest.Commands, wantCommands)
+	}
+}

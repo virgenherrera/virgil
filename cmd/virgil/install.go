@@ -68,6 +68,26 @@ func runInstall(out io.Writer) error {
 		return nil
 	}
 
+	st, err := state.Load(homeDir)
+	if err != nil {
+		return fmt.Errorf("load state: %w", err)
+	}
+
+	switch {
+	case st.Version == "":
+		fmt.Fprintln(out, "Fresh install...")
+	case st.Version == Version:
+		fmt.Fprintf(out, "Reinstalling %s...\n", Version)
+	default:
+		fmt.Fprintf(out, "Upgrading from %s to %s...\n", st.Version, Version)
+	}
+
+	cleanPreviousInstall(out, st, homeDir)
+
+	if st.Manifest == nil {
+		st.Manifest = make(map[string]state.AgentManifest)
+	}
+
 	var installedAgents []string
 	for _, adapter := range discovered {
 		fmt.Fprintf(out, "Installing Virgil for %s...\n", adapter.Name())
@@ -79,12 +99,9 @@ func runInstall(out io.Writer) error {
 		}
 
 		installedAgents = append(installedAgents, string(adapter.Agent()))
+		st.Manifest[string(adapter.Agent())] = buildManifest(adapter, homeDir)
 	}
 
-	st, err := state.Load(homeDir)
-	if err != nil {
-		return fmt.Errorf("load state: %w", err)
-	}
 	st.Version = Version
 	st.InstalledAgents = mergeUnique(st.InstalledAgents, installedAgents)
 	st.LastSync = time.Now().UTC().Format(time.RFC3339)
@@ -124,13 +141,124 @@ func newRegistry() (*agents.Registry, error) {
 // config correct even if that per-adapter resolution step is ever skipped.
 func virgilMCPConfig() map[string]any {
 	cmd := "virgil"
-	if abs, err := exec.LookPath("virgil"); err == nil {
+	abs, lookErr := exec.LookPath("virgil")
+	if lookErr == nil {
 		cmd = abs
 	}
+
+	if exePath, err := os.Executable(); err == nil && lookErr == nil && exePath != abs {
+		fmt.Fprintf(os.Stderr, "warning: PATH resolves virgil to %s, but this command is running from %s; the installed MCP config may point to the wrong binary\n", abs, exePath)
+	}
+
 	return map[string]any{
 		"command": cmd,
 		"args":    []any{"serve"},
 	}
+}
+
+// cleanPreviousInstall removes skill and command directories recorded in
+// st.Manifest for each agent before the current install pipeline re-writes
+// them. This drops assets a prior version installed but the current version
+// no longer ships (e.g. a renamed skill), preventing orphaned directories
+// from accumulating across upgrades. A nil or empty manifest means either a
+// fresh install or state produced by a pre-manifest binary -- either way
+// there is nothing recorded to clean.
+func cleanPreviousInstall(out io.Writer, st *state.InstallState, homeDir string) {
+	if len(st.Manifest) == 0 {
+		return
+	}
+
+	registry, err := newRegistry()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: could not build agent registry for cleanup: %v\n", err)
+		return
+	}
+
+	for agentID, manifest := range st.Manifest {
+		adapter, ok := registry.Get(agents.AgentID(agentID))
+		if !ok {
+			continue
+		}
+
+		removedSkills := removeSkillEntries(adapter.SkillsDir(homeDir), manifest.Skills)
+		removedCommands := removeCommandEntries(adapter.CommandsDir(homeDir), manifest.Commands)
+
+		fmt.Fprintf(out, "  [ok] Cleaned previous install for %s: %d skills, %d commands\n", adapter.Name(), removedSkills, removedCommands)
+	}
+}
+
+// removeSkillEntries removes {skillsDir}/{id} for each id, best-effort.
+// Both current adapters write skills as {skillsDir}/{id}/SKILL.md.
+func removeSkillEntries(skillsDir string, ids []string) int {
+	removed := 0
+	for _, id := range ids {
+		if err := os.RemoveAll(filepath.Join(skillsDir, id)); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: could not remove skill %q at %s: %v\n", id, skillsDir, err)
+			continue
+		}
+		removed++
+	}
+	return removed
+}
+
+// removeCommandEntries removes each command id from commandsDir, best-effort.
+// Command layout differs per adapter: Claude writes a flat {id}.md file,
+// Codex writes an {id}/SKILL.md directory (commands are just skills to it).
+// removeCommandArtifact clears both shapes so this works regardless of which
+// adapter produced the manifest.
+func removeCommandEntries(commandsDir string, ids []string) int {
+	removed := 0
+	for _, id := range ids {
+		if err := removeCommandArtifact(commandsDir, id); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: could not remove command %q at %s: %v\n", id, commandsDir, err)
+			continue
+		}
+		removed++
+	}
+	return removed
+}
+
+// removeCommandArtifact deletes the on-disk form of a single command,
+// whichever adapter shape it takes -- see removeCommandEntries.
+func removeCommandArtifact(commandsDir, id string) error {
+	if err := os.RemoveAll(filepath.Join(commandsDir, id)); err != nil {
+		return err
+	}
+	if err := os.Remove(filepath.Join(commandsDir, id+".md")); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+// buildManifest records what installSteps just wrote for adapter, so a
+// future install or sync can find and clean it up if the shipped set of
+// skills/commands changes.
+func buildManifest(adapter agents.Adapter, homeDir string) state.AgentManifest {
+	manifest := state.AgentManifest{
+		SystemPromptPath:    adapter.SystemPromptPath(homeDir),
+		SystemPromptSection: "methodology",
+	}
+
+	if adapter.SupportsMCP() {
+		manifest.MCPConfigPath = adapter.SettingsPath(homeDir)
+		if cmd, ok := virgilMCPConfig()["command"].(string); ok {
+			manifest.BinaryPath = cmd
+		}
+	}
+
+	if adapter.SupportsSkills() {
+		if entries, err := skills.List(); err == nil {
+			for _, entry := range entries {
+				manifest.Skills = append(manifest.Skills, entry.ID)
+			}
+		}
+	}
+
+	if adapter.SupportsCommands() {
+		manifest.Commands = append(manifest.Commands, commandIDs...)
+	}
+
+	return manifest
 }
 
 // installSteps builds the full install pipeline for adapter: MCP config

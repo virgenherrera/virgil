@@ -10,6 +10,18 @@ import (
 	"path/filepath"
 )
 
+// AgentManifest records exactly what Virgil wrote into a single agent during
+// the most recent install, so a later install or sync can clean up assets
+// (renamed skills, dropped commands) that the new version no longer ships.
+type AgentManifest struct {
+	MCPConfigPath       string   `json:"mcp_config_path,omitempty"`
+	BinaryPath          string   `json:"binary_path,omitempty"`
+	Skills              []string `json:"skills,omitempty"`
+	Commands            []string `json:"commands,omitempty"`
+	SystemPromptPath    string   `json:"system_prompt_path,omitempty"`
+	SystemPromptSection string   `json:"system_prompt_section,omitempty"`
+}
+
 // InstallState records the outcome of the most recent `virgil install` run.
 type InstallState struct {
 	// Version is the virgil binary version that produced this state.
@@ -19,6 +31,10 @@ type InstallState struct {
 	InstalledAgents []string `json:"installed_agents"`
 	// LastSync is the RFC3339 timestamp of the most recent install or sync.
 	LastSync string `json:"last_sync"`
+	// Manifest maps AgentID to what was written for that agent, keyed the
+	// same way as InstalledAgents entries. Absent (nil) on state produced by
+	// pre-manifest binaries -- callers must treat that as "nothing to clean".
+	Manifest map[string]AgentManifest `json:"manifest,omitempty"`
 }
 
 // Path returns the state file location: {homeDir}/.virgil/state.json.
