@@ -141,13 +141,12 @@ func newRegistry() (*agents.Registry, error) {
 // config correct even if that per-adapter resolution step is ever skipped.
 func virgilMCPConfig() map[string]any {
 	cmd := "virgil"
-	abs, lookErr := exec.LookPath("virgil")
-	if lookErr == nil {
-		cmd = abs
+	if exePath, err := os.Executable(); err == nil {
+		cmd = exePath
 	}
 
-	if exePath, err := os.Executable(); err == nil && lookErr == nil && exePath != abs {
-		fmt.Fprintf(os.Stderr, "warning: PATH resolves virgil to %s, but this command is running from %s; the installed MCP config may point to the wrong binary\n", abs, exePath)
+	if abs, err := exec.LookPath("virgil"); err == nil && cmd != abs {
+		fmt.Fprintf(os.Stderr, "warning: PATH resolves virgil to %s, but this binary is %s; MCP config will use this binary\n", abs, cmd)
 	}
 
 	return map[string]any{
