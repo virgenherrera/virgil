@@ -100,7 +100,7 @@
     "script": {
       "uri": "fixture://validation/t0-new-after-completed-change/actor-script.json",
       "revision": "v1",
-      "digest": "sha256:bd79e751d8ab7d4fdbb36a479682b68297c3e96f7e58cd460dd4eb9b7aa01dbe"
+      "digest": "sha256:72bbb7c379bbccc4479aa1db0cf0d3862ef8b87df60c870e1da475abcb4018ea"
     }
   },
   "adapter_profile": {
@@ -282,7 +282,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/first-change/00-idea.md",
+        "resource_pattern": "docs/first-change/00-idea/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -313,7 +313,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/first-change/00-idea.md",
+        "resource_pattern": "docs/first-change/00-idea/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -343,7 +343,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/first-change/01-spec.md",
+        "resource_pattern": "docs/first-change/01-spec/01-spec.md",
         "process_id": "process-a"
       },
       {
@@ -374,7 +374,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/first-change/01-spec.md",
+        "resource_pattern": "docs/first-change/01-spec/01-spec.md",
         "process_id": "process-a"
       },
       {
@@ -404,7 +404,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/first-change/02-design.md",
+        "resource_pattern": "docs/first-change/02-design/02-design.md",
         "process_id": "process-a"
       },
       {
@@ -435,7 +435,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/first-change/02-design.md",
+        "resource_pattern": "docs/first-change/02-design/02-design.md",
         "process_id": "process-a"
       },
       {
@@ -465,7 +465,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/first-change/03-tasks.md",
+        "resource_pattern": "docs/first-change/03-tasks/03-tasks.md",
         "process_id": "process-a"
       },
       {
@@ -496,7 +496,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/first-change/03-tasks.md",
+        "resource_pattern": "docs/first-change/03-tasks/03-tasks.md",
         "process_id": "process-a"
       },
       {
@@ -526,7 +526,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/first-change/04-handoff.md",
+        "resource_pattern": "docs/first-change/04-handoff/04-handoff.md",
         "process_id": "process-a"
       },
       {
@@ -557,7 +557,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/first-change/04-handoff.md",
+        "resource_pattern": "docs/first-change/04-handoff/04-handoff.md",
         "process_id": "process-a"
       },
       {
@@ -886,23 +886,23 @@
         "change_type": "added"
       },
       {
-        "path": "docs/first-change/00-idea.md",
+        "path": "docs/first-change/00-idea/00-idea.md",
         "change_type": "added"
       },
       {
-        "path": "docs/first-change/01-spec.md",
+        "path": "docs/first-change/01-spec/01-spec.md",
         "change_type": "added"
       },
       {
-        "path": "docs/first-change/02-design.md",
+        "path": "docs/first-change/02-design/02-design.md",
         "change_type": "added"
       },
       {
-        "path": "docs/first-change/03-tasks.md",
+        "path": "docs/first-change/03-tasks/03-tasks.md",
         "change_type": "added"
       },
       {
-        "path": "docs/first-change/04-handoff.md",
+        "path": "docs/first-change/04-handoff/04-handoff.md",
         "change_type": "added"
       }
     ]
@@ -972,7 +972,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/00-idea.md",
+            "path": "docs/first-change/00-idea/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -984,7 +984,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/00-idea.md",
+            "path": "docs/first-change/00-idea/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -1009,7 +1009,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/00-idea.md",
+            "path": "docs/first-change/00-idea/00-idea.md",
             "change_type": "modified"
           }
         ]
@@ -1021,7 +1021,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/00-idea.md",
+            "path": "docs/first-change/00-idea/00-idea.md",
             "change_type": "modified"
           }
         ]
@@ -1046,7 +1046,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/01-spec.md",
+            "path": "docs/first-change/01-spec/01-spec.md",
             "change_type": "added"
           }
         ]
@@ -1058,7 +1058,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/01-spec.md",
+            "path": "docs/first-change/01-spec/01-spec.md",
             "change_type": "added"
           }
         ]
@@ -1083,7 +1083,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/01-spec.md",
+            "path": "docs/first-change/01-spec/01-spec.md",
             "change_type": "modified"
           }
         ]
@@ -1095,7 +1095,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/01-spec.md",
+            "path": "docs/first-change/01-spec/01-spec.md",
             "change_type": "modified"
           }
         ]
@@ -1120,7 +1120,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/02-design.md",
+            "path": "docs/first-change/02-design/02-design.md",
             "change_type": "added"
           }
         ]
@@ -1132,7 +1132,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/02-design.md",
+            "path": "docs/first-change/02-design/02-design.md",
             "change_type": "added"
           }
         ]
@@ -1157,7 +1157,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/02-design.md",
+            "path": "docs/first-change/02-design/02-design.md",
             "change_type": "modified"
           }
         ]
@@ -1169,7 +1169,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/02-design.md",
+            "path": "docs/first-change/02-design/02-design.md",
             "change_type": "modified"
           }
         ]
@@ -1194,7 +1194,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/03-tasks.md",
+            "path": "docs/first-change/03-tasks/03-tasks.md",
             "change_type": "added"
           }
         ]
@@ -1206,7 +1206,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/03-tasks.md",
+            "path": "docs/first-change/03-tasks/03-tasks.md",
             "change_type": "added"
           }
         ]
@@ -1231,7 +1231,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/03-tasks.md",
+            "path": "docs/first-change/03-tasks/03-tasks.md",
             "change_type": "modified"
           }
         ]
@@ -1243,7 +1243,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/03-tasks.md",
+            "path": "docs/first-change/03-tasks/03-tasks.md",
             "change_type": "modified"
           }
         ]
@@ -1268,7 +1268,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/04-handoff.md",
+            "path": "docs/first-change/04-handoff/04-handoff.md",
             "change_type": "added"
           }
         ]
@@ -1280,7 +1280,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/04-handoff.md",
+            "path": "docs/first-change/04-handoff/04-handoff.md",
             "change_type": "added"
           }
         ]
@@ -1306,7 +1306,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/04-handoff.md",
+            "path": "docs/first-change/04-handoff/04-handoff.md",
             "change_type": "modified"
           },
           {
@@ -1322,7 +1322,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/first-change/04-handoff.md",
+            "path": "docs/first-change/04-handoff/04-handoff.md",
             "change_type": "modified"
           }
         ]

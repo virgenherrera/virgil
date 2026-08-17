@@ -101,7 +101,7 @@
     "script": {
       "uri": "fixture://validation/t0-continue-recovery-fresh-process/actor-script.json",
       "revision": "v2",
-      "digest": "sha256:54c7668ac74b7e04f71aa60f66f08801165d4a863345fac4f206b1369b599d55"
+      "digest": "sha256:8c98b226e81ebf5ef4a761552c051264c774b4f19a52f02b36c9b163401397dc"
     }
   },
   "adapter_profile": {
@@ -283,7 +283,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/change-recovery-alpha/00-idea.md",
+        "resource_pattern": "docs/change-recovery-alpha/00-idea/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -314,7 +314,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/change-recovery-alpha/00-idea.md",
+        "resource_pattern": "docs/change-recovery-alpha/00-idea/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -354,7 +354,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/change-recovery-alpha/01-spec.md",
+        "resource_pattern": "docs/change-recovery-alpha/01-spec/01-spec.md",
         "process_id": "process-b"
       },
       {
@@ -521,11 +521,11 @@
         "change_type": "added"
       },
       {
-        "path": "docs/change-recovery-alpha/00-idea.md",
+        "path": "docs/change-recovery-alpha/00-idea/00-idea.md",
         "change_type": "added"
       },
       {
-        "path": "docs/change-recovery-alpha/01-spec.md",
+        "path": "docs/change-recovery-alpha/01-spec/01-spec.md",
         "change_type": "added"
       }
     ]
@@ -595,7 +595,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-recovery-alpha/00-idea.md",
+            "path": "docs/change-recovery-alpha/00-idea/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -607,7 +607,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-recovery-alpha/00-idea.md",
+            "path": "docs/change-recovery-alpha/00-idea/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -632,7 +632,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-recovery-alpha/00-idea.md",
+            "path": "docs/change-recovery-alpha/00-idea/00-idea.md",
             "change_type": "modified"
           }
         ]
@@ -644,7 +644,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-recovery-alpha/00-idea.md",
+            "path": "docs/change-recovery-alpha/00-idea/00-idea.md",
             "change_type": "modified"
           }
         ]
@@ -669,7 +669,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-recovery-alpha/01-spec.md",
+            "path": "docs/change-recovery-alpha/01-spec/01-spec.md",
             "change_type": "added"
           }
         ]
@@ -681,7 +681,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-recovery-alpha/01-spec.md",
+            "path": "docs/change-recovery-alpha/01-spec/01-spec.md",
             "change_type": "added"
           }
         ]

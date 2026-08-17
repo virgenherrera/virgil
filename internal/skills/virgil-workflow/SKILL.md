@@ -31,6 +31,11 @@ Virgil-managed project.
   Finish or check the active change via `virgil_status` first.
 - `virgil_status` takes no parameters and is always safe to call — use it
   liberally to re-orient.
+- Never call `virgil_approve` without explicit human confirmation. Present
+  the proposal summary and wait.
+- After `derived_step` reaches `complete`, STOP. The pipeline is a PLANNING
+  tool. Implementation requires separate, explicit instruction from the
+  human.
 
 ## The Artifact Pipeline
 
@@ -90,6 +95,9 @@ awaiting approval — the next call should be `virgil_approve`, not another
 6. Repeat steps 4-5 until `derived_step` is `complete`.
 7. Use `virgil_status` at any point to re-check state, including after an
    error or a `blocked` result.
+8. When `derived_step` is `complete`, report the final state to the user and
+   STOP. Do not proceed to implementation unless the user explicitly
+   instructs it.
 
 ## Output Contract
 

@@ -63,11 +63,11 @@ Every invocation uses a runtime envelope:
 
 Each change goes through 5 sequential stages:
 
-1. **idea** (` + backtick + `docs/{change_id}/00-idea.md` + backtick + `) — What and why
-2. **spec** (` + backtick + `docs/{change_id}/01-spec.md` + backtick + `) — Detailed requirements
-3. **design** (` + backtick + `docs/{change_id}/02-design.md` + backtick + `) — Architecture and approach
-4. **tasks** (` + backtick + `docs/{change_id}/03-tasks.md` + backtick + `) — Implementation breakdown
-5. **handoff** (` + backtick + `docs/{change_id}/04-handoff.md` + backtick + `) — Delivery checklist
+1. **idea** (` + backtick + `docs/{change_id}/00-idea/00-idea.md` + backtick + `) — What and why
+2. **spec** (` + backtick + `docs/{change_id}/01-spec/01-spec.md` + backtick + `) — Detailed requirements
+3. **design** (` + backtick + `docs/{change_id}/02-design/02-design.md` + backtick + `) — Architecture and approach
+4. **tasks** (` + backtick + `docs/{change_id}/03-tasks/03-tasks.md` + backtick + `) — Implementation breakdown
+5. **handoff** (` + backtick + `docs/{change_id}/04-handoff/04-handoff.md` + backtick + `) — Delivery checklist
 
 Each artifact is proposed via ` + backtick + `content_proposal` + backtick + `, then approved via ` + backtick + `approval` + backtick + `.
 
@@ -78,11 +78,16 @@ virgil.json              # Project config (auto-generated)
 AGENTS.md                # This file (auto-generated)
 docs/
   {change_id}/
-    00-idea.md           # JSON frontmatter + markdown content
-    01-spec.md
-    02-design.md
-    03-tasks.md
-    04-handoff.md
+    00-idea/
+      00-idea.md         # JSON frontmatter + markdown content
+    01-spec/
+      01-spec.md
+    02-design/
+      02-design.md
+    03-tasks/
+      03-tasks.md
+    04-handoff/
+      04-handoff.md
 ` + tripleBacktick + `
 
 ### Artifact Format
@@ -107,6 +112,8 @@ Each ` + backtick + `.md` + backtick + ` file has JSON frontmatter:
 
 - **DO NOT** modify files in ` + backtick + `docs/` + backtick + ` directly — always go through Virgil
 - **DO NOT** delete or rename artifact files
+- **DO NOT** implement code after the pipeline reaches ` + backtick + `complete` + backtick + ` — the handoff is the end of Virgil's scope. Implementation requires explicit human instruction.
+- **DO NOT** call approval operations without presenting the proposal to the human first and receiving their confirmation.
 - **DO** read ` + backtick + `docs/` + backtick + ` files for context (RAG-friendly)
 - **DO** propose changes through ` + backtick + `virgil.continue` + backtick + ` with ` + backtick + `content_proposal` + backtick + `
 `

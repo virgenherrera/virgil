@@ -272,7 +272,7 @@
             "kind": "content_proposal",
             "artifact_kind": "idea",
             "content": {
-              "uri": "seed/idea-proposal.md",
+              "uri": "docs/change-continue-alpha/00-idea/idea-proposal.md",
               "digest": "sha256:3397ad706bc1302494ad3af9c785e3abf26d5112200c2ea7db074439b12f10ea"
             }
           }

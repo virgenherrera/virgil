@@ -237,14 +237,14 @@ func (runner *Runner) runFixture(ctx context.Context, envelope wire.RunT0Envelop
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-continue-oracle", Status: "failed", Detail: "content proposal and approval happy path violated the durable operation oracle"})
 			return failScenario(scenario, "virgil_failure", "CONTINUE_ORACLE_FAILED", err.Error())
 		}
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-continue-oracle", Status: "passed", Detail: "content proposal drafted docs/00-idea.md and approval advanced the derived step"})
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-continue-oracle", Status: "passed", Detail: "content proposal drafted docs/00-idea/00-idea.md and approval advanced the derived step"})
 
 	case "t0-continue-request-changes":
 		if err := validateRequestChangesScenario(runner.registry, targetRoot, executions); err != nil {
 			scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-request-changes-oracle", Status: "failed", Detail: "content proposal and request_changes path violated the durable operation oracle"})
 			return failScenario(scenario, "virgil_failure", "REQUEST_CHANGES_ORACLE_FAILED", err.Error())
 		}
-		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-request-changes-oracle", Status: "passed", Detail: "content proposal drafted docs/00-idea.md and a request_changes approval withdrew it without advancing the derived step"})
+		scenario.Checks = append(scenario.Checks, wire.CheckResult{CheckID: "repo-docs-request-changes-oracle", Status: "passed", Detail: "content proposal drafted docs/00-idea/00-idea.md and a request_changes approval withdrew it without advancing the derived step"})
 
 	case "t0-continue-idempotent-retry":
 		if err := validateContinueIdempotentRetryScenario(runner.registry, targetRoot, executions); err != nil {
@@ -1075,17 +1075,20 @@ func validateContentProposalReplayResult(request protocol.OperationRequest, resu
 	return nil
 }
 
-// artifactExpectation names one docs/{change_id}/{NN}-{kind}.md file expected
-// to exist in the final tree, along with its frontmatter status.
+// artifactExpectation names one docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md
+// file expected to exist in the final tree, along with its frontmatter
+// status.
 type artifactExpectation struct {
 	Kind   string
 	Status string
 }
 
 // validateWholeTree walks the entire target repository and confirms it
-// contains exactly virgil.json, the expected docs/{change_id}/{NN}-{kind}.md
-// files, and the fixture's pre-seeded content_proposal source files living
-// outside the managed namespace.
+// contains exactly virgil.json, the expected
+// docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md files, and the fixture's
+// pre-seeded content_proposal source files, which live alongside each
+// artifact file inside its docs/{change_id}/{NN}-{kind}/ directory but are
+// never created by the runtime itself.
 func validateWholeTree(targetRoot, changeID string, artifacts []artifactExpectation, seedPaths []string) error {
 	expected := map[string]string{protocol.VirgilConfigFile: "file", agentsDocFile: "file"}
 	if len(artifacts) > 0 {
@@ -1093,7 +1096,8 @@ func validateWholeTree(targetRoot, changeID string, artifacts []artifactExpectat
 		expected[path.Join("docs", changeID)] = "dir"
 	}
 	for _, artifact := range artifacts {
-		expected[path.Join("docs", changeID, protocol.ArtifactFileName(artifact.Kind))] = "file"
+		expected[path.Join("docs", changeID, protocol.ArtifactDirName(artifact.Kind))] = "dir"
+		expected[path.Join("docs", changeID, protocol.ArtifactDirName(artifact.Kind), protocol.ArtifactFileName(artifact.Kind))] = "file"
 	}
 	for _, seedPath := range seedPaths {
 		for directory := path.Dir(seedPath); directory != "." && directory != "/"; directory = path.Dir(directory) {
@@ -1138,11 +1142,12 @@ func validateExactTree(targetRoot string, expected map[string]string) error {
 	return nil
 }
 
-// validateArtifactFile reads docs/{change_id}/{NN}-{kind}.md, validates its
-// frontmatter against the bundled schema, and asserts revision, status,
-// content digest and (when requireApproval is true) approved_by/approved_at.
+// validateArtifactFile reads docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md,
+// validates its frontmatter against the bundled schema, and asserts
+// revision, status, content digest and (when requireApproval is true)
+// approved_by/approved_at.
 func validateArtifactFile(registry *contracts.Registry, targetRoot, changeID, kind, wantRevision, wantStatus string, requireApproval bool) error {
-	relative := path.Join("docs", changeID, protocol.ArtifactFileName(kind))
+	relative := path.Join("docs", changeID, protocol.ArtifactDirName(kind), protocol.ArtifactFileName(kind))
 	raw, err := os.ReadFile(filepath.Join(targetRoot, filepath.FromSlash(relative)))
 	if err != nil {
 		return fmt.Errorf("read %s artifact file: %w", kind, err)
@@ -1394,7 +1399,7 @@ func validateNewAfterCompletedChangeScenario(registry *contracts.Registry, targe
 }
 
 func validateUpstreamRef(registry *contracts.Registry, targetRoot, changeID, kind string, index int) error {
-	relative := path.Join("docs", changeID, protocol.ArtifactFileName(kind))
+	relative := path.Join("docs", changeID, protocol.ArtifactDirName(kind), protocol.ArtifactFileName(kind))
 	raw, err := os.ReadFile(filepath.Join(targetRoot, filepath.FromSlash(relative)))
 	if err != nil {
 		return err

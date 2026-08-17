@@ -35,6 +35,16 @@ to navigate the methodology:
 - ` + "`/virgil-status`" + ` — Check current project state
 
 Call ` + "`virgil_status`" + ` first to check if the project is already initialized.
+
+**MIM principle**: the human directs, the agent proposes. Never approve an artifact
+without explicit human confirmation.
+
+**Approval gate**: after each ` + "`virgil_propose`" + `, present the content summary to the
+human and wait for their approval before calling ` + "`virgil_approve`" + `.
+
+**Planning boundary**: Virgil manages PLANNING only. After the pipeline reaches
+` + "`complete`" + `, STOP and report the result. Implementation is a separate phase that
+requires explicit human instruction.
 `)
 
 var installCmd = &cobra.Command{

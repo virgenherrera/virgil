@@ -17,7 +17,7 @@ import (
 
 // Builder constructs wire.InvokeEnvelope values from simple MCP tool
 // parameters, filling in the 50+ field boilerplate required by the Virgil
-// wire protocol. It does not perform I/O beyond writing seed files for
+// wire protocol. It does not perform I/O beyond writing proposal files for
 // content proposals.
 type Builder struct {
 	targetRoot string
@@ -88,8 +88,9 @@ func (b *Builder) BuildNew(changeID, intent string) (wire.InvokeEnvelope, error)
 }
 
 // BuildPropose constructs a wire.InvokeEnvelope for virgil.continue with
-// a content_proposal entry. It writes the markdown content to a seed file
-// at seed/{change_id}/{artifact_kind}-proposal.md in the target root.
+// a content_proposal entry. It writes the markdown content to a proposal
+// file at docs/{change_id}/{NN-kind}/{artifact_kind}-proposal.md in the
+// target root.
 func (b *Builder) BuildPropose(state *ProjectState, artifactKind, content string) (wire.InvokeEnvelope, error) {
 	if state == nil || state.ActiveChange == nil {
 		return wire.InvokeEnvelope{}, fmt.Errorf("no active change")
@@ -100,20 +101,21 @@ func (b *Builder) BuildPropose(state *ProjectState, artifactKind, content string
 
 	changeID := state.ActiveChange.ChangeID
 
-	// Write the content to a seed file so the content_proposal entry can
-	// reference it by URI.
-	seedDir := filepath.Join(b.targetRoot, "seed", changeID)
-	if err := os.MkdirAll(seedDir, 0o700); err != nil {
-		return wire.InvokeEnvelope{}, fmt.Errorf("create seed directory: %w", err)
+	// Write the content to a proposal file inside the artifact directory
+	// so the content_proposal entry can reference it by URI.
+	artifactDir := protocol.ArtifactDirName(artifactKind)
+	proposalDir := filepath.Join(b.targetRoot, "docs", changeID, artifactDir)
+	if err := os.MkdirAll(proposalDir, 0o700); err != nil {
+		return wire.InvokeEnvelope{}, fmt.Errorf("create proposal directory: %w", err)
 	}
-	seedFile := fmt.Sprintf("%s-proposal.md", artifactKind)
-	seedPath := filepath.Join(seedDir, seedFile)
-	if err := os.WriteFile(seedPath, []byte(content), 0o600); err != nil {
-		return wire.InvokeEnvelope{}, fmt.Errorf("write seed file: %w", err)
+	proposalFile := fmt.Sprintf("%s-proposal.md", artifactKind)
+	proposalPath := filepath.Join(proposalDir, proposalFile)
+	if err := os.WriteFile(proposalPath, []byte(content), 0o600); err != nil {
+		return wire.InvokeEnvelope{}, fmt.Errorf("write proposal file: %w", err)
 	}
 
-	// Build the relative URI for the seed file.
-	seedURI := fmt.Sprintf("seed/%s/%s", changeID, seedFile)
+	// Build the relative URI for the proposal file.
+	proposalURI := fmt.Sprintf("docs/%s/%s/%s", changeID, artifactDir, proposalFile)
 	contentDigest := fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(content)))
 
 	input := protocol.ContinueInput{
@@ -122,7 +124,7 @@ func (b *Builder) BuildPropose(state *ProjectState, artifactKind, content string
 			Kind:         "content_proposal",
 			ArtifactKind: artifactKind,
 			Content: &protocol.ResourceRef{
-				URI:    seedURI,
+				URI:    proposalURI,
 				Digest: contentDigest,
 			},
 		},

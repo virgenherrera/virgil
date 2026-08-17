@@ -272,7 +272,7 @@
             "kind": "content_proposal",
             "artifact_kind": "idea",
             "content": {
-              "uri": "seed/idea-proposal.md",
+              "uri": "docs/change-handoff-alpha/00-idea/idea-proposal.md",
               "digest": "sha256:7e8342ee6d8bd815d66c007937a615f7e8fedb2c05a25ad51a733ed8a2ad1eed"
             }
           }
@@ -465,7 +465,7 @@
             "kind": "content_proposal",
             "artifact_kind": "spec",
             "content": {
-              "uri": "seed/spec-proposal.md",
+              "uri": "docs/change-handoff-alpha/01-spec/spec-proposal.md",
               "digest": "sha256:69ae2e96e74c35aab52f71bccb6a829f31255297bddda94e76357a8278d80ba8"
             }
           }
@@ -658,7 +658,7 @@
             "kind": "content_proposal",
             "artifact_kind": "design",
             "content": {
-              "uri": "seed/design-proposal.md",
+              "uri": "docs/change-handoff-alpha/02-design/design-proposal.md",
               "digest": "sha256:deede3d01e72017185e5013e1184bbd469156469b3e05c5ebab0eabdeab7bd62"
             }
           }
@@ -851,7 +851,7 @@
             "kind": "content_proposal",
             "artifact_kind": "tasks",
             "content": {
-              "uri": "seed/tasks-proposal.md",
+              "uri": "docs/change-handoff-alpha/03-tasks/tasks-proposal.md",
               "digest": "sha256:8b1df1d7ccd89743ee7527a5e0ac69afbfd26acd598c9278bac3eeef267f3d71"
             }
           }
@@ -1044,7 +1044,7 @@
             "kind": "content_proposal",
             "artifact_kind": "handoff",
             "content": {
-              "uri": "seed/handoff-proposal.md",
+              "uri": "docs/change-handoff-alpha/04-handoff/handoff-proposal.md",
               "digest": "sha256:ae9d8f0d6010c85117673dee152b42db21b03cd45c03945ed05af0e3ef7bf12c"
             }
           }

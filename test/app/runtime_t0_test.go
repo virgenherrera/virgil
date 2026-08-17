@@ -57,19 +57,20 @@ func TestApp_T0NewChangeIdCollision(t *testing.T) {
 func TestApp_T0NewAfterCompletedChange(t *testing.T) {
 	const fixtureID = "t0-new-after-completed-change"
 	execution := runT0Seeded(t, fixtureID, func(targetRoot string) error {
-		seedDir := filepath.Join(targetRoot, "seed")
-		if err := os.MkdirAll(seedDir, 0o700); err != nil {
-			return err
-		}
 		seeds := map[string]string{
-			"idea-proposal.md":    newAfterCompletedChangeIdeaSeed,
-			"spec-proposal.md":    newAfterCompletedChangeSpecSeed,
-			"design-proposal.md":  newAfterCompletedChangeDesignSeed,
-			"tasks-proposal.md":   newAfterCompletedChangeTasksSeed,
-			"handoff-proposal.md": newAfterCompletedChangeHandoffSeed,
+			filepath.Join("00-idea", "idea-proposal.md"):       newAfterCompletedChangeIdeaSeed,
+			filepath.Join("01-spec", "spec-proposal.md"):       newAfterCompletedChangeSpecSeed,
+			filepath.Join("02-design", "design-proposal.md"):   newAfterCompletedChangeDesignSeed,
+			filepath.Join("03-tasks", "tasks-proposal.md"):     newAfterCompletedChangeTasksSeed,
+			filepath.Join("04-handoff", "handoff-proposal.md"): newAfterCompletedChangeHandoffSeed,
 		}
-		for name, content := range seeds {
-			if err := os.WriteFile(filepath.Join(seedDir, name), []byte(content), 0o600); err != nil {
+		changeDir := filepath.Join(targetRoot, "docs", "first-change")
+		for relative, content := range seeds {
+			full := filepath.Join(changeDir, relative)
+			if err := os.MkdirAll(filepath.Dir(full), 0o700); err != nil {
+				return err
+			}
+			if err := os.WriteFile(full, []byte(content), 0o600); err != nil {
 				return err
 			}
 		}
@@ -80,12 +81,12 @@ func TestApp_T0NewAfterCompletedChange(t *testing.T) {
 
 // The newAfterCompletedChange*Seed constants are the content_proposal source
 // files the T0 ActorScript for t0-new-after-completed-change references by
-// relative path (seed/{kind}-proposal.md), one per artifact_kind in the
-// idea -> spec -> design -> tasks -> handoff progression driven for
-// first-change before the second virgil.new targets second-change. See
-// continueContentProposalSeed for why the T0 harness must materialize them
-// directly on disk. Their bytes are fixed so the digests embedded in the
-// fixture's actor-script.json stay correlated.
+// path (docs/first-change/{NN-kind}/{kind}-proposal.md), one per
+// artifact_kind in the idea -> spec -> design -> tasks -> handoff progression
+// driven for first-change before the second virgil.new targets
+// second-change. See continueContentProposalSeed for why the T0 harness must
+// materialize them directly on disk. Their bytes are fixed so the digests
+// embedded in the fixture's actor-script.json stay correlated.
 const newAfterCompletedChangeIdeaSeed = "# Idea Proposal\n\nThis is the initial idea proposal for first-change.\n"
 const newAfterCompletedChangeSpecSeed = "# Spec Proposal\n\nThis is the spec proposal for first-change.\n"
 const newAfterCompletedChangeDesignSeed = "# Design Proposal\n\nThis is the design proposal for first-change.\n"
@@ -95,61 +96,64 @@ const newAfterCompletedChangeHandoffSeed = "# Handoff Proposal\n\nThis is the ha
 func TestApp_T0ContinueContentProposalHappy(t *testing.T) {
 	const fixtureID = "t0-continue-content-proposal-happy"
 	execution := runT0Seeded(t, fixtureID, func(targetRoot string) error {
-		seedDir := filepath.Join(targetRoot, "seed")
-		if err := os.MkdirAll(seedDir, 0o700); err != nil {
+		proposalDir := filepath.Join(targetRoot, "docs", "change-continue-alpha", "00-idea")
+		if err := os.MkdirAll(proposalDir, 0o700); err != nil {
 			return err
 		}
-		return os.WriteFile(filepath.Join(seedDir, "idea-proposal.md"), []byte(continueContentProposalSeed), 0o600)
+		return os.WriteFile(filepath.Join(proposalDir, "idea-proposal.md"), []byte(continueContentProposalSeed), 0o600)
 	})
 	assertScenarioPassed(t, execution, fixtureID)
 }
 
 // continueContentProposalSeed is the content_proposal source file the T0
-// ActorScript for t0-continue-content-proposal-happy references by relative
-// path (seed/idea-proposal.md). ActorScript actions cannot themselves write
-// arbitrary target files, so the harness materializes this file directly on
-// disk before the isolated public binary is invoked. Its bytes are fixed so
-// the digest embedded in the fixture's actor-script.json stays correlated.
+// ActorScript for t0-continue-content-proposal-happy references by path
+// (docs/change-continue-alpha/00-idea/idea-proposal.md). ActorScript actions
+// cannot themselves write arbitrary target files, so the harness materializes
+// this file directly on disk before the isolated public binary is invoked.
+// Its bytes are fixed so the digest embedded in the fixture's
+// actor-script.json stays correlated.
 const continueContentProposalSeed = "# Idea Proposal\n\nThis is the initial idea proposal for change-continue-alpha.\n"
 
 func TestApp_T0ContinueRequestChanges(t *testing.T) {
 	const fixtureID = "t0-continue-request-changes"
 	execution := runT0Seeded(t, fixtureID, func(targetRoot string) error {
-		seedDir := filepath.Join(targetRoot, "seed")
-		if err := os.MkdirAll(seedDir, 0o700); err != nil {
+		proposalDir := filepath.Join(targetRoot, "docs", "change-request-changes", "00-idea")
+		if err := os.MkdirAll(proposalDir, 0o700); err != nil {
 			return err
 		}
-		return os.WriteFile(filepath.Join(seedDir, "idea-proposal.md"), []byte(continueRequestChangesSeed), 0o600)
+		return os.WriteFile(filepath.Join(proposalDir, "idea-proposal.md"), []byte(continueRequestChangesSeed), 0o600)
 	})
 	assertScenarioPassed(t, execution, fixtureID)
 }
 
 // continueRequestChangesSeed is the content_proposal source file the T0
-// ActorScript for t0-continue-request-changes references by relative path
-// (seed/idea-proposal.md). See continueContentProposalSeed for why the T0
-// harness must materialize it directly on disk. Its bytes are fixed so the
-// digest embedded in the fixture's actor-script.json stays correlated.
+// ActorScript for t0-continue-request-changes references by path
+// (docs/change-request-changes/00-idea/idea-proposal.md). See
+// continueContentProposalSeed for why the T0 harness must materialize it
+// directly on disk. Its bytes are fixed so the digest embedded in the
+// fixture's actor-script.json stays correlated.
 const continueRequestChangesSeed = "# Idea Proposal\n\nThis is the initial idea proposal for change-request-changes.\n"
 
 func TestApp_T0ContinueIdempotentRetry(t *testing.T) {
 	const fixtureID = "t0-continue-idempotent-retry"
 	execution := runT0Seeded(t, fixtureID, func(targetRoot string) error {
-		seedDir := filepath.Join(targetRoot, "seed")
-		if err := os.MkdirAll(seedDir, 0o700); err != nil {
+		proposalDir := filepath.Join(targetRoot, "docs", "change-retry-alpha", "00-idea")
+		if err := os.MkdirAll(proposalDir, 0o700); err != nil {
 			return err
 		}
-		return os.WriteFile(filepath.Join(seedDir, "idea-proposal.md"), []byte(continueIdempotentRetrySeed), 0o600)
+		return os.WriteFile(filepath.Join(proposalDir, "idea-proposal.md"), []byte(continueIdempotentRetrySeed), 0o600)
 	})
 	assertScenarioPassed(t, execution, fixtureID)
 }
 
 // continueIdempotentRetrySeed is the content_proposal source file the T0
-// ActorScript for t0-continue-idempotent-retry references by relative path
-// (seed/idea-proposal.md). See continueContentProposalSeed for why the T0
-// harness must materialize it directly on disk. Its bytes are fixed so the
-// digest embedded in the fixture's actor-script.json stays correlated. Both
-// content_proposal actions in the script reference this same file, since the
-// retry must present the identical content digest as the first proposal.
+// ActorScript for t0-continue-idempotent-retry references by path
+// (docs/change-retry-alpha/00-idea/idea-proposal.md). See
+// continueContentProposalSeed for why the T0 harness must materialize it
+// directly on disk. Its bytes are fixed so the digest embedded in the
+// fixture's actor-script.json stays correlated. Both content_proposal
+// actions in the script reference this same file, since the retry must
+// present the identical content digest as the first proposal.
 const continueIdempotentRetrySeed = "# Idea Proposal\n\nThis is the initial idea proposal for change-retry-alpha.\n"
 
 func TestApp_T0ContinueOutOfScopeWriteBlocked(t *testing.T) {
@@ -160,19 +164,20 @@ func TestApp_T0ContinueOutOfScopeWriteBlocked(t *testing.T) {
 func TestApp_T0ContinueHandoffComplete(t *testing.T) {
 	const fixtureID = "t0-continue-handoff-complete"
 	execution := runT0Seeded(t, fixtureID, func(targetRoot string) error {
-		seedDir := filepath.Join(targetRoot, "seed")
-		if err := os.MkdirAll(seedDir, 0o700); err != nil {
-			return err
-		}
 		seeds := map[string]string{
-			"idea-proposal.md":    continueHandoffCompleteIdeaSeed,
-			"spec-proposal.md":    continueHandoffCompleteSpecSeed,
-			"design-proposal.md":  continueHandoffCompleteDesignSeed,
-			"tasks-proposal.md":   continueHandoffCompleteTasksSeed,
-			"handoff-proposal.md": continueHandoffCompleteHandoffSeed,
+			filepath.Join("00-idea", "idea-proposal.md"):       continueHandoffCompleteIdeaSeed,
+			filepath.Join("01-spec", "spec-proposal.md"):       continueHandoffCompleteSpecSeed,
+			filepath.Join("02-design", "design-proposal.md"):   continueHandoffCompleteDesignSeed,
+			filepath.Join("03-tasks", "tasks-proposal.md"):     continueHandoffCompleteTasksSeed,
+			filepath.Join("04-handoff", "handoff-proposal.md"): continueHandoffCompleteHandoffSeed,
 		}
-		for name, content := range seeds {
-			if err := os.WriteFile(filepath.Join(seedDir, name), []byte(content), 0o600); err != nil {
+		changeDir := filepath.Join(targetRoot, "docs", "change-handoff-alpha")
+		for relative, content := range seeds {
+			full := filepath.Join(changeDir, relative)
+			if err := os.MkdirAll(filepath.Dir(full), 0o700); err != nil {
+				return err
+			}
+			if err := os.WriteFile(full, []byte(content), 0o600); err != nil {
 				return err
 			}
 		}
@@ -183,11 +188,11 @@ func TestApp_T0ContinueHandoffComplete(t *testing.T) {
 
 // The continueHandoffComplete*Seed constants are the content_proposal source
 // files the T0 ActorScript for t0-continue-handoff-complete references by
-// relative path (seed/{kind}-proposal.md), one per artifact_kind in the
-// idea -> spec -> design -> tasks -> handoff progression. See
-// continueContentProposalSeed for why the T0 harness must materialize them
-// directly on disk. Their bytes are fixed so the digests embedded in the
-// fixture's actor-script.json stay correlated.
+// path (docs/change-handoff-alpha/{NN-kind}/{kind}-proposal.md), one per
+// artifact_kind in the idea -> spec -> design -> tasks -> handoff
+// progression. See continueContentProposalSeed for why the T0 harness must
+// materialize them directly on disk. Their bytes are fixed so the digests
+// embedded in the fixture's actor-script.json stay correlated.
 const continueHandoffCompleteIdeaSeed = "# Idea Proposal\n\nThis is the initial idea proposal for change-handoff-alpha.\n"
 const continueHandoffCompleteSpecSeed = "# Spec Proposal\n\nThis is the spec proposal for change-handoff-alpha.\n"
 const continueHandoffCompleteDesignSeed = "# Design Proposal\n\nThis is the design proposal for change-handoff-alpha.\n"
@@ -205,16 +210,17 @@ const continueHandoffCompleteHandoffSeed = "# Handoff Proposal\n\nThis is the ha
 func TestApp_T0ContinueRecoveryFreshProcess(t *testing.T) {
 	const fixtureID = "t0-continue-recovery-fresh-process"
 	execution := runT0Seeded(t, fixtureID, func(targetRoot string) error {
-		seedDir := filepath.Join(targetRoot, "seed")
-		if err := os.MkdirAll(seedDir, 0o700); err != nil {
-			return err
-		}
 		seeds := map[string]string{
-			"idea-proposal.md": continueRecoveryFreshProcessIdeaSeed,
-			"spec-proposal.md": continueRecoveryFreshProcessSpecSeed,
+			filepath.Join("00-idea", "idea-proposal.md"): continueRecoveryFreshProcessIdeaSeed,
+			filepath.Join("01-spec", "spec-proposal.md"): continueRecoveryFreshProcessSpecSeed,
 		}
-		for name, content := range seeds {
-			if err := os.WriteFile(filepath.Join(seedDir, name), []byte(content), 0o600); err != nil {
+		changeDir := filepath.Join(targetRoot, "docs", "change-recovery-alpha")
+		for relative, content := range seeds {
+			full := filepath.Join(changeDir, relative)
+			if err := os.MkdirAll(filepath.Dir(full), 0o700); err != nil {
+				return err
+			}
+			if err := os.WriteFile(full, []byte(content), 0o600); err != nil {
 				return err
 			}
 		}
@@ -225,9 +231,10 @@ func TestApp_T0ContinueRecoveryFreshProcess(t *testing.T) {
 
 // The continueRecoveryFreshProcess*Seed constants are the content_proposal
 // source files the T0 ActorScript for t0-continue-recovery-fresh-process
-// references by relative path (seed/idea-proposal.md, seed/spec-proposal.md).
-// See continueContentProposalSeed for why the T0 harness must materialize
-// them directly on disk. Their bytes are fixed so the digests embedded in the
+// references by path (docs/change-recovery-alpha/00-idea/idea-proposal.md,
+// docs/change-recovery-alpha/01-spec/spec-proposal.md). See
+// continueContentProposalSeed for why the T0 harness must materialize them
+// directly on disk. Their bytes are fixed so the digests embedded in the
 // fixture's actor-script.json stay correlated.
 const continueRecoveryFreshProcessIdeaSeed = "# Idea Proposal\n\nThis is the initial idea proposal for change-recovery-alpha.\n"
 const continueRecoveryFreshProcessSpecSeed = "# Spec Proposal\n\nThis is the spec proposal for change-recovery-alpha.\n"
@@ -1006,22 +1013,23 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 	// AGENTS.md at the target root (the repo-docs control file and the
 	// generated agent guide, neither part of managed_root). Scenarios that
 	// reach virgil.continue additionally publish one
-	// docs/{change_id}/{NN}-{kind}.md per artifact drafted, plus the
-	// fixture's seed file that content_proposal read.
+	// docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md per artifact drafted, plus the
+	// fixture's proposal file that content_proposal read, living alongside it
+	// in the same docs/{change_id}/{NN}-{kind}/ directory.
 	prefix := filepath.Join(fixtureID, "target")
 	want := []string{filepath.Join(prefix, "virgil.json"), filepath.Join(prefix, "AGENTS.md")}
 
 	artifactFileByKind := map[string]string{
-		"idea":    "00-idea.md",
-		"spec":    "01-spec.md",
-		"design":  "02-design.md",
-		"tasks":   "03-tasks.md",
-		"handoff": "04-handoff.md",
+		"idea":    filepath.Join("00-idea", "00-idea.md"),
+		"spec":    filepath.Join("01-spec", "01-spec.md"),
+		"design":  filepath.Join("02-design", "02-design.md"),
+		"tasks":   filepath.Join("03-tasks", "03-tasks.md"),
+		"handoff": filepath.Join("04-handoff", "04-handoff.md"),
 	}
 	addArtifact := func(changeID, kind, seedName string) {
 		want = append(want,
 			filepath.Join(prefix, "docs", changeID, artifactFileByKind[kind]),
-			filepath.Join(prefix, "seed", seedName),
+			filepath.Join(prefix, "docs", changeID, filepath.Dir(artifactFileByKind[kind]), seedName),
 		)
 	}
 

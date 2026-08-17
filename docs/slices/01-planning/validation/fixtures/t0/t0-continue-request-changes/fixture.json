@@ -100,7 +100,7 @@
     "script": {
       "uri": "fixture://validation/t0-continue-request-changes/actor-script.json",
       "revision": "v1",
-      "digest": "sha256:2bf235295711c93d2500040d6727ef5d109357c8a00b525381bb99995bb66507"
+      "digest": "sha256:9a14d3c5e293ec672c8d064ee9be4b9e9160b1800f65622d4cf6053e2e66e711"
     }
   },
   "adapter_profile": {
@@ -282,7 +282,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/change-request-changes/00-idea.md",
+        "resource_pattern": "docs/change-request-changes/00-idea/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -313,7 +313,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/change-request-changes/00-idea.md",
+        "resource_pattern": "docs/change-request-changes/00-idea/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -456,7 +456,7 @@
         "change_type": "added"
       },
       {
-        "path": "docs/change-request-changes/00-idea.md",
+        "path": "docs/change-request-changes/00-idea/00-idea.md",
         "change_type": "added"
       }
     ]
@@ -526,7 +526,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-request-changes/00-idea.md",
+            "path": "docs/change-request-changes/00-idea/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -538,7 +538,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-request-changes/00-idea.md",
+            "path": "docs/change-request-changes/00-idea/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -563,7 +563,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-request-changes/00-idea.md",
+            "path": "docs/change-request-changes/00-idea/00-idea.md",
             "change_type": "modified"
           }
         ]
@@ -575,7 +575,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-request-changes/00-idea.md",
+            "path": "docs/change-request-changes/00-idea/00-idea.md",
             "change_type": "modified"
           }
         ]

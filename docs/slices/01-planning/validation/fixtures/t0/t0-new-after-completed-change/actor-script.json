@@ -272,7 +272,7 @@
             "kind": "content_proposal",
             "artifact_kind": "idea",
             "content": {
-              "uri": "seed/idea-proposal.md",
+              "uri": "docs/first-change/00-idea/idea-proposal.md",
               "digest": "sha256:df8cd121737235308ed8a8806ee176e8ed2df167753ebb5c796267b2e4b3d650"
             }
           }
@@ -465,7 +465,7 @@
             "kind": "content_proposal",
             "artifact_kind": "spec",
             "content": {
-              "uri": "seed/spec-proposal.md",
+              "uri": "docs/first-change/01-spec/spec-proposal.md",
               "digest": "sha256:c78a57508d3233b9cf1ff5572b3940acdb7db9d3893e4db1a24e58f43f8ef0af"
             }
           }
@@ -658,7 +658,7 @@
             "kind": "content_proposal",
             "artifact_kind": "design",
             "content": {
-              "uri": "seed/design-proposal.md",
+              "uri": "docs/first-change/02-design/design-proposal.md",
               "digest": "sha256:2ad65a3c40dd7fc0853db0ce5bcaccd3af61bfa3d737cf18609d2a08e9358370"
             }
           }
@@ -851,7 +851,7 @@
             "kind": "content_proposal",
             "artifact_kind": "tasks",
             "content": {
-              "uri": "seed/tasks-proposal.md",
+              "uri": "docs/first-change/03-tasks/tasks-proposal.md",
               "digest": "sha256:5594aa4714735b4eda41da8bbe6d3a775d35fe72b2c1a2e39a9d7da7299f870b"
             }
           }
@@ -1044,7 +1044,7 @@
             "kind": "content_proposal",
             "artifact_kind": "handoff",
             "content": {
-              "uri": "seed/handoff-proposal.md",
+              "uri": "docs/first-change/04-handoff/handoff-proposal.md",
               "digest": "sha256:45f7148779ed6e3de4195759cd171e13e58a0360da1f653763d4baa44b1152f1"
             }
           }

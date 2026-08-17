@@ -272,7 +272,7 @@
             "kind": "content_proposal",
             "artifact_kind": "idea",
             "content": {
-              "uri": "seed/idea-proposal.md",
+              "uri": "docs/change-recovery-alpha/00-idea/idea-proposal.md",
               "digest": "sha256:cac3e04a393460d00fe61439f1bd640ff72e16eb28eb095a5c0029becdcd399f"
             }
           }
@@ -481,7 +481,7 @@
             "kind": "content_proposal",
             "artifact_kind": "spec",
             "content": {
-              "uri": "seed/spec-proposal.md",
+              "uri": "docs/change-recovery-alpha/01-spec/spec-proposal.md",
               "digest": "sha256:01d3f80e5b3642dfda08585ec19c9abdb2e1cfa83bf52a1e2837ac5e3e039c3c"
             }
           }

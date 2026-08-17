@@ -54,7 +54,7 @@ func Tools() []ToolDefinition {
 		},
 		{
 			Name:        "virgil_propose",
-			Description: "Submit a content proposal for the current artifact step (idea, spec, design, tasks, or handoff). The proposal is written as a seed file and submitted for approval.",
+			Description: "Submit a content proposal for the current artifact step (idea, spec, design, tasks, or handoff). The proposal is written as a proposal file inside the artifact directory and submitted for approval.",
 			InputSchema: json.RawMessage(`{
 				"type": "object",
 				"properties": {

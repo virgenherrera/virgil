@@ -26,6 +26,19 @@ var artifactFileNames = map[string]string{
 	"handoff": "04-handoff.md",
 }
 
+// artifactDirNames is the fixed, numbered directory name for each Slice 1
+// artifact_kind, published under managed_root's per-change subdirectory
+// ("docs/{change_id}/"). Each artifact's file lives inside its own directory
+// so a stage can later accumulate more than one file (diagrams, schemas,
+// supplementary docs) alongside the canonical artifact file.
+var artifactDirNames = map[string]string{
+	"idea":    "00-idea",
+	"spec":    "01-spec",
+	"design":  "02-design",
+	"tasks":   "03-tasks",
+	"handoff": "04-handoff",
+}
+
 // ArtifactStepOrder is the fixed Slice 1 artifact sequence shared by the
 // repo-docs adapter and every T0 oracle that observes its durable output.
 var ArtifactStepOrder = []string{"idea", "spec", "design", "tasks", "handoff"}
@@ -34,6 +47,12 @@ var ArtifactStepOrder = []string{"idea", "spec", "design", "tasks", "handoff"}
 // if kind is not a recognized Slice 1 artifact_kind.
 func ArtifactFileName(kind string) string {
 	return artifactFileNames[kind]
+}
+
+// ArtifactDirName returns the fixed docs/-relative directory name for kind,
+// or "" if kind is not a recognized Slice 1 artifact_kind.
+func ArtifactDirName(kind string) string {
+	return artifactDirNames[kind]
 }
 
 type ResourceRef struct {
@@ -191,7 +210,7 @@ type IdempotencyRecord struct {
 
 // ActiveChange is the single change repo-docs tracks per project, published
 // under VirgilConfig.ActiveChange. Its artifacts live under their own
-// docs/{change_id}/{NN}-{kind}.md subdirectory; there is still only one
+// docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md subdirectory; there is still only one
 // active change per project, so git history — not a second active_change
 // slot — is where prior changes live once superseded.
 type ActiveChange struct {
@@ -226,7 +245,7 @@ type VirgilConfig struct {
 }
 
 // ArtifactFrontmatter is the JSON frontmatter embedded between the leading
-// "---json" / "---" markers of every docs/{change_id}/{NN}-{kind}.md file.
+// "---json" / "---" markers of every docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md file.
 // It replaces the Slice 1 RevisionEnvelope: there is no separate
 // envelope.json, and there is no revision_lifecycle_event log, because the
 // file itself — rewritten in place through drafts, withdrawals and approval

@@ -9,7 +9,7 @@
 // AI agents interacting with the Virgil-managed repository) and, per change,
 // up to five numbered artifact files under managed_root's per-change
 // subdirectory ("docs/{change_id}/"):
-// docs/{change_id}/00-idea.md .. docs/{change_id}/04-handoff.md. This layout
+// docs/{change_id}/00-idea/00-idea.md .. docs/{change_id}/04-handoff/04-handoff.md. This layout
 // leaves room for a project to accumulate multiple changes side by side
 // under docs/ over time, one subdirectory per change_id. There is no
 // project.json/events.jsonl/change.json ledger: git is the ledger.
@@ -140,7 +140,7 @@ type NewInput struct {
 	Evidence   []protocol.ResourceRef    `json:"evidence,omitempty"`
 }
 
-// artifactRecord is a parsed docs/{change_id}/{NN}-{kind}.md file: its relative path, its
+// artifactRecord is a parsed docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md file: its relative path, its
 // decoded frontmatter, and its content body (everything after the closing
 // frontmatter marker).
 type artifactRecord struct {
@@ -830,18 +830,18 @@ func validArtifactKind(kind string) bool {
 }
 
 // ---------------------------------------------------------------------------
-// Durable artifact state: docs/{change_id}/{NN}-{kind}.md
+// Durable artifact state: docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md
 // ---------------------------------------------------------------------------
 
 // loadExistingState scans managed_root's per-change subdirectory for the
-// fixed docs/{change_id}/{NN}-{kind}.md filenames and parses whichever ones
-// exist. Any other file under docs/ is pre-existing consumer content and is
-// silently ignored: managed_root and corpus_root are the same tree, so
-// unrecognized entries are not corruption.
+// fixed docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md filenames and parses
+// whichever ones exist. Any other file under docs/ is pre-existing consumer
+// content and is silently ignored: managed_root and corpus_root are the same
+// tree, so unrecognized entries are not corruption.
 func loadExistingState(root *os.Root, changeID string, schema SchemaValidator, validateJSON JSONValidator) (map[string]artifactRecord, error) {
 	state := make(map[string]artifactRecord, len(artifactStepOrder))
 	for _, kind := range artifactStepOrder {
-		relative := path.Join(managedRoot, changeID, protocol.ArtifactFileName(kind))
+		relative := path.Join(managedRoot, changeID, protocol.ArtifactDirName(kind), protocol.ArtifactFileName(kind))
 		info, statErr := root.Lstat(relative)
 		if errors.Is(statErr, fs.ErrNotExist) {
 			continue
@@ -913,7 +913,7 @@ func nextRevision(current string) string {
 }
 
 // serializeArtifactFile renders frontmatter and content into the on-disk
-// docs/{change_id}/{NN}-{kind}.md representation: a "---json" / "---" delimited JSON
+// docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md representation: a "---json" / "---" delimited JSON
 // block followed by the Markdown content body. JSON frontmatter (not YAML)
 // is a deliberate choice: it lets the adapter reuse encoding/json instead of
 // adding a YAML parsing dependency.
@@ -930,7 +930,7 @@ func serializeArtifactFile(frontmatter protocol.ArtifactFrontmatter, content []b
 	return buffer.Bytes(), nil
 }
 
-// parseArtifactFrontmatter splits a docs/{change_id}/{NN}-{kind}.md file into its decoded
+// parseArtifactFrontmatter splits a docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md file into its decoded
 // JSON frontmatter and its content body.
 func parseArtifactFrontmatter(raw []byte) (protocol.ArtifactFrontmatter, []byte, error) {
 	if !bytes.HasPrefix(raw, []byte(frontmatterOpen)) {
@@ -959,7 +959,7 @@ func parseArtifactFrontmatter(raw []byte) (protocol.ArtifactFrontmatter, []byte,
 	return frontmatter, content, nil
 }
 
-// writeArtifactFile publishes a brand-new docs/{change_id}/{NN}-{kind}.md
+// writeArtifactFile publishes a brand-new docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md
 // using create-exclusive-and-rename. The artifact's change_id subdirectory is
 // derived from relative and created (with its full managed_root chain) if it
 // does not already exist.
@@ -1053,7 +1053,7 @@ func handleContentProposal(root *os.Root, request protocol.OperationRequest, inp
 		return protocol.OperationResult{}, typedError("CORRUPT_LEDGER", entry.Content.URI, "content resource digest does not match its declared reference", nil)
 	}
 
-	relative := path.Join(managedRoot, input.ChangeID, protocol.ArtifactFileName(entry.ArtifactKind))
+	relative := path.Join(managedRoot, input.ChangeID, protocol.ArtifactDirName(entry.ArtifactKind), protocol.ArtifactFileName(entry.ArtifactKind))
 	existing, found := state[entry.ArtifactKind]
 
 	replay := false

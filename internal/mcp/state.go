@@ -79,11 +79,12 @@ func LoadState(targetRoot string) (*ProjectState, error) {
 func deriveStepFromArtifacts(targetRoot, changeID string) (string, string) {
 	lastRevision := ""
 	for _, kind := range protocol.ArtifactStepOrder {
+		dirName := protocol.ArtifactDirName(kind)
 		filename := protocol.ArtifactFileName(kind)
 		if filename == "" {
 			return kind, lastRevision
 		}
-		artifactPath := filepath.Join(targetRoot, "docs", changeID, filename)
+		artifactPath := filepath.Join(targetRoot, "docs", changeID, dirName, filename)
 		raw, err := os.ReadFile(artifactPath)
 		if err != nil {
 			return kind, lastRevision

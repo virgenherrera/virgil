@@ -100,7 +100,7 @@
     "script": {
       "uri": "fixture://validation/t0-continue-idempotent-retry/actor-script.json",
       "revision": "v1",
-      "digest": "sha256:272a388216ae40b5cc9bab9d2b530ecdf38cf727333a74c7a077a236ef828ca6"
+      "digest": "sha256:65ab3193cc360cacedf515688eb886516e88e666511daa54e51e2abb36d7fe86"
     }
   },
   "adapter_profile": {
@@ -282,7 +282,7 @@
         "effect_kind": "write",
         "policy_decision": "authorized",
         "occurred": true,
-        "resource_pattern": "docs/change-retry-alpha/00-idea.md",
+        "resource_pattern": "docs/change-retry-alpha/00-idea/00-idea.md",
         "process_id": "process-a"
       },
       {
@@ -453,7 +453,7 @@
         "change_type": "added"
       },
       {
-        "path": "docs/change-retry-alpha/00-idea.md",
+        "path": "docs/change-retry-alpha/00-idea/00-idea.md",
         "change_type": "added"
       }
     ]
@@ -523,7 +523,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-retry-alpha/00-idea.md",
+            "path": "docs/change-retry-alpha/00-idea/00-idea.md",
             "change_type": "added"
           }
         ]
@@ -535,7 +535,7 @@
         ],
         "expected_changes": [
           {
-            "path": "docs/change-retry-alpha/00-idea.md",
+            "path": "docs/change-retry-alpha/00-idea/00-idea.md",
             "change_type": "added"
           }
         ]
