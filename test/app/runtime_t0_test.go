@@ -810,13 +810,19 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 	}
 	// Every non-blocked T0 scenario publishes exactly virgil.json and
 	// AGENTS.md at the target root (the repo-docs control file and the
-	// generated agent guide, neither part of managed_root). Scenarios that
-	// reach virgil.continue additionally publish one
+	// generated agent guide, neither part of managed_root), plus the
+	// materialized virgil.json JSON Schema at docs/.virgil-schema.json (so
+	// editors can resolve virgil.json's $schema pointer offline). Scenarios
+	// that reach virgil.continue additionally publish one
 	// docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md per artifact drafted, plus the
 	// fixture's proposal file that content_proposal read, living alongside it
 	// in the same docs/{change_id}/{NN}-{kind}/ directory.
 	prefix := filepath.Join(fixtureID, "target")
-	want := []string{filepath.Join(prefix, "virgil.json"), filepath.Join(prefix, "AGENTS.md")}
+	want := []string{
+		filepath.Join(prefix, "virgil.json"),
+		filepath.Join(prefix, "AGENTS.md"),
+		filepath.Join(prefix, "docs", ".virgil-schema.json"),
+	}
 
 	artifactFileByKind := map[string]string{
 		"idea":    filepath.Join("00-idea", "00-idea.md"),

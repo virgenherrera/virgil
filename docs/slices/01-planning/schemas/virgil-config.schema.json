@@ -18,6 +18,9 @@
     "resolved_context"
   ],
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
     "schema_version": {
       "const": "virgil.dev/config/v1alpha1"
     },
