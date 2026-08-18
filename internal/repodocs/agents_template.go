@@ -69,20 +69,20 @@ Documents are organized by kind under ` + backtick + `docs/` + backtick + `:
 virgil.json                            # Project config (auto-generated)
 AGENTS.md                              # This file (auto-generated)
 docs/
-  index.md                             # Navigation index (auto-generated)
+  README.md                            # Navigation index (auto-generated)
   idea.md                              # Single project-level idea
   requirements/
-    index.md                           # Navigation index (auto-generated)
+    README.md                          # Navigation index (auto-generated)
     {category}-{slug}.md               # Requirement documents
   design/
-    index.md                           # Navigation index (auto-generated)
+    README.md                          # Navigation index (auto-generated)
     {category}-{slug}.md               # Design documents
   tasks/
-    index.md                           # Navigation index (auto-generated)
+    README.md                          # Navigation index (auto-generated)
     {slug}.md                          # Task documents with lifecycle
 ` + tripleBacktick + `
 
-Every ` + backtick + `index.md` + backtick + ` is regenerated in full after each ` + backtick + `virgil.write` + backtick + ` call. **DO NOT** edit ` + backtick + `index.md` + backtick + ` files manually — they carry no content of their own and any manual edit is overwritten on the next write.
+Every ` + backtick + `README.md` + backtick + ` is regenerated in full after each ` + backtick + `virgil.write` + backtick + ` call. **DO NOT** edit ` + backtick + `README.md` + backtick + ` files manually — they carry no content of their own and any manual edit is overwritten on the next write.
 
 ### Document Kinds
 
