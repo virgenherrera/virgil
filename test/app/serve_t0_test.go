@@ -1137,6 +1137,86 @@ func TestApp_T0ServeStatusPermissionDeniedLedger(t *testing.T) {
 	}
 }
 
+// TestApp_T0ServeComprehensiveReadme writes one document of every kind
+// (idea, requirement, design, task) against an initialized project and
+// asserts the regenerated docs/README.md carries a mermaid document map
+// linking to all four documents, and that no regional README.md is
+// generated inside docs/requirements/, docs/design/ or docs/tasks/ — the
+// global index at docs/README.md is the single navigation surface.
+func TestApp_T0ServeComprehensiveReadme(t *testing.T) {
+	dir := t.TempDir()
+	session := startServeSession(t, dir)
+
+	session.initialize(t)
+	session.initProject(t, 2, "comprehensive-readme")
+
+	nextID := 3
+	writeDoc := func(args map[string]any) {
+		t.Helper()
+		resp := session.call(t, nextID, "tools/call", map[string]any{
+			"name":      "virgil_write",
+			"arguments": args,
+		})
+		nextID++
+		result := decodeToolCallResult(t, resp)
+		if result.IsError {
+			t.Fatalf("virgil_write setup call failed: %s", result.Content[0].Text)
+		}
+	}
+
+	writeDoc(map[string]any{
+		"doc_kind": "idea",
+		"content":  "# Idea\n\nDescribes the project.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "requirement",
+		"category": "functional",
+		"slug":     "user-auth",
+		"content":  "# User Auth\n\nUsers can authenticate.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "design",
+		"category": "arch",
+		"slug":     "api-flow",
+		"content":  "# API Flow\n\nDescribes the API flow.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "task",
+		"slug":     "implement-login",
+		"content":  "# Implement Login\n\nBuild the login screen.",
+	})
+
+	readmePath := filepath.Join(dir, "docs", "README.md")
+	raw, err := os.ReadFile(readmePath)
+	if err != nil {
+		t.Fatalf("read docs/README.md: %v", err)
+	}
+	readme := string(raw)
+
+	for _, want := range []string{
+		"```mermaid",
+		"flowchart",
+		"idea.md",
+		"functional-user-auth.md",
+		"arch-api-flow.md",
+		"implement-login.md",
+	} {
+		if !strings.Contains(readme, want) {
+			t.Fatalf("docs/README.md does not contain %q:\n%s", want, readme)
+		}
+	}
+
+	for _, regional := range []string{
+		filepath.Join(dir, "docs", "requirements", "README.md"),
+		filepath.Join(dir, "docs", "design", "README.md"),
+		filepath.Join(dir, "docs", "tasks", "README.md"),
+	} {
+		if _, statErr := os.Stat(regional); !os.IsNotExist(statErr) {
+			t.Fatalf("expected regional README %s to not exist, stat err = %v", regional, statErr)
+		}
+	}
+}
+
 // TestApp_T0ServeStatusToleratesMalformedTaskFiles seeds docs/tasks/ with a
 // stray directory, a non-.md file, a dangling symlink, and three
 // malformed .md files (missing the frontmatter open marker, missing the
