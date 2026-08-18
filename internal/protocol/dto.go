@@ -241,6 +241,7 @@ type IdempotencyRecord struct {
 }
 
 type VirgilConfig struct {
+	Schema          string            `json:"$schema,omitempty"`
 	SchemaVersion   string            `json:"schema_version"`
 	ProtocolVersion string            `json:"protocol_version"`
 	ProjectID       string            `json:"project_id"`
