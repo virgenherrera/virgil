@@ -32,6 +32,7 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(syncCmd)
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(doctorCmd)
 }
 
 func main() {
