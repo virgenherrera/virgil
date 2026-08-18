@@ -3,9 +3,10 @@
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/virgenherrera/virgil/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/virgenherrera/virgil/main/install.sh | sh -s -- v0.3.0-rc.8
 #
 # Env vars:
-#   VIRGIL_VERSION      Version tag to install (e.g. v0.2.0). Default: latest release.
+#   VIRGIL_VERSION      Version tag to install (e.g. v0.2.0). Overridden by positional arg.
 #   VIRGIL_INSTALL_DIR  Directory to install the binary into. Default: /usr/local/bin,
 #                        falling back to ~/.local/bin when /usr/local/bin is not
 #                        writable. Setting this var explicitly disables the fallback.
@@ -13,7 +14,6 @@ set -eu
 
 REPO="virgenherrera/virgil"
 BIN_NAME="virgil"
-VERSION="${VIRGIL_VERSION:-}"
 
 # INSTALL_DIR resolution:
 #   - VIRGIL_INSTALL_DIR set by the user -> use it verbatim, no fallback.
@@ -105,6 +105,8 @@ download() {
 # --- main ---------------------------------------------------------------------
 
 main() {
+  VERSION="${1:-${VIRGIL_VERSION:-}}"
+
   need_cmd uname
   need_cmd tar
   need_cmd grep
