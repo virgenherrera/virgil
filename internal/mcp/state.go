@@ -27,6 +27,13 @@ type ProjectState struct {
 	RequirementCount int
 	DesignCount      int
 	TaskCounts       TaskCounts
+	// PlanningComplete is true when the project has at least one task and
+	// every task is at status "refined" -- i.e. planning is done and any
+	// further action (implementation) requires explicit human authorization.
+	PlanningComplete bool
+	// Notice carries planningCompleteNotice when PlanningComplete is true,
+	// and is empty otherwise.
+	Notice string
 }
 
 // TaskCounts tracks the number of tasks by status.
@@ -36,6 +43,19 @@ type TaskCounts struct {
 	Active   int
 	Done     int
 	Released int
+}
+
+// Total returns the total number of tasks across all statuses.
+func (tc TaskCounts) Total() int {
+	return tc.Backlog + tc.Refined + tc.Active + tc.Done + tc.Released
+}
+
+// AllRefined reports whether the project has at least one task and every
+// task is at status "refined". This is the planning-complete condition:
+// the knowledge base is fully refined and implementation requires explicit
+// human authorization before proceeding.
+func (tc TaskCounts) AllRefined() bool {
+	return tc.Total() > 0 && tc.Refined == tc.Total()
 }
 
 // LoadState reads virgil.json from targetRoot and scans docs/ to derive the
@@ -71,6 +91,10 @@ func LoadState(targetRoot string) (*ProjectState, error) {
 	state.RequirementCount = countDocFiles(targetRoot, "requirements")
 	state.DesignCount = countDocFiles(targetRoot, "design")
 	state.TaskCounts = countTasksByStatus(targetRoot)
+	state.PlanningComplete = state.TaskCounts.AllRefined()
+	if state.PlanningComplete {
+		state.Notice = planningCompleteNotice
+	}
 
 	return state, nil
 }
