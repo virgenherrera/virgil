@@ -1273,3 +1273,153 @@ func TestApp_T0ServeStatusToleratesMalformedTaskFiles(t *testing.T) {
 		t.Fatalf("expected malformed task files to be silently skipped, got counts %+v", state.TaskCounts)
 	}
 }
+
+// TestApp_T0ServeBreadcrumbNavigation writes one document of every kind
+// (idea, requirement, design, task) and asserts each generated file carries
+// the breadcrumb navigation blockquote injected by serializeDocFile:
+//   - idea.md, which lives at docs/ itself, links to the sibling
+//     "README.md" with no trailing segment;
+//   - every nested doc (requirement, design, task) links to "../README.md"
+//     followed by " / {filename-stem}", since regional README.md files were
+//     removed and docs/README.md is the single navigation index;
+//   - the breadcrumb sits between the frontmatter close marker ("-->") and
+//     the content body's first "#" heading, as a blank line followed by a
+//     "> " blockquote line, exactly as GitHub/VS Code markdown preview
+//     expects for a styled callout.
+func TestApp_T0ServeBreadcrumbNavigation(t *testing.T) {
+	dir := t.TempDir()
+	session := startServeSession(t, dir)
+
+	session.initialize(t)
+	session.initProject(t, 2, "breadcrumb-nav")
+
+	nextID := 3
+	writeDoc := func(args map[string]any) {
+		t.Helper()
+		resp := session.call(t, nextID, "tools/call", map[string]any{
+			"name":      "virgil_write",
+			"arguments": args,
+		})
+		nextID++
+		result := decodeToolCallResult(t, resp)
+		if result.IsError {
+			t.Fatalf("virgil_write setup call failed: %s", result.Content[0].Text)
+		}
+	}
+
+	writeDoc(map[string]any{
+		"doc_kind": "idea",
+		"content":  "# Idea\n\nDescribes the project.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "requirement",
+		"category": "functional",
+		"slug":     "user-auth",
+		"content":  "# User Auth\n\nUsers can authenticate.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "design",
+		"category": "arch",
+		"slug":     "api-flow",
+		"content":  "# API Flow\n\nDescribes the API flow.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "task",
+		"slug":     "implement-login",
+		"content":  "# Implement Login\n\nBuild the login screen.",
+	})
+
+	readDoc := func(relative string) string {
+		t.Helper()
+		raw, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(relative)))
+		if err != nil {
+			t.Fatalf("read %s: %v", relative, err)
+		}
+		return string(raw)
+	}
+
+	// breadcrumbLine returns the exact blockquote line immediately following
+	// the frontmatter close marker and its blank line, failing the test if
+	// that position is not a "> " blockquote or the line after it is not
+	// blank -- this pins the breadcrumb's required position between "-->"
+	// and the content body's first "#" heading.
+	breadcrumbLine := func(raw string) string {
+		t.Helper()
+		closeIdx := strings.Index(raw, "-->\n\n")
+		if closeIdx < 0 {
+			t.Fatalf("frontmatter close marker not found:\n%s", raw)
+		}
+		rest := raw[closeIdx+len("-->\n\n"):]
+		lines := strings.SplitN(rest, "\n", 3)
+		if len(lines) < 3 {
+			t.Fatalf("expected a breadcrumb line, a blank line and a heading after frontmatter, got:\n%s", rest)
+		}
+		if !strings.HasPrefix(lines[0], "> ") {
+			t.Fatalf("expected breadcrumb line to be a blockquote, got %q", lines[0])
+		}
+		if lines[1] != "" {
+			t.Fatalf("expected a blank line between breadcrumb and content body, got %q", lines[1])
+		}
+		if !strings.HasPrefix(lines[2], "#") {
+			t.Fatalf("expected content body's first heading right after the blank line, got %q", lines[2])
+		}
+		return lines[0]
+	}
+
+	// Test 1 (task): breadcrumb links to "../README.md" and names the slug.
+	taskRaw := readDoc("docs/tasks/implement-login.md")
+	taskBreadcrumb := breadcrumbLine(taskRaw)
+	if !strings.Contains(taskBreadcrumb, "../README.md") {
+		t.Fatalf("task breadcrumb missing ../README.md link: %q", taskBreadcrumb)
+	}
+	if !strings.Contains(taskBreadcrumb, "implement-login") {
+		t.Fatalf("task breadcrumb missing slug: %q", taskBreadcrumb)
+	}
+
+	// Test 2 (idea): exact breadcrumb, no "../README.md" since idea.md lives
+	// at docs/ itself.
+	ideaRaw := readDoc("docs/idea.md")
+	ideaBreadcrumb := breadcrumbLine(ideaRaw)
+	if ideaBreadcrumb != "> [Docs](README.md)" {
+		t.Fatalf("idea breadcrumb = %q, want %q", ideaBreadcrumb, "> [Docs](README.md)")
+	}
+	if strings.Contains(ideaRaw, "../README.md") {
+		t.Fatalf("idea document unexpectedly contains ../README.md:\n%s", ideaRaw)
+	}
+
+	// Test 3 (requirement): breadcrumb links to "../README.md" and names the
+	// full "{category}-{slug}" filename stem.
+	requirementRaw := readDoc("docs/requirements/functional-user-auth.md")
+	requirementBreadcrumb := breadcrumbLine(requirementRaw)
+	if !strings.Contains(requirementBreadcrumb, "../README.md") {
+		t.Fatalf("requirement breadcrumb missing ../README.md link: %q", requirementBreadcrumb)
+	}
+	if !strings.Contains(requirementBreadcrumb, "functional-user-auth") {
+		t.Fatalf("requirement breadcrumb missing category-slug: %q", requirementBreadcrumb)
+	}
+
+	// Test 4 (design): same shape as requirement, exercised separately since
+	// design docs live under their own docs/design/ directory.
+	designRaw := readDoc("docs/design/arch-api-flow.md")
+	designBreadcrumb := breadcrumbLine(designRaw)
+	if !strings.Contains(designBreadcrumb, "../README.md") {
+		t.Fatalf("design breadcrumb missing ../README.md link: %q", designBreadcrumb)
+	}
+	if !strings.Contains(designBreadcrumb, "arch-api-flow") {
+		t.Fatalf("design breadcrumb missing category-slug: %q", designBreadcrumb)
+	}
+
+	// ContentDigest must not be affected by the injected breadcrumb: the
+	// digest is computed in Write() from the raw content before
+	// serializeDocFile ever runs, so reloading the doc through the normal
+	// read path (which recomputes the digest from the content body it
+	// parses back out) must still succeed.
+	statusResp := session.call(t, nextID, "tools/call", map[string]any{
+		"name":      "virgil_status",
+		"arguments": map[string]any{},
+	})
+	statusResult := decodeToolCallResult(t, statusResp)
+	if statusResult.IsError {
+		t.Fatalf("virgil_status returned isError=true after breadcrumb-bearing writes: %s", statusResult.Content[0].Text)
+	}
+}
