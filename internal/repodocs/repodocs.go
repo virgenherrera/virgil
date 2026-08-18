@@ -972,15 +972,18 @@ func loadExistingDoc(root *os.Root, relative string, schema SchemaValidator, val
 }
 
 // ---------------------------------------------------------------------------
-// Navigation indexes: docs/README.md and docs/{requirements,design,tasks}/README.md
+// Navigation index: docs/README.md
 // ---------------------------------------------------------------------------
 
-// indexFileName is the plain-markdown navigation file regenerated in docs/
-// and in each of its kind subdirectories after every successful
-// virgil.write. Index files carry no frontmatter and are always fully
-// overwritten; they are a browsing convenience, not part of the knowledge
-// base's durable content. Named README.md (not index.md) so GitHub and
-// similar viewers auto-render it as the directory's landing page.
+// indexFileName is the plain-markdown navigation file regenerated at
+// docs/README.md after every successful virgil.write or virgil.transition.
+// It carries no frontmatter and is always fully overwritten; it is a
+// browsing convenience, not part of the knowledge base's durable content.
+// Named README.md (not index.md) so GitHub and similar viewers auto-render
+// it as the directory's landing page. There is exactly one index file — no
+// regional README.md is generated inside docs/requirements/, docs/design/
+// or docs/tasks/ — so the document map on docs/README.md is the single
+// source of navigation truth.
 const indexFileName = "README.md"
 
 // navEntry is a single row rendered into a navigation index.
@@ -996,13 +999,12 @@ type navEntry struct {
 }
 
 // regenerateIndexes rescans docs/ after a successful virgil.write or
-// virgil.transition and republishes docs/README.md plus one regional index
-// per kind subdirectory. Index generation is best-effort: any failure is
-// logged and swallowed so it never turns an already-successful operation
-// into a failed one.
+// virgil.transition and republishes docs/README.md. Index generation is
+// best-effort: any failure is logged and swallowed so it never turns an
+// already-successful operation into a failed one.
 func regenerateIndexes(targetRoot string) {
 	if err := writeNavigationIndexes(targetRoot); err != nil {
-		log.Printf("virgil: failed to regenerate docs/ navigation indexes: %v", err)
+		log.Printf("virgil: failed to regenerate docs/README.md: %v", err)
 	}
 }
 
@@ -1066,19 +1068,7 @@ func writeNavigationIndexes(targetRoot string) error {
 	design := byKind[protocol.DocKindDesign]
 	tasks := byKind[protocol.DocKindTask]
 
-	if err := writeGlobalIndex(root, idea, requirements, design, tasks); err != nil {
-		return err
-	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindRequirement), "Requirements", requirements); err != nil {
-		return err
-	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindDesign), "Design", design); err != nil {
-		return err
-	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindTask), "Tasks", tasks); err != nil {
-		return err
-	}
-	return nil
+	return writeGlobalIndex(root, idea, requirements, design, tasks)
 }
 
 // docTitle returns the text of the first "# Heading" line in content,
@@ -1108,6 +1098,10 @@ func renderIndexSection(level, heading string, items []string) string {
 	return block
 }
 
+// writeGlobalIndex publishes docs/README.md: a mermaid flowchart document
+// map (omitted when the project has no documents at all, e.g. immediately
+// after virgil.init) followed by sections listing every document grouped by
+// kind.
 func writeGlobalIndex(root *os.Root, idea *navEntry, requirements, design, tasks []navEntry) error {
 	var ideaItems []string
 	if idea != nil {
@@ -1126,42 +1120,98 @@ func writeGlobalIndex(root *os.Root, idea *navEntry, requirements, design, tasks
 		taskItems = append(taskItems, fmt.Sprintf("- [%s](tasks/%s)", entry.Title, entry.FileName))
 	}
 
-	sections := []string{
+	parts := []string{"# Project Documentation"}
+	if documentMap := renderDocumentMap(idea, requirements, design, tasks); documentMap != "" {
+		parts = append(parts, documentMap)
+	} else {
+		parts = append(parts, "No documents yet — use `virgil.write` to create your first document.")
+	}
+	parts = append(parts,
 		renderIndexSection("##", "Idea", ideaItems),
 		renderIndexSection("##", "Requirements", requirementItems),
 		renderIndexSection("##", "Design", designItems),
 		renderIndexSection("##", "Tasks", taskItems),
-	}
-	body := "# Project Documentation\n\n" + strings.Join(sections, "\n\n")
+	)
+	body := strings.Join(parts, "\n\n")
 	return writeIndexFile(root, path.Join(managedRoot, indexFileName), normalizeTrailingNewline([]byte(body)))
 }
 
-// writeRegionalIndex publishes docs/{dir}/README.md. It is a no-op when dir
-// has never been created (no document of that kind has ever been written),
-// so regenerateIndexes never creates empty kind directories just to hold an
-// index file.
-func writeRegionalIndex(root *os.Root, dir, heading string, entries []navEntry) error {
-	if dir == "" {
-		return nil
-	}
-	managedDir := path.Join(managedRoot, dir)
-	if _, statErr := root.Stat(managedDir); errors.Is(statErr, fs.ErrNotExist) {
-		return nil
-	} else if statErr != nil {
-		return statErr
+// renderDocumentMap renders a fenced ```mermaid flowchart TD block showing
+// how every existing document relates to the idea and its own kind
+// category. It returns "" when the project has no documents at all (idea
+// is nil and every kind slice is empty), so writeGlobalIndex can fall back
+// to a plain placeholder message instead of an empty diagram. A kind with
+// no documents yet is simply omitted from the diagram — there is no
+// leaf-less "Requirements" node cluttering the map for a project that has
+// never written a requirement.
+func renderDocumentMap(idea *navEntry, requirements, design, tasks []navEntry) string {
+	if idea == nil && len(requirements) == 0 && len(design) == 0 && len(tasks) == 0 {
+		return ""
 	}
 
-	items := make([]string, 0, len(entries))
+	lines := []string{"```mermaid", "flowchart TD"}
+	if idea != nil {
+		lines = append(lines, fmt.Sprintf("    IDEA[%s]", mermaidLabel(idea.FileName)))
+	}
+	lines = append(lines, renderDocumentMapCategory(idea != nil, "REQ", "R", "Requirements", requirements)...)
+	lines = append(lines, renderDocumentMapCategory(idea != nil, "DESIGN", "D", "Design", design)...)
+	lines = append(lines, renderDocumentMapCategory(idea != nil, "TASKS", "T", "Tasks", tasks)...)
+	lines = append(lines, "```")
+	return strings.Join(lines, "\n")
+}
+
+// renderDocumentMapCategory renders the mermaid lines for a single kind
+// category (Requirements, Design or Tasks): the category node itself
+// (linked from IDEA when an idea document exists), followed by one leaf
+// node per document of that kind. It returns nil when entries is empty, so
+// a kind with no documents contributes no lines to the diagram at all.
+func renderDocumentMapCategory(hasIdea bool, categoryID, nodePrefix, heading string, entries []navEntry) []string {
+	if len(entries) == 0 {
+		return nil
+	}
+	var lines []string
+	if hasIdea {
+		lines = append(lines, fmt.Sprintf("    IDEA --> %s[%s]", categoryID, heading))
+	} else {
+		lines = append(lines, fmt.Sprintf("    %s[%s]", categoryID, heading))
+	}
 	for _, entry := range entries {
-		items = append(items, fmt.Sprintf("- [%s](%s)", entry.Title, entry.FileName))
+		nodeID := mermaidNodeID(nodePrefix, strings.TrimSuffix(entry.FileName, ".md"))
+		lines = append(lines, fmt.Sprintf("    %s --> %s[%s]", categoryID, nodeID, mermaidLabel(entry.FileName)))
 	}
+	return lines
+}
 
-	sections := []string{
-		renderIndexSection("#", heading, items),
-		"[← All Documentation](../README.md)",
+// mermaidNodeID derives a mermaid-safe flowchart node ID from an arbitrary
+// document slug: every rune outside [A-Za-z0-9] collapses to a single
+// hyphen, and the result is prefixed with prefix (a fixed, already-safe
+// per-kind letter: "R", "D" or "T") so two documents can never collide with
+// each other or with the fixed category/idea node IDs, and so the ID always
+// starts with a letter regardless of what the slug starts with.
+func mermaidNodeID(prefix, raw string) string {
+	var builder strings.Builder
+	builder.WriteString(prefix)
+	previousHyphen := false
+	for _, r := range raw {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+			builder.WriteRune(r)
+			previousHyphen = false
+		default:
+			if !previousHyphen {
+				builder.WriteRune('-')
+				previousHyphen = true
+			}
+		}
 	}
-	body := strings.Join(sections, "\n\n")
-	return writeIndexFile(root, path.Join(managedRoot, dir, indexFileName), normalizeTrailingNewline([]byte(body)))
+	return strings.TrimRight(builder.String(), "-")
+}
+
+// mermaidLabel renders text as a double-quoted mermaid node label so
+// characters mermaid would otherwise treat as syntax (brackets, quotes,
+// pipes) render as literal text instead of breaking the diagram.
+func mermaidLabel(text string) string {
+	return fmt.Sprintf("%q", text)
 }
 
 // writeIndexFile fully overwrites a navigation index file. Unlike
