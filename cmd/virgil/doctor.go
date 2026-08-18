@@ -50,8 +50,8 @@ type doctorToolsListResult struct {
 	} `json:"tools"`
 }
 
-// doctorMCPSettings mirrors the subset of ~/.claude/settings.json this
-// command reads: mcpServers.virgil.{command,args}.
+// doctorMCPSettings mirrors the subset of ~/.claude.json this command reads:
+// mcpServers.virgil.{command,args}.
 type doctorMCPSettings struct {
 	MCPServers map[string]struct {
 		Command string   `json:"command"`
@@ -66,7 +66,7 @@ var doctorCmd = &cobra.Command{
 virgil binary and its MCP client configuration:
 
   1. Binary       -- resolves the running binary's own path.
-  2. MCP config   -- reads mcpServers.virgil from ~/.claude/settings.json.
+  2. MCP config   -- reads mcpServers.virgil from ~/.claude.json.
   3. Path parity  -- confirms the MCP config points at this same binary.
   4. Handshake    -- spawns "virgil serve" and drives a real MCP handshake.`,
 	RunE: runDoctor,
@@ -120,11 +120,17 @@ func doctorCheckBinary(out io.Writer, failed *int) (execPath, resolvedExecPath s
 	return execPath, resolvedExecPath
 }
 
-// doctorCheckMCPConfig reads ~/.claude/settings.json and extracts
-// mcpServers.virgil. A missing settings file is a warning, not a failure --
-// Virgil may simply not be registered with Claude yet. It returns the raw
-// (unresolved) command path from the config and whether a virgil entry was
-// found at all, both consumed by Check 3.
+// doctorCheckMCPConfig reads ~/.claude.json and extracts mcpServers.virgil --
+// this is the file Claude Code actually reads MCP server config from
+// (verified via `claude mcp add --scope user` / `claude mcp list`), not
+// ~/.claude/settings.json. A missing settings file is a warning, not a
+// failure -- Virgil may simply not be registered with Claude yet. When
+// ~/.claude.json has no virgil entry, it falls back to checking the legacy
+// ~/.claude/settings.json location (written by pre-fix versions of `virgil
+// install`) and warns the user to re-run `virgil install` to migrate. It
+// returns the raw (unresolved) command path from the config and whether a
+// virgil entry was found at all (in either location), both consumed by
+// Check 3.
 func doctorCheckMCPConfig(out io.Writer, failed, warned *int) (mcpCommand string, mcpConfigured bool) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -133,28 +139,34 @@ func doctorCheckMCPConfig(out io.Writer, failed, warned *int) (mcpCommand string
 		return "", false
 	}
 
-	settingsPath := filepath.Join(homeDir, ".claude", "settings.json")
+	settingsPath := filepath.Join(homeDir, ".claude.json")
 	data, err := os.ReadFile(settingsPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Fprintln(out, "⚠ MCP config: ~/.claude/settings.json not found")
+			if command, ok := doctorCheckLegacyMCPConfig(out, warned, homeDir); ok {
+				return command, true
+			}
+			fmt.Fprintln(out, "⚠ MCP config: ~/.claude.json not found")
 			*warned++
 			return "", false
 		}
-		fmt.Fprintf(out, "✗ MCP config: read ~/.claude/settings.json: %v\n", err)
+		fmt.Fprintf(out, "✗ MCP config: read ~/.claude.json: %v\n", err)
 		*failed++
 		return "", false
 	}
 
 	var settings doctorMCPSettings
 	if err := json.Unmarshal(data, &settings); err != nil {
-		fmt.Fprintf(out, "✗ MCP config: parse ~/.claude/settings.json: %v\n", err)
+		fmt.Fprintf(out, "✗ MCP config: parse ~/.claude.json: %v\n", err)
 		*failed++
 		return "", false
 	}
 
 	virgilConfig, ok := settings.MCPServers["virgil"]
 	if !ok || virgilConfig.Command == "" {
+		if command, ok := doctorCheckLegacyMCPConfig(out, warned, homeDir); ok {
+			return command, true
+		}
 		fmt.Fprintln(out, "✗ MCP config: virgil not found in mcpServers")
 		*failed++
 		return "", false
@@ -164,7 +176,36 @@ func doctorCheckMCPConfig(out io.Writer, failed, warned *int) (mcpCommand string
 	if len(virgilConfig.Args) > 0 {
 		commandLine += " " + strings.Join(virgilConfig.Args, " ")
 	}
-	fmt.Fprintf(out, "✓ MCP config: ~/.claude/settings.json → %s\n", commandLine)
+	fmt.Fprintf(out, "✓ MCP config: ~/.claude.json → %s\n", commandLine)
+	return virgilConfig.Command, true
+}
+
+// doctorCheckLegacyMCPConfig checks the legacy ~/.claude/settings.json
+// location for a virgil MCP entry, used as a fallback when ~/.claude.json
+// (the file Claude Code actually reads) has none. This location was where
+// `virgil install` mistakenly wrote MCP config before the fix -- Claude Code
+// never read mcpServers from there, so servers registered under it silently
+// never connected. Returns the command and true when a virgil entry is
+// found there, printing a migration warning in that case.
+func doctorCheckLegacyMCPConfig(out io.Writer, warned *int, homeDir string) (mcpCommand string, found bool) {
+	legacyPath := filepath.Join(homeDir, ".claude", "settings.json")
+	data, err := os.ReadFile(legacyPath)
+	if err != nil {
+		return "", false
+	}
+
+	var settings doctorMCPSettings
+	if err := json.Unmarshal(data, &settings); err != nil {
+		return "", false
+	}
+
+	virgilConfig, ok := settings.MCPServers["virgil"]
+	if !ok || virgilConfig.Command == "" {
+		return "", false
+	}
+
+	fmt.Fprintln(out, "⚠ MCP config: virgil found in legacy ~/.claude/settings.json — run 'virgil install' to migrate to ~/.claude.json")
+	*warned++
 	return virgilConfig.Command, true
 }
 

@@ -29,7 +29,7 @@ type MCPStrategy int
 
 const (
 	// MCPStrategyJSONMerge merges the MCP server entry into a JSON
-	// settings file (Claude Code's settings.json).
+	// settings file (Claude Code's ~/.claude.json).
 	MCPStrategyJSONMerge MCPStrategy = iota
 	// MCPStrategyTOML writes the MCP server entry into a TOML config
 	// file (Codex's config.toml).

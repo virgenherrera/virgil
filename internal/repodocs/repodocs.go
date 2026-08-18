@@ -27,11 +27,13 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -53,8 +55,14 @@ const (
 	schemaOperationResult = "https://schemas.virgil.dev/planning-slice1/v1alpha1/operation-result.schema.json"
 	schemaEffectRecord    = "https://schemas.virgil.dev/planning-slice1/v1alpha1/effect-record.schema.json"
 
-	frontmatterOpen  = "---json\n"
-	frontmatterClose = "\n---\n\n"
+	frontmatterOpen = "---\n"
+	// frontmatterOpenLegacy is the pre-existing open marker used by
+	// documents written before Virgil switched to standard YAML-style
+	// frontmatter fences. It is accepted on read only so that projects
+	// with previously written docs keep working; all new writes use
+	// frontmatterOpen.
+	frontmatterOpenLegacy = "---json\n"
+	frontmatterClose      = "\n---\n\n"
 )
 
 // SchemaValidator validates JSON bytes against a schema identified by its
@@ -475,7 +483,12 @@ func Write(request protocol.OperationRequest, targetRoot string, clock Clock, ca
 		status = protocol.TaskStatusBacklog
 	}
 
-	contentBytes := []byte(input.Content)
+	// Callers (AI agents, via virgil_write) supply Markdown content freely and
+	// cannot be relied on to end it with exactly one newline. Normalize here,
+	// before the digest is computed, so the persisted file always satisfies
+	// markdownlint's MD047 (single-trailing-newline) and the frontmatter's
+	// ContentDigest always matches what loadExistingDoc reads back from disk.
+	contentBytes := normalizeTrailingNewline([]byte(input.Content))
 	contentDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(contentBytes))
 
 	existing, existingFound, loadDocErr := loadExistingDoc(root, relative, schema, validateJSON)
@@ -524,6 +537,12 @@ func Write(request protocol.OperationRequest, targetRoot string, clock Clock, ca
 	if writeErr != nil {
 		return protocol.OperationResult{}, writeErr
 	}
+
+	// Navigation indexes are a convenience for humans and RAG-style readers
+	// browsing docs/ directly; they are not part of the durable write
+	// contract, so a failure here is logged and swallowed rather than
+	// failing the virgil.write operation that already succeeded.
+	regenerateIndexes(resolvedTarget)
 
 	fileResource := withDigest(protocol.ResourceRef{URI: relative}, raw)
 	resolved := resolvedContext(request, resolvedTarget)
@@ -748,8 +767,18 @@ func docRelativePath(docKind, category, slug string) string {
 	return path.Join(managedRoot, dir, filename)
 }
 
+// normalizeTrailingNewline trims any trailing newline characters from
+// content and appends exactly one. Content is the final segment of every
+// published doc file, so this is what makes the file as a whole end with a
+// single trailing newline (markdownlint MD047) regardless of whether the
+// caller's Markdown ended with no newline, one, or several blank lines.
+func normalizeTrailingNewline(content []byte) []byte {
+	trimmed := bytes.TrimRight(content, "\n")
+	return append(trimmed, '\n')
+}
+
 // serializeDocFile renders frontmatter and content into the on-disk
-// representation: a "---json" / "---" delimited JSON block followed by the
+// representation: a "---" / "---" delimited JSON block followed by the
 // Markdown content body.
 func serializeDocFile(frontmatter protocol.DocFrontmatter, content []byte) ([]byte, error) {
 	frontmatterBytes, err := json.MarshalIndent(frontmatter, "", "  ")
@@ -765,12 +794,19 @@ func serializeDocFile(frontmatter protocol.DocFrontmatter, content []byte) ([]by
 }
 
 // parseDocFrontmatter splits a doc file into its decoded JSON frontmatter
-// and its content body.
+// and its content body. It accepts both the current open marker and the
+// legacy "---json\n" marker so documents written before the frontmatter
+// fence migration continue to parse.
 func parseDocFrontmatter(raw []byte) (protocol.DocFrontmatter, []byte, error) {
-	if !bytes.HasPrefix(raw, []byte(frontmatterOpen)) {
-		return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file does not start with %q", frontmatterOpen)
+	openMarker := frontmatterOpen
+	if !bytes.HasPrefix(raw, []byte(openMarker)) {
+		if bytes.HasPrefix(raw, []byte(frontmatterOpenLegacy)) {
+			openMarker = frontmatterOpenLegacy
+		} else {
+			return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file does not start with %q", frontmatterOpen)
+		}
 	}
-	rest := raw[len(frontmatterOpen):]
+	rest := raw[len(openMarker):]
 	closeIndex := bytes.Index(rest, []byte(frontmatterClose))
 	if closeIndex < 0 {
 		return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file has no closing frontmatter marker %q", frontmatterClose)
@@ -882,6 +918,209 @@ func loadExistingDoc(root *os.Root, relative string, schema SchemaValidator, val
 		return docRecord{}, false, typedError("CORRUPT_LEDGER", relative, "doc content does not match its frontmatter digest", nil)
 	}
 	return docRecord{Path: relative, Frontmatter: frontmatter, Content: content}, true, nil
+}
+
+// ---------------------------------------------------------------------------
+// Navigation indexes: docs/index.md and docs/{requirements,design,tasks}/index.md
+// ---------------------------------------------------------------------------
+
+// indexFileName is the plain-markdown navigation file regenerated in docs/
+// and in each of its kind subdirectories after every successful
+// virgil.write. Index files carry no frontmatter and are always fully
+// overwritten; they are a browsing convenience, not part of the knowledge
+// base's durable content.
+const indexFileName = "index.md"
+
+// navEntry is a single row rendered into a navigation index.
+type navEntry struct {
+	// FileName is the doc's file name relative to its own directory, e.g.
+	// "idea.md" or "functional-user-auth.md".
+	FileName string
+	// Title is the doc's first "# Heading" line, or FileName without its
+	// extension when the doc body has no heading.
+	Title string
+	// Status is the task's frontmatter status; empty for non-task kinds.
+	Status string
+}
+
+// regenerateIndexes rescans docs/ after a successful virgil.write and
+// republishes docs/index.md plus one regional index per kind subdirectory.
+// Index generation is best-effort: any failure is logged and swallowed so it
+// never turns an already-successful write into a failed operation.
+func regenerateIndexes(targetRoot string) {
+	if err := writeNavigationIndexes(targetRoot); err != nil {
+		log.Printf("virgil: failed to regenerate docs/ navigation indexes: %v", err)
+	}
+}
+
+func writeNavigationIndexes(targetRoot string) error {
+	root, _, err := openTargetRoot(targetRoot)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+
+	var idea *navEntry
+	byKind := map[string][]navEntry{
+		protocol.DocKindRequirement: nil,
+		protocol.DocKindDesign:      nil,
+		protocol.DocKindTask:        nil,
+	}
+
+	walkErr := fs.WalkDir(root.FS(), managedRoot, func(name string, entry fs.DirEntry, entryErr error) error {
+		if entryErr != nil {
+			return entryErr
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		base := path.Base(name)
+		if base == indexFileName || path.Ext(base) != ".md" {
+			return nil
+		}
+		raw, readErr := root.ReadFile(name)
+		if readErr != nil {
+			return readErr
+		}
+		frontmatter, content, parseErr := parseDocFrontmatter(raw)
+		if parseErr != nil {
+			return parseErr
+		}
+		found := navEntry{
+			FileName: base,
+			Title:    docTitle(content, base),
+			Status:   frontmatter.Status,
+		}
+		switch frontmatter.DocKind {
+		case protocol.DocKindIdea:
+			ideaCopy := found
+			idea = &ideaCopy
+		case protocol.DocKindRequirement, protocol.DocKindDesign, protocol.DocKindTask:
+			byKind[frontmatter.DocKind] = append(byKind[frontmatter.DocKind], found)
+		}
+		return nil
+	})
+	if walkErr != nil {
+		return walkErr
+	}
+
+	for kind := range byKind {
+		entries := byKind[kind]
+		sort.Slice(entries, func(i, j int) bool { return entries[i].FileName < entries[j].FileName })
+	}
+
+	requirements := byKind[protocol.DocKindRequirement]
+	design := byKind[protocol.DocKindDesign]
+	tasks := byKind[protocol.DocKindTask]
+
+	if err := writeGlobalIndex(root, idea, requirements, design, tasks); err != nil {
+		return err
+	}
+	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindRequirement), "Requirements", requirements, false); err != nil {
+		return err
+	}
+	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindDesign), "Design", design, false); err != nil {
+		return err
+	}
+	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindTask), "Tasks", tasks, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+// docTitle returns the text of the first "# Heading" line in content,
+// falling back to fileName without its extension when the body has no
+// top-level heading.
+func docTitle(content []byte, fileName string) string {
+	for _, line := range strings.Split(string(content), "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "# ") {
+			title := strings.TrimSpace(strings.TrimPrefix(trimmed, "# "))
+			if title != "" {
+				return title
+			}
+		}
+	}
+	return strings.TrimSuffix(fileName, ".md")
+}
+
+// renderIndexSection renders a "## Heading" block followed by its list
+// items, or the bare heading when items is empty. It never emits more than
+// one blank line, regardless of whether items is empty.
+func renderIndexSection(level, heading string, items []string) string {
+	block := level + " " + heading
+	if len(items) > 0 {
+		block += "\n\n" + strings.Join(items, "\n")
+	}
+	return block
+}
+
+func writeGlobalIndex(root *os.Root, idea *navEntry, requirements, design, tasks []navEntry) error {
+	var ideaItems []string
+	if idea != nil {
+		ideaItems = []string{fmt.Sprintf("- [%s](idea.md)", idea.Title)}
+	}
+	requirementItems := make([]string, 0, len(requirements))
+	for _, entry := range requirements {
+		requirementItems = append(requirementItems, fmt.Sprintf("- [%s](requirements/%s)", entry.Title, entry.FileName))
+	}
+	designItems := make([]string, 0, len(design))
+	for _, entry := range design {
+		designItems = append(designItems, fmt.Sprintf("- [%s](design/%s)", entry.Title, entry.FileName))
+	}
+	taskItems := make([]string, 0, len(tasks))
+	for _, entry := range tasks {
+		taskItems = append(taskItems, fmt.Sprintf("- [%s](tasks/%s) — `%s`", entry.Title, entry.FileName, entry.Status))
+	}
+
+	sections := []string{
+		renderIndexSection("##", "Idea", ideaItems),
+		renderIndexSection("##", "Requirements", requirementItems),
+		renderIndexSection("##", "Design", designItems),
+		renderIndexSection("##", "Tasks", taskItems),
+	}
+	body := "# Project Documentation\n\n" + strings.Join(sections, "\n\n")
+	return writeIndexFile(root, path.Join(managedRoot, indexFileName), normalizeTrailingNewline([]byte(body)))
+}
+
+// writeRegionalIndex publishes docs/{dir}/index.md. It is a no-op when dir
+// has never been created (no document of that kind has ever been written),
+// so regenerateIndexes never creates empty kind directories just to hold an
+// index file.
+func writeRegionalIndex(root *os.Root, dir, heading string, entries []navEntry, withStatus bool) error {
+	if dir == "" {
+		return nil
+	}
+	managedDir := path.Join(managedRoot, dir)
+	if _, statErr := root.Stat(managedDir); errors.Is(statErr, fs.ErrNotExist) {
+		return nil
+	} else if statErr != nil {
+		return statErr
+	}
+
+	items := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if withStatus {
+			items = append(items, fmt.Sprintf("- [%s](%s) — `%s`", entry.Title, entry.FileName, entry.Status))
+			continue
+		}
+		items = append(items, fmt.Sprintf("- [%s](%s)", entry.Title, entry.FileName))
+	}
+
+	sections := []string{
+		renderIndexSection("#", heading, items),
+		"[← All Documentation](../index.md)",
+	}
+	body := strings.Join(sections, "\n\n")
+	return writeIndexFile(root, path.Join(managedRoot, dir, indexFileName), normalizeTrailingNewline([]byte(body)))
+}
+
+// writeIndexFile fully overwrites a navigation index file. Unlike
+// writeDocFile/rewriteDocFile, no atomic rename dance is used: index files
+// carry no idempotency guarantees and are regenerated in full on every
+// virgil.write, so plain truncate-and-write is sufficient.
+func writeIndexFile(root *os.Root, relative string, content []byte) error {
+	return root.WriteFile(relative, content, 0o600)
 }
 
 // ---------------------------------------------------------------------------

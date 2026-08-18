@@ -79,13 +79,14 @@ func buildIsolatedEnv(homeDir, binDir string) []string {
 	return env
 }
 
-// assertMCPConfigClaude verifies ~/.claude/settings.json contains
-// mcpServers.virgil with an absolute "command" path and "serve" as its
-// first argument.
+// assertMCPConfigClaude verifies ~/.claude.json contains mcpServers.virgil
+// with an absolute "command" path and "serve" as its first argument. This is
+// the file Claude Code actually reads MCP server config from -- not
+// ~/.claude/settings.json.
 func assertMCPConfigClaude(t *testing.T, homeDir string) {
 	t.Helper()
 
-	settingsPath := filepath.Join(homeDir, ".claude", "settings.json")
+	settingsPath := filepath.Join(homeDir, ".claude.json")
 	data, err := os.ReadFile(settingsPath)
 	if err != nil {
 		t.Fatalf("read %s: %v", settingsPath, err)
@@ -444,9 +445,10 @@ func TestApp_T0InstallIdempotent(t *testing.T) {
 }
 
 // TestApp_T0InstallPreservesExistingConfig proves that a pre-existing
-// ~/.claude/settings.json with unrelated top-level keys and other MCP
-// servers is preserved -- virgil's entry is merged in without clobbering the
-// rest of the file.
+// ~/.claude.json with unrelated top-level keys (simulating real Claude Code
+// preferences/tip-history/feature-flag keys) and other MCP servers is
+// preserved -- virgil's entry is merged in without clobbering the rest of
+// the file.
 func TestApp_T0InstallPreservesExistingConfig(t *testing.T) {
 	homeDir := t.TempDir()
 	claudeDir := filepath.Join(homeDir, ".claude")
@@ -467,7 +469,7 @@ func TestApp_T0InstallPreservesExistingConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal seed settings: %v", err)
 	}
-	settingsPath := filepath.Join(claudeDir, "settings.json")
+	settingsPath := filepath.Join(homeDir, ".claude.json")
 	if err := os.WriteFile(settingsPath, existingData, 0o644); err != nil {
 		t.Fatalf("write seed settings: %v", err)
 	}

@@ -634,8 +634,13 @@ func validateExactTree(targetRoot string, expected map[string]string) error {
 }
 
 const (
-	frontmatterOpen  = "---json\n"
-	frontmatterClose = "\n---\n\n"
+	frontmatterOpen = "---\n"
+	// frontmatterOpenLegacy is the pre-existing open marker used by
+	// documents written before Virgil switched to standard YAML-style
+	// frontmatter fences. It is accepted on read only, mirroring
+	// repodocs.parseDocFrontmatter's backward compatibility.
+	frontmatterOpenLegacy = "---json\n"
+	frontmatterClose      = "\n---\n\n"
 )
 
 // splitFrontmatterForOracle is the independent, oracle-side counterpart of
@@ -643,10 +648,15 @@ const (
 // bytes without importing the internal repodocs package, so the T0 oracle
 // observes the artifact file exactly as any other reader would.
 func splitFrontmatterForOracle(raw []byte) ([]byte, []byte, error) {
-	if !bytes.HasPrefix(raw, []byte(frontmatterOpen)) {
-		return nil, nil, fmt.Errorf("artifact file does not start with %q", frontmatterOpen)
+	openMarker := frontmatterOpen
+	if !bytes.HasPrefix(raw, []byte(openMarker)) {
+		if bytes.HasPrefix(raw, []byte(frontmatterOpenLegacy)) {
+			openMarker = frontmatterOpenLegacy
+		} else {
+			return nil, nil, fmt.Errorf("artifact file does not start with %q", frontmatterOpen)
+		}
 	}
-	rest := raw[len(frontmatterOpen):]
+	rest := raw[len(openMarker):]
 	closeIndex := bytes.Index(rest, []byte(frontmatterClose))
 	if closeIndex < 0 {
 		return nil, nil, fmt.Errorf("artifact file has no closing frontmatter marker")

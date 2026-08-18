@@ -54,7 +54,7 @@ func Tools() []ToolDefinition {
 					},
 					"content": {
 						"type": "string",
-						"description": "Markdown content for the document."
+						"description": "Markdown content for the document. Must use ATX-style headings only (e.g. '# Title', '## Section') — never setext/underline-style headings (e.g. 'Title' followed by a line of '='). Do not include a frontmatter block; Virgil generates and prepends the JSON frontmatter automatically. Virgil normalizes the content to end with exactly one trailing newline, so there is no need to manage trailing blank lines."
 					},
 					"status": {
 						"type": "string",

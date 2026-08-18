@@ -33,6 +33,8 @@ Virgil-managed project.
 - After tasks reach `done` or `released`, STOP. The knowledge base is a
   PLANNING tool. Implementation requires separate, explicit instruction
   from the human.
+- Never declare planning complete with tasks still at `backlog` — all
+  tasks should be at `refined` minimum.
 
 ## The Knowledge Base Model
 
@@ -84,15 +86,21 @@ status. Backward transitions are allowed (except from `released`).
 
 1. `virgil_status` — check if project is initialized.
 2. `virgil_init` — if not initialized, create the project.
+   - Call `virgil_status` to confirm initialization succeeded.
 3. `virgil_write` with `doc_kind: "idea"` — capture the project idea.
 4. `virgil_write` with `doc_kind: "requirement"` — define requirements
    (repeat for each requirement, using `slug` and optionally `category`).
+   - Call `virgil_status` to verify requirement counts match expectations.
 5. `virgil_write` with `doc_kind: "design"` — write design documents
    (repeat for each design doc).
 6. `virgil_write` with `doc_kind: "task"` — break work into tasks with
    `refs` linking to requirements and design docs.
-7. `virgil_transition` — advance tasks through `backlog → refined →
-   active → done → released` as work progresses.
+   - Call `virgil_status` to verify task counts. Then call
+     `virgil_transition` on each task to advance from `backlog` to
+     `refined`.
+7. `virgil_transition` — during planning: transition all tasks to
+   `refined` after writing them. During implementation: advance through
+   `active → done → released`.
 8. `virgil_status` — check document counts and task status distribution
    at any point.
 

@@ -12,6 +12,12 @@ import (
 	"github.com/virgenherrera/virgil/internal/protocol"
 )
 
+// indexFileName is the auto-generated navigation index repodocs.Write
+// republishes in docs/ and each of its kind subdirectories after every
+// virgil.write. It carries no frontmatter and must be excluded from doc and
+// task counts here, mirroring the skip in repodocs' own index scan.
+const indexFileName = "index.md"
+
 // ProjectState is the simplified view of the Virgil project at targetRoot,
 // derived from virgil.json and the doc files under docs/.
 type ProjectState struct {
@@ -77,7 +83,7 @@ func countDocFiles(targetRoot, dir string) int {
 	}
 	count := 0
 	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".md") {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".md") && entry.Name() != indexFileName {
 			count++
 		}
 	}
@@ -92,7 +98,7 @@ func countTasksByStatus(targetRoot string) TaskCounts {
 		return counts
 	}
 	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") || entry.Name() == indexFileName {
 			continue
 		}
 		taskPath := filepath.Join(tasksDir, entry.Name())
@@ -121,16 +127,24 @@ func countTasksByStatus(targetRoot string) TaskCounts {
 }
 
 // extractDocFrontmatter parses the JSON frontmatter from a doc file
-// delimited by "---json\n" and "\n---\n\n".
+// delimited by "---\n" and "\n---\n\n". The legacy "---json\n" open marker
+// is also accepted so documents written before the frontmatter fence
+// migration (to a marker VS Code's markdown preview recognizes as YAML
+// frontmatter) continue to parse.
 func extractDocFrontmatter(raw []byte) (protocol.DocFrontmatter, error) {
-	const openMarker = "---json\n"
+	const openMarker = "---\n"
+	const openMarkerLegacy = "---json\n"
 	const closeMarker = "\n---\n\n"
 
 	content := string(raw)
-	if len(content) < len(openMarker) || content[:len(openMarker)] != openMarker {
-		return protocol.DocFrontmatter{}, fmt.Errorf("missing frontmatter open marker")
+	marker := openMarker
+	if len(content) < len(marker) || content[:len(marker)] != marker {
+		marker = openMarkerLegacy
+		if len(content) < len(marker) || content[:len(marker)] != marker {
+			return protocol.DocFrontmatter{}, fmt.Errorf("missing frontmatter open marker")
+		}
 	}
-	rest := content[len(openMarker):]
+	rest := content[len(marker):]
 	closeIdx := -1
 	for i := 0; i <= len(rest)-len(closeMarker); i++ {
 		if rest[i:i+len(closeMarker)] == closeMarker {

@@ -1,6 +1,6 @@
 // Package claude implements the Virgil agents.Adapter contract for Claude
 // Code. It knows Claude Code's on-disk config layout (~/.claude/...), how it
-// expects MCP servers to be declared in settings.json, and how it discovers
+// expects MCP servers to be declared in ~/.claude.json, and how it discovers
 // skills, slash commands, and system-prompt content.
 package claude
 
@@ -71,9 +71,12 @@ func (a *Adapter) GlobalConfigDir(homeDir string) string {
 	return filepath.Join(homeDir, ".claude")
 }
 
-// SettingsPath returns ~/.claude/settings.json.
+// SettingsPath returns ~/.claude.json, the file Claude Code actually reads
+// MCP server configuration from (verified via `claude mcp add --scope user`
+// / `claude mcp list`). This is distinct from ~/.claude/settings.json, which
+// Claude Code does not consult for mcpServers.
 func (a *Adapter) SettingsPath(homeDir string) string {
-	return filepath.Join(a.GlobalConfigDir(homeDir), "settings.json")
+	return filepath.Join(homeDir, ".claude.json")
 }
 
 // SkillsDir returns ~/.claude/skills.
@@ -94,7 +97,7 @@ func (a *Adapter) SystemPromptPath(homeDir string) string {
 // --- Strategies ---
 
 // MCPStrategy reports that Claude Code's MCP servers live merged into
-// settings.json under the "mcpServers" key.
+// ~/.claude.json under the "mcpServers" key.
 func (a *Adapter) MCPStrategy() agents.MCPStrategy {
 	return agents.MCPStrategyJSONMerge
 }
@@ -121,9 +124,12 @@ func (a *Adapter) SupportsSystemPrompt() bool { return true }
 
 // --- Installation ---
 
-// WriteMCPConfig merges an MCP server entry into settings.json under
+// WriteMCPConfig merges an MCP server entry into ~/.claude.json under
 // mcpServers.{serverName}, preserving every other key already present in
-// the file.
+// the file. ~/.claude.json is a shared file also holding Claude Code
+// preferences, tip history, and feature flags unrelated to Virgil, so
+// readOrCreateSettings/writeSettings perform a merge-based read-modify-write
+// rather than clobbering the file.
 //
 // Before merging, any bare (non-absolute) "command" value in config is
 // resolved to an absolute path via lookPath. Claude Code's MCP client
@@ -172,8 +178,8 @@ func (a *Adapter) resolveCommandPath(config map[string]any) map[string]any {
 	return resolved
 }
 
-// readOrCreateSettings loads existing settings.json or returns an empty map
-// when the file does not yet exist.
+// readOrCreateSettings loads the existing settings file at path (e.g.
+// ~/.claude.json) or returns an empty map when the file does not yet exist.
 func readOrCreateSettings(path string) (map[string]any, error) {
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {

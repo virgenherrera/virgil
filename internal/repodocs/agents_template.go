@@ -69,14 +69,20 @@ Documents are organized by kind under ` + backtick + `docs/` + backtick + `:
 virgil.json                            # Project config (auto-generated)
 AGENTS.md                              # This file (auto-generated)
 docs/
+  index.md                             # Navigation index (auto-generated)
   idea.md                              # Single project-level idea
   requirements/
+    index.md                           # Navigation index (auto-generated)
     {category}-{slug}.md               # Requirement documents
   design/
+    index.md                           # Navigation index (auto-generated)
     {category}-{slug}.md               # Design documents
   tasks/
+    index.md                           # Navigation index (auto-generated)
     {slug}.md                          # Task documents with lifecycle
 ` + tripleBacktick + `
+
+Every ` + backtick + `index.md` + backtick + ` is regenerated in full after each ` + backtick + `virgil.write` + backtick + ` call. **DO NOT** edit ` + backtick + `index.md` + backtick + ` files manually — they carry no content of their own and any manual edit is overwritten on the next write.
 
 ### Document Kinds
 
@@ -102,7 +108,7 @@ Backward transitions are allowed (` + backtick + `refined → backlog` + backtic
 Each ` + backtick + `.md` + backtick + ` file has JSON frontmatter:
 
 ` + tripleBacktick + `
----json
+---
 {
   "schema": "virgil.dev/doc/v1alpha1",
   "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
@@ -132,4 +138,28 @@ Each ` + backtick + `.md` + backtick + ` file has JSON frontmatter:
 - **DO** use ` + backtick + `virgil.write` + backtick + ` to create and update documents
 - **DO** use ` + backtick + `virgil.transition` + backtick + ` to advance task status
 - **DO** use ` + backtick + `virgil.status` + backtick + ` to check project state before acting
+- **DO** call ` + backtick + `virgil.status` + backtick + ` at every phase boundary (after init, after requirements, after tasks, before declaring done)
+- **DO** transition tasks to ` + backtick + `refined` + backtick + ` after writing them with acceptance criteria
+
+## Planning Workflow Checkpoints
+
+Planning is not complete just because documents were written. An agent must
+verify state and advance task status at defined checkpoints — these are not
+optional.
+
+### Status Check Points
+
+Call ` + backtick + `virgil.status` + backtick + ` at each of these points:
+
+- **Immediately after** ` + backtick + `virgil.init` + backtick + ` — confirm initialization succeeded.
+- **After writing ALL requirements** — verify requirement counts match what was intended.
+- **After writing ALL tasks** — verify the full backlog was recorded.
+- **Before declaring planning complete** — verify all expected documents exist (idea, requirements, design, tasks) and inspect ` + backtick + `task_counts` + backtick + `.
+
+### Transition Guidance
+
+- After writing a task with acceptance criteria, transition it from ` + backtick + `backlog` + backtick + ` to ` + backtick + `refined` + backtick + ` using ` + backtick + `virgil.transition` + backtick + `.
+- A task at ` + backtick + `refined` + backtick + ` means "fully specified and ready for implementation."
+- Do NOT leave all tasks at ` + backtick + `backlog` + backtick + ` — a completed planning phase should have all tasks at ` + backtick + `refined` + backtick + `.
+- Transitions to ` + backtick + `active` + backtick + `, ` + backtick + `done` + backtick + `, and ` + backtick + `released` + backtick + ` happen during implementation, not planning.
 `
