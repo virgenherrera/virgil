@@ -26,6 +26,47 @@ const runtimeProtocol = "virgil.dev/runtime/v1alpha1"
 func TestApp_T0InitRepoDocsHappy(t *testing.T) {
 	execution := runT0(t, "t0-init-repo-docs-happy")
 	assertScenarioPassed(t, execution, "t0-init-repo-docs-happy")
+	assertAgentsMDFormattingGuidelines(t, execution.WorkspaceRoot, "t0-init-repo-docs-happy")
+}
+
+// assertAgentsMDFormattingGuidelines proves that the AGENTS.md virgil.init
+// publishes carries the "Document Formatting Guidelines" section: guidance
+// an AI agent needs to know HOW to format document content (mermaid
+// diagrams, tables of contents, per-kind structure templates, and
+// cross-references) when it calls virgil.write, not just what operations
+// exist.
+func assertAgentsMDFormattingGuidelines(t *testing.T, workspaceRoot, fixtureID string) {
+	t.Helper()
+	agentsMDPath := filepath.Join(workspaceRoot, fixtureID, "target", "AGENTS.md")
+	content, err := os.ReadFile(agentsMDPath)
+	if err != nil {
+		t.Fatalf("read generated AGENTS.md at %s: %v", agentsMDPath, err)
+	}
+	agentsMD := string(content)
+
+	sectionHeading := "## Document Formatting Guidelines"
+	sectionIndex := strings.Index(agentsMD, sectionHeading)
+	if sectionIndex == -1 {
+		t.Fatalf("AGENTS.md missing %q section:\n%s", sectionHeading, agentsMD)
+	}
+	section := agentsMD[sectionIndex:]
+
+	for _, want := range []string{
+		sectionHeading,
+		"mermaid",
+		"flowchart",
+		"erDiagram",
+		"Table of Contents",
+		"Idea",
+		"Requirement",
+		"Design",
+		"Task",
+		"relative link",
+	} {
+		if !strings.Contains(section, want) {
+			t.Fatalf("AGENTS.md formatting guidelines section missing %q:\n%s", want, section)
+		}
+	}
 }
 
 func TestApp_T0InitUnmanagedWriteBlocked(t *testing.T) {
