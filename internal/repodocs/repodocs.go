@@ -38,6 +38,7 @@ import (
 	"time"
 
 	"github.com/gowebpki/jcs"
+	virgil "github.com/virgenherrera/virgil"
 	"github.com/virgenherrera/virgil/internal/protocol"
 )
 
@@ -45,6 +46,13 @@ const (
 	managedRoot      = "docs"
 	virgilConfigFile = protocol.VirgilConfigFile
 	agentsFile       = "AGENTS.md"
+
+	// schemaConfigRelPath is where virgil.init materializes the canonical
+	// virgil.json JSON Schema, relative to targetRoot (and, since virgil.json
+	// itself lives at targetRoot, also relative to virgil.json). It lives
+	// under managedRoot as a dot-file so it does not collide with any
+	// consumer-owned or virgil.write-managed doc.
+	schemaConfigRelPath = managedRoot + "/.virgil-schema.json"
 
 	configSchemaVersion = "virgil.dev/config/v1alpha1"
 
@@ -55,14 +63,22 @@ const (
 	schemaOperationResult = "https://schemas.virgil.dev/planning-slice1/v1alpha1/operation-result.schema.json"
 	schemaEffectRecord    = "https://schemas.virgil.dev/planning-slice1/v1alpha1/effect-record.schema.json"
 
-	frontmatterOpen = "---\n"
-	// frontmatterOpenLegacy is the pre-existing open marker used by
-	// documents written before Virgil switched to standard YAML-style
-	// frontmatter fences. It is accepted on read only so that projects
-	// with previously written docs keep working; all new writes use
-	// frontmatterOpen.
-	frontmatterOpenLegacy = "---json\n"
-	frontmatterClose      = "\n---\n\n"
+	// frontmatterOpen and frontmatterClose delimit the frontmatter fence used
+	// for every new write. An HTML comment renders as invisible in GitHub and
+	// VS Code's markdown preview, unlike a "---" fence, which both engines
+	// interpret as (and render as a table for) YAML frontmatter even though
+	// the body is JSON.
+	frontmatterOpen  = "<!-- virgil:meta\n"
+	frontmatterClose = "\n-->\n\n"
+
+	// frontmatterOpenLegacyJSON and frontmatterOpenLegacyYAML are prior open
+	// markers accepted on read only, so documents written before the
+	// HTML-comment frontmatter migration continue to parse; all new writes
+	// use frontmatterOpen. Both legacy formats share the same closing
+	// delimiter, frontmatterCloseLegacy.
+	frontmatterOpenLegacyJSON = "---json\n" // pre-rc.7
+	frontmatterOpenLegacyYAML = "---\n"     // rc.7 (commit 9fe8805)
+	frontmatterCloseLegacy    = "\n---\n\n"
 )
 
 // SchemaValidator validates JSON bytes against a schema identified by its
@@ -192,7 +208,20 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 		}
 	}
 
-	result := initSuccessResult(request, cfg, cfgBytes, agentsBytes)
+	schemaBytes, err := virgil.VirgilConfigSchema()
+	if err != nil {
+		return protocol.OperationResult{}, typedError("INTERNAL_ERROR", request.Operation, "cannot load embedded virgil.json schema", err)
+	}
+	if err := publishSchemaFile(root, schemaConfigRelPath, schemaBytes); err != nil {
+		var publicationError *publishError
+		if errors.As(err, &publicationError) {
+			// Materialized schema already exists (e.g., previous partial init) — acceptable, continue.
+		} else {
+			return protocol.OperationResult{}, err
+		}
+	}
+
+	result := initSuccessResult(request, cfg, cfgBytes, agentsBytes, schemaBytes)
 	if err := validateConfigPublication(schema, cfgBytes, result); err != nil {
 		return protocol.OperationResult{}, err
 	}
@@ -217,6 +246,7 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 
 func buildConfig(request protocol.OperationRequest, digest, createdAt string, resolved protocol.Context) (protocol.VirgilConfig, []byte, error) {
 	cfg := protocol.VirgilConfig{
+		Schema:          schemaConfigRelPath,
 		SchemaVersion:   configSchemaVersion,
 		ProtocolVersion: request.ProtocolVersion,
 		ProjectID:       request.ProjectRef.ProjectID,
@@ -241,9 +271,10 @@ func buildConfig(request protocol.OperationRequest, digest, createdAt string, re
 	return cfg, cfgBytes, nil
 }
 
-func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilConfig, cfgBytes, agentsBytes []byte) protocol.OperationResult {
+func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilConfig, cfgBytes, agentsBytes, schemaBytes []byte) protocol.OperationResult {
 	cfgResource := withDigest(protocol.ResourceRef{URI: virgilConfigFile}, cfgBytes)
 	agentsResource := withDigest(protocol.ResourceRef{URI: agentsFile}, agentsBytes)
+	schemaResource := withDigest(protocol.ResourceRef{URI: schemaConfigRelPath}, schemaBytes)
 	resolved := cfg.ResolvedContext
 	return protocol.OperationResult{
 		ProtocolVersion:  request.ProtocolVersion,
@@ -259,6 +290,7 @@ func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilCon
 		Effects: []protocol.EffectRecord{
 			writeEffect(request, "virgil-config", cfgResource, cfgResource, len(cfgBytes)),
 			writeEffect(request, "agents-doc", agentsResource, agentsResource, len(agentsBytes)),
+			writeEffect(request, "config-schema", schemaResource, schemaResource, len(schemaBytes)),
 		},
 		Next: protocol.NextAction{
 			Operation: "virgil.write",
@@ -417,6 +449,46 @@ func publishAgents(root *os.Root, content []byte) error {
 	}
 	published = true
 	return syncDirectory(root, ".")
+}
+
+// publishSchemaFile durably materializes the canonical virgil.json JSON
+// Schema at relative (under managedRoot) using create-exclusive-and-rename,
+// creating the parent directory chain if it does not already exist. A
+// pre-existing schema file (e.g. from a crashed prior init) is reported as a
+// *publishError so Init can treat it as an acceptable no-op, mirroring
+// publishAgents: the embedded schema content is fixed per binary build, so
+// there is nothing to reconcile.
+func publishSchemaFile(root *os.Root, relative string, content []byte) error {
+	if info, statErr := root.Lstat(relative); statErr == nil {
+		if !info.Mode().IsRegular() {
+			return typedError("CORRUPT_LEDGER", relative, "materialized schema path is not a regular file", nil)
+		}
+		return &publishError{Path: relative, Cause: fs.ErrExist}
+	} else if !errors.Is(statErr, fs.ErrNotExist) {
+		return typedError("ATOMICITY_UNSUPPORTED", relative, "cannot stat materialized schema file", statErr)
+	}
+	parentDir := path.Dir(relative)
+	if err := createDirectoryChain(root, parentDir); err != nil {
+		return err
+	}
+	if err := syncDirectoryChain(root, parentDir); err != nil {
+		return err
+	}
+	tempName := path.Join(parentDir, ".schema-"+stableID("tmp", relative, fmt.Sprintf("%x", sha256.Sum256(content))))
+	if err := writeExclusive(root, tempName, content); err != nil {
+		return err
+	}
+	published := false
+	defer func() {
+		if !published {
+			_ = root.Remove(tempName)
+		}
+	}()
+	if err := root.Rename(tempName, relative); err != nil {
+		return typedError("ATOMICITY_UNSUPPORTED", relative, "cannot atomically publish schema file", err)
+	}
+	published = true
+	return syncDirectory(root, parentDir)
 }
 
 // rewriteConfig durably replaces an existing virgil.json using
@@ -694,6 +766,12 @@ func Transition(request protocol.OperationRequest, targetRoot string, clock Cloc
 		return protocol.OperationResult{}, writeErr
 	}
 
+	// Indexes are regenerated after every doc mutation, not just virgil.write,
+	// so navigation stays consistent regardless of which operation touched
+	// docs/. Best-effort: any failure is logged and swallowed rather than
+	// failing the virgil.transition operation that already succeeded.
+	regenerateIndexes(resolvedTarget)
+
 	fileResource := withDigest(protocol.ResourceRef{URI: relative}, raw)
 	resolved := resolvedContext(request, resolvedTarget)
 	result := protocol.OperationResult{
@@ -778,7 +856,7 @@ func normalizeTrailingNewline(content []byte) []byte {
 }
 
 // serializeDocFile renders frontmatter and content into the on-disk
-// representation: a "---" / "---" delimited JSON block followed by the
+// representation: an HTML-comment delimited JSON block followed by the
 // Markdown content body.
 func serializeDocFile(frontmatter protocol.DocFrontmatter, content []byte) ([]byte, error) {
 	frontmatterBytes, err := json.MarshalIndent(frontmatter, "", "  ")
@@ -794,25 +872,29 @@ func serializeDocFile(frontmatter protocol.DocFrontmatter, content []byte) ([]by
 }
 
 // parseDocFrontmatter splits a doc file into its decoded JSON frontmatter
-// and its content body. It accepts both the current open marker and the
-// legacy "---json\n" marker so documents written before the frontmatter
-// fence migration continue to parse.
+// and its content body. It accepts the current open marker plus two legacy
+// open markers (pre-rc.7 "---json\n" and rc.7 "---\n") so documents written
+// before the HTML-comment frontmatter migration continue to parse. None of
+// the three markers is a prefix of another, so detection is unambiguous.
 func parseDocFrontmatter(raw []byte) (protocol.DocFrontmatter, []byte, error) {
-	openMarker := frontmatterOpen
-	if !bytes.HasPrefix(raw, []byte(openMarker)) {
-		if bytes.HasPrefix(raw, []byte(frontmatterOpenLegacy)) {
-			openMarker = frontmatterOpenLegacy
-		} else {
-			return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file does not start with %q", frontmatterOpen)
-		}
+	var openMarker, closeMarker string
+	switch {
+	case bytes.HasPrefix(raw, []byte(frontmatterOpen)):
+		openMarker, closeMarker = frontmatterOpen, frontmatterClose
+	case bytes.HasPrefix(raw, []byte(frontmatterOpenLegacyJSON)):
+		openMarker, closeMarker = frontmatterOpenLegacyJSON, frontmatterCloseLegacy
+	case bytes.HasPrefix(raw, []byte(frontmatterOpenLegacyYAML)):
+		openMarker, closeMarker = frontmatterOpenLegacyYAML, frontmatterCloseLegacy
+	default:
+		return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file does not start with %q", frontmatterOpen)
 	}
 	rest := raw[len(openMarker):]
-	closeIndex := bytes.Index(rest, []byte(frontmatterClose))
+	closeIndex := bytes.Index(rest, []byte(closeMarker))
 	if closeIndex < 0 {
-		return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file has no closing frontmatter marker %q", frontmatterClose)
+		return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file has no closing frontmatter marker %q", closeMarker)
 	}
 	frontmatterBytes := rest[:closeIndex]
-	content := rest[closeIndex+len(frontmatterClose):]
+	content := rest[closeIndex+len(closeMarker):]
 	var frontmatter protocol.DocFrontmatter
 	decoder := json.NewDecoder(bytes.NewReader(frontmatterBytes))
 	decoder.DisallowUnknownFields()
@@ -921,15 +1003,16 @@ func loadExistingDoc(root *os.Root, relative string, schema SchemaValidator, val
 }
 
 // ---------------------------------------------------------------------------
-// Navigation indexes: docs/index.md and docs/{requirements,design,tasks}/index.md
+// Navigation indexes: docs/README.md and docs/{requirements,design,tasks}/README.md
 // ---------------------------------------------------------------------------
 
 // indexFileName is the plain-markdown navigation file regenerated in docs/
 // and in each of its kind subdirectories after every successful
 // virgil.write. Index files carry no frontmatter and are always fully
 // overwritten; they are a browsing convenience, not part of the knowledge
-// base's durable content.
-const indexFileName = "index.md"
+// base's durable content. Named README.md (not index.md) so GitHub and
+// similar viewers auto-render it as the directory's landing page.
+const indexFileName = "README.md"
 
 // navEntry is a single row rendered into a navigation index.
 type navEntry struct {
@@ -943,10 +1026,11 @@ type navEntry struct {
 	Status string
 }
 
-// regenerateIndexes rescans docs/ after a successful virgil.write and
-// republishes docs/index.md plus one regional index per kind subdirectory.
-// Index generation is best-effort: any failure is logged and swallowed so it
-// never turns an already-successful write into a failed operation.
+// regenerateIndexes rescans docs/ after a successful virgil.write or
+// virgil.transition and republishes docs/README.md plus one regional index
+// per kind subdirectory. Index generation is best-effort: any failure is
+// logged and swallowed so it never turns an already-successful operation
+// into a failed one.
 func regenerateIndexes(targetRoot string) {
 	if err := writeNavigationIndexes(targetRoot); err != nil {
 		log.Printf("virgil: failed to regenerate docs/ navigation indexes: %v", err)
@@ -1016,13 +1100,13 @@ func writeNavigationIndexes(targetRoot string) error {
 	if err := writeGlobalIndex(root, idea, requirements, design, tasks); err != nil {
 		return err
 	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindRequirement), "Requirements", requirements, false); err != nil {
+	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindRequirement), "Requirements", requirements); err != nil {
 		return err
 	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindDesign), "Design", design, false); err != nil {
+	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindDesign), "Design", design); err != nil {
 		return err
 	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindTask), "Tasks", tasks, true); err != nil {
+	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindTask), "Tasks", tasks); err != nil {
 		return err
 	}
 	return nil
@@ -1070,7 +1154,7 @@ func writeGlobalIndex(root *os.Root, idea *navEntry, requirements, design, tasks
 	}
 	taskItems := make([]string, 0, len(tasks))
 	for _, entry := range tasks {
-		taskItems = append(taskItems, fmt.Sprintf("- [%s](tasks/%s) — `%s`", entry.Title, entry.FileName, entry.Status))
+		taskItems = append(taskItems, fmt.Sprintf("- [%s](tasks/%s)", entry.Title, entry.FileName))
 	}
 
 	sections := []string{
@@ -1083,11 +1167,11 @@ func writeGlobalIndex(root *os.Root, idea *navEntry, requirements, design, tasks
 	return writeIndexFile(root, path.Join(managedRoot, indexFileName), normalizeTrailingNewline([]byte(body)))
 }
 
-// writeRegionalIndex publishes docs/{dir}/index.md. It is a no-op when dir
+// writeRegionalIndex publishes docs/{dir}/README.md. It is a no-op when dir
 // has never been created (no document of that kind has ever been written),
 // so regenerateIndexes never creates empty kind directories just to hold an
 // index file.
-func writeRegionalIndex(root *os.Root, dir, heading string, entries []navEntry, withStatus bool) error {
+func writeRegionalIndex(root *os.Root, dir, heading string, entries []navEntry) error {
 	if dir == "" {
 		return nil
 	}
@@ -1100,16 +1184,12 @@ func writeRegionalIndex(root *os.Root, dir, heading string, entries []navEntry, 
 
 	items := make([]string, 0, len(entries))
 	for _, entry := range entries {
-		if withStatus {
-			items = append(items, fmt.Sprintf("- [%s](%s) — `%s`", entry.Title, entry.FileName, entry.Status))
-			continue
-		}
 		items = append(items, fmt.Sprintf("- [%s](%s)", entry.Title, entry.FileName))
 	}
 
 	sections := []string{
 		renderIndexSection("#", heading, items),
-		"[← All Documentation](../index.md)",
+		"[← All Documentation](../README.md)",
 	}
 	body := strings.Join(sections, "\n\n")
 	return writeIndexFile(root, path.Join(managedRoot, dir, indexFileName), normalizeTrailingNewline([]byte(body)))

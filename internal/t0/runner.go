@@ -455,12 +455,18 @@ func changedNonDirectoryEntries(before, after map[string]snapshotEntry) map[stri
 // public constant for the config file's own fixed name.
 const agentsDocFile = "AGENTS.md"
 
+// schemaConfigFile is the fixed path (relative to targetRoot) where
+// virgil.init materializes the canonical virgil.json JSON Schema. It is an
+// independent oracle-side counterpart of repodocs' own schemaConfigRelPath
+// constant, deliberately not imported from the internal package under test.
+const schemaConfigFile = "docs/.virgil-schema.json"
+
 func validateFreshInitResult(request protocol.OperationRequest, result protocol.OperationResult, snapshot map[string]snapshotEntry, targetRoot string) error {
 	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil || result.Next.Operation != "virgil.write" {
 		return fmt.Errorf("virgil.init did not return the required fresh success result")
 	}
-	if len(result.Diagnostics) != 0 || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 2 {
-		return fmt.Errorf("fresh init result does not expose exactly two writes (virgil.json, AGENTS.md) and zero events")
+	if len(result.Diagnostics) != 0 || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 3 {
+		return fmt.Errorf("fresh init result does not expose exactly three writes (virgil.json, AGENTS.md, docs/.virgil-schema.json) and zero events")
 	}
 	resolvedTarget, err := filepath.EvalSymlinks(targetRoot)
 	if err != nil {
@@ -472,7 +478,7 @@ func validateFreshInitResult(request protocol.OperationRequest, result protocol.
 		return fmt.Errorf("resolved_context does not preserve request refs with the real target binding path")
 	}
 
-	var configEffect, agentsEffect *protocol.EffectRecord
+	var configEffect, agentsEffect, schemaEffect *protocol.EffectRecord
 	for index := range result.Effects {
 		effect := &result.Effects[index]
 		switch effect.Resource.URI {
@@ -480,12 +486,14 @@ func validateFreshInitResult(request protocol.OperationRequest, result protocol.
 			configEffect = effect
 		case agentsDocFile:
 			agentsEffect = effect
+		case schemaConfigFile:
+			schemaEffect = effect
 		}
 	}
-	if configEffect == nil || agentsEffect == nil {
-		return fmt.Errorf("fresh init result does not report writes for both virgil.json and AGENTS.md")
+	if configEffect == nil || agentsEffect == nil || schemaEffect == nil {
+		return fmt.Errorf("fresh init result does not report writes for virgil.json, AGENTS.md, and the materialized schema")
 	}
-	for _, effect := range []*protocol.EffectRecord{configEffect, agentsEffect} {
+	for _, effect := range []*protocol.EffectRecord{configEffect, agentsEffect, schemaEffect} {
 		if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" || effect.RequestID != request.RequestID ||
 			effect.CausationID != request.RequestID || effect.Capability != "artifact_store.write" || effect.Observed == nil || effect.StateBefore != nil ||
 			effect.StateAfter == nil || !reflect.DeepEqual(*effect.StateAfter, effect.Resource) {
@@ -501,15 +509,20 @@ func validateFreshInitResult(request protocol.OperationRequest, result protocol.
 	if !found || !agentsEntry.Mode.IsRegular() || agentsEntry.Digest != agentsEffect.Resource.Digest {
 		return fmt.Errorf("write effect does not match the observed AGENTS.md file")
 	}
+	schemaEntry, found := snapshot[schemaConfigFile]
+	if !found || !schemaEntry.Mode.IsRegular() || schemaEntry.Digest != schemaEffect.Resource.Digest {
+		return fmt.Errorf("write effect does not match the observed materialized schema file")
+	}
 	return nil
 }
 
 // validatePublishedTree confirms the target root contains exactly
-// virgil.json and AGENTS.md — the only durable objects virgil.init or
-// virgil.new (without an active change yet drafted) ever publishes.
+// virgil.json, AGENTS.md, and the materialized schema under docs/ — the
+// only durable objects virgil.init or virgil.new (without an active change
+// yet drafted) ever publishes.
 func validatePublishedTree(targetRoot string, snapshot map[string]snapshotEntry) error {
-	if len(snapshot) != 2 {
-		return fmt.Errorf("published target contains %d file/symlink entries, want exactly 2 (virgil.json, AGENTS.md)", len(snapshot))
+	if len(snapshot) != 3 {
+		return fmt.Errorf("published target contains %d file/symlink entries, want exactly 3 (virgil.json, AGENTS.md, docs/.virgil-schema.json)", len(snapshot))
 	}
 	entry, found := snapshot[protocol.VirgilConfigFile]
 	if !found || !entry.Mode.IsRegular() {
@@ -519,7 +532,16 @@ func validatePublishedTree(targetRoot string, snapshot map[string]snapshotEntry)
 	if !found || !agentsEntry.Mode.IsRegular() {
 		return fmt.Errorf("published target file AGENTS.md is missing or has the wrong kind")
 	}
-	return validateExactTree(targetRoot, map[string]string{protocol.VirgilConfigFile: "file", agentsDocFile: "file"})
+	schemaEntry, found := snapshot[schemaConfigFile]
+	if !found || !schemaEntry.Mode.IsRegular() {
+		return fmt.Errorf("published target file docs/.virgil-schema.json is missing or has the wrong kind")
+	}
+	return validateExactTree(targetRoot, map[string]string{
+		protocol.VirgilConfigFile: "file",
+		agentsDocFile:             "file",
+		"docs":                    "dir",
+		schemaConfigFile:          "file",
+	})
 }
 
 func validatePublishedAuthority(registry *contracts.Registry, targetRoot string, request protocol.OperationRequest, result protocol.OperationResult) error {
@@ -634,13 +656,18 @@ func validateExactTree(targetRoot string, expected map[string]string) error {
 }
 
 const (
-	frontmatterOpen = "---\n"
-	// frontmatterOpenLegacy is the pre-existing open marker used by
-	// documents written before Virgil switched to standard YAML-style
-	// frontmatter fences. It is accepted on read only, mirroring
-	// repodocs.parseDocFrontmatter's backward compatibility.
-	frontmatterOpenLegacy = "---json\n"
-	frontmatterClose      = "\n---\n\n"
+	frontmatterOpen  = "<!-- virgil:meta\n"
+	frontmatterClose = "\n-->\n\n"
+
+	// frontmatterOpenLegacyJSON and frontmatterOpenLegacyYAML are prior open
+	// markers used by documents written before Virgil switched to the
+	// HTML-comment frontmatter fence. They are accepted on read only,
+	// mirroring repodocs.parseDocFrontmatter's backward compatibility. Both
+	// legacy formats share the same closing delimiter,
+	// frontmatterCloseLegacy.
+	frontmatterOpenLegacyJSON = "---json\n" // pre-rc.7
+	frontmatterOpenLegacyYAML = "---\n"     // rc.7 (commit 9fe8805)
+	frontmatterCloseLegacy    = "\n---\n\n"
 )
 
 // splitFrontmatterForOracle is the independent, oracle-side counterpart of
@@ -648,20 +675,23 @@ const (
 // bytes without importing the internal repodocs package, so the T0 oracle
 // observes the artifact file exactly as any other reader would.
 func splitFrontmatterForOracle(raw []byte) ([]byte, []byte, error) {
-	openMarker := frontmatterOpen
-	if !bytes.HasPrefix(raw, []byte(openMarker)) {
-		if bytes.HasPrefix(raw, []byte(frontmatterOpenLegacy)) {
-			openMarker = frontmatterOpenLegacy
-		} else {
-			return nil, nil, fmt.Errorf("artifact file does not start with %q", frontmatterOpen)
-		}
+	var openMarker, closeMarker string
+	switch {
+	case bytes.HasPrefix(raw, []byte(frontmatterOpen)):
+		openMarker, closeMarker = frontmatterOpen, frontmatterClose
+	case bytes.HasPrefix(raw, []byte(frontmatterOpenLegacyJSON)):
+		openMarker, closeMarker = frontmatterOpenLegacyJSON, frontmatterCloseLegacy
+	case bytes.HasPrefix(raw, []byte(frontmatterOpenLegacyYAML)):
+		openMarker, closeMarker = frontmatterOpenLegacyYAML, frontmatterCloseLegacy
+	default:
+		return nil, nil, fmt.Errorf("artifact file does not start with %q", frontmatterOpen)
 	}
 	rest := raw[len(openMarker):]
-	closeIndex := bytes.Index(rest, []byte(frontmatterClose))
+	closeIndex := bytes.Index(rest, []byte(closeMarker))
 	if closeIndex < 0 {
 		return nil, nil, fmt.Errorf("artifact file has no closing frontmatter marker")
 	}
-	return rest[:closeIndex], rest[closeIndex+len(frontmatterClose):], nil
+	return rest[:closeIndex], rest[closeIndex+len(closeMarker):], nil
 }
 
 // ---------------------------------------------------------------------------

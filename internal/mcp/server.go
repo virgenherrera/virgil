@@ -292,10 +292,13 @@ func (s *Server) invokeAndRespond(id json.RawMessage, envelope wire.InvokeEnvelo
 		return s.toolError(id, err)
 	}
 
-	simple := SimplifyResult(result)
-
-	// Refresh state after mutations so subsequent calls see updated state.
+	// Refresh state after mutations so subsequent calls see updated state,
+	// and so the success message can detect a completed planning boundary
+	// (all tasks at status "refined") using post-operation state.
 	s.refreshState()
+
+	planningComplete := s.state != nil && s.state.PlanningComplete
+	simple := SimplifyResult(result, planningComplete)
 
 	isError := simple.Status == "error" || simple.Status == "blocked"
 	return s.jsonTextResult(id, simple, isError)

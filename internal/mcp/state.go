@@ -16,7 +16,7 @@ import (
 // republishes in docs/ and each of its kind subdirectories after every
 // virgil.write. It carries no frontmatter and must be excluded from doc and
 // task counts here, mirroring the skip in repodocs' own index scan.
-const indexFileName = "index.md"
+const indexFileName = "README.md"
 
 // ProjectState is the simplified view of the Virgil project at targetRoot,
 // derived from virgil.json and the doc files under docs/.
@@ -27,6 +27,13 @@ type ProjectState struct {
 	RequirementCount int
 	DesignCount      int
 	TaskCounts       TaskCounts
+	// PlanningComplete is true when the project has at least one task and
+	// every task is at status "refined" -- i.e. planning is done and any
+	// further action (implementation) requires explicit human authorization.
+	PlanningComplete bool
+	// Notice carries planningCompleteNotice when PlanningComplete is true,
+	// and is empty otherwise.
+	Notice string
 }
 
 // TaskCounts tracks the number of tasks by status.
@@ -36,6 +43,19 @@ type TaskCounts struct {
 	Active   int
 	Done     int
 	Released int
+}
+
+// Total returns the total number of tasks across all statuses.
+func (tc TaskCounts) Total() int {
+	return tc.Backlog + tc.Refined + tc.Active + tc.Done + tc.Released
+}
+
+// AllRefined reports whether the project has at least one task and every
+// task is at status "refined". This is the planning-complete condition:
+// the knowledge base is fully refined and implementation requires explicit
+// human authorization before proceeding.
+func (tc TaskCounts) AllRefined() bool {
+	return tc.Total() > 0 && tc.Refined == tc.Total()
 }
 
 // LoadState reads virgil.json from targetRoot and scans docs/ to derive the
@@ -71,6 +91,10 @@ func LoadState(targetRoot string) (*ProjectState, error) {
 	state.RequirementCount = countDocFiles(targetRoot, "requirements")
 	state.DesignCount = countDocFiles(targetRoot, "design")
 	state.TaskCounts = countTasksByStatus(targetRoot)
+	state.PlanningComplete = state.TaskCounts.AllRefined()
+	if state.PlanningComplete {
+		state.Notice = planningCompleteNotice
+	}
 
 	return state, nil
 }
@@ -127,27 +151,35 @@ func countTasksByStatus(targetRoot string) TaskCounts {
 }
 
 // extractDocFrontmatter parses the JSON frontmatter from a doc file
-// delimited by "---\n" and "\n---\n\n". The legacy "---json\n" open marker
-// is also accepted so documents written before the frontmatter fence
-// migration (to a marker VS Code's markdown preview recognizes as YAML
-// frontmatter) continue to parse.
+// delimited by "<!-- virgil:meta\n" and "\n-->\n\n". Two legacy open markers
+// are also accepted, each paired with the legacy close marker
+// "\n---\n\n", so documents written before the HTML-comment frontmatter
+// migration continue to parse: "---json\n" (pre-rc.7) and "---\n" (rc.7).
+// None of the three open markers is a prefix of another, so detection is
+// unambiguous.
 func extractDocFrontmatter(raw []byte) (protocol.DocFrontmatter, error) {
-	const openMarker = "---\n"
-	const openMarkerLegacy = "---json\n"
-	const closeMarker = "\n---\n\n"
+	const frontmatterOpen = "<!-- virgil:meta\n"
+	const frontmatterClose = "\n-->\n\n"
+	const frontmatterOpenLegacyJSON = "---json\n" // pre-rc.7
+	const frontmatterOpenLegacyYAML = "---\n"     // rc.7 (commit 9fe8805)
+	const frontmatterCloseLegacy = "\n---\n\n"
 
 	content := string(raw)
-	marker := openMarker
-	if len(content) < len(marker) || content[:len(marker)] != marker {
-		marker = openMarkerLegacy
-		if len(content) < len(marker) || content[:len(marker)] != marker {
-			return protocol.DocFrontmatter{}, fmt.Errorf("missing frontmatter open marker")
-		}
+	marker, closer := frontmatterOpen, frontmatterClose
+	switch {
+	case len(content) >= len(frontmatterOpen) && content[:len(frontmatterOpen)] == frontmatterOpen:
+		// marker, closer already set to the current format.
+	case len(content) >= len(frontmatterOpenLegacyJSON) && content[:len(frontmatterOpenLegacyJSON)] == frontmatterOpenLegacyJSON:
+		marker, closer = frontmatterOpenLegacyJSON, frontmatterCloseLegacy
+	case len(content) >= len(frontmatterOpenLegacyYAML) && content[:len(frontmatterOpenLegacyYAML)] == frontmatterOpenLegacyYAML:
+		marker, closer = frontmatterOpenLegacyYAML, frontmatterCloseLegacy
+	default:
+		return protocol.DocFrontmatter{}, fmt.Errorf("missing frontmatter open marker")
 	}
 	rest := content[len(marker):]
 	closeIdx := -1
-	for i := 0; i <= len(rest)-len(closeMarker); i++ {
-		if rest[i:i+len(closeMarker)] == closeMarker {
+	for i := 0; i <= len(rest)-len(closer); i++ {
+		if rest[i:i+len(closer)] == closer {
 			closeIdx = i
 			break
 		}

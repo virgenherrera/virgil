@@ -23,3 +23,15 @@ var canonicalAssets embed.FS
 func CanonicalAssets() fs.FS {
 	return canonicalAssets
 }
+
+// VirgilConfigSchemaAssetPath is the embedded path of the canonical
+// virgil.json JSON Schema. virgil.init materializes its bytes into
+// managed_root so editors can resolve virgil.json's $schema pointer without
+// network access.
+const VirgilConfigSchemaAssetPath = "docs/slices/01-planning/schemas/virgil-config.schema.json"
+
+// VirgilConfigSchema returns the raw bytes of the canonical virgil.json JSON
+// Schema, as embedded in canonicalAssets.
+func VirgilConfigSchema() ([]byte, error) {
+	return fs.ReadFile(canonicalAssets, VirgilConfigSchemaAssetPath)
+}

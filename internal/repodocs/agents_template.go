@@ -69,20 +69,20 @@ Documents are organized by kind under ` + backtick + `docs/` + backtick + `:
 virgil.json                            # Project config (auto-generated)
 AGENTS.md                              # This file (auto-generated)
 docs/
-  index.md                             # Navigation index (auto-generated)
+  README.md                            # Navigation index (auto-generated)
   idea.md                              # Single project-level idea
   requirements/
-    index.md                           # Navigation index (auto-generated)
+    README.md                          # Navigation index (auto-generated)
     {category}-{slug}.md               # Requirement documents
   design/
-    index.md                           # Navigation index (auto-generated)
+    README.md                          # Navigation index (auto-generated)
     {category}-{slug}.md               # Design documents
   tasks/
-    index.md                           # Navigation index (auto-generated)
+    README.md                          # Navigation index (auto-generated)
     {slug}.md                          # Task documents with lifecycle
 ` + tripleBacktick + `
 
-Every ` + backtick + `index.md` + backtick + ` is regenerated in full after each ` + backtick + `virgil.write` + backtick + ` call. **DO NOT** edit ` + backtick + `index.md` + backtick + ` files manually — they carry no content of their own and any manual edit is overwritten on the next write.
+Every ` + backtick + `README.md` + backtick + ` is regenerated in full after each ` + backtick + `virgil.write` + backtick + ` call. **DO NOT** edit ` + backtick + `README.md` + backtick + ` files manually — they carry no content of their own and any manual edit is overwritten on the next write.
 
 ### Document Kinds
 
@@ -103,12 +103,22 @@ backlog → refined → active → done → released
 
 Backward transitions are allowed (` + backtick + `refined → backlog` + backtick + `, ` + backtick + `active → refined` + backtick + `, ` + backtick + `done → active` + backtick + `). ` + backtick + `released` + backtick + ` is terminal.
 
+### Transition Guidance — Planning Boundary
+
+Virgil manages **planning only**. When every task in the project reaches status ` + backtick + `refined` + backtick + `, planning is complete: ` + backtick + `virgil_status` + backtick + `, ` + backtick + `virgil_write` + backtick + `, and ` + backtick + `virgil_transition` + backtick + ` will all report this via a ` + backtick + `PlanningComplete` + backtick + ` signal and an explicit notice.
+
+That signal is not informational trivia — it is a stop condition:
+
+- **DO NOT** transition a task to ` + backtick + `active` + backtick + ` or begin writing implementation code as a result of seeing all tasks at ` + backtick + `refined` + backtick + `. That transition requires an explicit, direct instruction from the human in the current conversation.
+- **DO NOT** infer authorization to implement from the presence of refined tasks, a completed plan, or an absence of objection. Silence is not authorization.
+- **DO** stop and report the planning-complete state to the human, then wait for them to explicitly direct the next step (e.g. "start implementing task X", "move task X to active").
+
 ### Document Format
 
 Each ` + backtick + `.md` + backtick + ` file has JSON frontmatter:
 
 ` + tripleBacktick + `
----
+<!-- virgil:meta
 {
   "schema": "virgil.dev/doc/v1alpha1",
   "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
@@ -124,7 +134,7 @@ Each ` + backtick + `.md` + backtick + ` file has JSON frontmatter:
   "created_at": "2025-01-01T00:00:00Z",
   "updated_at": "2025-01-01T00:00:00Z"
 }
----
+-->
 
 # Content here
 ` + tripleBacktick + `
@@ -133,7 +143,8 @@ Each ` + backtick + `.md` + backtick + ` file has JSON frontmatter:
 
 - **DO NOT** modify files in ` + backtick + `docs/` + backtick + ` directly — always go through Virgil
 - **DO NOT** delete or rename document files
-- **DO NOT** implement code after tasks reach ` + backtick + `done` + backtick + ` — implementation requires explicit human instruction
+- **DO NOT** write implementation code once all tasks reach ` + backtick + `refined` + backtick + ` (planning complete) or ` + backtick + `done` + backtick + ` — implementation ALWAYS requires an explicit, direct instruction from the human, given in the current conversation. A completed plan is not that instruction.
+- **DO NOT** treat ` + backtick + `virgil_status` + backtick + ` reporting ` + backtick + `PlanningComplete: true` + backtick + ` as permission to proceed — treat it as a signal to stop and report back to the human
 - **DO** read ` + backtick + `docs/` + backtick + ` files for context (RAG-friendly)
 - **DO** use ` + backtick + `virgil.write` + backtick + ` to create and update documents
 - **DO** use ` + backtick + `virgil.transition` + backtick + ` to advance task status

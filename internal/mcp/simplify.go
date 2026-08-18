@@ -21,9 +21,17 @@ type SimpleResult struct {
 	Error       string   `json:"error,omitempty"`
 }
 
+// planningCompleteNotice is appended to success messages from virgil_write
+// and virgil_transition when the operation leaves ALL project tasks at
+// status "refined". It reinforces the planning boundary: Virgil manages
+// planning only, and implementation requires explicit human authorization.
+const planningCompleteNotice = "Planning complete. Implementation requires explicit human authorization."
+
 // SimplifyResult converts a full wire.InvokeResult into a SimpleResult
-// for agent consumption.
-func SimplifyResult(result wire.InvokeResult) SimpleResult {
+// for agent consumption. planningComplete should reflect the project's
+// task state AFTER the operation (i.e. computed from refreshed state) --
+// when true, a planning-complete notice is appended to success messages.
+func SimplifyResult(result wire.InvokeResult, planningComplete bool) SimpleResult {
 	r := result.Result
 
 	simple := SimpleResult{
@@ -42,7 +50,7 @@ func SimplifyResult(result wire.InvokeResult) SimpleResult {
 	// Build human-readable message from status and diagnostics.
 	switch r.Status {
 	case "success":
-		simple.Message = formatSuccessMessage(r.Operation, r.DerivedStep)
+		simple.Message = formatSuccessMessage(r.Operation, r.DerivedStep, planningComplete)
 	case "needs_input":
 		simple.Message = "Operation needs additional input."
 	case "blocked":
@@ -68,17 +76,27 @@ func SimplifyResult(result wire.InvokeResult) SimpleResult {
 	return simple
 }
 
-func formatSuccessMessage(operation, derivedStep string) string {
+func formatSuccessMessage(operation, derivedStep string, planningComplete bool) string {
+	var msg string
 	switch operation {
 	case "virgil.init":
-		return "Project initialized. Ready to write documents."
+		msg = "Project initialized. Ready to write documents."
 	case "virgil.write":
-		return "Document written successfully."
+		msg = "Document written successfully."
 	case "virgil.transition":
-		return "Task status updated."
+		msg = "Task status updated."
 	default:
-		return fmt.Sprintf("Operation %s completed.", operation)
+		msg = fmt.Sprintf("Operation %s completed.", operation)
 	}
+
+	// Only virgil.write and virgil.transition can leave the task set at
+	// "all refined" as a direct result of the call, but the check is
+	// operation-agnostic: it fires whenever the caller reports the
+	// post-operation state as planning-complete.
+	if planningComplete {
+		msg = msg + "\n" + planningCompleteNotice
+	}
+	return msg
 }
 
 func extractDiagnosticConditions(diagnostics []protocol.Diagnostic) string {
