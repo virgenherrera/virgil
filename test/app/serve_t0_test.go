@@ -125,9 +125,21 @@ func (s *serveSession) wait() error {
 	return s.waitErr
 }
 
-// startServeSession builds the public binary and launches `virgil serve` as
-// a subprocess rooted at dir, with a clean environment. The subprocess is
-// torn down automatically via t.Cleanup.
+// startServeSession launches `virgil serve` with dir doubling as both the
+// project root (cwd) and HOME. This is sufficient for every scenario that
+// only needs virgil.init's $schema pointer to resolve to *some* isolated
+// path; scenarios that need a HOME independent of the project root (e.g. one
+// shared with a prior `virgil install` run) should call
+// startServeSessionWithHome directly instead. The subprocess is torn down
+// automatically via t.Cleanup.
+func startServeSession(t *testing.T, dir string) *serveSession {
+	t.Helper()
+	return startServeSessionWithHome(t, dir, dir)
+}
+
+// startServeSessionWithHome builds the public binary and launches `virgil
+// serve` as a subprocess rooted at dir (cwd), with HOME set independently to
+// homeDir and an otherwise clean environment.
 //
 // When the outer `go test` process runs with GOCOVERDIR set, the binary is
 // instead built with Go's binary coverage instrumentation
@@ -137,14 +149,14 @@ func (s *serveSession) wait() error {
 // inside a spawned subprocess (see https://go.dev/blog/integration-test-coverage):
 // a plain `go test -coverpkg=./internal/mcp/...` cannot see this package at
 // all, since this T0 black-box test file never imports it directly.
-func startServeSession(t *testing.T, dir string) *serveSession {
+func startServeSessionWithHome(t *testing.T, dir, homeDir string) *serveSession {
 	t.Helper()
 	binary := buildServeBinary(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	cmd := exec.CommandContext(ctx, binary, "serve")
 	cmd.Dir = dir
-	env := appEnvironment()
+	env := appEnvironment(homeDir)
 	if coverDir := os.Getenv("GOCOVERDIR"); coverDir != "" {
 		env = append(env, "GOCOVERDIR="+coverDir)
 	}

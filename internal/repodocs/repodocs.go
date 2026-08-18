@@ -38,7 +38,6 @@ import (
 	"time"
 
 	"github.com/gowebpki/jcs"
-	virgil "github.com/virgenherrera/virgil"
 	"github.com/virgenherrera/virgil/internal/protocol"
 )
 
@@ -46,13 +45,6 @@ const (
 	managedRoot      = "docs"
 	virgilConfigFile = protocol.VirgilConfigFile
 	agentsFile       = "AGENTS.md"
-
-	// schemaConfigRelPath is where virgil.init materializes the canonical
-	// virgil.json JSON Schema, relative to targetRoot (and, since virgil.json
-	// itself lives at targetRoot, also relative to virgil.json). It lives
-	// under managedRoot as a dot-file so it does not collide with any
-	// consumer-owned or virgil.write-managed doc.
-	schemaConfigRelPath = managedRoot + "/.virgil-schema.json"
 
 	configSchemaVersion = "virgil.dev/config/v1alpha1"
 
@@ -80,6 +72,30 @@ const (
 	frontmatterOpenLegacyYAML = "---\n"     // rc.7 (commit 9fe8805)
 	frontmatterCloseLegacy    = "\n---\n\n"
 )
+
+// schemaInstallDir and schemaFileName mirror cmd/virgil/install.go's own
+// constants of the same name: `virgil install` materializes the canonical
+// virgil.json JSON Schema once, under the user's home directory, rather than
+// per project. virgil.init points virgil.json's $schema at that shared,
+// install-time path instead of writing its own per-project copy.
+const (
+	schemaInstallDir = ".virgil/schemas"
+	schemaFileName   = "virgil-config.schema.json"
+)
+
+// installedSchemaPath resolves the absolute path virgil.init points
+// virgil.json's $schema field at:
+// {homeDir}/.virgil/schemas/virgil-config.schema.json. It fails closed
+// (typed INTERNAL_ERROR) when the home directory cannot be resolved, since a
+// virgil.json with no usable $schema pointer would silently degrade editor
+// autocompletion instead of surfacing the problem.
+func installedSchemaPath(operation string) (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", typedError("INTERNAL_ERROR", operation, "cannot resolve home directory for the installed virgil.json schema", err)
+	}
+	return filepath.Join(homeDir, filepath.FromSlash(schemaInstallDir), schemaFileName), nil
+}
 
 // SchemaValidator validates JSON bytes against a schema identified by its
 // canonical URI. The caller provides the concrete implementation so that
@@ -189,6 +205,10 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 	resolved := resolvedContext(request, resolvedTarget)
 	cfg, cfgBytes, err := buildConfig(request, digest, createdAt, resolved)
 	if err != nil {
+		var typed *Error
+		if errors.As(err, &typed) {
+			return protocol.OperationResult{}, err
+		}
 		return protocol.OperationResult{}, typedError("INTERNAL_ERROR", request.Operation, "cannot encode virgil.json", err)
 	}
 
@@ -208,20 +228,7 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 		}
 	}
 
-	schemaBytes, err := virgil.VirgilConfigSchema()
-	if err != nil {
-		return protocol.OperationResult{}, typedError("INTERNAL_ERROR", request.Operation, "cannot load embedded virgil.json schema", err)
-	}
-	if err := publishSchemaFile(root, schemaConfigRelPath, schemaBytes); err != nil {
-		var publicationError *publishError
-		if errors.As(err, &publicationError) {
-			// Materialized schema already exists (e.g., previous partial init) — acceptable, continue.
-		} else {
-			return protocol.OperationResult{}, err
-		}
-	}
-
-	result := initSuccessResult(request, cfg, cfgBytes, agentsBytes, schemaBytes)
+	result := initSuccessResult(request, cfg, cfgBytes, agentsBytes)
 	if err := validateConfigPublication(schema, cfgBytes, result); err != nil {
 		return protocol.OperationResult{}, err
 	}
@@ -245,8 +252,12 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 }
 
 func buildConfig(request protocol.OperationRequest, digest, createdAt string, resolved protocol.Context) (protocol.VirgilConfig, []byte, error) {
+	schemaPath, err := installedSchemaPath(request.Operation)
+	if err != nil {
+		return protocol.VirgilConfig{}, nil, err
+	}
 	cfg := protocol.VirgilConfig{
-		Schema:          schemaConfigRelPath,
+		Schema:          schemaPath,
 		SchemaVersion:   configSchemaVersion,
 		ProtocolVersion: request.ProtocolVersion,
 		ProjectID:       request.ProjectRef.ProjectID,
@@ -271,10 +282,9 @@ func buildConfig(request protocol.OperationRequest, digest, createdAt string, re
 	return cfg, cfgBytes, nil
 }
 
-func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilConfig, cfgBytes, agentsBytes, schemaBytes []byte) protocol.OperationResult {
+func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilConfig, cfgBytes, agentsBytes []byte) protocol.OperationResult {
 	cfgResource := withDigest(protocol.ResourceRef{URI: virgilConfigFile}, cfgBytes)
 	agentsResource := withDigest(protocol.ResourceRef{URI: agentsFile}, agentsBytes)
-	schemaResource := withDigest(protocol.ResourceRef{URI: schemaConfigRelPath}, schemaBytes)
 	resolved := cfg.ResolvedContext
 	return protocol.OperationResult{
 		ProtocolVersion:  request.ProtocolVersion,
@@ -290,7 +300,6 @@ func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilCon
 		Effects: []protocol.EffectRecord{
 			writeEffect(request, "virgil-config", cfgResource, cfgResource, len(cfgBytes)),
 			writeEffect(request, "agents-doc", agentsResource, agentsResource, len(agentsBytes)),
-			writeEffect(request, "config-schema", schemaResource, schemaResource, len(schemaBytes)),
 		},
 		Next: protocol.NextAction{
 			Operation: "virgil.write",
@@ -449,46 +458,6 @@ func publishAgents(root *os.Root, content []byte) error {
 	}
 	published = true
 	return syncDirectory(root, ".")
-}
-
-// publishSchemaFile durably materializes the canonical virgil.json JSON
-// Schema at relative (under managedRoot) using create-exclusive-and-rename,
-// creating the parent directory chain if it does not already exist. A
-// pre-existing schema file (e.g. from a crashed prior init) is reported as a
-// *publishError so Init can treat it as an acceptable no-op, mirroring
-// publishAgents: the embedded schema content is fixed per binary build, so
-// there is nothing to reconcile.
-func publishSchemaFile(root *os.Root, relative string, content []byte) error {
-	if info, statErr := root.Lstat(relative); statErr == nil {
-		if !info.Mode().IsRegular() {
-			return typedError("CORRUPT_LEDGER", relative, "materialized schema path is not a regular file", nil)
-		}
-		return &publishError{Path: relative, Cause: fs.ErrExist}
-	} else if !errors.Is(statErr, fs.ErrNotExist) {
-		return typedError("ATOMICITY_UNSUPPORTED", relative, "cannot stat materialized schema file", statErr)
-	}
-	parentDir := path.Dir(relative)
-	if err := createDirectoryChain(root, parentDir); err != nil {
-		return err
-	}
-	if err := syncDirectoryChain(root, parentDir); err != nil {
-		return err
-	}
-	tempName := path.Join(parentDir, ".schema-"+stableID("tmp", relative, fmt.Sprintf("%x", sha256.Sum256(content))))
-	if err := writeExclusive(root, tempName, content); err != nil {
-		return err
-	}
-	published := false
-	defer func() {
-		if !published {
-			_ = root.Remove(tempName)
-		}
-	}()
-	if err := root.Rename(tempName, relative); err != nil {
-		return typedError("ATOMICITY_UNSUPPORTED", relative, "cannot atomically publish schema file", err)
-	}
-	published = true
-	return syncDirectory(root, parentDir)
 }
 
 // rewriteConfig durably replaces an existing virgil.json using

@@ -223,15 +223,6 @@
         "process_id": "process-a"
       },
       {
-        "step_id": "schema-write",
-        "kind": "effect_observed",
-        "effect_kind": "write",
-        "policy_decision": "authorized",
-        "occurred": true,
-        "resource_pattern": "docs/.virgil-schema.json",
-        "process_id": "process-a"
-      },
-      {
         "step_id": "result-a",
         "kind": "operation_decided",
         "operation": "virgil.init",
@@ -307,10 +298,6 @@
       },
       {
         "before": "agents-write",
-        "after": "schema-write"
-      },
-      {
-        "before": "schema-write",
         "after": "result-a"
       },
       {
@@ -349,8 +336,8 @@
   "expected_effects": [
     {
       "kind": "write",
-      "min_count": 3,
-      "max_count": 3,
+      "min_count": 2,
+      "max_count": 2,
       "field_equals": {
         "/request_id": "init-retry-001-a",
         "/policy_decision": "authorized",
@@ -371,8 +358,7 @@
     "mode": "exact",
     "allowed_paths": [
       "virgil.json",
-      "AGENTS.md",
-      "docs/.virgil-schema.json"
+      "AGENTS.md"
     ],
     "expected_changes": [
       {
@@ -381,10 +367,6 @@
       },
       {
         "path": "AGENTS.md",
-        "change_type": "added"
-      },
-      {
-        "path": "docs/.virgil-schema.json",
         "change_type": "added"
       }
     ]
@@ -398,8 +380,7 @@
         "mode": "exact",
         "allowed_paths": [
           "virgil.json",
-          "AGENTS.md",
-          "docs/.virgil-schema.json"
+          "AGENTS.md"
         ],
         "expected_changes": [
           {
@@ -409,24 +390,13 @@
           {
             "path": "AGENTS.md",
             "change_type": "added"
-          },
-          {
-            "path": "docs/.virgil-schema.json",
-            "change_type": "added"
           }
         ]
       },
       "store_diff": {
-        "mode": "exact",
-        "allowed_paths": [
-          "docs/.virgil-schema.json"
-        ],
-        "expected_changes": [
-          {
-            "path": "docs/.virgil-schema.json",
-            "change_type": "added"
-          }
-        ]
+        "mode": "empty",
+        "allowed_paths": [],
+        "expected_changes": []
       },
       "expected_events": [],
       "expected_artifacts": []
@@ -481,6 +451,6 @@
   },
   "expected_outcome": {
     "status": "passed",
-    "reason": "A fresh process replays init with the same canonical intent (publishing virgil.json, AGENTS.md, and the materialized schema once) and creates no duplicate state."
+    "reason": "A fresh process replays init with the same canonical intent (publishing virgil.json and AGENTS.md once) and creates no duplicate state."
   }
 }

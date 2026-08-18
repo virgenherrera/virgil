@@ -68,13 +68,12 @@ func runCLI(t *testing.T, homeDir string, args ...string) (stdout, stderr string
 	return outBuf.String(), errBuf.String(), exitCode
 }
 
-// buildIsolatedEnv builds a subprocess environment from appEnvironment()
-// (deterministic LANG/LC_ALL/TZ) plus an isolated HOME and a PATH that
-// exposes the freshly built binary's directory so PATH-based lookups inside
-// the subprocess resolve to it.
+// buildIsolatedEnv builds a subprocess environment from appEnvironment(homeDir)
+// (deterministic LANG/LC_ALL/TZ/HOME) plus a PATH that exposes the freshly
+// built binary's directory so PATH-based lookups inside the subprocess
+// resolve to it.
 func buildIsolatedEnv(homeDir, binDir string) []string {
-	env := append([]string{}, appEnvironment()...)
-	env = append(env, "HOME="+homeDir)
+	env := append([]string{}, appEnvironment(homeDir)...)
 	env = append(env, "PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	return env
 }
@@ -785,5 +784,113 @@ func TestApp_T0InstallReinstallSameVersion(t *testing.T) {
 	sort.Strings(wantCommands)
 	if strings.Join(gotCommands, ",") != strings.Join(wantCommands, ",") {
 		t.Fatalf("state.json manifest.claude-code.commands = %v, want %v (should remain unchanged)", claudeManifest.Commands, wantCommands)
+	}
+}
+
+// installedSchemaPath returns the path `virgil install` materializes the
+// canonical virgil.json JSON Schema at, mirroring
+// cmd/virgil/install.go's own schemaInstallDir/schemaFileName constants.
+// Declared locally rather than imported from cmd/virgil so this file stays a
+// black-box consumer of the installed layout.
+func installedSchemaPath(homeDir string) string {
+	return filepath.Join(homeDir, ".virgil", "schemas", "virgil-config.schema.json")
+}
+
+// TestApp_T0InstallMaterializesSchema proves that `virgil install` writes
+// the embedded virgil.json JSON Schema to
+// ~/.virgil/schemas/virgil-config.schema.json, independent of which (if
+// any) AI agents are detected: the schema is a Virgil install-time asset,
+// not a per-agent one.
+func TestApp_T0InstallMaterializesSchema(t *testing.T) {
+	homeDir := t.TempDir()
+
+	stdout, stderr, exitCode := runCLI(t, homeDir, "install")
+	if exitCode != 0 {
+		t.Fatalf("virgil install exited %d; stdout=%q stderr=%q", exitCode, stdout, stderr)
+	}
+
+	schemaPath := installedSchemaPath(homeDir)
+	data, err := os.ReadFile(schemaPath)
+	if err != nil {
+		t.Fatalf("read materialized schema at %s: %v", schemaPath, err)
+	}
+
+	var schema map[string]any
+	if err := json.Unmarshal(data, &schema); err != nil {
+		t.Fatalf("materialized schema at %s is not valid JSON: %v; content=%q", schemaPath, err, string(data))
+	}
+	if _, ok := schema["$schema"]; !ok {
+		t.Fatalf("materialized schema at %s missing top-level %q key, not a real JSON Schema document: %v", schemaPath, "$schema", schema)
+	}
+}
+
+// virgilConfigFile mirrors the on-disk shape of virgil.json's $schema
+// pointer. Declared locally rather than imported from internal/protocol so
+// this file stays a black-box consumer of the persisted JSON contract.
+type virgilConfigFile struct {
+	Schema string `json:"$schema"`
+}
+
+// TestApp_T0InitReferencesInstalledSchema proves that after `virgil install`
+// materializes the canonical schema under a given HOME, a `virgil_init` call
+// (via the serve subprocess + JSON-RPC, sharing that same HOME) points
+// virgil.json's $schema field at the installed path rather than writing its
+// own per-project copy, and that no docs/.virgil-schema.json is published in
+// the project.
+func TestApp_T0InitReferencesInstalledSchema(t *testing.T) {
+	homeDir := t.TempDir()
+
+	stdout, stderr, exitCode := runCLI(t, homeDir, "install")
+	if exitCode != 0 {
+		t.Fatalf("virgil install exited %d; stdout=%q stderr=%q", exitCode, stdout, stderr)
+	}
+	schemaPath := installedSchemaPath(homeDir)
+	if _, err := os.Stat(schemaPath); err != nil {
+		t.Fatalf("prerequisite install did not materialize schema at %s: %v", schemaPath, err)
+	}
+
+	projectDir := t.TempDir()
+	session := startServeSessionWithHome(t, projectDir, homeDir)
+	session.initialize(t)
+
+	resp := session.call(t, 2, "tools/call", map[string]any{
+		"name": "virgil_init",
+		"arguments": map[string]any{
+			"project_id": "schema-pointer-project",
+		},
+	})
+	result := decodeToolCallResult(t, resp)
+	if result.IsError {
+		t.Fatalf("virgil_init returned isError=true: %s", result.Content[0].Text)
+	}
+
+	configPath := filepath.Join(projectDir, "virgil.json")
+	configData, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read %s: %v", configPath, err)
+	}
+	var config virgilConfigFile
+	if err := json.Unmarshal(configData, &config); err != nil {
+		t.Fatalf("parse %s: %v; content=%q", configPath, err, string(configData))
+	}
+	if config.Schema != schemaPath {
+		t.Fatalf("%s $schema = %q, want %q", configPath, config.Schema, schemaPath)
+	}
+
+	schemaData, err := os.ReadFile(config.Schema)
+	if err != nil {
+		t.Fatalf("read schema at %s referenced by virgil.json: %v", config.Schema, err)
+	}
+	var schema map[string]any
+	if err := json.Unmarshal(schemaData, &schema); err != nil {
+		t.Fatalf("schema at %s is not valid JSON: %v; content=%q", config.Schema, err, string(schemaData))
+	}
+	if _, ok := schema["$schema"]; !ok {
+		t.Fatalf("schema at %s missing top-level %q key, not a real JSON Schema document: %v", config.Schema, "$schema", schema)
+	}
+
+	legacySchemaPath := filepath.Join(projectDir, "docs", ".virgil-schema.json")
+	if _, err := os.Stat(legacySchemaPath); !os.IsNotExist(err) {
+		t.Fatalf("expected no per-project schema at %s, stat returned: %v", legacySchemaPath, err)
 	}
 }

@@ -455,18 +455,12 @@ func changedNonDirectoryEntries(before, after map[string]snapshotEntry) map[stri
 // public constant for the config file's own fixed name.
 const agentsDocFile = "AGENTS.md"
 
-// schemaConfigFile is the fixed path (relative to targetRoot) where
-// virgil.init materializes the canonical virgil.json JSON Schema. It is an
-// independent oracle-side counterpart of repodocs' own schemaConfigRelPath
-// constant, deliberately not imported from the internal package under test.
-const schemaConfigFile = "docs/.virgil-schema.json"
-
 func validateFreshInitResult(request protocol.OperationRequest, result protocol.OperationResult, snapshot map[string]snapshotEntry, targetRoot string) error {
 	if result.Status != "success" || result.ReplayedFromRequest != "" || result.ResolvedContext == nil || result.Next.Operation != "virgil.write" {
 		return fmt.Errorf("virgil.init did not return the required fresh success result")
 	}
-	if len(result.Diagnostics) != 0 || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 3 {
-		return fmt.Errorf("fresh init result does not expose exactly three writes (virgil.json, AGENTS.md, docs/.virgil-schema.json) and zero events")
+	if len(result.Diagnostics) != 0 || len(result.Artifacts) != 0 || len(result.Briefs) != 0 || len(result.Events) != 0 || len(result.Effects) != 2 {
+		return fmt.Errorf("fresh init result does not expose exactly two writes (virgil.json, AGENTS.md) and zero events")
 	}
 	resolvedTarget, err := filepath.EvalSymlinks(targetRoot)
 	if err != nil {
@@ -478,7 +472,7 @@ func validateFreshInitResult(request protocol.OperationRequest, result protocol.
 		return fmt.Errorf("resolved_context does not preserve request refs with the real target binding path")
 	}
 
-	var configEffect, agentsEffect, schemaEffect *protocol.EffectRecord
+	var configEffect, agentsEffect *protocol.EffectRecord
 	for index := range result.Effects {
 		effect := &result.Effects[index]
 		switch effect.Resource.URI {
@@ -486,14 +480,12 @@ func validateFreshInitResult(request protocol.OperationRequest, result protocol.
 			configEffect = effect
 		case agentsDocFile:
 			agentsEffect = effect
-		case schemaConfigFile:
-			schemaEffect = effect
 		}
 	}
-	if configEffect == nil || agentsEffect == nil || schemaEffect == nil {
-		return fmt.Errorf("fresh init result does not report writes for virgil.json, AGENTS.md, and the materialized schema")
+	if configEffect == nil || agentsEffect == nil {
+		return fmt.Errorf("fresh init result does not report writes for virgil.json and AGENTS.md")
 	}
-	for _, effect := range []*protocol.EffectRecord{configEffect, agentsEffect, schemaEffect} {
+	for _, effect := range []*protocol.EffectRecord{configEffect, agentsEffect} {
 		if effect.Kind != "write" || !effect.Occurred || effect.PolicyDecision != "authorized" || effect.RequestID != request.RequestID ||
 			effect.CausationID != request.RequestID || effect.Capability != "artifact_store.write" || effect.Observed == nil || effect.StateBefore != nil ||
 			effect.StateAfter == nil || !reflect.DeepEqual(*effect.StateAfter, effect.Resource) {
@@ -509,20 +501,18 @@ func validateFreshInitResult(request protocol.OperationRequest, result protocol.
 	if !found || !agentsEntry.Mode.IsRegular() || agentsEntry.Digest != agentsEffect.Resource.Digest {
 		return fmt.Errorf("write effect does not match the observed AGENTS.md file")
 	}
-	schemaEntry, found := snapshot[schemaConfigFile]
-	if !found || !schemaEntry.Mode.IsRegular() || schemaEntry.Digest != schemaEffect.Resource.Digest {
-		return fmt.Errorf("write effect does not match the observed materialized schema file")
-	}
 	return nil
 }
 
 // validatePublishedTree confirms the target root contains exactly
-// virgil.json, AGENTS.md, and the materialized schema under docs/ — the
-// only durable objects virgil.init or virgil.new (without an active change
-// yet drafted) ever publishes.
+// virgil.json and AGENTS.md — the only durable objects virgil.init or
+// virgil.new (without an active change yet drafted) ever publishes. The
+// canonical virgil.json JSON Schema is materialized once, at install time,
+// under the user's home directory (see `virgil install`'s schemaStep), not
+// per project, so it is deliberately absent from this tree.
 func validatePublishedTree(targetRoot string, snapshot map[string]snapshotEntry) error {
-	if len(snapshot) != 3 {
-		return fmt.Errorf("published target contains %d file/symlink entries, want exactly 3 (virgil.json, AGENTS.md, docs/.virgil-schema.json)", len(snapshot))
+	if len(snapshot) != 2 {
+		return fmt.Errorf("published target contains %d file/symlink entries, want exactly 2 (virgil.json, AGENTS.md)", len(snapshot))
 	}
 	entry, found := snapshot[protocol.VirgilConfigFile]
 	if !found || !entry.Mode.IsRegular() {
@@ -532,15 +522,9 @@ func validatePublishedTree(targetRoot string, snapshot map[string]snapshotEntry)
 	if !found || !agentsEntry.Mode.IsRegular() {
 		return fmt.Errorf("published target file AGENTS.md is missing or has the wrong kind")
 	}
-	schemaEntry, found := snapshot[schemaConfigFile]
-	if !found || !schemaEntry.Mode.IsRegular() {
-		return fmt.Errorf("published target file docs/.virgil-schema.json is missing or has the wrong kind")
-	}
 	return validateExactTree(targetRoot, map[string]string{
 		protocol.VirgilConfigFile: "file",
 		agentsDocFile:             "file",
-		"docs":                    "dir",
-		schemaConfigFile:          "file",
 	})
 }
 
@@ -858,9 +842,14 @@ func invokeFreshProcess(ctx context.Context, registry *contracts.Registry, envel
 		return wire.InvokeResult{}, wire.ProcessObservation{}, processCapture{}, fmt.Errorf("marshal invoke envelope: %w", err)
 	}
 
+	homeDir, err := ensureFreshProcessHome(envelope.WorkspaceRoot)
+	if err != nil {
+		return wire.InvokeResult{}, wire.ProcessObservation{}, processCapture{}, fmt.Errorf("prepare fresh process HOME: %w", err)
+	}
+
 	command := exec.CommandContext(childContext, executable, "pipe")
 	command.Dir = envelope.WorkspaceRoot
-	command.Env = minimalEnvironment()
+	command.Env = minimalEnvironment(homeDir)
 	command.Stdin = bytes.NewReader(payload)
 	stdout := newLimitedBuffer(outputLimit)
 	stderr := newLimitedBuffer(outputLimit)
@@ -978,14 +967,33 @@ func effectiveLimits(limits wire.RunLimits) (time.Duration, int64, error) {
 	return timeout, output, nil
 }
 
-func minimalEnvironment() []string {
-	environment := []string{"LANG=C", "LC_ALL=C", "TZ=UTC"}
+// minimalEnvironment builds the deterministic environment each fresh T0
+// invoke process runs under. HOME is always set explicitly (never inherited)
+// because virgil.init resolves the installed virgil.json JSON Schema path
+// via os.UserHomeDir(), which fails closed if HOME is unset.
+func minimalEnvironment(homeDir string) []string {
+	environment := []string{"LANG=C", "LC_ALL=C", "TZ=UTC", "HOME=" + homeDir}
 	if runtime.GOOS == "windows" {
 		if systemRoot := os.Getenv("SYSTEMROOT"); systemRoot != "" {
 			environment = append(environment, "SYSTEMROOT="+systemRoot)
 		}
 	}
 	return environment
+}
+
+// ensureFreshProcessHome returns a deterministic HOME directory for fresh T0
+// invoke processes, deliberately a *sibling* of workspaceRoot (not nested
+// under it) so that any files a fresh process's virgil.init resolves under
+// HOME (e.g. the installed virgil.json JSON Schema path it computes, even
+// though no `virgil install` step ever runs one T0 scenario) never appear in
+// a workspaceRoot snapshot and so never affect exact-tree workspace
+// assertions. It is created if it does not already exist.
+func ensureFreshProcessHome(workspaceRoot string) (string, error) {
+	homeDir := filepath.Join(filepath.Dir(workspaceRoot), ".t0-home")
+	if err := os.MkdirAll(homeDir, 0o700); err != nil {
+		return "", err
+	}
+	return homeDir, nil
 }
 
 type limitedBuffer struct {
