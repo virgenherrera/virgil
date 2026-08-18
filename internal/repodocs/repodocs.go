@@ -825,8 +825,11 @@ func normalizeTrailingNewline(content []byte) []byte {
 }
 
 // serializeDocFile renders frontmatter and content into the on-disk
-// representation: an HTML-comment delimited JSON block followed by the
-// Markdown content body.
+// representation: an HTML-comment delimited JSON block, a breadcrumb
+// navigation blockquote, and the Markdown content body. The breadcrumb is
+// injected here (not before Write's digest computation) so it is never part
+// of frontmatter.ContentDigest, which is computed from the raw content body
+// alone.
 func serializeDocFile(frontmatter protocol.DocFrontmatter, content []byte) ([]byte, error) {
 	frontmatterBytes, err := json.MarshalIndent(frontmatter, "", "  ")
 	if err != nil {
@@ -836,8 +839,54 @@ func serializeDocFile(frontmatter protocol.DocFrontmatter, content []byte) ([]by
 	buffer.WriteString(frontmatterOpen)
 	buffer.Write(frontmatterBytes)
 	buffer.WriteString(frontmatterClose)
+	buffer.WriteString(buildBreadcrumb(frontmatter.DocKind, frontmatter.Slug, frontmatter.Category))
+	buffer.WriteString("\n\n")
 	buffer.Write(content)
 	return buffer.Bytes(), nil
+}
+
+// buildBreadcrumb renders the navigation blockquote injected between a doc
+// file's frontmatter and its content body. Since there is no regional
+// README.md (only the single docs/README.md), every nested doc kind links
+// up to "../README.md" followed by its own filename stem (the segment
+// after the category prefix is not distinguished — the full stem is used,
+// e.g. "functional-user-auth" or "implement-login"); the idea document
+// lives at docs/idea.md itself, so its breadcrumb links to the sibling
+// "README.md" with no trailing segment.
+func buildBreadcrumb(kind, slug, category string) string {
+	if kind == protocol.DocKindIdea {
+		return "> [Docs](README.md)"
+	}
+	stem := strings.TrimSuffix(path.Base(protocol.DocFileName(kind, category, slug)), ".md")
+	return "> [Docs](../README.md) / " + stem
+}
+
+// breadcrumbLinePrefix opens every string buildBreadcrumb can produce, so it
+// doubles as the marker stripBreadcrumb uses to recognize and remove an
+// injected breadcrumb from a doc file's content body when re-parsing it.
+const breadcrumbLinePrefix = "> [Docs]("
+
+// stripBreadcrumb removes a leading breadcrumb line (plus the blank line
+// that follows it) from a doc file's content body, if present. content, as
+// split out by parseDocFrontmatter, is everything after frontmatterClose --
+// which is exactly what serializeDocFile writes as breadcrumb + "\n\n" +
+// content. Without this step, re-reading an already-written doc file (e.g.
+// loadExistingDoc's digest check, or virgil.transition re-serializing
+// existing content) would treat the breadcrumb as part of the content body:
+// its digest would never match frontmatter.ContentDigest (computed in
+// Write() over the raw body alone), and any rewrite would stack a second
+// breadcrumb on top of the first. Doc files written before this feature (or
+// through a legacy frontmatter marker) never contain this prefix, so they
+// pass through unchanged.
+func stripBreadcrumb(content []byte) []byte {
+	if !bytes.HasPrefix(content, []byte(breadcrumbLinePrefix)) {
+		return content
+	}
+	lineEnd := bytes.IndexByte(content, '\n')
+	if lineEnd < 0 || lineEnd+1 >= len(content) || content[lineEnd+1] != '\n' {
+		return content
+	}
+	return content[lineEnd+2:]
 }
 
 // parseDocFrontmatter splits a doc file into its decoded JSON frontmatter
@@ -863,7 +912,7 @@ func parseDocFrontmatter(raw []byte) (protocol.DocFrontmatter, []byte, error) {
 		return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file has no closing frontmatter marker %q", closeMarker)
 	}
 	frontmatterBytes := rest[:closeIndex]
-	content := rest[closeIndex+len(closeMarker):]
+	content := stripBreadcrumb(rest[closeIndex+len(closeMarker):])
 	var frontmatter protocol.DocFrontmatter
 	decoder := json.NewDecoder(bytes.NewReader(frontmatterBytes))
 	decoder.DisallowUnknownFields()
