@@ -108,7 +108,7 @@ Backward transitions are allowed (` + backtick + `refined → backlog` + backtic
 Each ` + backtick + `.md` + backtick + ` file has JSON frontmatter:
 
 ` + tripleBacktick + `
----
+<!-- virgil:meta
 {
   "schema": "virgil.dev/doc/v1alpha1",
   "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
@@ -124,7 +124,7 @@ Each ` + backtick + `.md` + backtick + ` file has JSON frontmatter:
   "created_at": "2025-01-01T00:00:00Z",
   "updated_at": "2025-01-01T00:00:00Z"
 }
----
+-->
 
 # Content here
 ` + tripleBacktick + `

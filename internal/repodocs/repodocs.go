@@ -55,14 +55,22 @@ const (
 	schemaOperationResult = "https://schemas.virgil.dev/planning-slice1/v1alpha1/operation-result.schema.json"
 	schemaEffectRecord    = "https://schemas.virgil.dev/planning-slice1/v1alpha1/effect-record.schema.json"
 
-	frontmatterOpen = "---\n"
-	// frontmatterOpenLegacy is the pre-existing open marker used by
-	// documents written before Virgil switched to standard YAML-style
-	// frontmatter fences. It is accepted on read only so that projects
-	// with previously written docs keep working; all new writes use
-	// frontmatterOpen.
-	frontmatterOpenLegacy = "---json\n"
-	frontmatterClose      = "\n---\n\n"
+	// frontmatterOpen and frontmatterClose delimit the frontmatter fence used
+	// for every new write. An HTML comment renders as invisible in GitHub and
+	// VS Code's markdown preview, unlike a "---" fence, which both engines
+	// interpret as (and render as a table for) YAML frontmatter even though
+	// the body is JSON.
+	frontmatterOpen  = "<!-- virgil:meta\n"
+	frontmatterClose = "\n-->\n\n"
+
+	// frontmatterOpenLegacyJSON and frontmatterOpenLegacyYAML are prior open
+	// markers accepted on read only, so documents written before the
+	// HTML-comment frontmatter migration continue to parse; all new writes
+	// use frontmatterOpen. Both legacy formats share the same closing
+	// delimiter, frontmatterCloseLegacy.
+	frontmatterOpenLegacyJSON = "---json\n" // pre-rc.7
+	frontmatterOpenLegacyYAML = "---\n"     // rc.7 (commit 9fe8805)
+	frontmatterCloseLegacy    = "\n---\n\n"
 )
 
 // SchemaValidator validates JSON bytes against a schema identified by its
@@ -778,7 +786,7 @@ func normalizeTrailingNewline(content []byte) []byte {
 }
 
 // serializeDocFile renders frontmatter and content into the on-disk
-// representation: a "---" / "---" delimited JSON block followed by the
+// representation: an HTML-comment delimited JSON block followed by the
 // Markdown content body.
 func serializeDocFile(frontmatter protocol.DocFrontmatter, content []byte) ([]byte, error) {
 	frontmatterBytes, err := json.MarshalIndent(frontmatter, "", "  ")
@@ -794,25 +802,29 @@ func serializeDocFile(frontmatter protocol.DocFrontmatter, content []byte) ([]by
 }
 
 // parseDocFrontmatter splits a doc file into its decoded JSON frontmatter
-// and its content body. It accepts both the current open marker and the
-// legacy "---json\n" marker so documents written before the frontmatter
-// fence migration continue to parse.
+// and its content body. It accepts the current open marker plus two legacy
+// open markers (pre-rc.7 "---json\n" and rc.7 "---\n") so documents written
+// before the HTML-comment frontmatter migration continue to parse. None of
+// the three markers is a prefix of another, so detection is unambiguous.
 func parseDocFrontmatter(raw []byte) (protocol.DocFrontmatter, []byte, error) {
-	openMarker := frontmatterOpen
-	if !bytes.HasPrefix(raw, []byte(openMarker)) {
-		if bytes.HasPrefix(raw, []byte(frontmatterOpenLegacy)) {
-			openMarker = frontmatterOpenLegacy
-		} else {
-			return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file does not start with %q", frontmatterOpen)
-		}
+	var openMarker, closeMarker string
+	switch {
+	case bytes.HasPrefix(raw, []byte(frontmatterOpen)):
+		openMarker, closeMarker = frontmatterOpen, frontmatterClose
+	case bytes.HasPrefix(raw, []byte(frontmatterOpenLegacyJSON)):
+		openMarker, closeMarker = frontmatterOpenLegacyJSON, frontmatterCloseLegacy
+	case bytes.HasPrefix(raw, []byte(frontmatterOpenLegacyYAML)):
+		openMarker, closeMarker = frontmatterOpenLegacyYAML, frontmatterCloseLegacy
+	default:
+		return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file does not start with %q", frontmatterOpen)
 	}
 	rest := raw[len(openMarker):]
-	closeIndex := bytes.Index(rest, []byte(frontmatterClose))
+	closeIndex := bytes.Index(rest, []byte(closeMarker))
 	if closeIndex < 0 {
-		return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file has no closing frontmatter marker %q", frontmatterClose)
+		return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file has no closing frontmatter marker %q", closeMarker)
 	}
 	frontmatterBytes := rest[:closeIndex]
-	content := rest[closeIndex+len(frontmatterClose):]
+	content := rest[closeIndex+len(closeMarker):]
 	var frontmatter protocol.DocFrontmatter
 	decoder := json.NewDecoder(bytes.NewReader(frontmatterBytes))
 	decoder.DisallowUnknownFields()
