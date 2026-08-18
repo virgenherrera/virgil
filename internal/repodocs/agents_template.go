@@ -173,4 +173,212 @@ Call ` + backtick + `virgil.status` + backtick + ` at each of these points:
 - A task at ` + backtick + `refined` + backtick + ` means "fully specified and ready for implementation."
 - Do NOT leave all tasks at ` + backtick + `backlog` + backtick + ` — a completed planning phase should have all tasks at ` + backtick + `refined` + backtick + `.
 - Transitions to ` + backtick + `active` + backtick + `, ` + backtick + `done` + backtick + `, and ` + backtick + `released` + backtick + ` happen during implementation, not planning.
+
+## Document Formatting Guidelines
+
+This section documents how to format document content passed to ` + backtick + `virgil.write` + backtick + `. Applying these conventions consistently makes documents easier to navigate for both humans and other agents reading them through the knowledge base.
+
+### Mermaid Diagrams
+
+Use a diagram when it makes a structure easier to see than prose alone. Pick the diagram type by what it needs to show:
+
+| Type | Use for |
+|------|---------|
+| ` + backtick + `flowchart TD` + backtick + ` / ` + backtick + `flowchart LR` + backtick + ` | Architecture, dependency graphs, document maps |
+| ` + backtick + `sequenceDiagram` + backtick + ` | Request flows, async pipelines, interaction patterns |
+| ` + backtick + `classDiagram` + backtick + ` | Class hierarchies, interfaces, module contracts |
+| ` + backtick + `stateDiagram-v2` + backtick + ` | State machines, lifecycle transitions, workflow states |
+| ` + backtick + `erDiagram` + backtick + ` | Data models and entity relationships |
+| ` + backtick + `gantt` + backtick + ` | Sprint planning, milestones, timeline dependencies |
+| ` + backtick + `pie` + backtick + ` | Effort distribution, priority breakdowns, category proportions |
+| ` + backtick + `journey` + backtick + ` | User experience flows, stakeholder interaction paths |
+| ` + backtick + `gitgraph` + backtick + ` | Branching strategies, release workflows |
+| ` + backtick + `mindmap` + backtick + ` | Concept exploration, feature decomposition, brainstorming |
+| ` + backtick + `timeline` + backtick + ` | Chronological events, release history, roadmap milestones |
+| ` + backtick + `quadrantChart` + backtick + ` | Priority vs complexity matrices, risk assessment grids |
+| ` + backtick + `block-beta` + backtick + ` | High-level system components, infrastructure layout |
+
+**DO NOT** leave a diagram standalone — every diagram MUST be followed by a prose explanation of what it shows. Use ` + backtick + `%%` + backtick + ` comments as a title inside the mermaid block.
+
+#### Examples
+
+` + tripleBacktick + `mermaid
+%% Request flow
+flowchart LR
+  Client --> API --> DB
+` + tripleBacktick + `
+
+The client calls the API, which reads from and writes to the database.
+
+` + tripleBacktick + `mermaid
+%% Login sequence
+sequenceDiagram
+  Client->>API: POST /login
+  API-->>Client: 200 OK
+` + tripleBacktick + `
+
+The client submits credentials and the API responds with a session on success.
+
+` + tripleBacktick + `mermaid
+%% Service contracts
+classDiagram
+  class Repository {
+    +FindByID(id) Entity
+    +Save(entity) error
+  }
+  class Service {
+    -repo Repository
+    +Execute(cmd) Result
+  }
+  Service --> Repository
+` + tripleBacktick + `
+
+Service depends on the Repository interface, keeping business logic decoupled from storage.
+
+` + tripleBacktick + `mermaid
+%% Task lifecycle
+stateDiagram-v2
+  [*] --> backlog
+  backlog --> refined
+  refined --> active
+  active --> done
+  done --> released
+  released --> [*]
+` + tripleBacktick + `
+
+Tasks follow a linear lifecycle from backlog through released.
+
+` + tripleBacktick + `mermaid
+%% Core entities
+erDiagram
+  USER ||--o{ ORDER : places
+  ORDER ||--|{ LINE_ITEM : contains
+` + tripleBacktick + `
+
+A user places zero or more orders, each containing one or more line items.
+
+` + tripleBacktick + `mermaid
+%% Sprint 1 plan
+gantt
+  title Sprint 1
+  dateFormat YYYY-MM-DD
+  section Auth
+    Design auth flow :a1, 2025-01-06, 3d
+    Implement login  :a2, after a1, 5d
+  section API
+    Define endpoints :b1, 2025-01-06, 2d
+` + tripleBacktick + `
+
+Sprint 1 runs auth design before implementation, with API endpoint definition in parallel.
+
+` + tripleBacktick + `mermaid
+%% Effort breakdown
+pie title Effort by Area
+  "Backend" : 45
+  "Frontend" : 30
+  "Infrastructure" : 15
+  "Testing" : 10
+` + tripleBacktick + `
+
+Backend work dominates the effort estimate at 45% of total planned capacity.
+
+` + tripleBacktick + `mermaid
+%% Onboarding journey
+journey
+  title New User Onboarding
+  section Sign Up
+    Visit landing page: 5: User
+    Fill registration form: 3: User
+    Confirm email: 4: User
+  section First Use
+    Complete tutorial: 4: User
+    Create first project: 5: User
+` + tripleBacktick + `
+
+The onboarding flow scores lowest on form completion, signaling a simplification opportunity.
+
+` + tripleBacktick + `mermaid
+%% Feature decomposition
+mindmap
+  root((Project))
+    Auth
+      Login
+      Registration
+      Password Reset
+    API
+      REST Endpoints
+      Validation
+      Rate Limiting
+    Storage
+      PostgreSQL
+      Migrations
+` + tripleBacktick + `
+
+The project decomposes into three main areas: auth, API, and storage.
+
+` + tripleBacktick + `mermaid
+%% Release roadmap
+timeline
+  title Release Roadmap
+  section Q1
+    v1.0 : Core features, Auth, Basic API
+  section Q2
+    v1.1 : Webhooks, Admin panel
+    v1.2 : Analytics, Reporting
+` + tripleBacktick + `
+
+The roadmap targets core delivery in Q1 with extensions through Q2.
+
+` + tripleBacktick + `mermaid
+%% Requirement prioritization
+quadrantChart
+  title Priority vs Complexity
+  x-axis Low Complexity --> High Complexity
+  y-axis Low Priority --> High Priority
+  quadrant-1 Do first
+  quadrant-2 Plan carefully
+  quadrant-3 Delegate
+  quadrant-4 Defer
+  Login: [0.3, 0.9]
+  OAuth: [0.8, 0.7]
+  Dark mode: [0.4, 0.2]
+` + tripleBacktick + `
+
+Login is high-priority and low-complexity — implement first. OAuth needs careful planning due to complexity.
+
+### Table of Contents
+
+For documents with 3 or more major sections, place an anchor-linked table of contents immediately after the H1 heading:
+
+` + tripleBacktick + `
+- [Section Name](#section-slug)
+- [Another Section](#another-section)
+` + tripleBacktick + `
+
+### Structure Templates per Document Kind
+
+These are recommended section orders, not rigid mandates — adapt based on what the document actually needs.
+
+| Kind | Recommended Structure |
+|------|------------------------|
+| Idea | Summary → Motivation → Scope (mindmap) → Out of Scope → Success Criteria |
+| Requirement | Summary → Acceptance Criteria (Given/When/Then) → User Journey (journey) → Validation Rules → Risks → Dependencies → Related Documents |
+| Design | Summary → Architecture (flowchart) → Data Model (erDiagram) → API Contract (sequenceDiagram) → Class Structure (classDiagram) → State Transitions (stateDiagram-v2) → Technical Decisions → Related Requirements |
+| Task | Description → Steps → Dependencies (gantt) → Definition of Done → Related Docs |
+
+### Cross-References
+
+Use relative links between documents so links keep resolving regardless of where the repository is cloned:
+
+- ` + backtick + `[User Auth Requirement](../requirements/functional-user-auth.md)` + backtick + `
+- Link to a specific section with an anchor: ` + backtick + `[see Data Model](../design/arch-api-flow.md#data-model)` + backtick + `
+- Collect related documents in a "Related Documents" section at the end of the document
+
+### Back-to-Top Links
+
+For longer documents, add a back-to-top link after each major section so readers can jump back without scrolling:
+
+` + tripleBacktick + `
+[↑ Back to top](#document-title-slug)
+` + tripleBacktick + `
 `
