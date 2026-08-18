@@ -702,6 +702,12 @@ func Transition(request protocol.OperationRequest, targetRoot string, clock Cloc
 		return protocol.OperationResult{}, writeErr
 	}
 
+	// Indexes are regenerated after every doc mutation, not just virgil.write,
+	// so navigation stays consistent regardless of which operation touched
+	// docs/. Best-effort: any failure is logged and swallowed rather than
+	// failing the virgil.transition operation that already succeeded.
+	regenerateIndexes(resolvedTarget)
+
 	fileResource := withDigest(protocol.ResourceRef{URI: relative}, raw)
 	resolved := resolvedContext(request, resolvedTarget)
 	result := protocol.OperationResult{
@@ -933,15 +939,16 @@ func loadExistingDoc(root *os.Root, relative string, schema SchemaValidator, val
 }
 
 // ---------------------------------------------------------------------------
-// Navigation indexes: docs/index.md and docs/{requirements,design,tasks}/index.md
+// Navigation indexes: docs/README.md and docs/{requirements,design,tasks}/README.md
 // ---------------------------------------------------------------------------
 
 // indexFileName is the plain-markdown navigation file regenerated in docs/
 // and in each of its kind subdirectories after every successful
 // virgil.write. Index files carry no frontmatter and are always fully
 // overwritten; they are a browsing convenience, not part of the knowledge
-// base's durable content.
-const indexFileName = "index.md"
+// base's durable content. Named README.md (not index.md) so GitHub and
+// similar viewers auto-render it as the directory's landing page.
+const indexFileName = "README.md"
 
 // navEntry is a single row rendered into a navigation index.
 type navEntry struct {
@@ -955,10 +962,11 @@ type navEntry struct {
 	Status string
 }
 
-// regenerateIndexes rescans docs/ after a successful virgil.write and
-// republishes docs/index.md plus one regional index per kind subdirectory.
-// Index generation is best-effort: any failure is logged and swallowed so it
-// never turns an already-successful write into a failed operation.
+// regenerateIndexes rescans docs/ after a successful virgil.write or
+// virgil.transition and republishes docs/README.md plus one regional index
+// per kind subdirectory. Index generation is best-effort: any failure is
+// logged and swallowed so it never turns an already-successful operation
+// into a failed one.
 func regenerateIndexes(targetRoot string) {
 	if err := writeNavigationIndexes(targetRoot); err != nil {
 		log.Printf("virgil: failed to regenerate docs/ navigation indexes: %v", err)
@@ -1028,13 +1036,13 @@ func writeNavigationIndexes(targetRoot string) error {
 	if err := writeGlobalIndex(root, idea, requirements, design, tasks); err != nil {
 		return err
 	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindRequirement), "Requirements", requirements, false); err != nil {
+	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindRequirement), "Requirements", requirements); err != nil {
 		return err
 	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindDesign), "Design", design, false); err != nil {
+	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindDesign), "Design", design); err != nil {
 		return err
 	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindTask), "Tasks", tasks, true); err != nil {
+	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindTask), "Tasks", tasks); err != nil {
 		return err
 	}
 	return nil
@@ -1082,7 +1090,7 @@ func writeGlobalIndex(root *os.Root, idea *navEntry, requirements, design, tasks
 	}
 	taskItems := make([]string, 0, len(tasks))
 	for _, entry := range tasks {
-		taskItems = append(taskItems, fmt.Sprintf("- [%s](tasks/%s) — `%s`", entry.Title, entry.FileName, entry.Status))
+		taskItems = append(taskItems, fmt.Sprintf("- [%s](tasks/%s)", entry.Title, entry.FileName))
 	}
 
 	sections := []string{
@@ -1095,11 +1103,11 @@ func writeGlobalIndex(root *os.Root, idea *navEntry, requirements, design, tasks
 	return writeIndexFile(root, path.Join(managedRoot, indexFileName), normalizeTrailingNewline([]byte(body)))
 }
 
-// writeRegionalIndex publishes docs/{dir}/index.md. It is a no-op when dir
+// writeRegionalIndex publishes docs/{dir}/README.md. It is a no-op when dir
 // has never been created (no document of that kind has ever been written),
 // so regenerateIndexes never creates empty kind directories just to hold an
 // index file.
-func writeRegionalIndex(root *os.Root, dir, heading string, entries []navEntry, withStatus bool) error {
+func writeRegionalIndex(root *os.Root, dir, heading string, entries []navEntry) error {
 	if dir == "" {
 		return nil
 	}
@@ -1112,16 +1120,12 @@ func writeRegionalIndex(root *os.Root, dir, heading string, entries []navEntry, 
 
 	items := make([]string, 0, len(entries))
 	for _, entry := range entries {
-		if withStatus {
-			items = append(items, fmt.Sprintf("- [%s](%s) — `%s`", entry.Title, entry.FileName, entry.Status))
-			continue
-		}
 		items = append(items, fmt.Sprintf("- [%s](%s)", entry.Title, entry.FileName))
 	}
 
 	sections := []string{
 		renderIndexSection("#", heading, items),
-		"[← All Documentation](../index.md)",
+		"[← All Documentation](../README.md)",
 	}
 	body := strings.Join(sections, "\n\n")
 	return writeIndexFile(root, path.Join(managedRoot, dir, indexFileName), normalizeTrailingNewline([]byte(body)))

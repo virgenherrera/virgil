@@ -16,7 +16,7 @@ import (
 // republishes in docs/ and each of its kind subdirectories after every
 // virgil.write. It carries no frontmatter and must be excluded from doc and
 // task counts here, mirroring the skip in repodocs' own index scan.
-const indexFileName = "index.md"
+const indexFileName = "README.md"
 
 // ProjectState is the simplified view of the Virgil project at targetRoot,
 // derived from virgil.json and the doc files under docs/.
