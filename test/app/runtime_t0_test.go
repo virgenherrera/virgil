@@ -26,6 +26,58 @@ const runtimeProtocol = "virgil.dev/runtime/v1alpha1"
 func TestApp_T0InitRepoDocsHappy(t *testing.T) {
 	execution := runT0(t, "t0-init-repo-docs-happy")
 	assertScenarioPassed(t, execution, "t0-init-repo-docs-happy")
+	assertAgentsMDFormattingGuidelines(t, execution.WorkspaceRoot, "t0-init-repo-docs-happy")
+}
+
+// assertAgentsMDFormattingGuidelines proves that the AGENTS.md virgil.init
+// publishes carries the "Document Formatting Guidelines" section: guidance
+// an AI agent needs to know HOW to format document content (mermaid
+// diagrams, tables of contents, per-kind structure templates, and
+// cross-references) when it calls virgil.write, not just what operations
+// exist.
+func assertAgentsMDFormattingGuidelines(t *testing.T, workspaceRoot, fixtureID string) {
+	t.Helper()
+	agentsMDPath := filepath.Join(workspaceRoot, fixtureID, "target", "AGENTS.md")
+	content, err := os.ReadFile(agentsMDPath)
+	if err != nil {
+		t.Fatalf("read generated AGENTS.md at %s: %v", agentsMDPath, err)
+	}
+	agentsMD := string(content)
+
+	sectionHeading := "## Document Formatting Guidelines"
+	sectionIndex := strings.Index(agentsMD, sectionHeading)
+	if sectionIndex == -1 {
+		t.Fatalf("AGENTS.md missing %q section:\n%s", sectionHeading, agentsMD)
+	}
+	section := agentsMD[sectionIndex:]
+
+	for _, want := range []string{
+		sectionHeading,
+		"mermaid",
+		"flowchart",
+		"sequenceDiagram",
+		"classDiagram",
+		"stateDiagram-v2",
+		"erDiagram",
+		"gantt",
+		"pie",
+		"journey",
+		"gitgraph",
+		"mindmap",
+		"timeline",
+		"quadrantChart",
+		"block-beta",
+		"Table of Contents",
+		"Idea",
+		"Requirement",
+		"Design",
+		"Task",
+		"relative link",
+	} {
+		if !strings.Contains(section, want) {
+			t.Fatalf("AGENTS.md formatting guidelines section missing %q:\n%s", want, section)
+		}
+	}
 }
 
 func TestApp_T0InitUnmanagedWriteBlocked(t *testing.T) {
@@ -244,7 +296,7 @@ func runT0Seeded(t *testing.T, fixtureID string, seed func(targetRoot string) er
 	defer cancel()
 	command := exec.CommandContext(ctx, binary, "pipe")
 	command.Dir = isolationRoot
-	command.Env = appEnvironment()
+	command.Env = appEnvironment(isolationRoot)
 	command.Stdin = bytes.NewReader(payload)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -810,10 +862,11 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 	}
 	// Every non-blocked T0 scenario publishes exactly virgil.json and
 	// AGENTS.md at the target root (the repo-docs control file and the
-	// generated agent guide, neither part of managed_root), plus the
-	// materialized virgil.json JSON Schema at docs/.virgil-schema.json (so
-	// editors can resolve virgil.json's $schema pointer offline). Scenarios
-	// that reach virgil.continue additionally publish one
+	// generated agent guide, neither part of managed_root). The canonical
+	// virgil.json JSON Schema is materialized once, at install time, under
+	// the user's home directory (see `virgil install`'s schemaStep), not
+	// per project, so it is deliberately absent here. Scenarios that reach
+	// virgil.continue additionally publish one
 	// docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md per artifact drafted, plus the
 	// fixture's proposal file that content_proposal read, living alongside it
 	// in the same docs/{change_id}/{NN}-{kind}/ directory.
@@ -821,7 +874,6 @@ func assertWorkspace(t *testing.T, workspaceRoot, fixtureID string) {
 	want := []string{
 		filepath.Join(prefix, "virgil.json"),
 		filepath.Join(prefix, "AGENTS.md"),
-		filepath.Join(prefix, "docs", ".virgil-schema.json"),
 	}
 
 	artifactFileByKind := map[string]string{
@@ -899,8 +951,14 @@ func equalStrings(actual, expected []string) bool {
 	return true
 }
 
-func appEnvironment() []string {
-	environment := []string{"LANG=C", "LC_ALL=C", "TZ=UTC"}
+// appEnvironment builds a deterministic subprocess environment rooted at
+// homeDir. HOME is always set explicitly (never inherited from the outer
+// test process) because virgil.init resolves the installed virgil.json JSON
+// Schema path via os.UserHomeDir(), which fails closed if HOME is unset --
+// callers must pass an isolated, per-test directory so that resolution
+// never depends on (or pollutes) the real user's home directory.
+func appEnvironment(homeDir string) []string {
+	environment := []string{"LANG=C", "LC_ALL=C", "TZ=UTC", "HOME=" + homeDir}
 	if runtime.GOOS == "windows" {
 		if systemRoot := os.Getenv("SYSTEMROOT"); systemRoot != "" {
 			environment = append(environment, "SYSTEMROOT="+systemRoot)

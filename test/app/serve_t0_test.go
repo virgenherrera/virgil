@@ -125,9 +125,21 @@ func (s *serveSession) wait() error {
 	return s.waitErr
 }
 
-// startServeSession builds the public binary and launches `virgil serve` as
-// a subprocess rooted at dir, with a clean environment. The subprocess is
-// torn down automatically via t.Cleanup.
+// startServeSession launches `virgil serve` with dir doubling as both the
+// project root (cwd) and HOME. This is sufficient for every scenario that
+// only needs virgil.init's $schema pointer to resolve to *some* isolated
+// path; scenarios that need a HOME independent of the project root (e.g. one
+// shared with a prior `virgil install` run) should call
+// startServeSessionWithHome directly instead. The subprocess is torn down
+// automatically via t.Cleanup.
+func startServeSession(t *testing.T, dir string) *serveSession {
+	t.Helper()
+	return startServeSessionWithHome(t, dir, dir)
+}
+
+// startServeSessionWithHome builds the public binary and launches `virgil
+// serve` as a subprocess rooted at dir (cwd), with HOME set independently to
+// homeDir and an otherwise clean environment.
 //
 // When the outer `go test` process runs with GOCOVERDIR set, the binary is
 // instead built with Go's binary coverage instrumentation
@@ -137,14 +149,14 @@ func (s *serveSession) wait() error {
 // inside a spawned subprocess (see https://go.dev/blog/integration-test-coverage):
 // a plain `go test -coverpkg=./internal/mcp/...` cannot see this package at
 // all, since this T0 black-box test file never imports it directly.
-func startServeSession(t *testing.T, dir string) *serveSession {
+func startServeSessionWithHome(t *testing.T, dir, homeDir string) *serveSession {
 	t.Helper()
 	binary := buildServeBinary(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	cmd := exec.CommandContext(ctx, binary, "serve")
 	cmd.Dir = dir
-	env := appEnvironment()
+	env := appEnvironment(homeDir)
 	if coverDir := os.Getenv("GOCOVERDIR"); coverDir != "" {
 		env = append(env, "GOCOVERDIR="+coverDir)
 	}
@@ -1125,6 +1137,86 @@ func TestApp_T0ServeStatusPermissionDeniedLedger(t *testing.T) {
 	}
 }
 
+// TestApp_T0ServeComprehensiveReadme writes one document of every kind
+// (idea, requirement, design, task) against an initialized project and
+// asserts the regenerated docs/README.md carries a mermaid document map
+// linking to all four documents, and that no regional README.md is
+// generated inside docs/requirements/, docs/design/ or docs/tasks/ — the
+// global index at docs/README.md is the single navigation surface.
+func TestApp_T0ServeComprehensiveReadme(t *testing.T) {
+	dir := t.TempDir()
+	session := startServeSession(t, dir)
+
+	session.initialize(t)
+	session.initProject(t, 2, "comprehensive-readme")
+
+	nextID := 3
+	writeDoc := func(args map[string]any) {
+		t.Helper()
+		resp := session.call(t, nextID, "tools/call", map[string]any{
+			"name":      "virgil_write",
+			"arguments": args,
+		})
+		nextID++
+		result := decodeToolCallResult(t, resp)
+		if result.IsError {
+			t.Fatalf("virgil_write setup call failed: %s", result.Content[0].Text)
+		}
+	}
+
+	writeDoc(map[string]any{
+		"doc_kind": "idea",
+		"content":  "# Idea\n\nDescribes the project.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "requirement",
+		"category": "functional",
+		"slug":     "user-auth",
+		"content":  "# User Auth\n\nUsers can authenticate.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "design",
+		"category": "arch",
+		"slug":     "api-flow",
+		"content":  "# API Flow\n\nDescribes the API flow.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "task",
+		"slug":     "implement-login",
+		"content":  "# Implement Login\n\nBuild the login screen.",
+	})
+
+	readmePath := filepath.Join(dir, "docs", "README.md")
+	raw, err := os.ReadFile(readmePath)
+	if err != nil {
+		t.Fatalf("read docs/README.md: %v", err)
+	}
+	readme := string(raw)
+
+	for _, want := range []string{
+		"```mermaid",
+		"flowchart",
+		"idea.md",
+		"functional-user-auth.md",
+		"arch-api-flow.md",
+		"implement-login.md",
+	} {
+		if !strings.Contains(readme, want) {
+			t.Fatalf("docs/README.md does not contain %q:\n%s", want, readme)
+		}
+	}
+
+	for _, regional := range []string{
+		filepath.Join(dir, "docs", "requirements", "README.md"),
+		filepath.Join(dir, "docs", "design", "README.md"),
+		filepath.Join(dir, "docs", "tasks", "README.md"),
+	} {
+		if _, statErr := os.Stat(regional); !os.IsNotExist(statErr) {
+			t.Fatalf("expected regional README %s to not exist, stat err = %v", regional, statErr)
+		}
+	}
+}
+
 // TestApp_T0ServeStatusToleratesMalformedTaskFiles seeds docs/tasks/ with a
 // stray directory, a non-.md file, a dangling symlink, and three
 // malformed .md files (missing the frontmatter open marker, missing the
@@ -1179,5 +1271,155 @@ func TestApp_T0ServeStatusToleratesMalformedTaskFiles(t *testing.T) {
 	gotCounts := [5]int{state.TaskCounts.Backlog, state.TaskCounts.Refined, state.TaskCounts.Active, state.TaskCounts.Done, state.TaskCounts.Released}
 	if gotCounts != wantCounts {
 		t.Fatalf("expected malformed task files to be silently skipped, got counts %+v", state.TaskCounts)
+	}
+}
+
+// TestApp_T0ServeBreadcrumbNavigation writes one document of every kind
+// (idea, requirement, design, task) and asserts each generated file carries
+// the breadcrumb navigation blockquote injected by serializeDocFile:
+//   - idea.md, which lives at docs/ itself, links to the sibling
+//     "README.md" with no trailing segment;
+//   - every nested doc (requirement, design, task) links to "../README.md"
+//     followed by " / {filename-stem}", since regional README.md files were
+//     removed and docs/README.md is the single navigation index;
+//   - the breadcrumb sits between the frontmatter close marker ("-->") and
+//     the content body's first "#" heading, as a blank line followed by a
+//     "> " blockquote line, exactly as GitHub/VS Code markdown preview
+//     expects for a styled callout.
+func TestApp_T0ServeBreadcrumbNavigation(t *testing.T) {
+	dir := t.TempDir()
+	session := startServeSession(t, dir)
+
+	session.initialize(t)
+	session.initProject(t, 2, "breadcrumb-nav")
+
+	nextID := 3
+	writeDoc := func(args map[string]any) {
+		t.Helper()
+		resp := session.call(t, nextID, "tools/call", map[string]any{
+			"name":      "virgil_write",
+			"arguments": args,
+		})
+		nextID++
+		result := decodeToolCallResult(t, resp)
+		if result.IsError {
+			t.Fatalf("virgil_write setup call failed: %s", result.Content[0].Text)
+		}
+	}
+
+	writeDoc(map[string]any{
+		"doc_kind": "idea",
+		"content":  "# Idea\n\nDescribes the project.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "requirement",
+		"category": "functional",
+		"slug":     "user-auth",
+		"content":  "# User Auth\n\nUsers can authenticate.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "design",
+		"category": "arch",
+		"slug":     "api-flow",
+		"content":  "# API Flow\n\nDescribes the API flow.",
+	})
+	writeDoc(map[string]any{
+		"doc_kind": "task",
+		"slug":     "implement-login",
+		"content":  "# Implement Login\n\nBuild the login screen.",
+	})
+
+	readDoc := func(relative string) string {
+		t.Helper()
+		raw, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(relative)))
+		if err != nil {
+			t.Fatalf("read %s: %v", relative, err)
+		}
+		return string(raw)
+	}
+
+	// breadcrumbLine returns the exact blockquote line immediately following
+	// the frontmatter close marker and its blank line, failing the test if
+	// that position is not a "> " blockquote or the line after it is not
+	// blank -- this pins the breadcrumb's required position between "-->"
+	// and the content body's first "#" heading.
+	breadcrumbLine := func(raw string) string {
+		t.Helper()
+		closeIdx := strings.Index(raw, "-->\n\n")
+		if closeIdx < 0 {
+			t.Fatalf("frontmatter close marker not found:\n%s", raw)
+		}
+		rest := raw[closeIdx+len("-->\n\n"):]
+		lines := strings.SplitN(rest, "\n", 3)
+		if len(lines) < 3 {
+			t.Fatalf("expected a breadcrumb line, a blank line and a heading after frontmatter, got:\n%s", rest)
+		}
+		if !strings.HasPrefix(lines[0], "> ") {
+			t.Fatalf("expected breadcrumb line to be a blockquote, got %q", lines[0])
+		}
+		if lines[1] != "" {
+			t.Fatalf("expected a blank line between breadcrumb and content body, got %q", lines[1])
+		}
+		if !strings.HasPrefix(lines[2], "#") {
+			t.Fatalf("expected content body's first heading right after the blank line, got %q", lines[2])
+		}
+		return lines[0]
+	}
+
+	// Test 1 (task): breadcrumb links to "../README.md" and names the slug.
+	taskRaw := readDoc("docs/tasks/implement-login.md")
+	taskBreadcrumb := breadcrumbLine(taskRaw)
+	if !strings.Contains(taskBreadcrumb, "../README.md") {
+		t.Fatalf("task breadcrumb missing ../README.md link: %q", taskBreadcrumb)
+	}
+	if !strings.Contains(taskBreadcrumb, "implement-login") {
+		t.Fatalf("task breadcrumb missing slug: %q", taskBreadcrumb)
+	}
+
+	// Test 2 (idea): exact breadcrumb, no "../README.md" since idea.md lives
+	// at docs/ itself.
+	ideaRaw := readDoc("docs/idea.md")
+	ideaBreadcrumb := breadcrumbLine(ideaRaw)
+	if ideaBreadcrumb != "> [Docs](README.md)" {
+		t.Fatalf("idea breadcrumb = %q, want %q", ideaBreadcrumb, "> [Docs](README.md)")
+	}
+	if strings.Contains(ideaRaw, "../README.md") {
+		t.Fatalf("idea document unexpectedly contains ../README.md:\n%s", ideaRaw)
+	}
+
+	// Test 3 (requirement): breadcrumb links to "../README.md" and names the
+	// full "{category}-{slug}" filename stem.
+	requirementRaw := readDoc("docs/requirements/functional-user-auth.md")
+	requirementBreadcrumb := breadcrumbLine(requirementRaw)
+	if !strings.Contains(requirementBreadcrumb, "../README.md") {
+		t.Fatalf("requirement breadcrumb missing ../README.md link: %q", requirementBreadcrumb)
+	}
+	if !strings.Contains(requirementBreadcrumb, "functional-user-auth") {
+		t.Fatalf("requirement breadcrumb missing category-slug: %q", requirementBreadcrumb)
+	}
+
+	// Test 4 (design): same shape as requirement, exercised separately since
+	// design docs live under their own docs/design/ directory.
+	designRaw := readDoc("docs/design/arch-api-flow.md")
+	designBreadcrumb := breadcrumbLine(designRaw)
+	if !strings.Contains(designBreadcrumb, "../README.md") {
+		t.Fatalf("design breadcrumb missing ../README.md link: %q", designBreadcrumb)
+	}
+	if !strings.Contains(designBreadcrumb, "arch-api-flow") {
+		t.Fatalf("design breadcrumb missing category-slug: %q", designBreadcrumb)
+	}
+
+	// ContentDigest must not be affected by the injected breadcrumb: the
+	// digest is computed in Write() from the raw content before
+	// serializeDocFile ever runs, so reloading the doc through the normal
+	// read path (which recomputes the digest from the content body it
+	// parses back out) must still succeed.
+	statusResp := session.call(t, nextID, "tools/call", map[string]any{
+		"name":      "virgil_status",
+		"arguments": map[string]any{},
+	})
+	statusResult := decodeToolCallResult(t, statusResp)
+	if statusResult.IsError {
+		t.Fatalf("virgil_status returned isError=true after breadcrumb-bearing writes: %s", statusResult.Content[0].Text)
 	}
 }

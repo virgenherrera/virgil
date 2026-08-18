@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	virgil "github.com/virgenherrera/virgil"
 	"github.com/virgenherrera/virgil/internal/agents"
 	"github.com/virgenherrera/virgil/internal/agents/claude"
 	"github.com/virgenherrera/virgil/internal/agents/codex"
@@ -20,6 +21,17 @@ import (
 // mcpServerName is the key Virgil registers itself under in each agent's
 // MCP server configuration.
 const mcpServerName = "virgil"
+
+// schemaInstallDir is where `virgil install` materializes the canonical
+// virgil.json JSON Schema, relative to homeDir. It lives under ~/.virgil (not
+// per-project) so every project's virgil.json can point its $schema at one
+// shared, offline-resolvable file instead of each project carrying its own
+// copy.
+const schemaInstallDir = ".virgil/schemas"
+
+// schemaFileName is the fixed file name virgil.init's $schema pointer and
+// `virgil install`'s materialization both agree on, under schemaInstallDir.
+const schemaFileName = "virgil-config.schema.json"
 
 // virgilSystemPrompt is injected into each supported agent's system prompt
 // so it knows how to reach Virgil's MCP tools.
@@ -60,6 +72,12 @@ func runInstall(out io.Writer) error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("get home directory: %w", err)
+	}
+
+	schemaResult := pipeline.Run([]pipeline.Step{schemaStep(homeDir)})
+	reportResult(out, "Virgil", schemaResult)
+	if !schemaResult.Success() {
+		return fmt.Errorf("install schema: %w", schemaResult.Error)
 	}
 
 	registry, err := newRegistry()
@@ -298,6 +316,40 @@ func syncSteps(adapter agents.Adapter, homeDir string) []pipeline.Step {
 	}
 
 	return steps
+}
+
+// schemaStep materializes the embedded virgil.json JSON Schema at
+// {homeDir}/.virgil/schemas/virgil-config.schema.json. It runs once per
+// install, independent of which AI agents were discovered: the schema is a
+// Virgil install-time asset, not a per-agent one. It is idempotent -- a
+// re-run overwrites the file with the current binary's embedded bytes, so
+// upgrades always land the schema that matches the installed version.
+func schemaStep(homeDir string) pipeline.Step {
+	schemaDir := filepath.Join(homeDir, schemaInstallDir)
+	schemaPath := filepath.Join(schemaDir, schemaFileName)
+	return pipeline.Step{
+		Name: "write-schema",
+		Prepare: func() error {
+			return ensureAccessibleDir(schemaDir)
+		},
+		Apply: func() error {
+			content, err := virgil.VirgilConfigSchema()
+			if err != nil {
+				return fmt.Errorf("load embedded virgil.json schema: %w", err)
+			}
+			if err := os.MkdirAll(schemaDir, 0o755); err != nil {
+				return fmt.Errorf("create schema directory %s: %w", schemaDir, err)
+			}
+			if err := os.WriteFile(schemaPath, content, 0o644); err != nil {
+				return fmt.Errorf("write schema file %s: %w", schemaPath, err)
+			}
+			return nil
+		},
+		Rollback: func() error {
+			fmt.Fprintf(os.Stderr, "warning: could not automatically roll back schema written to %s; please remove manually if needed\n", schemaPath)
+			return nil
+		},
+	}
 }
 
 func mcpConfigStep(adapter agents.Adapter, homeDir string) pipeline.Step {

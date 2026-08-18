@@ -38,7 +38,6 @@ import (
 	"time"
 
 	"github.com/gowebpki/jcs"
-	virgil "github.com/virgenherrera/virgil"
 	"github.com/virgenherrera/virgil/internal/protocol"
 )
 
@@ -46,13 +45,6 @@ const (
 	managedRoot      = "docs"
 	virgilConfigFile = protocol.VirgilConfigFile
 	agentsFile       = "AGENTS.md"
-
-	// schemaConfigRelPath is where virgil.init materializes the canonical
-	// virgil.json JSON Schema, relative to targetRoot (and, since virgil.json
-	// itself lives at targetRoot, also relative to virgil.json). It lives
-	// under managedRoot as a dot-file so it does not collide with any
-	// consumer-owned or virgil.write-managed doc.
-	schemaConfigRelPath = managedRoot + "/.virgil-schema.json"
 
 	configSchemaVersion = "virgil.dev/config/v1alpha1"
 
@@ -80,6 +72,30 @@ const (
 	frontmatterOpenLegacyYAML = "---\n"     // rc.7 (commit 9fe8805)
 	frontmatterCloseLegacy    = "\n---\n\n"
 )
+
+// schemaInstallDir and schemaFileName mirror cmd/virgil/install.go's own
+// constants of the same name: `virgil install` materializes the canonical
+// virgil.json JSON Schema once, under the user's home directory, rather than
+// per project. virgil.init points virgil.json's $schema at that shared,
+// install-time path instead of writing its own per-project copy.
+const (
+	schemaInstallDir = ".virgil/schemas"
+	schemaFileName   = "virgil-config.schema.json"
+)
+
+// installedSchemaPath resolves the absolute path virgil.init points
+// virgil.json's $schema field at:
+// {homeDir}/.virgil/schemas/virgil-config.schema.json. It fails closed
+// (typed INTERNAL_ERROR) when the home directory cannot be resolved, since a
+// virgil.json with no usable $schema pointer would silently degrade editor
+// autocompletion instead of surfacing the problem.
+func installedSchemaPath(operation string) (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", typedError("INTERNAL_ERROR", operation, "cannot resolve home directory for the installed virgil.json schema", err)
+	}
+	return filepath.Join(homeDir, filepath.FromSlash(schemaInstallDir), schemaFileName), nil
+}
 
 // SchemaValidator validates JSON bytes against a schema identified by its
 // canonical URI. The caller provides the concrete implementation so that
@@ -189,6 +205,10 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 	resolved := resolvedContext(request, resolvedTarget)
 	cfg, cfgBytes, err := buildConfig(request, digest, createdAt, resolved)
 	if err != nil {
+		var typed *Error
+		if errors.As(err, &typed) {
+			return protocol.OperationResult{}, err
+		}
 		return protocol.OperationResult{}, typedError("INTERNAL_ERROR", request.Operation, "cannot encode virgil.json", err)
 	}
 
@@ -208,20 +228,7 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 		}
 	}
 
-	schemaBytes, err := virgil.VirgilConfigSchema()
-	if err != nil {
-		return protocol.OperationResult{}, typedError("INTERNAL_ERROR", request.Operation, "cannot load embedded virgil.json schema", err)
-	}
-	if err := publishSchemaFile(root, schemaConfigRelPath, schemaBytes); err != nil {
-		var publicationError *publishError
-		if errors.As(err, &publicationError) {
-			// Materialized schema already exists (e.g., previous partial init) — acceptable, continue.
-		} else {
-			return protocol.OperationResult{}, err
-		}
-	}
-
-	result := initSuccessResult(request, cfg, cfgBytes, agentsBytes, schemaBytes)
+	result := initSuccessResult(request, cfg, cfgBytes, agentsBytes)
 	if err := validateConfigPublication(schema, cfgBytes, result); err != nil {
 		return protocol.OperationResult{}, err
 	}
@@ -245,8 +252,12 @@ func Init(request protocol.OperationRequest, targetRoot string, clock Clock, can
 }
 
 func buildConfig(request protocol.OperationRequest, digest, createdAt string, resolved protocol.Context) (protocol.VirgilConfig, []byte, error) {
+	schemaPath, err := installedSchemaPath(request.Operation)
+	if err != nil {
+		return protocol.VirgilConfig{}, nil, err
+	}
 	cfg := protocol.VirgilConfig{
-		Schema:          schemaConfigRelPath,
+		Schema:          schemaPath,
 		SchemaVersion:   configSchemaVersion,
 		ProtocolVersion: request.ProtocolVersion,
 		ProjectID:       request.ProjectRef.ProjectID,
@@ -271,10 +282,9 @@ func buildConfig(request protocol.OperationRequest, digest, createdAt string, re
 	return cfg, cfgBytes, nil
 }
 
-func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilConfig, cfgBytes, agentsBytes, schemaBytes []byte) protocol.OperationResult {
+func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilConfig, cfgBytes, agentsBytes []byte) protocol.OperationResult {
 	cfgResource := withDigest(protocol.ResourceRef{URI: virgilConfigFile}, cfgBytes)
 	agentsResource := withDigest(protocol.ResourceRef{URI: agentsFile}, agentsBytes)
-	schemaResource := withDigest(protocol.ResourceRef{URI: schemaConfigRelPath}, schemaBytes)
 	resolved := cfg.ResolvedContext
 	return protocol.OperationResult{
 		ProtocolVersion:  request.ProtocolVersion,
@@ -290,7 +300,6 @@ func initSuccessResult(request protocol.OperationRequest, cfg protocol.VirgilCon
 		Effects: []protocol.EffectRecord{
 			writeEffect(request, "virgil-config", cfgResource, cfgResource, len(cfgBytes)),
 			writeEffect(request, "agents-doc", agentsResource, agentsResource, len(agentsBytes)),
-			writeEffect(request, "config-schema", schemaResource, schemaResource, len(schemaBytes)),
 		},
 		Next: protocol.NextAction{
 			Operation: "virgil.write",
@@ -449,46 +458,6 @@ func publishAgents(root *os.Root, content []byte) error {
 	}
 	published = true
 	return syncDirectory(root, ".")
-}
-
-// publishSchemaFile durably materializes the canonical virgil.json JSON
-// Schema at relative (under managedRoot) using create-exclusive-and-rename,
-// creating the parent directory chain if it does not already exist. A
-// pre-existing schema file (e.g. from a crashed prior init) is reported as a
-// *publishError so Init can treat it as an acceptable no-op, mirroring
-// publishAgents: the embedded schema content is fixed per binary build, so
-// there is nothing to reconcile.
-func publishSchemaFile(root *os.Root, relative string, content []byte) error {
-	if info, statErr := root.Lstat(relative); statErr == nil {
-		if !info.Mode().IsRegular() {
-			return typedError("CORRUPT_LEDGER", relative, "materialized schema path is not a regular file", nil)
-		}
-		return &publishError{Path: relative, Cause: fs.ErrExist}
-	} else if !errors.Is(statErr, fs.ErrNotExist) {
-		return typedError("ATOMICITY_UNSUPPORTED", relative, "cannot stat materialized schema file", statErr)
-	}
-	parentDir := path.Dir(relative)
-	if err := createDirectoryChain(root, parentDir); err != nil {
-		return err
-	}
-	if err := syncDirectoryChain(root, parentDir); err != nil {
-		return err
-	}
-	tempName := path.Join(parentDir, ".schema-"+stableID("tmp", relative, fmt.Sprintf("%x", sha256.Sum256(content))))
-	if err := writeExclusive(root, tempName, content); err != nil {
-		return err
-	}
-	published := false
-	defer func() {
-		if !published {
-			_ = root.Remove(tempName)
-		}
-	}()
-	if err := root.Rename(tempName, relative); err != nil {
-		return typedError("ATOMICITY_UNSUPPORTED", relative, "cannot atomically publish schema file", err)
-	}
-	published = true
-	return syncDirectory(root, parentDir)
 }
 
 // rewriteConfig durably replaces an existing virgil.json using
@@ -856,8 +825,11 @@ func normalizeTrailingNewline(content []byte) []byte {
 }
 
 // serializeDocFile renders frontmatter and content into the on-disk
-// representation: an HTML-comment delimited JSON block followed by the
-// Markdown content body.
+// representation: an HTML-comment delimited JSON block, a breadcrumb
+// navigation blockquote, and the Markdown content body. The breadcrumb is
+// injected here (not before Write's digest computation) so it is never part
+// of frontmatter.ContentDigest, which is computed from the raw content body
+// alone.
 func serializeDocFile(frontmatter protocol.DocFrontmatter, content []byte) ([]byte, error) {
 	frontmatterBytes, err := json.MarshalIndent(frontmatter, "", "  ")
 	if err != nil {
@@ -867,8 +839,54 @@ func serializeDocFile(frontmatter protocol.DocFrontmatter, content []byte) ([]by
 	buffer.WriteString(frontmatterOpen)
 	buffer.Write(frontmatterBytes)
 	buffer.WriteString(frontmatterClose)
+	buffer.WriteString(buildBreadcrumb(frontmatter.DocKind, frontmatter.Slug, frontmatter.Category))
+	buffer.WriteString("\n\n")
 	buffer.Write(content)
 	return buffer.Bytes(), nil
+}
+
+// buildBreadcrumb renders the navigation blockquote injected between a doc
+// file's frontmatter and its content body. Since there is no regional
+// README.md (only the single docs/README.md), every nested doc kind links
+// up to "../README.md" followed by its own filename stem (the segment
+// after the category prefix is not distinguished — the full stem is used,
+// e.g. "functional-user-auth" or "implement-login"); the idea document
+// lives at docs/idea.md itself, so its breadcrumb links to the sibling
+// "README.md" with no trailing segment.
+func buildBreadcrumb(kind, slug, category string) string {
+	if kind == protocol.DocKindIdea {
+		return "> [Docs](README.md)"
+	}
+	stem := strings.TrimSuffix(path.Base(protocol.DocFileName(kind, category, slug)), ".md")
+	return "> [Docs](../README.md) / " + stem
+}
+
+// breadcrumbLinePrefix opens every string buildBreadcrumb can produce, so it
+// doubles as the marker stripBreadcrumb uses to recognize and remove an
+// injected breadcrumb from a doc file's content body when re-parsing it.
+const breadcrumbLinePrefix = "> [Docs]("
+
+// stripBreadcrumb removes a leading breadcrumb line (plus the blank line
+// that follows it) from a doc file's content body, if present. content, as
+// split out by parseDocFrontmatter, is everything after frontmatterClose --
+// which is exactly what serializeDocFile writes as breadcrumb + "\n\n" +
+// content. Without this step, re-reading an already-written doc file (e.g.
+// loadExistingDoc's digest check, or virgil.transition re-serializing
+// existing content) would treat the breadcrumb as part of the content body:
+// its digest would never match frontmatter.ContentDigest (computed in
+// Write() over the raw body alone), and any rewrite would stack a second
+// breadcrumb on top of the first. Doc files written before this feature (or
+// through a legacy frontmatter marker) never contain this prefix, so they
+// pass through unchanged.
+func stripBreadcrumb(content []byte) []byte {
+	if !bytes.HasPrefix(content, []byte(breadcrumbLinePrefix)) {
+		return content
+	}
+	lineEnd := bytes.IndexByte(content, '\n')
+	if lineEnd < 0 || lineEnd+1 >= len(content) || content[lineEnd+1] != '\n' {
+		return content
+	}
+	return content[lineEnd+2:]
 }
 
 // parseDocFrontmatter splits a doc file into its decoded JSON frontmatter
@@ -894,7 +912,7 @@ func parseDocFrontmatter(raw []byte) (protocol.DocFrontmatter, []byte, error) {
 		return protocol.DocFrontmatter{}, nil, fmt.Errorf("doc file has no closing frontmatter marker %q", closeMarker)
 	}
 	frontmatterBytes := rest[:closeIndex]
-	content := rest[closeIndex+len(closeMarker):]
+	content := stripBreadcrumb(rest[closeIndex+len(closeMarker):])
 	var frontmatter protocol.DocFrontmatter
 	decoder := json.NewDecoder(bytes.NewReader(frontmatterBytes))
 	decoder.DisallowUnknownFields()
@@ -1003,15 +1021,18 @@ func loadExistingDoc(root *os.Root, relative string, schema SchemaValidator, val
 }
 
 // ---------------------------------------------------------------------------
-// Navigation indexes: docs/README.md and docs/{requirements,design,tasks}/README.md
+// Navigation index: docs/README.md
 // ---------------------------------------------------------------------------
 
-// indexFileName is the plain-markdown navigation file regenerated in docs/
-// and in each of its kind subdirectories after every successful
-// virgil.write. Index files carry no frontmatter and are always fully
-// overwritten; they are a browsing convenience, not part of the knowledge
-// base's durable content. Named README.md (not index.md) so GitHub and
-// similar viewers auto-render it as the directory's landing page.
+// indexFileName is the plain-markdown navigation file regenerated at
+// docs/README.md after every successful virgil.write or virgil.transition.
+// It carries no frontmatter and is always fully overwritten; it is a
+// browsing convenience, not part of the knowledge base's durable content.
+// Named README.md (not index.md) so GitHub and similar viewers auto-render
+// it as the directory's landing page. There is exactly one index file — no
+// regional README.md is generated inside docs/requirements/, docs/design/
+// or docs/tasks/ — so the document map on docs/README.md is the single
+// source of navigation truth.
 const indexFileName = "README.md"
 
 // navEntry is a single row rendered into a navigation index.
@@ -1027,13 +1048,12 @@ type navEntry struct {
 }
 
 // regenerateIndexes rescans docs/ after a successful virgil.write or
-// virgil.transition and republishes docs/README.md plus one regional index
-// per kind subdirectory. Index generation is best-effort: any failure is
-// logged and swallowed so it never turns an already-successful operation
-// into a failed one.
+// virgil.transition and republishes docs/README.md. Index generation is
+// best-effort: any failure is logged and swallowed so it never turns an
+// already-successful operation into a failed one.
 func regenerateIndexes(targetRoot string) {
 	if err := writeNavigationIndexes(targetRoot); err != nil {
-		log.Printf("virgil: failed to regenerate docs/ navigation indexes: %v", err)
+		log.Printf("virgil: failed to regenerate docs/README.md: %v", err)
 	}
 }
 
@@ -1097,19 +1117,7 @@ func writeNavigationIndexes(targetRoot string) error {
 	design := byKind[protocol.DocKindDesign]
 	tasks := byKind[protocol.DocKindTask]
 
-	if err := writeGlobalIndex(root, idea, requirements, design, tasks); err != nil {
-		return err
-	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindRequirement), "Requirements", requirements); err != nil {
-		return err
-	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindDesign), "Design", design); err != nil {
-		return err
-	}
-	if err := writeRegionalIndex(root, protocol.DocDir(protocol.DocKindTask), "Tasks", tasks); err != nil {
-		return err
-	}
-	return nil
+	return writeGlobalIndex(root, idea, requirements, design, tasks)
 }
 
 // docTitle returns the text of the first "# Heading" line in content,
@@ -1139,6 +1147,10 @@ func renderIndexSection(level, heading string, items []string) string {
 	return block
 }
 
+// writeGlobalIndex publishes docs/README.md: a mermaid flowchart document
+// map (omitted when the project has no documents at all, e.g. immediately
+// after virgil.init) followed by sections listing every document grouped by
+// kind.
 func writeGlobalIndex(root *os.Root, idea *navEntry, requirements, design, tasks []navEntry) error {
 	var ideaItems []string
 	if idea != nil {
@@ -1157,42 +1169,98 @@ func writeGlobalIndex(root *os.Root, idea *navEntry, requirements, design, tasks
 		taskItems = append(taskItems, fmt.Sprintf("- [%s](tasks/%s)", entry.Title, entry.FileName))
 	}
 
-	sections := []string{
+	parts := []string{"# Project Documentation"}
+	if documentMap := renderDocumentMap(idea, requirements, design, tasks); documentMap != "" {
+		parts = append(parts, documentMap)
+	} else {
+		parts = append(parts, "No documents yet — use `virgil.write` to create your first document.")
+	}
+	parts = append(parts,
 		renderIndexSection("##", "Idea", ideaItems),
 		renderIndexSection("##", "Requirements", requirementItems),
 		renderIndexSection("##", "Design", designItems),
 		renderIndexSection("##", "Tasks", taskItems),
-	}
-	body := "# Project Documentation\n\n" + strings.Join(sections, "\n\n")
+	)
+	body := strings.Join(parts, "\n\n")
 	return writeIndexFile(root, path.Join(managedRoot, indexFileName), normalizeTrailingNewline([]byte(body)))
 }
 
-// writeRegionalIndex publishes docs/{dir}/README.md. It is a no-op when dir
-// has never been created (no document of that kind has ever been written),
-// so regenerateIndexes never creates empty kind directories just to hold an
-// index file.
-func writeRegionalIndex(root *os.Root, dir, heading string, entries []navEntry) error {
-	if dir == "" {
-		return nil
-	}
-	managedDir := path.Join(managedRoot, dir)
-	if _, statErr := root.Stat(managedDir); errors.Is(statErr, fs.ErrNotExist) {
-		return nil
-	} else if statErr != nil {
-		return statErr
+// renderDocumentMap renders a fenced ```mermaid flowchart TD block showing
+// how every existing document relates to the idea and its own kind
+// category. It returns "" when the project has no documents at all (idea
+// is nil and every kind slice is empty), so writeGlobalIndex can fall back
+// to a plain placeholder message instead of an empty diagram. A kind with
+// no documents yet is simply omitted from the diagram — there is no
+// leaf-less "Requirements" node cluttering the map for a project that has
+// never written a requirement.
+func renderDocumentMap(idea *navEntry, requirements, design, tasks []navEntry) string {
+	if idea == nil && len(requirements) == 0 && len(design) == 0 && len(tasks) == 0 {
+		return ""
 	}
 
-	items := make([]string, 0, len(entries))
+	lines := []string{"```mermaid", "flowchart TD"}
+	if idea != nil {
+		lines = append(lines, fmt.Sprintf("    IDEA[%s]", mermaidLabel(idea.FileName)))
+	}
+	lines = append(lines, renderDocumentMapCategory(idea != nil, "REQ", "R", "Requirements", requirements)...)
+	lines = append(lines, renderDocumentMapCategory(idea != nil, "DESIGN", "D", "Design", design)...)
+	lines = append(lines, renderDocumentMapCategory(idea != nil, "TASKS", "T", "Tasks", tasks)...)
+	lines = append(lines, "```")
+	return strings.Join(lines, "\n")
+}
+
+// renderDocumentMapCategory renders the mermaid lines for a single kind
+// category (Requirements, Design or Tasks): the category node itself
+// (linked from IDEA when an idea document exists), followed by one leaf
+// node per document of that kind. It returns nil when entries is empty, so
+// a kind with no documents contributes no lines to the diagram at all.
+func renderDocumentMapCategory(hasIdea bool, categoryID, nodePrefix, heading string, entries []navEntry) []string {
+	if len(entries) == 0 {
+		return nil
+	}
+	var lines []string
+	if hasIdea {
+		lines = append(lines, fmt.Sprintf("    IDEA --> %s[%s]", categoryID, heading))
+	} else {
+		lines = append(lines, fmt.Sprintf("    %s[%s]", categoryID, heading))
+	}
 	for _, entry := range entries {
-		items = append(items, fmt.Sprintf("- [%s](%s)", entry.Title, entry.FileName))
+		nodeID := mermaidNodeID(nodePrefix, strings.TrimSuffix(entry.FileName, ".md"))
+		lines = append(lines, fmt.Sprintf("    %s --> %s[%s]", categoryID, nodeID, mermaidLabel(entry.FileName)))
 	}
+	return lines
+}
 
-	sections := []string{
-		renderIndexSection("#", heading, items),
-		"[← All Documentation](../README.md)",
+// mermaidNodeID derives a mermaid-safe flowchart node ID from an arbitrary
+// document slug: every rune outside [A-Za-z0-9] collapses to a single
+// hyphen, and the result is prefixed with prefix (a fixed, already-safe
+// per-kind letter: "R", "D" or "T") so two documents can never collide with
+// each other or with the fixed category/idea node IDs, and so the ID always
+// starts with a letter regardless of what the slug starts with.
+func mermaidNodeID(prefix, raw string) string {
+	var builder strings.Builder
+	builder.WriteString(prefix)
+	previousHyphen := false
+	for _, r := range raw {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+			builder.WriteRune(r)
+			previousHyphen = false
+		default:
+			if !previousHyphen {
+				builder.WriteRune('-')
+				previousHyphen = true
+			}
+		}
 	}
-	body := strings.Join(sections, "\n\n")
-	return writeIndexFile(root, path.Join(managedRoot, dir, indexFileName), normalizeTrailingNewline([]byte(body)))
+	return strings.TrimRight(builder.String(), "-")
+}
+
+// mermaidLabel renders text as a double-quoted mermaid node label so
+// characters mermaid would otherwise treat as syntax (brackets, quotes,
+// pipes) render as literal text instead of breaking the diagram.
+func mermaidLabel(text string) string {
+	return fmt.Sprintf("%q", text)
 }
 
 // writeIndexFile fully overwrites a navigation index file. Unlike
