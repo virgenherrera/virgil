@@ -13,8 +13,11 @@ type JSONRPCRequest struct {
 
 // IsNotification returns true when the message has no id field,
 // meaning it is a JSON-RPC 2.0 notification that expects no response.
+// A JSON "id": null also indicates a notification: json.Unmarshal decodes
+// it as the 4-byte literal []byte("null") rather than a nil/empty slice,
+// so that case must be checked explicitly.
 func (r *JSONRPCRequest) IsNotification() bool {
-	return len(r.ID) == 0
+	return len(r.ID) == 0 || string(r.ID) == "null"
 }
 
 // JSONRPCResponse represents a JSON-RPC 2.0 response (success or error).
