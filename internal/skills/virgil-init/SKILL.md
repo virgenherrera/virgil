@@ -45,9 +45,8 @@ No other fields are accepted (`additionalProperties: false`).
 
 Check `status` in the response:
 
-- `success` — project initialized; `message` reads "Project initialized.
-  Ready to create a change." Proceed to `/virgil-new` when the user is
-  ready to start a change.
+- `success` — project initialized; `message` reads "Project initialized."
+  Proceed to `/virgil-write` to start writing documents.
 - `blocked` or `error` — read the `error` field and surface it to the
   user before retrying.
 

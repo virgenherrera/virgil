@@ -7,29 +7,33 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/virgenherrera/virgil/internal/protocol"
 )
 
 // ProjectState is the simplified view of the Virgil project at targetRoot,
-// derived from virgil.json and the artifact files under docs/{change_id}/.
+// derived from virgil.json and the doc files under docs/.
 type ProjectState struct {
-	Initialized  bool
-	ProjectID    string
-	ActiveChange *ChangeState
-	TargetRoot   string
+	Initialized      bool
+	ProjectID        string
+	TargetRoot       string
+	RequirementCount int
+	DesignCount      int
+	TaskCounts       TaskCounts
 }
 
-// ChangeState captures the active change's identity and pipeline progress.
-type ChangeState struct {
-	ChangeID    string
-	RunID       string
-	DerivedStep string // current stage: idea, spec, design, tasks, handoff, complete
-	Revision    string // revision of the latest artifact at the current step
+// TaskCounts tracks the number of tasks by status.
+type TaskCounts struct {
+	Backlog  int
+	Refined  int
+	Active   int
+	Done     int
+	Released int
 }
 
-// LoadState reads virgil.json from targetRoot and derives the project state.
-// If virgil.json does not exist the project is not initialized.
+// LoadState reads virgil.json from targetRoot and scans docs/ to derive the
+// project state. If virgil.json does not exist the project is not initialized.
 func LoadState(targetRoot string) (*ProjectState, error) {
 	if !filepath.IsAbs(targetRoot) {
 		return nil, fmt.Errorf("target root must be absolute: %s", targetRoot)
@@ -58,61 +62,73 @@ func LoadState(targetRoot string) (*ProjectState, error) {
 		TargetRoot:  targetRoot,
 	}
 
-	if cfg.ActiveChange != nil {
-		changeState := &ChangeState{
-			ChangeID: cfg.ActiveChange.ChangeID,
-			RunID:    cfg.ActiveChange.RunID,
-		}
-		derivedStep, revision := deriveStepFromArtifacts(targetRoot, cfg.ActiveChange.ChangeID)
-		changeState.DerivedStep = derivedStep
-		changeState.Revision = revision
-		state.ActiveChange = changeState
-	}
+	state.RequirementCount = countDocFiles(targetRoot, "requirements")
+	state.DesignCount = countDocFiles(targetRoot, "design")
+	state.TaskCounts = countTasksByStatus(targetRoot)
 
 	return state, nil
 }
 
-// deriveStepFromArtifacts scans docs/{changeID}/ for numbered artifact files
-// and determines the current derived step and the revision of the artifact at
-// that step. The derived step is the first step in the pipeline that does not
-// have an approved artifact file.
-func deriveStepFromArtifacts(targetRoot, changeID string) (string, string) {
-	lastRevision := ""
-	for _, kind := range protocol.ArtifactStepOrder {
-		dirName := protocol.ArtifactDirName(kind)
-		filename := protocol.ArtifactFileName(kind)
-		if filename == "" {
-			return kind, lastRevision
-		}
-		artifactPath := filepath.Join(targetRoot, "docs", changeID, dirName, filename)
-		raw, err := os.ReadFile(artifactPath)
-		if err != nil {
-			return kind, lastRevision
-		}
-		frontmatter, err := extractFrontmatter(raw)
-		if err != nil {
-			return kind, lastRevision
-		}
-		if frontmatter.Status == "awaiting_approval" {
-			return kind, frontmatter.Revision
-		}
-		if frontmatter.Status != "approved" {
-			return kind, lastRevision
-		}
-		lastRevision = frontmatter.Revision
+func countDocFiles(targetRoot, dir string) int {
+	dirPath := filepath.Join(targetRoot, "docs", dir)
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return 0
 	}
-	return "complete", lastRevision
+	count := 0
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".md") {
+			count++
+		}
+	}
+	return count
 }
 
-// extractFrontmatter parses the JSON frontmatter from a docs artifact file
+func countTasksByStatus(targetRoot string) TaskCounts {
+	var counts TaskCounts
+	tasksDir := filepath.Join(targetRoot, "docs", "tasks")
+	entries, err := os.ReadDir(tasksDir)
+	if err != nil {
+		return counts
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
+			continue
+		}
+		taskPath := filepath.Join(tasksDir, entry.Name())
+		raw, err := os.ReadFile(taskPath)
+		if err != nil {
+			continue
+		}
+		fm, err := extractDocFrontmatter(raw)
+		if err != nil {
+			continue
+		}
+		switch fm.Status {
+		case protocol.TaskStatusBacklog:
+			counts.Backlog++
+		case protocol.TaskStatusRefined:
+			counts.Refined++
+		case protocol.TaskStatusActive:
+			counts.Active++
+		case protocol.TaskStatusDone:
+			counts.Done++
+		case protocol.TaskStatusReleased:
+			counts.Released++
+		}
+	}
+	return counts
+}
+
+// extractDocFrontmatter parses the JSON frontmatter from a doc file
 // delimited by "---json\n" and "\n---\n\n".
-func extractFrontmatter(raw []byte) (protocol.ArtifactFrontmatter, error) {
+func extractDocFrontmatter(raw []byte) (protocol.DocFrontmatter, error) {
 	const openMarker = "---json\n"
 	const closeMarker = "\n---\n\n"
 
 	content := string(raw)
 	if len(content) < len(openMarker) || content[:len(openMarker)] != openMarker {
-		return protocol.ArtifactFrontmatter{}, fmt.Errorf("missing frontmatter open marker")
+		return protocol.DocFrontmatter{}, fmt.Errorf("missing frontmatter open marker")
 	}
 	rest := content[len(openMarker):]
 	closeIdx := -1
@@ -123,13 +139,13 @@ func extractFrontmatter(raw []byte) (protocol.ArtifactFrontmatter, error) {
 		}
 	}
 	if closeIdx < 0 {
-		return protocol.ArtifactFrontmatter{}, fmt.Errorf("missing frontmatter close marker")
+		return protocol.DocFrontmatter{}, fmt.Errorf("missing frontmatter close marker")
 	}
 	jsonBlock := rest[:closeIdx]
 
-	var fm protocol.ArtifactFrontmatter
+	var fm protocol.DocFrontmatter
 	if err := json.Unmarshal([]byte(jsonBlock), &fm); err != nil {
-		return protocol.ArtifactFrontmatter{}, fmt.Errorf("decode frontmatter: %w", err)
+		return protocol.DocFrontmatter{}, fmt.Errorf("decode frontmatter: %w", err)
 	}
 	return fm, nil
 }

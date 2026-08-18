@@ -19,10 +19,10 @@
   ],
   "properties": {
     "protocol_version": {
-      "const": "virgil.dev/planning-slice1/v1alpha1"
+      "const": "virgil.dev/planning-slice2/v1alpha1"
     },
     "operation": {
-      "enum": ["virgil.init", "virgil.new", "virgil.continue"]
+      "enum": ["virgil.init", "virgil.write", "virgil.transition"]
     },
     "request_id": {
       "$ref": "common.schema.json#/$defs/NonEmptyString"
@@ -43,7 +43,7 @@
       "$ref": "#/$defs/Context"
     },
     "derived_step": {
-      "enum": ["idea", "spec", "design", "tasks", "handoff", "complete"]
+      "type": "string"
     },
     "artifacts": {
       "type": "array",

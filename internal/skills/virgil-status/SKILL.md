@@ -3,14 +3,14 @@ name: virgil-status
 description: "Trigger: /virgil-status, or need to check the current Virgil project state. Calls the virgil_status MCP tool; no parameters, safe to call anytime."
 metadata:
   author: virgenherrera
-  version: "1.0"
+  version: "2.0"
 ---
 
 # /virgil-status
 
 Show the current project state by calling the `virgil_status` MCP tool:
-whether the project is initialized, the active change (if any), and the
-current derived step.
+whether the project is initialized, document counts by kind, and task
+counts by lifecycle status.
 
 ## Activation Contract
 
@@ -38,17 +38,26 @@ properties defined).
 
 ## After Calling
 
-The response is the project state itself (not the standard tool-result
-envelope used by the other four tools). Use it to decide the next action:
+The response is a ProjectState object with:
+
+- `initialized` — boolean, whether `virgil.json` exists.
+- `project_id` — string, the project identifier (if initialized).
+- `requirement_count` — number of requirement documents in `docs/requirements/`.
+- `design_count` — number of design documents in `docs/design/`.
+- `task_counts` — object with counts by lifecycle status:
+  - `backlog` — tasks not yet refined.
+  - `refined` — tasks ready to be picked up.
+  - `active` — tasks currently in progress.
+  - `done` — tasks completed but not released.
+  - `released` — tasks shipped.
+
+Use the response to decide the next action:
 
 - Not initialized -> run `/virgil-init`.
-- Initialized, no active change -> run `/virgil-new`.
-- Active change with a `derived_step` other than `complete` -> continue the
-  propose/approve cycle for that step via `/virgil-propose` or
-  `/virgil-approve`.
-- `derived_step` is `complete` -> the change's artifact pipeline is
-  finished; no further propose/approve calls apply to it.
+- Initialized, no documents -> run `/virgil-write` to start writing.
+- Has tasks -> check `task_counts` to understand project progress and
+  use `/virgil-transition` to advance tasks as needed.
 
 ## References
 
-- `../virgil-workflow/SKILL.md` — full pipeline and how each step reads status.
+- `../virgil-workflow/SKILL.md` — full workflow and how each tool reads state.

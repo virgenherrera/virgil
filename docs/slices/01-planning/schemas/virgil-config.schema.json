@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.virgil.dev/planning-slice1/v1alpha1/virgil-config.schema.json",
   "title": "Virgil Config",
-  "description": "virgil.json, the repo-docs adapter control file published at the target root by virgil.init and updated by virgil.new to carry the active change.",
+  "description": "virgil.json, the repo-docs adapter control file published at the target root by virgil.init.",
   "type": "object",
   "required": [
     "schema_version",
@@ -22,7 +22,7 @@
       "const": "virgil.dev/config/v1alpha1"
     },
     "protocol_version": {
-      "const": "virgil.dev/planning-slice1/v1alpha1"
+      "const": "virgil.dev/planning-slice2/v1alpha1"
     },
     "project_id": {
       "$ref": "common.schema.json#/$defs/NonEmptyString"
@@ -51,9 +51,6 @@
     },
     "resolved_context": {
       "$ref": "operation-result.schema.json#/$defs/Context"
-    },
-    "active_change": {
-      "$ref": "#/$defs/ActiveChange"
     }
   },
   "$defs": {
@@ -64,33 +61,6 @@
         "key": { "$ref": "common.schema.json#/$defs/NonEmptyString" },
         "request_digest": { "$ref": "common.schema.json#/$defs/SHA256" },
         "original_request_id": { "$ref": "common.schema.json#/$defs/NonEmptyString" }
-      },
-      "additionalProperties": false
-    },
-    "ActiveChange": {
-      "type": "object",
-      "required": [
-        "change_id",
-        "intention",
-        "run_id",
-        "created_at",
-        "provenance",
-        "idempotency",
-        "original_request",
-        "resolved_context"
-      ],
-      "properties": {
-        "change_id": { "$ref": "common.schema.json#/$defs/NonEmptyString" },
-        "intention": { "$ref": "common.schema.json#/$defs/NonEmptyString" },
-        "run_id": { "$ref": "common.schema.json#/$defs/NonEmptyString" },
-        "created_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "provenance": { "$ref": "common.schema.json#/$defs/SourceProvenance" },
-        "idempotency": { "$ref": "#/$defs/IdempotencyRecord" },
-        "original_request": { "$ref": "operation-request.schema.json" },
-        "resolved_context": { "$ref": "operation-result.schema.json#/$defs/Context" }
       },
       "additionalProperties": false
     }

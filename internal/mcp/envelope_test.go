@@ -92,7 +92,7 @@ func TestBuildInit_SchemaValidation(t *testing.T) {
 	}
 }
 
-func TestBuildNew_SchemaValidation(t *testing.T) {
+func TestBuildWrite_SchemaValidation(t *testing.T) {
 	targetRoot := t.TempDir()
 
 	registry, err := contracts.NewRegistry()
@@ -100,7 +100,6 @@ func TestBuildNew_SchemaValidation(t *testing.T) {
 		t.Fatalf("create contract registry: %v", err)
 	}
 
-	// Initialize the project so BuildNew can read state.
 	builder := NewBuilder(targetRoot)
 	fixedTime := time.Date(2025, 1, 15, 12, 0, 0, 0, time.UTC)
 	builder.WithClock(func() time.Time { return fixedTime })
@@ -110,33 +109,37 @@ func TestBuildNew_SchemaValidation(t *testing.T) {
 		t.Fatalf("BuildInit: %v", err)
 	}
 
-	// Write a minimal virgil.json so LoadState succeeds.
 	writeTestConfig(t, targetRoot, initEnvelope)
 
-	// Build the virgil.new envelope.
-	newEnvelope, err := builder.BuildNew("my-change", "Add a feature")
+	state, err := LoadState(targetRoot)
 	if err != nil {
-		t.Fatalf("BuildNew: %v", err)
+		t.Fatalf("LoadState: %v", err)
 	}
 
-	if newEnvelope.Kind != "invoke" {
-		t.Errorf("envelope.Kind = %q, want %q", newEnvelope.Kind, "invoke")
+	writeEnvelope, err := builder.BuildWrite(state, protocol.WriteInput{
+		DocKind: "requirement",
+		Slug:    "cash-dispensing",
+		Category: "functional",
+		Content: "# Cash Dispensing\n\nThe ATM must dispense cash.",
+	})
+	if err != nil {
+		t.Fatalf("BuildWrite: %v", err)
 	}
 
-	// Validate the embedded request against the operation-request schema.
-	if err := registry.Validate(contracts.SchemaOperationRequest, newEnvelope.Request); err != nil {
+	if writeEnvelope.Kind != "invoke" {
+		t.Errorf("envelope.Kind = %q, want %q", writeEnvelope.Kind, "invoke")
+	}
+
+	if err := registry.Validate(contracts.SchemaOperationRequest, writeEnvelope.Request); err != nil {
 		t.Fatalf("request schema validation: %v", err)
 	}
 
-	request, err := protocol.DecodeOperationRequest(newEnvelope.Request)
+	request, err := protocol.DecodeOperationRequest(writeEnvelope.Request)
 	if err != nil {
 		t.Fatalf("decode request: %v", err)
 	}
-	if request.Operation != "virgil.new" {
-		t.Errorf("request.Operation = %q, want %q", request.Operation, "virgil.new")
-	}
-	if request.RunRef != nil {
-		t.Error("virgil.new must not have a run_ref")
+	if request.Operation != "virgil.write" {
+		t.Errorf("request.Operation = %q, want %q", request.Operation, "virgil.write")
 	}
 }
 

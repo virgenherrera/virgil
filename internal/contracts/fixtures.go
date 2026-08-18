@@ -28,57 +28,12 @@ var fixtureAssets = map[string]struct {
 		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-init-idempotent-retry/fixture.json",
 		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-init-idempotent-retry/actor-script.json",
 	},
-	"t0-new-repo-docs-happy": {
-		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-new-repo-docs-happy/fixture.json",
-		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-new-repo-docs-happy/actor-script.json",
-	},
-	"t0-new-change-id-collision": {
-		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-new-change-id-collision/fixture.json",
-		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-new-change-id-collision/actor-script.json",
-	},
-	"t0-new-after-completed-change": {
-		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-new-after-completed-change/fixture.json",
-		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-new-after-completed-change/actor-script.json",
-	},
-	"t0-continue-content-proposal-happy": {
-		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-content-proposal-happy/fixture.json",
-		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-content-proposal-happy/actor-script.json",
-	},
-	"t0-continue-request-changes": {
-		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-request-changes/fixture.json",
-		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-request-changes/actor-script.json",
-	},
-	"t0-continue-idempotent-retry": {
-		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-idempotent-retry/fixture.json",
-		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-idempotent-retry/actor-script.json",
-	},
-	"t0-continue-out-of-scope-write-blocked": {
-		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-out-of-scope-write-blocked/fixture.json",
-		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-out-of-scope-write-blocked/actor-script.json",
-	},
-	"t0-continue-handoff-complete": {
-		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-handoff-complete/fixture.json",
-		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-handoff-complete/actor-script.json",
-	},
-	"t0-continue-recovery-fresh-process": {
-		FixturePath: "docs/slices/01-planning/validation/fixtures/t0/t0-continue-recovery-fresh-process/fixture.json",
-		ScriptPath:  "docs/slices/01-planning/validation/fixtures/t0/t0-continue-recovery-fresh-process/actor-script.json",
-	},
 }
 
 var FixtureOrder = []string{
 	"t0-init-repo-docs-happy",
 	"t0-init-unmanaged-write-blocked",
 	"t0-init-idempotent-retry",
-	"t0-new-repo-docs-happy",
-	"t0-new-change-id-collision",
-	"t0-new-after-completed-change",
-	"t0-continue-content-proposal-happy",
-	"t0-continue-request-changes",
-	"t0-continue-idempotent-retry",
-	"t0-continue-out-of-scope-write-blocked",
-	"t0-continue-handoff-complete",
-	"t0-continue-recovery-fresh-process",
 }
 
 type Fixture struct {

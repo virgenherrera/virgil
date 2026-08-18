@@ -6,8 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
 	virgil "github.com/virgenherrera/virgil"
@@ -17,8 +15,7 @@ import (
 
 // Builder constructs wire.InvokeEnvelope values from simple MCP tool
 // parameters, filling in the 50+ field boilerplate required by the Virgil
-// wire protocol. It does not perform I/O beyond writing proposal files for
-// content proposals.
+// wire protocol. It does not perform I/O.
 type Builder struct {
 	targetRoot string
 	clock      func() time.Time
@@ -54,139 +51,40 @@ func (b *Builder) BuildInit(projectID string) (wire.InvokeEnvelope, error) {
 	return b.buildEnvelope("init", request)
 }
 
-// BuildNew constructs a wire.InvokeEnvelope for virgil.new.
-func (b *Builder) BuildNew(changeID, intent string) (wire.InvokeEnvelope, error) {
-	if changeID == "" || intent == "" {
-		return wire.InvokeEnvelope{}, fmt.Errorf("change_id and intent are required")
+// BuildWrite constructs a wire.InvokeEnvelope for virgil.write.
+func (b *Builder) BuildWrite(state *ProjectState, writeInput protocol.WriteInput) (wire.InvokeEnvelope, error) {
+	if state == nil || !state.Initialized {
+		return wire.InvokeEnvelope{}, fmt.Errorf("project is not initialized")
+	}
+	if writeInput.DocKind == "" || writeInput.Content == "" {
+		return wire.InvokeEnvelope{}, fmt.Errorf("doc_kind and content are required")
 	}
 
-	now := b.clock().UTC().Format(time.RFC3339Nano)
-	input := map[string]any{
-		"change_id": changeID,
-		"intent":    intent,
-		"provenance": map[string]string{
-			"kind":        "external_system",
-			"captured_at": now,
-		},
-	}
-	inputBytes, err := json.Marshal(input)
+	inputBytes, err := json.Marshal(writeInput)
 	if err != nil {
-		return wire.InvokeEnvelope{}, fmt.Errorf("marshal new input: %w", err)
+		return wire.InvokeEnvelope{}, fmt.Errorf("marshal write input: %w", err)
 	}
 
-	// Load state to get projectID -- virgil.new requires an initialized project.
-	state, err := LoadState(b.targetRoot)
-	if err != nil {
-		return wire.InvokeEnvelope{}, fmt.Errorf("load state for virgil.new: %w", err)
-	}
-	if !state.Initialized {
-		return wire.InvokeEnvelope{}, fmt.Errorf("project is not initialized at %s", b.targetRoot)
-	}
-
-	request := b.baseRequest("virgil.new", state.ProjectID, inputBytes, nil)
-	return b.buildEnvelope("new", request)
+	request := b.baseRequest("virgil.write", state.ProjectID, inputBytes, nil)
+	return b.buildEnvelope("write", request)
 }
 
-// BuildPropose constructs a wire.InvokeEnvelope for virgil.continue with
-// a content_proposal entry. It writes the markdown content to a proposal
-// file at docs/{change_id}/{NN-kind}/{artifact_kind}-proposal.md in the
-// target root.
-func (b *Builder) BuildPropose(state *ProjectState, artifactKind, content string) (wire.InvokeEnvelope, error) {
-	if state == nil || state.ActiveChange == nil {
-		return wire.InvokeEnvelope{}, fmt.Errorf("no active change")
+// BuildTransition constructs a wire.InvokeEnvelope for virgil.transition.
+func (b *Builder) BuildTransition(state *ProjectState, transInput protocol.TransitionInput) (wire.InvokeEnvelope, error) {
+	if state == nil || !state.Initialized {
+		return wire.InvokeEnvelope{}, fmt.Errorf("project is not initialized")
 	}
-	if artifactKind == "" || content == "" {
-		return wire.InvokeEnvelope{}, fmt.Errorf("artifact_kind and content are required")
+	if transInput.TaskSlug == "" || transInput.NewStatus == "" {
+		return wire.InvokeEnvelope{}, fmt.Errorf("task_slug and new_status are required")
 	}
 
-	changeID := state.ActiveChange.ChangeID
-
-	// Write the content to a proposal file inside the artifact directory
-	// so the content_proposal entry can reference it by URI.
-	artifactDir := protocol.ArtifactDirName(artifactKind)
-	proposalDir := filepath.Join(b.targetRoot, "docs", changeID, artifactDir)
-	if err := os.MkdirAll(proposalDir, 0o700); err != nil {
-		return wire.InvokeEnvelope{}, fmt.Errorf("create proposal directory: %w", err)
-	}
-	proposalFile := fmt.Sprintf("%s-proposal.md", artifactKind)
-	proposalPath := filepath.Join(proposalDir, proposalFile)
-	if err := os.WriteFile(proposalPath, []byte(content), 0o600); err != nil {
-		return wire.InvokeEnvelope{}, fmt.Errorf("write proposal file: %w", err)
-	}
-
-	// Build the relative URI for the proposal file.
-	proposalURI := fmt.Sprintf("docs/%s/%s/%s", changeID, artifactDir, proposalFile)
-	contentDigest := fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(content)))
-
-	input := protocol.ContinueInput{
-		ChangeID: changeID,
-		Entry: protocol.EntryUnion{
-			Kind:         "content_proposal",
-			ArtifactKind: artifactKind,
-			Content: &protocol.ResourceRef{
-				URI:    proposalURI,
-				Digest: contentDigest,
-			},
-		},
-	}
-	inputBytes, err := json.Marshal(input)
+	inputBytes, err := json.Marshal(transInput)
 	if err != nil {
-		return wire.InvokeEnvelope{}, fmt.Errorf("marshal propose input: %w", err)
+		return wire.InvokeEnvelope{}, fmt.Errorf("marshal transition input: %w", err)
 	}
 
-	runRef := &protocol.RunRef{
-		RunID:     state.ActiveChange.RunID,
-		ChangeID:  changeID,
-		ProjectID: state.ProjectID,
-		Baseline:  "baseline-v1",
-	}
-
-	request := b.baseRequest("virgil.continue", state.ProjectID, inputBytes, runRef)
-	return b.buildEnvelope("propose", request)
-}
-
-// BuildApprove constructs a wire.InvokeEnvelope for virgil.continue with
-// an approval entry. The artifact_id and revision are derived from the
-// current ProjectState.
-func (b *Builder) BuildApprove(state *ProjectState, rationale string) (wire.InvokeEnvelope, error) {
-	if state == nil || state.ActiveChange == nil {
-		return wire.InvokeEnvelope{}, fmt.Errorf("no active change")
-	}
-	if rationale == "" {
-		return wire.InvokeEnvelope{}, fmt.Errorf("rationale is required")
-	}
-
-	changeID := state.ActiveChange.ChangeID
-	artifactID := state.ActiveChange.DerivedStep
-	revision := state.ActiveChange.Revision
-	if revision == "" {
-		revision = "rev-000001"
-	}
-
-	input := protocol.ContinueInput{
-		ChangeID: changeID,
-		Entry: protocol.EntryUnion{
-			Kind:       "approval",
-			ArtifactID: artifactID,
-			Revision:   revision,
-			Decision:   "approved",
-			Rationale:  rationale,
-		},
-	}
-	inputBytes, err := json.Marshal(input)
-	if err != nil {
-		return wire.InvokeEnvelope{}, fmt.Errorf("marshal approve input: %w", err)
-	}
-
-	runRef := &protocol.RunRef{
-		RunID:     state.ActiveChange.RunID,
-		ChangeID:  changeID,
-		ProjectID: state.ProjectID,
-		Baseline:  "baseline-v1",
-	}
-
-	request := b.baseRequest("virgil.continue", state.ProjectID, inputBytes, runRef)
-	return b.buildEnvelope("approve", request)
+	request := b.baseRequest("virgil.transition", state.ProjectID, inputBytes, nil)
+	return b.buildEnvelope("transition", request)
 }
 
 // baseRequest builds the shared protocol.OperationRequest structure that
@@ -195,6 +93,8 @@ func (b *Builder) BuildApprove(state *ProjectState, rationale string) (wire.Invo
 func (b *Builder) baseRequest(operation, projectID string, input json.RawMessage, runRef *protocol.RunRef) protocol.OperationRequest {
 	targetURI := "file://" + b.targetRoot
 	storeRefID := "store-" + projectID
+
+	_ = sha256.Sum256(nil)
 
 	return protocol.OperationRequest{
 		ProtocolVersion: protocol.Version,
@@ -303,7 +203,6 @@ func (b *Builder) buildEnvelope(operation string, request protocol.OperationRequ
 func shortUUID() string {
 	var buf [8]byte
 	if _, err := rand.Read(buf[:]); err != nil {
-		// crypto/rand should never fail on supported platforms.
 		panic("crypto/rand: " + err.Error())
 	}
 	return hex.EncodeToString(buf[:])

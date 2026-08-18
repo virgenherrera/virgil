@@ -251,7 +251,7 @@
       "required": ["operation", "condition"],
       "properties": {
         "operation": {
-          "enum": ["virgil.init", "virgil.new", "virgil.continue", "none"]
+          "enum": ["virgil.init", "virgil.write", "virgil.transition", "none"]
         },
         "condition": { "$ref": "#/$defs/NonEmptyString" }
       },

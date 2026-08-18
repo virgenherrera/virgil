@@ -217,8 +217,8 @@ func TestApp_T0SyncHappy(t *testing.T) {
 	// All embedded skills must be present after sync, not just the one
 	// seeded stale.
 	for _, id := range []string{
-		"virgil-workflow", "virgil-init", "virgil-new",
-		"virgil-propose", "virgil-approve", "virgil-status",
+		"virgil-workflow", "virgil-init", "virgil-write",
+		"virgil-transition", "virgil-status",
 	} {
 		p := filepath.Join(homeDir, ".claude", "skills", id, "SKILL.md")
 		if _, err := os.Stat(p); err != nil {

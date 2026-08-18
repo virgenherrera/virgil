@@ -1,6 +1,6 @@
 {
   "schema_version": "virgil.dev/validation-fixture/v1alpha1",
-  "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+  "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
   "fixture_id": "t0-init-unmanaged-write-blocked",
   "fixture_revision": "v1",
   "layer": "T0",
@@ -10,7 +10,7 @@
     "baseline": "baseline-v1"
   },
   "initial_request": {
-    "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+    "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
     "operation": "virgil.init",
     "request_id": "init-unmanaged-001",
     "idempotency_key": "init-unmanaged-v1",
@@ -100,7 +100,7 @@
     "script": {
       "uri": "fixture://validation/t0-init-unmanaged-write-blocked/actor-script.json",
       "revision": "v1",
-      "digest": "sha256:21a595d94b6e8825d71a73a5738704e8f5432e0ff2a7cad82df1180b4e512629"
+      "digest": "sha256:a571b8343c909f6a19afd4daba59a76d890499d299116e49041606bce677cbe7"
     }
   },
   "adapter_profile": {

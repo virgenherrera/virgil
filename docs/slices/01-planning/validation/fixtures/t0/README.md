@@ -1,4 +1,4 @@
-# Fixtures T0 de Slice 1
+# Fixtures T0 de Slice 2
 
 Estas fixtures son los primeros contratos Red del harness app-level. Cada
 scenario dirige un actor determinístico a través de la misma superficie pública

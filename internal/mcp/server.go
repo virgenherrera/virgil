@@ -9,6 +9,7 @@ import (
 	"log"
 
 	"github.com/virgenherrera/virgil/internal/contracts"
+	"github.com/virgenherrera/virgil/internal/protocol"
 	runtimeimpl "github.com/virgenherrera/virgil/internal/runtime"
 	"github.com/virgenherrera/virgil/internal/wire"
 )
@@ -214,12 +215,10 @@ func (s *Server) handleToolsCall(req JSONRPCRequest) JSONRPCResponse {
 		return s.callStatus(req.ID)
 	case "virgil_init":
 		return s.callInit(req.ID, params.Arguments)
-	case "virgil_new":
-		return s.callNew(req.ID, params.Arguments)
-	case "virgil_propose":
-		return s.callPropose(req.ID, params.Arguments)
-	case "virgil_approve":
-		return s.callApprove(req.ID, params.Arguments)
+	case "virgil_write":
+		return s.callWrite(req.ID, params.Arguments)
+	case "virgil_transition":
+		return s.callTransition(req.ID, params.Arguments)
 	default:
 		return JSONRPCResponse{
 			JSONRPC: "2.0",
@@ -255,49 +254,28 @@ func (s *Server) callInit(id json.RawMessage, args json.RawMessage) JSONRPCRespo
 	return s.invokeAndRespond(id, envelope)
 }
 
-func (s *Server) callNew(id json.RawMessage, args json.RawMessage) JSONRPCResponse {
-	var a struct {
-		ChangeID string `json:"change_id"`
-		Intent   string `json:"intent"`
-	}
+func (s *Server) callWrite(id json.RawMessage, args json.RawMessage) JSONRPCResponse {
+	var a protocol.WriteInput
 	if err := json.Unmarshal(args, &a); err != nil {
 		return s.invalidParams(id, err)
 	}
 
-	envelope, err := s.builder.BuildNew(a.ChangeID, a.Intent)
+	s.refreshState()
+	envelope, err := s.builder.BuildWrite(s.state, a)
 	if err != nil {
 		return s.toolError(id, err)
 	}
 	return s.invokeAndRespond(id, envelope)
 }
 
-func (s *Server) callPropose(id json.RawMessage, args json.RawMessage) JSONRPCResponse {
-	var a struct {
-		ArtifactKind string `json:"artifact_kind"`
-		Content      string `json:"content"`
-	}
+func (s *Server) callTransition(id json.RawMessage, args json.RawMessage) JSONRPCResponse {
+	var a protocol.TransitionInput
 	if err := json.Unmarshal(args, &a); err != nil {
 		return s.invalidParams(id, err)
 	}
 
 	s.refreshState()
-	envelope, err := s.builder.BuildPropose(s.state, a.ArtifactKind, a.Content)
-	if err != nil {
-		return s.toolError(id, err)
-	}
-	return s.invokeAndRespond(id, envelope)
-}
-
-func (s *Server) callApprove(id json.RawMessage, args json.RawMessage) JSONRPCResponse {
-	var a struct {
-		Rationale string `json:"rationale"`
-	}
-	if err := json.Unmarshal(args, &a); err != nil {
-		return s.invalidParams(id, err)
-	}
-
-	s.refreshState()
-	envelope, err := s.builder.BuildApprove(s.state, a.Rationale)
+	envelope, err := s.builder.BuildTransition(s.state, a)
 	if err != nil {
 		return s.toolError(id, err)
 	}

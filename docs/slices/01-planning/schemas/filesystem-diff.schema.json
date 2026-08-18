@@ -17,7 +17,7 @@
       "const": "virgil.dev/filesystem-diff/v1alpha1"
     },
     "protocol_version": {
-      "const": "virgil.dev/planning-slice1/v1alpha1"
+      "const": "virgil.dev/planning-slice2/v1alpha1"
     },
     "diff_id": {
       "$ref": "common.schema.json#/$defs/NonEmptyString"

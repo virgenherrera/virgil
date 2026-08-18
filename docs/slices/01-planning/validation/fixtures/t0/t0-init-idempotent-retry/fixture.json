@@ -1,6 +1,6 @@
 {
   "schema_version": "virgil.dev/validation-fixture/v1alpha1",
-  "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+  "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
   "fixture_id": "t0-init-idempotent-retry",
   "fixture_revision": "v2",
   "layer": "T0",
@@ -10,7 +10,7 @@
     "baseline": "baseline-v1"
   },
   "initial_request": {
-    "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+    "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
     "operation": "virgil.init",
     "request_id": "init-retry-001-a",
     "idempotency_key": "init-retry-v1",
@@ -102,7 +102,7 @@
     "script": {
       "uri": "fixture://validation/t0-init-idempotent-retry/actor-script.json",
       "revision": "v2",
-      "digest": "sha256:aa3fbd9c20fa07402e666aa13f60fc62d4a3c4e4ae62d32d93f45cdfb5be36b7"
+      "digest": "sha256:279393dffc879181570ca4ec844c9791e7eb4d236dd70e6d01d2944a75655a71"
     }
   },
   "adapter_profile": {
@@ -229,7 +229,7 @@
         "request_id": "init-retry-001-a",
         "operation_status": "success",
         "process_id": "process-a",
-        "next_operation": "virgil.new"
+        "next_operation": "virgil.write"
       },
       {
         "step_id": "recovery",
@@ -262,7 +262,7 @@
         "operation_status": "success",
         "replayed_from_request_id": "init-retry-001-a",
         "process_id": "process-b",
-        "next_operation": "virgil.new"
+        "next_operation": "virgil.write"
       },
       {
         "step_id": "stop",

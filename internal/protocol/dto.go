@@ -7,52 +7,92 @@ import (
 	"io"
 )
 
-const Version = "virgil.dev/planning-slice1/v1alpha1"
+const Version = "virgil.dev/planning-slice2/v1alpha1"
 
 // VirgilConfigFile is the repo-docs adapter control file published at the
 // target root by virgil.init. It is not part of managed_root: it is the
 // adapter's own bootstrap state, analogous to .git/config.
 const VirgilConfigFile = "virgil.json"
 
-// artifactFileNames is the fixed, numbered filename for each Slice 1
-// artifact_kind, published under managed_root's per-change subdirectory
-// ("docs/{change_id}/"). The numbering encodes the pipeline order so a plain
-// directory listing shows the change's progress without reading any file.
-var artifactFileNames = map[string]string{
-	"idea":    "00-idea.md",
-	"spec":    "01-spec.md",
-	"design":  "02-design.md",
-	"tasks":   "03-tasks.md",
-	"handoff": "04-handoff.md",
+const (
+	DocKindIdea        = "idea"
+	DocKindRequirement = "requirement"
+	DocKindDesign      = "design"
+	DocKindTask        = "task"
+)
+
+var ValidDocKinds = []string{DocKindIdea, DocKindRequirement, DocKindDesign, DocKindTask}
+
+const (
+	TaskStatusBacklog  = "backlog"
+	TaskStatusRefined  = "refined"
+	TaskStatusActive   = "active"
+	TaskStatusDone     = "done"
+	TaskStatusReleased = "released"
+)
+
+var ValidTaskStatuses = []string{TaskStatusBacklog, TaskStatusRefined, TaskStatusActive, TaskStatusDone, TaskStatusReleased}
+
+var validTransitions = map[string][]string{
+	TaskStatusBacklog:  {TaskStatusRefined},
+	TaskStatusRefined:  {TaskStatusActive, TaskStatusBacklog},
+	TaskStatusActive:   {TaskStatusDone, TaskStatusRefined},
+	TaskStatusDone:     {TaskStatusReleased, TaskStatusActive},
+	TaskStatusReleased: {},
 }
 
-// artifactDirNames is the fixed, numbered directory name for each Slice 1
-// artifact_kind, published under managed_root's per-change subdirectory
-// ("docs/{change_id}/"). Each artifact's file lives inside its own directory
-// so a stage can later accumulate more than one file (diagrams, schemas,
-// supplementary docs) alongside the canonical artifact file.
-var artifactDirNames = map[string]string{
-	"idea":    "00-idea",
-	"spec":    "01-spec",
-	"design":  "02-design",
-	"tasks":   "03-tasks",
-	"handoff": "04-handoff",
+func IsValidDocKind(kind string) bool {
+	for _, k := range ValidDocKinds {
+		if k == kind {
+			return true
+		}
+	}
+	return false
 }
 
-// ArtifactStepOrder is the fixed Slice 1 artifact sequence shared by the
-// repo-docs adapter and every T0 oracle that observes its durable output.
-var ArtifactStepOrder = []string{"idea", "spec", "design", "tasks", "handoff"}
-
-// ArtifactFileName returns the fixed docs/-relative filename for kind, or ""
-// if kind is not a recognized Slice 1 artifact_kind.
-func ArtifactFileName(kind string) string {
-	return artifactFileNames[kind]
+func IsValidTaskStatus(status string) bool {
+	for _, s := range ValidTaskStatuses {
+		if s == status {
+			return true
+		}
+	}
+	return false
 }
 
-// ArtifactDirName returns the fixed docs/-relative directory name for kind,
-// or "" if kind is not a recognized Slice 1 artifact_kind.
-func ArtifactDirName(kind string) string {
-	return artifactDirNames[kind]
+func IsValidTransition(from, to string) bool {
+	targets, ok := validTransitions[from]
+	if !ok {
+		return false
+	}
+	for _, t := range targets {
+		if t == to {
+			return true
+		}
+	}
+	return false
+}
+
+func DocDir(kind string) string {
+	switch kind {
+	case DocKindRequirement:
+		return "requirements"
+	case DocKindDesign:
+		return "design"
+	case DocKindTask:
+		return "tasks"
+	default:
+		return ""
+	}
+}
+
+func DocFileName(kind, category, slug string) string {
+	if kind == DocKindIdea {
+		return "idea.md"
+	}
+	if category != "" {
+		return category + "-" + slug + ".md"
+	}
+	return slug + ".md"
 }
 
 type ResourceRef struct {
@@ -168,33 +208,25 @@ func ContextFromRequest(request OperationRequest) Context {
 	}
 }
 
-// ContinueInput is the typed payload for virgil.continue.
-type ContinueInput struct {
-	ChangeID string     `json:"change_id"`
-	Entry    EntryUnion `json:"entry"`
+type WriteInput struct {
+	DocKind  string    `json:"doc_kind"`
+	Slug     string    `json:"slug,omitempty"`
+	Category string    `json:"category,omitempty"`
+	Content  string    `json:"content"`
+	Status   string    `json:"status,omitempty"`
+	Refs     *TaskRefs `json:"refs,omitempty"`
 }
 
-// EntryUnion discriminates on Kind: content_proposal | approval | answer | recovery_request.
-type EntryUnion struct {
-	Kind string `json:"kind"`
-	// Content proposal fields.
-	ArtifactKind string       `json:"artifact_kind,omitempty"`
-	Content      *ResourceRef `json:"content,omitempty"`
-	// Approval fields.
-	ArtifactID string `json:"artifact_id,omitempty"`
-	Revision   string `json:"revision,omitempty"`
-	Decision   string `json:"decision,omitempty"`
-	Rationale  string `json:"rationale,omitempty"`
-	// Answer fields.
-	Answer string `json:"answer,omitempty"`
-	// Recovery fields.
-	Reason string `json:"reason,omitempty"`
+type TransitionInput struct {
+	TaskSlug  string    `json:"task_slug"`
+	NewStatus string    `json:"new_status"`
+	RefsUpdate *TaskRefs `json:"refs_update,omitempty"`
 }
 
-// UpstreamRef points to the revision of an upstream artifact kind a revision was built on.
-type UpstreamRef struct {
-	RevisionID   string `json:"revision_id"`
-	ArtifactKind string `json:"artifact_kind"`
+type TaskRefs struct {
+	Requirements []string `json:"requirements,omitempty"`
+	Design       []string `json:"design,omitempty"`
+	Implements   []string `json:"implements,omitempty"`
 }
 
 // IdempotencyRecord binds a caller's stable intent key to the canonical
@@ -208,27 +240,6 @@ type IdempotencyRecord struct {
 	OriginalRequestID string `json:"original_request_id"`
 }
 
-// ActiveChange is the single change repo-docs tracks per project, published
-// under VirgilConfig.ActiveChange. Its artifacts live under their own
-// docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md subdirectory; there is still only one
-// active change per project, so git history — not a second active_change
-// slot — is where prior changes live once superseded.
-type ActiveChange struct {
-	ChangeID        string            `json:"change_id"`
-	Intention       string            `json:"intention"`
-	RunID           string            `json:"run_id"`
-	CreatedAt       string            `json:"created_at"`
-	Provenance      SourceProvenance  `json:"provenance"`
-	Idempotency     IdempotencyRecord `json:"idempotency"`
-	OriginalRequest OperationRequest  `json:"original_request"`
-	ResolvedContext Context           `json:"resolved_context"`
-}
-
-// VirgilConfig is the durable authority published as virgil.json at the
-// target root by virgil.init, and updated in place by virgil.new to carry
-// ActiveChange. It replaces project.json, events.jsonl and change.json: git
-// is the ledger, so repo-docs keeps exactly one control file plus the
-// artifact files themselves.
 type VirgilConfig struct {
 	SchemaVersion   string            `json:"schema_version"`
 	ProtocolVersion string            `json:"protocol_version"`
@@ -241,68 +252,22 @@ type VirgilConfig struct {
 	Idempotency     IdempotencyRecord `json:"idempotency"`
 	OriginalRequest OperationRequest  `json:"original_request"`
 	ResolvedContext Context           `json:"resolved_context"`
-	ActiveChange    *ActiveChange     `json:"active_change,omitempty"`
 }
 
-// ArtifactFrontmatter is the JSON frontmatter embedded between the leading
-// "---json" / "---" markers of every docs/{change_id}/{NN}-{kind}/{NN}-{kind}.md file.
-// It replaces the Slice 1 RevisionEnvelope: there is no separate
-// envelope.json, and there is no revision_lifecycle_event log, because the
-// file itself — rewritten in place through drafts, withdrawals and approval
-// — is the durable authority.
-type ArtifactFrontmatter struct {
-	Schema          string           `json:"schema"`
-	ProtocolVersion string           `json:"protocol_version"`
-	ArtifactKind    string           `json:"artifact_kind"`
-	ChangeID        string           `json:"change_id"`
-	ProjectID       string           `json:"project_id"`
-	Status          string           `json:"status"`
-	Revision        string           `json:"revision"`
-	UpstreamRefs    []UpstreamRef    `json:"upstream_refs"`
-	ContentDigest   string           `json:"content_digest"`
-	IdempotencyKey  string           `json:"idempotency_key"`
-	RequestID       string           `json:"request_id"`
-	CreatedAt       string           `json:"created_at"`
-	Provenance      SourceProvenance `json:"provenance"`
-	ApprovedBy      *ActorRef        `json:"approved_by,omitempty"`
-	ApprovedAt      string           `json:"approved_at,omitempty"`
+type DocFrontmatter struct {
+	Schema          string    `json:"schema"`
+	ProtocolVersion string    `json:"protocol_version"`
+	DocKind         string    `json:"doc_kind"`
+	ProjectID       string    `json:"project_id"`
+	Slug            string    `json:"slug,omitempty"`
+	Category        string    `json:"category,omitempty"`
+	Status          string    `json:"status,omitempty"`
+	Refs            *TaskRefs `json:"refs,omitempty"`
+	ContentDigest   string    `json:"content_digest"`
+	CreatedAt       string    `json:"created_at"`
+	UpdatedAt       string    `json:"updated_at"`
 }
 
-// ContextBrief is compiled context for a specific step, stored at
-// briefs/{brief_id}.json.
-type ContextBrief struct {
-	SchemaVersion    string           `json:"schema_version"`
-	ProtocolVersion  string           `json:"protocol_version"`
-	BriefID          string           `json:"brief_id"`
-	ChangeID         string           `json:"change_id"`
-	ProjectID        string           `json:"project_id"`
-	ArtifactKind     string           `json:"artifact_kind"`
-	Objective        string           `json:"objective"`
-	Sources          []BriefSource    `json:"sources"`
-	ExcludedSources  []ExcludedSource `json:"excluded_sources"`
-	Budget           BriefBudget      `json:"budget"`
-	BaselineRevision string           `json:"baseline_revision,omitempty"`
-	CreatedAt        string           `json:"created_at"`
-}
-
-// BriefSource is a source consulted when compiling a ContextBrief.
-type BriefSource struct {
-	URI        string           `json:"uri"`
-	Provenance SourceProvenance `json:"provenance"`
-	Digest     string           `json:"digest"`
-}
-
-// ExcludedSource is a source deliberately excluded from a ContextBrief.
-type ExcludedSource struct {
-	URI    string `json:"uri"`
-	Reason string `json:"reason"`
-}
-
-// BriefBudget tracks the token budget of a ContextBrief.
-type BriefBudget struct {
-	MaxTokens  int `json:"max_tokens"`
-	UsedTokens int `json:"used_tokens"`
-}
 
 type ObjectPointer struct {
 	ObjectID string       `json:"object_id"`

@@ -1,115 +1,131 @@
 ---
 name: virgil-workflow
-description: "Trigger: working in a Virgil-managed project, or asked to run the Virgil planning workflow. Teaches the init -> new -> propose -> approve MCP tool pipeline and status checks."
+description: "Trigger: working in a Virgil-managed project, or asked to run the Virgil planning workflow. Teaches the init → write → transition → status MCP tool workflow and knowledge base management."
 metadata:
   author: virgenherrera
-  version: "1.0"
+  version: "2.0"
 ---
 
 # Virgil Workflow
 
-Virgil exposes five MCP tools on the `virgil` server: `virgil_init`, `virgil_new`,
-`virgil_propose`, `virgil_approve`, `virgil_status`. Together they drive a
-project through a fixed, gated artifact pipeline. This skill teaches the
-tool sequence; it does not replace the individual `/virgil-*` command
-skills, which document each tool's parameters in isolation.
+Virgil exposes four MCP tools on the `virgil` server: `virgil_init`,
+`virgil_write`, `virgil_transition`, `virgil_status`. Together they manage
+a project-level knowledge base with structured documents and task tracking.
+This skill teaches the tool workflow; it does not replace the individual
+`/virgil-*` command skills, which document each tool's parameters in
+isolation.
 
 ## Activation Contract
 
 Load this skill whenever you are about to call any `virgil_*` MCP tool, or
-whenever the user asks to plan, propose, or approve work in a
+whenever the user asks to plan, write, or manage documents in a
 Virgil-managed project.
 
 ## Hard Rules
 
 - Never invent tool parameters. Each tool's input schema is exact and
   `additionalProperties: false` — extra fields are rejected.
-- Never call `virgil_propose` with an `artifact_kind` that does not match
-  the current `derived_step`. Call `virgil_status` first if you are unsure
-  what the current step is.
-- Never call `virgil_new` while a project already has an active change.
-  Finish or check the active change via `virgil_status` first.
+- Never call `virgil_write` for a task without a `slug`.
+- Never call `virgil_transition` with an invalid transition (check
+  `virgil_status` first to know the current status).
 - `virgil_status` takes no parameters and is always safe to call — use it
   liberally to re-orient.
-- Never call `virgil_approve` without explicit human confirmation. Present
-  the proposal summary and wait.
-- After `derived_step` reaches `complete`, STOP. The pipeline is a PLANNING
-  tool. Implementation requires separate, explicit instruction from the
-  human.
+- After tasks reach `done` or `released`, STOP. The knowledge base is a
+  PLANNING tool. Implementation requires separate, explicit instruction
+  from the human.
 
-## The Artifact Pipeline
+## The Knowledge Base Model
 
-A change moves through a fixed, ordered sequence of artifact kinds:
+Virgil manages a project-level knowledge base (not per-change). Documents
+are organized by kind:
 
 ```
-idea -> spec -> design -> tasks -> handoff -> complete
+docs/
+  idea.md                              # Single project-level idea
+  requirements/
+    {category}-{slug}.md               # Requirement documents
+  design/
+    {category}-{slug}.md               # Design documents
+  tasks/
+    {slug}.md                          # Task documents with lifecycle
 ```
 
-Each artifact kind is proposed with `virgil_propose`, then approved with
-`virgil_approve`. Approval advances the pipeline to the next kind. There is
-no skipping steps and no working ahead of the current `derived_step`.
+### Document Kinds
 
-## Tool Call Sequence
+| Kind | Location | Notes |
+|------|----------|-------|
+| `idea` | `docs/idea.md` | Single file, overwritten on each write. No slug. |
+| `requirement` | `docs/requirements/` | Optional `category` prefix. |
+| `design` | `docs/design/` | Optional `category` prefix. |
+| `task` | `docs/tasks/` | Has `status` lifecycle and `refs` linking to other docs. |
 
-| # | Tool | Parameters | When |
-|---|------|-----------|------|
-| 1 | `virgil_init` | `project_id` (string, required) | Once per project, before anything else. |
-| 2 | `virgil_new` | `change_id` (string, required), `intent` (string, required) | Start a change. Project must be initialized and have no active change. |
-| 3 | `virgil_propose` | `artifact_kind` (enum: idea, spec, design, tasks, handoff, required), `content` (string, required) | Submit content for the current derived step. |
-| 4 | `virgil_approve` | `rationale` (string, required) | Approve the revision currently awaiting approval. Advances the pipeline. |
-| 5 | `virgil_status` | none | Check state at any point — before, between, or after any of the above. |
+### Task Lifecycle
 
-Repeat steps 3-4 for each artifact kind in order (idea, then spec, then
-design, then tasks, then handoff) until `derived_step` reports `complete`.
+Tasks have a status that follows a state machine. Status lives in the
+document's JSON frontmatter — files do NOT move between directories.
+
+```
+backlog → refined → active → done → released
+```
+
+Use `virgil_write` to create tasks and `virgil_transition` to change their
+status. Backward transitions are allowed (except from `released`).
+
+## Tool Summary
+
+| Tool | Purpose | When |
+|------|---------|------|
+| `virgil_init` | Initialize project, creates `virgil.json` and `AGENTS.md` | Once per project, before anything else. |
+| `virgil_write` | Create or update documents (idea, requirement, design, task) | Any time after init. |
+| `virgil_transition` | Change a task's lifecycle status | When a task needs to advance or regress. |
+| `virgil_status` | Check project state, doc counts, task counts by status | Any time — safe, no parameters. |
+
+## Typical Workflow
+
+1. `virgil_status` — check if project is initialized.
+2. `virgil_init` — if not initialized, create the project.
+3. `virgil_write` with `doc_kind: "idea"` — capture the project idea.
+4. `virgil_write` with `doc_kind: "requirement"` — define requirements
+   (repeat for each requirement, using `slug` and optionally `category`).
+5. `virgil_write` with `doc_kind: "design"` — write design documents
+   (repeat for each design doc).
+6. `virgil_write` with `doc_kind: "task"` — break work into tasks with
+   `refs` linking to requirements and design docs.
+7. `virgil_transition` — advance tasks through `backlog → refined →
+   active → done → released` as work progresses.
+8. `virgil_status` — check document counts and task status distribution
+   at any point.
 
 ## Response Shape
 
-Every `virgil_*` call (except a failed `virgil_status`) returns a JSON
-object with these fields — read them to decide the next action, do not
-guess:
+`virgil_init`, `virgil_write`, and `virgil_transition` return an
+OperationResult with:
 
 - `status`: one of `success`, `needs_input`, `blocked`, `error`, `unsupported`.
-- `operation`: the operation that ran (e.g. `virgil.init`, `virgil.new`, `virgil.continue`).
-- `derived_step`: the pipeline step the project is currently on.
-- `message`: human-readable summary.
+- `operation`: the operation that ran (e.g. `virgil.init`, `virgil.write`).
+- `message`: human-readable summary (when simplified by MCP layer).
 - `artifacts`: file paths written by this call, if any.
-- `next_step`: what to do next, if the runtime has a recommendation.
-- `error`: diagnostic detail, present only when `status` is `blocked`, `error`, or `unsupported`.
+- `next`: what to do next, if the runtime has a recommendation.
+- `error`: diagnostic detail, present only on failure.
 
-A `status` of `needs_input` after `virgil_propose` means the artifact is
-awaiting approval — the next call should be `virgil_approve`, not another
-`virgil_propose`.
+`virgil_status` returns a ProjectState object:
 
-## Execution Steps
-
-1. Call `virgil_status` to check whether the project is initialized and
-   whether a change is active.
-2. If not initialized, call `virgil_init` with a `project_id`.
-3. If no change is active, call `virgil_new` with a `change_id` and
-   `intent`.
-4. Read `derived_step` from the status/response. Call `virgil_propose`
-   with `artifact_kind` set to that exact step and `content` holding the
-   markdown for that artifact.
-5. Call `virgil_approve` with a `rationale` explaining why the proposed
-   revision is acceptable.
-6. Repeat steps 4-5 until `derived_step` is `complete`.
-7. Use `virgil_status` at any point to re-check state, including after an
-   error or a `blocked` result.
-8. When `derived_step` is `complete`, report the final state to the user and
-   STOP. Do not proceed to implementation unless the user explicitly
-   instructs it.
+- `initialized`: boolean.
+- `project_id`: string (if initialized).
+- `requirement_count`: number of requirement documents.
+- `design_count`: number of design documents.
+- `task_counts`: object with `backlog`, `refined`, `active`, `done`, `released` counts.
 
 ## Output Contract
 
-After driving the pipeline, report to the user: the current `derived_step`,
-the `status` of the last call, and any `artifacts` written. If `status` was
+After calling any tool, report to the user: the `status` of the call, any
+`artifacts` written, and the current state if relevant. If `status` was
 `blocked` or `error`, surface the `error` field verbatim before proposing a
 fix.
 
 ## References
 
 - `../virgil-init/SKILL.md` — `virgil_init` in isolation.
-- `../virgil-new/SKILL.md` — `virgil_new` in isolation.
-- `../virgil-propose/SKILL.md` — `virgil_propose` in isolation.
-- `../virgil-approve/SKILL.md` — `virgil_approve` in isolation.
+- `../virgil-write/SKILL.md` — `virgil_write` in isolation.
+- `../virgil-transition/SKILL.md` — `virgil_transition` in isolation.
 - `../virgil-status/SKILL.md` — `virgil_status` in isolation.

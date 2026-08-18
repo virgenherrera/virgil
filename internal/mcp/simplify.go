@@ -44,7 +44,7 @@ func SimplifyResult(result wire.InvokeResult) SimpleResult {
 	case "success":
 		simple.Message = formatSuccessMessage(r.Operation, r.DerivedStep)
 	case "needs_input":
-		simple.Message = fmt.Sprintf("Artifact %s is awaiting approval.", r.DerivedStep)
+		simple.Message = "Operation needs additional input."
 	case "blocked":
 		simple.Message = "Operation blocked. Check the error field for details."
 		simple.Error = extractDiagnosticConditions(r.Diagnostics)
@@ -71,14 +71,11 @@ func SimplifyResult(result wire.InvokeResult) SimpleResult {
 func formatSuccessMessage(operation, derivedStep string) string {
 	switch operation {
 	case "virgil.init":
-		return "Project initialized. Ready to create a change."
-	case "virgil.new":
-		return "Change created. Ready to propose the first artifact (idea)."
-	case "virgil.continue":
-		if derivedStep == "complete" {
-			return "All artifacts approved. Change pipeline is complete."
-		}
-		return fmt.Sprintf("Artifact approved. Next step: %s.", derivedStep)
+		return "Project initialized. Ready to write documents."
+	case "virgil.write":
+		return "Document written successfully."
+	case "virgil.transition":
+		return "Task status updated."
 	default:
 		return fmt.Sprintf("Operation %s completed.", operation)
 	}

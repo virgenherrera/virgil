@@ -1,6 +1,6 @@
 {
   "schema_version": "virgil.dev/validation-fixture/v1alpha1",
-  "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+  "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
   "fixture_id": "t0-init-repo-docs-happy",
   "fixture_revision": "v2",
   "layer": "T0",
@@ -10,7 +10,7 @@
     "baseline": "baseline-v1"
   },
   "initial_request": {
-    "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+    "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
     "operation": "virgil.init",
     "request_id": "init-happy-001",
     "idempotency_key": "init-happy-v1",
@@ -100,7 +100,7 @@
     "script": {
       "uri": "fixture://validation/t0-init-repo-docs-happy/actor-script.json",
       "revision": "v2",
-      "digest": "sha256:3932abfb8fc652f1ccfd56a062e888caa3920faa3d49e895d65f850e042c377b"
+      "digest": "sha256:99e76be3076d3dc372cb393bb93e042a35665237c319b2db6c30cf0d7b8f181b"
     }
   },
   "adapter_profile": {
@@ -232,7 +232,7 @@
         "request_id": "init-happy-001",
         "operation_status": "success",
         "process_id": "process-a",
-        "next_operation": "virgil.new"
+        "next_operation": "virgil.write"
       },
       {
         "step_id": "stop",

@@ -1,7 +1,7 @@
-# Schemas de Slice 1
+# Schemas de Slice 2
 
 Estos JSON Schemas definen la forma machine-readable del protocolo
-`virgil.dev/planning-slice1/v1alpha1`.
+`virgil.dev/planning-slice2/v1alpha1`.
 
 Sus `$id` son identificadores canónicos. Los adapters DEBEN registrar los
 schemas bundled y resolver referencias desde esa copia versionada; validarlos
@@ -12,13 +12,12 @@ no requiere acceso de red a `schemas.virgil.dev`.
 - [`common.schema.json`](common.schema.json): referencias, adapters, actors,
   diagnósticos y tipos compartidos.
 - [`operation-request.schema.json`](operation-request.schema.json): inputs
-  estructurados de `virgil.init`, `virgil.new` y `virgil.continue`.
+  estructurados de `virgil.init`, `virgil.write` y `virgil.transition`.
 - [`effect-record.schema.json`](effect-record.schema.json): decisión de policy
   y efecto realmente observado.
 - [`virgil-config.schema.json`](virgil-config.schema.json): forma de
   `virgil.json`, el archivo de control del adapter en la raíz del target —
-  identidad del proyecto, `dogma_ref`, `managed_root` y, mientras existe, el
-  cambio activo (`active_change`).
+  identidad del proyecto, `dogma_ref`, `managed_root`.
 - [`operation-result.schema.json`](operation-result.schema.json): resultado
   correlacionable, recuperable y no dependiente de prosa.
 - [`scenario-fixture.schema.json`](scenario-fixture.schema.json): actor,
@@ -35,16 +34,11 @@ no requiere acceso de red a `schemas.virgil.dev`.
   entre dos snapshots del mismo root.
 - [`runner-observation-report.schema.json`](runner-observation-report.schema.json):
   procesos reales, checkpoints y checks calculados por el harness externo.
-- [`artifact-frontmatter.schema.json`](artifact-frontmatter.schema.json): forma
-  del bloque JSON de frontmatter (`---json` … `---`) al inicio de cada
-  `docs/{NN}-{kind}.md`, incluida su transición
-  `awaiting_approval → approved | withdrawn` y la referencia al artefacto
-  upstream. Reemplaza el envelope y el event log de revisión: el archivo
-  reescrito en su lugar es la única autoridad, y git conserva el historial de
-  redrafts.
-- [`context-brief.schema.json`](context-brief.schema.json): forma de
-  `briefs/{brief_id}.json`, el contexto compilado y presupuestado para un paso
-  concreto de `virgil.continue`.
+- [`doc-frontmatter.schema.json`](doc-frontmatter.schema.json): forma del
+  bloque JSON de frontmatter (`---json` … `---`) al inicio de cada documento
+  gestionado por Virgil: idea, requirements, design y tasks. Los tasks incluyen
+  `status` (backlog/refined/active/done/released) y `refs` (requirements,
+  design, implements).
 
 ## Autoridad
 

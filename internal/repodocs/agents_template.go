@@ -14,7 +14,7 @@ const tripleBacktick = backtick + backtick + backtick
 
 // agentsTemplate is the content Virgil publishes as AGENTS.md at the target
 // root during virgil.init, alongside virgil.json. It documents the wire
-// protocol, available operations, and artifact pipeline so an AI agent
+// protocol, available operations, and knowledge base model so an AI agent
 // arriving at a Virgil-managed repository knows how to interact with it.
 const agentsTemplate = `# Virgil — Knowledge Guardian
 
@@ -25,8 +25,9 @@ This project is managed by [Virgil](https://github.com/virgenherrera/virgil), a 
 Virgil is the DBMS of the project's documentation. It:
 
 - Guards the ` + backtick + `docs/` + backtick + ` directory as the single source of truth
-- Enforces a structured pipeline: idea → spec → design → tasks → handoff
-- Validates all artifacts against schemas before writing
+- Manages a project-level knowledge base: idea, requirements, design, tasks
+- Tracks task lifecycle through a frontmatter state machine
+- Validates all documents against schemas before writing
 - Provides atomic, traversal-resistant file operations
 
 ## How to Interact
@@ -56,52 +57,66 @@ Every invocation uses a runtime envelope:
 | Operation | Purpose | Precondition |
 |-----------|---------|--------------|
 | ` + backtick + `virgil.init` + backtick + ` | Initialize project, creates ` + backtick + `virgil.json` + backtick + ` and ` + backtick + `AGENTS.md` + backtick + ` | No existing ` + backtick + `virgil.json` + backtick + ` |
-| ` + backtick + `virgil.new` + backtick + ` | Start a new change (creates the change slot) | Project initialized, no active change |
-| ` + backtick + `virgil.continue` + backtick + ` | Propose/approve artifacts for active change | Active change exists |
+| ` + backtick + `virgil.write` + backtick + ` | Create or update a document in the knowledge base | Project initialized |
+| ` + backtick + `virgil.transition` + backtick + ` | Change a task's lifecycle status | Task exists |
+| ` + backtick + `virgil.status` + backtick + ` | Check project state, doc counts, task counts | None (always safe) |
 
-### Artifact Pipeline
+### Knowledge Base Model
 
-Each change goes through 5 sequential stages:
-
-1. **idea** (` + backtick + `docs/{change_id}/00-idea/00-idea.md` + backtick + `) — What and why
-2. **spec** (` + backtick + `docs/{change_id}/01-spec/01-spec.md` + backtick + `) — Detailed requirements
-3. **design** (` + backtick + `docs/{change_id}/02-design/02-design.md` + backtick + `) — Architecture and approach
-4. **tasks** (` + backtick + `docs/{change_id}/03-tasks/03-tasks.md` + backtick + `) — Implementation breakdown
-5. **handoff** (` + backtick + `docs/{change_id}/04-handoff/04-handoff.md` + backtick + `) — Delivery checklist
-
-Each artifact is proposed via ` + backtick + `content_proposal` + backtick + `, then approved via ` + backtick + `approval` + backtick + `.
-
-### Layout
+Documents are organized by kind under ` + backtick + `docs/` + backtick + `:
 
 ` + tripleBacktick + `
-virgil.json              # Project config (auto-generated)
-AGENTS.md                # This file (auto-generated)
+virgil.json                            # Project config (auto-generated)
+AGENTS.md                              # This file (auto-generated)
 docs/
-  {change_id}/
-    00-idea/
-      00-idea.md         # JSON frontmatter + markdown content
-    01-spec/
-      01-spec.md
-    02-design/
-      02-design.md
-    03-tasks/
-      03-tasks.md
-    04-handoff/
-      04-handoff.md
+  idea.md                              # Single project-level idea
+  requirements/
+    {category}-{slug}.md               # Requirement documents
+  design/
+    {category}-{slug}.md               # Design documents
+  tasks/
+    {slug}.md                          # Task documents with lifecycle
 ` + tripleBacktick + `
 
-### Artifact Format
+### Document Kinds
+
+| Kind | Location | Notes |
+|------|----------|-------|
+| ` + backtick + `idea` + backtick + ` | ` + backtick + `docs/idea.md` + backtick + ` | Single file, overwritten on each write. No slug. |
+| ` + backtick + `requirement` + backtick + ` | ` + backtick + `docs/requirements/` + backtick + ` | Optional category prefix (e.g. ` + backtick + `functional` + backtick + `, ` + backtick + `non-functional` + backtick + `). |
+| ` + backtick + `design` + backtick + ` | ` + backtick + `docs/design/` + backtick + ` | Optional category prefix (e.g. ` + backtick + `arch` + backtick + `, ` + backtick + `entity` + backtick + `, ` + backtick + `api-contract` + backtick + `). |
+| ` + backtick + `task` + backtick + ` | ` + backtick + `docs/tasks/` + backtick + ` | Has lifecycle status and refs to other docs. |
+
+### Task Lifecycle
+
+Tasks carry a ` + backtick + `status` + backtick + ` field in their JSON frontmatter. Status transitions follow a state machine — files do NOT move between directories:
+
+` + tripleBacktick + `
+backlog → refined → active → done → released
+` + tripleBacktick + `
+
+Backward transitions are allowed (` + backtick + `refined → backlog` + backtick + `, ` + backtick + `active → refined` + backtick + `, ` + backtick + `done → active` + backtick + `). ` + backtick + `released` + backtick + ` is terminal.
+
+### Document Format
 
 Each ` + backtick + `.md` + backtick + ` file has JSON frontmatter:
 
 ` + tripleBacktick + `
 ---json
 {
-  "schema": "virgil.dev/artifact/v1alpha1",
-  "artifact_kind": "idea",
-  "change_id": "my-feature",
-  "status": "approved",
-  "revision": "rev-000001"
+  "schema": "virgil.dev/doc/v1alpha1",
+  "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
+  "doc_kind": "task",
+  "project_id": "my-project",
+  "slug": "implement-login",
+  "status": "backlog",
+  "refs": {
+    "requirements": ["functional-user-auth.md"],
+    "design": ["arch-auth-flow.md"]
+  },
+  "content_digest": "sha256:...",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z"
 }
 ---
 
@@ -111,9 +126,10 @@ Each ` + backtick + `.md` + backtick + ` file has JSON frontmatter:
 ### Rules
 
 - **DO NOT** modify files in ` + backtick + `docs/` + backtick + ` directly — always go through Virgil
-- **DO NOT** delete or rename artifact files
-- **DO NOT** implement code after the pipeline reaches ` + backtick + `complete` + backtick + ` — the handoff is the end of Virgil's scope. Implementation requires explicit human instruction.
-- **DO NOT** call approval operations without presenting the proposal to the human first and receiving their confirmation.
+- **DO NOT** delete or rename document files
+- **DO NOT** implement code after tasks reach ` + backtick + `done` + backtick + ` — implementation requires explicit human instruction
 - **DO** read ` + backtick + `docs/` + backtick + ` files for context (RAG-friendly)
-- **DO** propose changes through ` + backtick + `virgil.continue` + backtick + ` with ` + backtick + `content_proposal` + backtick + `
+- **DO** use ` + backtick + `virgil.write` + backtick + ` to create and update documents
+- **DO** use ` + backtick + `virgil.transition` + backtick + ` to advance task status
+- **DO** use ` + backtick + `virgil.status` + backtick + ` to check project state before acting
 `

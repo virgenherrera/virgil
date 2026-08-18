@@ -1,6 +1,6 @@
 {
   "schema_version": "virgil.dev/scripted-actor/v1alpha1",
-  "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+  "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
   "script_id": "script-t0-init-idempotent-retry",
   "script_revision": "v2",
   "actor": {
@@ -18,7 +18,7 @@
       "process_id": "process-a",
       "after_trace_kind": "activation_decision",
       "operation_request": {
-        "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+        "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
         "operation": "virgil.init",
         "request_id": "init-retry-001-a",
         "idempotency_key": "init-retry-v1",
@@ -110,7 +110,7 @@
       "retries_action_id": "invoke-init-a",
       "after_trace_kind": "recovery",
       "operation_request": {
-        "protocol_version": "virgil.dev/planning-slice1/v1alpha1",
+        "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
         "operation": "virgil.init",
         "request_id": "init-retry-001-b",
         "idempotency_key": "init-retry-v1",

@@ -15,7 +15,7 @@ type ToolDefinition struct {
 	InputSchema json.RawMessage `json:"inputSchema"`
 }
 
-// Tools returns the five Virgil MCP tool definitions in invocation order.
+// Tools returns the four Virgil MCP tool definitions.
 func Tools() []ToolDefinition {
 	return []ToolDefinition{
 		{
@@ -34,62 +34,102 @@ func Tools() []ToolDefinition {
 			}`),
 		},
 		{
-			Name:        "virgil_new",
-			Description: "Start a new planning change within an initialized project. The project must not have an active change.",
+			Name:        "virgil_write",
+			Description: "Create or update a document in the project knowledge base. Supports idea, requirement, design, and task documents. Task documents include lifecycle status and refs linking to requirements, design docs, and implementing code.",
 			InputSchema: json.RawMessage(`{
 				"type": "object",
 				"properties": {
-					"change_id": {
+					"doc_kind": {
 						"type": "string",
-						"description": "Unique identifier for the change (safe relative path component, no slashes)."
+						"enum": ["idea", "requirement", "design", "task"],
+						"description": "The kind of document to create or update."
 					},
-					"intent": {
+					"slug": {
 						"type": "string",
-						"description": "Human-readable description of what this change is about."
-					}
-				},
-				"required": ["change_id", "intent"],
-				"additionalProperties": false
-			}`),
-		},
-		{
-			Name:        "virgil_propose",
-			Description: "Submit a content proposal for the current artifact step (idea, spec, design, tasks, or handoff). The proposal is written as a proposal file inside the artifact directory and submitted for approval.",
-			InputSchema: json.RawMessage(`{
-				"type": "object",
-				"properties": {
-					"artifact_kind": {
+						"description": "Short identifier for the document (required for requirement, design, task; not used for idea)."
+					},
+					"category": {
 						"type": "string",
-						"enum": ["idea", "spec", "design", "tasks", "handoff"],
-						"description": "The artifact kind to propose content for. Must match the current derived step."
+						"description": "Category prefix for requirements (functional, non-functional) and design docs (arch, entity, api-contract, ci, cd, dataflow, otel, etc.)."
 					},
 					"content": {
 						"type": "string",
-						"description": "Markdown content for the artifact proposal."
+						"description": "Markdown content for the document."
+					},
+					"status": {
+						"type": "string",
+						"enum": ["backlog", "refined", "active", "done", "released"],
+						"description": "Initial status for task documents. Defaults to backlog if not specified. Only applicable to tasks."
+					},
+					"refs": {
+						"type": "object",
+						"description": "References linking this task to requirements, design docs, and implementing code. Only applicable to tasks.",
+						"properties": {
+							"requirements": {
+								"type": "array",
+								"items": { "type": "string" },
+								"description": "Filenames of requirement docs this task implements."
+							},
+							"design": {
+								"type": "array",
+								"items": { "type": "string" },
+								"description": "Filenames of design docs this task follows."
+							},
+							"implements": {
+								"type": "array",
+								"items": { "type": "string" },
+								"description": "Source code paths this task delivers."
+							}
+						},
+						"additionalProperties": false
 					}
 				},
-				"required": ["artifact_kind", "content"],
+				"required": ["doc_kind", "content"],
 				"additionalProperties": false
 			}`),
 		},
 		{
-			Name:        "virgil_approve",
-			Description: "Approve the current artifact revision that is awaiting approval. Advances the pipeline to the next step.",
+			Name:        "virgil_transition",
+			Description: "Change the status of a task document. Follows the lifecycle state machine: backlog → refined → active → done → released.",
 			InputSchema: json.RawMessage(`{
 				"type": "object",
 				"properties": {
-					"rationale": {
+					"task_slug": {
 						"type": "string",
-						"description": "Explanation of why this artifact revision is approved."
+						"description": "The slug identifying the task to transition."
+					},
+					"new_status": {
+						"type": "string",
+						"enum": ["backlog", "refined", "active", "done", "released"],
+						"description": "The target status for the task."
+					},
+					"refs_update": {
+						"type": "object",
+						"description": "Optional updated refs to apply alongside the status transition.",
+						"properties": {
+							"requirements": {
+								"type": "array",
+								"items": { "type": "string" }
+							},
+							"design": {
+								"type": "array",
+								"items": { "type": "string" }
+							},
+							"implements": {
+								"type": "array",
+								"items": { "type": "string" }
+							}
+						},
+						"additionalProperties": false
 					}
 				},
-				"required": ["rationale"],
+				"required": ["task_slug", "new_status"],
 				"additionalProperties": false
 			}`),
 		},
 		{
 			Name:        "virgil_status",
-			Description: "Show the current project state: whether it is initialized, the active change (if any), and the current derived step.",
+			Description: "Show the current project state: whether it is initialized, document counts by kind, and task counts by status.",
 			InputSchema: json.RawMessage(`{
 				"type": "object",
 				"properties": {},

@@ -35,17 +35,17 @@ func Invoke(registry *contracts.Registry, envelope wire.InvokeEnvelope) (wire.In
 	if request.Operation == "virgil.init" {
 		return invokeRepoDocsInit(registry, envelope, request)
 	}
-	if request.Operation == "virgil.new" && !namespaceIsManaged(request) {
+	if request.Operation == "virgil.write" && !namespaceIsManaged(request) {
 		return blockedStorePolicyResult(registry, envelope, request)
 	}
-	if request.Operation == "virgil.new" {
-		return invokeRepoDocsNew(registry, envelope, request)
+	if request.Operation == "virgil.write" {
+		return invokeRepoDocsWrite(registry, envelope, request)
 	}
-	if request.Operation == "virgil.continue" && !namespaceIsManaged(request) {
+	if request.Operation == "virgil.transition" && !namespaceIsManaged(request) {
 		return blockedStorePolicyResult(registry, envelope, request)
 	}
-	if request.Operation == "virgil.continue" {
-		return invokeRepoDocsContinue(registry, envelope, request)
+	if request.Operation == "virgil.transition" {
+		return invokeRepoDocsTransition(registry, envelope, request)
 	}
 
 	context := protocol.ContextFromRequest(request)
@@ -132,13 +132,13 @@ func invokeRepoDocsInit(registry *contracts.Registry, envelope wire.InvokeEnvelo
 	}, nil
 }
 
-func invokeRepoDocsNew(registry *contracts.Registry, envelope wire.InvokeEnvelope, request protocol.OperationRequest) (wire.InvokeResult, error) {
+func invokeRepoDocsWrite(registry *contracts.Registry, envelope wire.InvokeEnvelope, request protocol.OperationRequest) (wire.InvokeResult, error) {
 	now, err := time.Parse(time.RFC3339, envelope.Clock.Now)
 	if err != nil {
 		return wire.InvokeResult{}, fmt.Errorf("invoke clock violates runtime envelope: %w", err)
 	}
 
-	result, err := repodocs.New(
+	result, err := repodocs.Write(
 		request,
 		envelope.Bindings.Target.Root,
 		repodocs.ClockFunc(func() time.Time { return now }),
@@ -149,7 +149,7 @@ func invokeRepoDocsNew(registry *contracts.Registry, envelope wire.InvokeEnvelop
 	if err != nil {
 		var adapterError *repodocs.Error
 		if !errors.As(err, &adapterError) {
-			return wire.InvokeResult{}, fmt.Errorf("repo-docs new failed without a protocol diagnostic: %w", err)
+			return wire.InvokeResult{}, fmt.Errorf("repo-docs write failed without a protocol diagnostic: %w", err)
 		}
 		result = repoDocsErrorResult(request, adapterError)
 	}
@@ -172,13 +172,13 @@ func invokeRepoDocsNew(registry *contracts.Registry, envelope wire.InvokeEnvelop
 	}, nil
 }
 
-func invokeRepoDocsContinue(registry *contracts.Registry, envelope wire.InvokeEnvelope, request protocol.OperationRequest) (wire.InvokeResult, error) {
+func invokeRepoDocsTransition(registry *contracts.Registry, envelope wire.InvokeEnvelope, request protocol.OperationRequest) (wire.InvokeResult, error) {
 	now, err := time.Parse(time.RFC3339, envelope.Clock.Now)
 	if err != nil {
 		return wire.InvokeResult{}, fmt.Errorf("invoke clock violates runtime envelope: %w", err)
 	}
 
-	result, err := repodocs.Continue(
+	result, err := repodocs.Transition(
 		request,
 		envelope.Bindings.Target.Root,
 		repodocs.ClockFunc(func() time.Time { return now }),
@@ -189,7 +189,7 @@ func invokeRepoDocsContinue(registry *contracts.Registry, envelope wire.InvokeEn
 	if err != nil {
 		var adapterError *repodocs.Error
 		if !errors.As(err, &adapterError) {
-			return wire.InvokeResult{}, fmt.Errorf("repo-docs continue failed without a protocol diagnostic: %w", err)
+			return wire.InvokeResult{}, fmt.Errorf("repo-docs transition failed without a protocol diagnostic: %w", err)
 		}
 		result = repoDocsErrorResult(request, adapterError)
 	}

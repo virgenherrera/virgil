@@ -17,12 +17,11 @@ import (
 // virgil-workflow is a contextual skill only -- it is installed as a skill
 // but never exposed as a slash command (see commandIDs below).
 var embeddedSkillIDs = []string{
-	"virgil-approve",
 	"virgil-init",
-	"virgil-new",
-	"virgil-propose",
 	"virgil-status",
+	"virgil-transition",
 	"virgil-workflow",
+	"virgil-write",
 }
 
 // commandIDs lists the embedded skills that double as slash commands,
@@ -30,9 +29,8 @@ var embeddedSkillIDs = []string{
 // intentionally excluded.
 var commandIDs = []string{
 	"virgil-init",
-	"virgil-new",
-	"virgil-propose",
-	"virgil-approve",
+	"virgil-write",
+	"virgil-transition",
 	"virgil-status",
 }
 

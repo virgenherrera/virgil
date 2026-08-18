@@ -28,7 +28,7 @@
       "const": "virgil.dev/validation-fixture/v1alpha1"
     },
     "protocol_version": {
-      "const": "virgil.dev/planning-slice1/v1alpha1"
+      "const": "virgil.dev/planning-slice2/v1alpha1"
     },
     "fixture_id": {
       "$ref": "common.schema.json#/$defs/NonEmptyString"
@@ -196,7 +196,7 @@
           ]
         },
         "operation": {
-          "enum": ["virgil.init", "virgil.new", "virgil.continue"]
+          "enum": ["virgil.init", "virgil.write", "virgil.transition"]
         },
         "diagnostic_code": {
           "type": "string",
@@ -209,7 +209,7 @@
           "enum": ["success", "needs_input", "blocked", "unsupported", "error"]
         },
         "next_operation": {
-          "enum": ["virgil.init", "virgil.new", "virgil.continue", "none"]
+          "enum": ["virgil.init", "virgil.write", "virgil.transition", "none"]
         },
         "replayed_from_request_id": {
           "$ref": "common.schema.json#/$defs/NonEmptyString"

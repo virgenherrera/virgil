@@ -29,21 +29,17 @@ This project uses Virgil for AI-assisted development planning. Use the virgil MC
 to navigate the methodology:
 
 - ` + "`/virgil-init`" + ` — Initialize a Virgil project
-- ` + "`/virgil-new`" + ` — Start a new planning change
-- ` + "`/virgil-propose`" + ` — Submit an artifact proposal
-- ` + "`/virgil-approve`" + ` — Approve and advance the pipeline
+- ` + "`/virgil-write`" + ` — Create or update a document (idea, requirement, design, task)
+- ` + "`/virgil-transition`" + ` — Change a task's lifecycle status
 - ` + "`/virgil-status`" + ` — Check current project state
 
 Call ` + "`virgil_status`" + ` first to check if the project is already initialized.
 
-**MIM principle**: the human directs, the agent proposes. Never approve an artifact
-without explicit human confirmation.
+**MIM principle**: the human directs, the agent proposes. Never write documents
+without explicit human direction.
 
-**Approval gate**: after each ` + "`virgil_propose`" + `, present the content summary to the
-human and wait for their approval before calling ` + "`virgil_approve`" + `.
-
-**Planning boundary**: Virgil manages PLANNING only. After the pipeline reaches
-` + "`complete`" + `, STOP and report the result. Implementation is a separate phase that
+**Planning boundary**: Virgil manages PLANNING only. After tasks reach ` + "`done`" + `,
+STOP and report the result. Implementation is a separate phase that
 requires explicit human instruction.
 `)
 
@@ -360,9 +356,8 @@ func skillsStep(adapter agents.Adapter, homeDir string) pipeline.Step {
 // command.
 var commandIDs = []string{
 	"virgil-init",
-	"virgil-new",
-	"virgil-propose",
-	"virgil-approve",
+	"virgil-write",
+	"virgil-transition",
 	"virgil-status",
 }
 

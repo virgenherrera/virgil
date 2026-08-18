@@ -17,10 +17,10 @@
   ],
   "properties": {
     "protocol_version": {
-      "const": "virgil.dev/planning-slice1/v1alpha1"
+      "const": "virgil.dev/planning-slice2/v1alpha1"
     },
     "operation": {
-      "enum": ["virgil.init", "virgil.new", "virgil.continue"]
+      "enum": ["virgil.init", "virgil.write", "virgil.transition"]
     },
     "request_id": {
       "$ref": "common.schema.json#/$defs/NonEmptyString"
@@ -68,28 +68,26 @@
     {
       "if": {
         "properties": {
-          "operation": { "const": "virgil.new" }
+          "operation": { "const": "virgil.write" }
         },
         "required": ["operation"]
       },
       "then": {
-        "not": { "required": ["run_ref"] },
         "properties": {
-          "input": { "$ref": "#/$defs/NewInput" }
+          "input": { "$ref": "#/$defs/WriteInput" }
         }
       }
     },
     {
       "if": {
         "properties": {
-          "operation": { "const": "virgil.continue" }
+          "operation": { "const": "virgil.transition" }
         },
         "required": ["operation"]
       },
       "then": {
-        "required": ["run_ref"],
         "properties": {
-          "input": { "$ref": "#/$defs/ContinueInput" }
+          "input": { "$ref": "#/$defs/TransitionInput" }
         }
       }
     }
@@ -124,104 +122,55 @@
       },
       "additionalProperties": false
     },
-    "NewInput": {
+    "WriteInput": {
       "type": "object",
-      "required": ["change_id", "intent", "provenance"],
+      "required": ["doc_kind", "content"],
       "properties": {
-        "change_id": {
+        "doc_kind": {
+          "enum": ["idea", "requirement", "design", "task"]
+        },
+        "slug": {
           "$ref": "common.schema.json#/$defs/NonEmptyString"
         },
-        "intent": {
+        "category": {
           "$ref": "common.schema.json#/$defs/NonEmptyString"
-        },
-        "provenance": {
-          "$ref": "common.schema.json#/$defs/SourceProvenance"
-        },
-        "evidence": {
-          "type": "array",
-          "items": {
-            "$ref": "common.schema.json#/$defs/ResourceRef"
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    "ContinueInput": {
-      "type": "object",
-      "required": ["change_id", "entry"],
-      "properties": {
-        "change_id": {
-          "$ref": "common.schema.json#/$defs/NonEmptyString"
-        },
-        "entry": {
-          "oneOf": [
-            { "$ref": "#/$defs/AnswerEntry" },
-            { "$ref": "#/$defs/ContentProposalEntry" },
-            { "$ref": "#/$defs/ApprovalEntry" },
-            { "$ref": "#/$defs/RecoveryEntry" }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "AnswerEntry": {
-      "type": "object",
-      "required": ["kind", "answer"],
-      "properties": {
-        "kind": { "const": "answer" },
-        "answer": {
-          "$ref": "common.schema.json#/$defs/NonEmptyString"
-        }
-      },
-      "additionalProperties": false
-    },
-    "ContentProposalEntry": {
-      "type": "object",
-      "required": ["kind", "artifact_kind", "content"],
-      "properties": {
-        "kind": { "const": "content_proposal" },
-        "artifact_kind": {
-          "enum": ["idea", "spec", "design", "tasks", "handoff"]
         },
         "content": {
-          "$ref": "common.schema.json#/$defs/ResourceRef"
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": ["backlog", "refined", "active", "done", "released"]
+        },
+        "refs": {
+          "$ref": "doc-frontmatter.schema.json#/$defs/TaskRefs"
         }
       },
-      "additionalProperties": false
-    },
-    "ApprovalEntry": {
-      "type": "object",
-      "required": [
-        "kind",
-        "artifact_id",
-        "revision",
-        "decision",
-        "rationale"
+      "allOf": [
+        {
+          "if": {
+            "properties": { "doc_kind": { "enum": ["requirement", "design", "task"] } },
+            "required": ["doc_kind"]
+          },
+          "then": {
+            "required": ["slug"]
+          }
+        }
       ],
-      "properties": {
-        "kind": { "const": "approval" },
-        "artifact_id": {
-          "$ref": "common.schema.json#/$defs/NonEmptyString"
-        },
-        "revision": {
-          "$ref": "common.schema.json#/$defs/NonEmptyString"
-        },
-        "decision": {
-          "enum": ["approved", "request_changes", "rejected"]
-        },
-        "rationale": {
-          "$ref": "common.schema.json#/$defs/NonEmptyString"
-        }
-      },
       "additionalProperties": false
     },
-    "RecoveryEntry": {
+    "TransitionInput": {
       "type": "object",
-      "required": ["kind", "reason"],
+      "required": ["task_slug", "new_status"],
       "properties": {
-        "kind": { "const": "recovery_request" },
-        "reason": {
+        "task_slug": {
           "$ref": "common.schema.json#/$defs/NonEmptyString"
+        },
+        "new_status": {
+          "enum": ["backlog", "refined", "active", "done", "released"]
+        },
+        "refs_update": {
+          "$ref": "doc-frontmatter.schema.json#/$defs/TaskRefs"
         }
       },
       "additionalProperties": false
