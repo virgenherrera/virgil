@@ -127,6 +127,13 @@ func TestApp_T0DoctorHappy(t *testing.T) {
 			t.Fatalf("stdout missing %q: %q (stderr=%q)", want, stdout, stderr)
 		}
 	}
+
+	// The doctor binary and the `virgil serve` subprocess it spawns for the
+	// handshake check are the exact same binary here, so their reported
+	// versions always match -- the version-mismatch warning must not fire.
+	if strings.Contains(stdout, "MCP server version") {
+		t.Fatalf("stdout unexpectedly contains version-mismatch warning: %q", stdout)
+	}
 }
 
 // TestApp_T0DoctorNoMCPConfig proves that a missing ~/.claude.json (and no

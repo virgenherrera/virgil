@@ -50,6 +50,16 @@ type doctorToolsListResult struct {
 	} `json:"tools"`
 }
 
+// doctorInitializeResult mirrors the subset of internal/mcp.initializeResult
+// needed to extract the server's reported version (serverInfo.version) for
+// the version-mismatch check below. It intentionally duplicates the shape
+// instead of importing internal/mcp, matching doctorRPCResponse's rationale.
+type doctorInitializeResult struct {
+	ServerInfo struct {
+		Version string `json:"version"`
+	} `json:"serverInfo"`
+}
+
 // doctorMCPSettings mirrors the subset of ~/.claude.json this command reads:
 // mcpServers.virgil.{command,args}.
 type doctorMCPSettings struct {
@@ -82,7 +92,7 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	execPath, resolvedExecPath := doctorCheckBinary(out, &failed)
 	mcpCommand, mcpConfigured := doctorCheckMCPConfig(out, &failed, &warned)
 	doctorCheckPathParity(out, &warned, &failed, execPath, resolvedExecPath, mcpCommand, mcpConfigured)
-	doctorCheckHandshake(out, &failed, execPath)
+	doctorCheckHandshake(out, &failed, &warned, execPath)
 
 	fmt.Fprintln(out)
 	switch {
@@ -239,14 +249,14 @@ func doctorCheckPathParity(out io.Writer, warned, failed *int, execPath, resolve
 // drives a real MCP handshake over its stdin/stdout, exactly as a real MCP
 // client would. It never imports internal/mcp -- decoding uses the local
 // doctorRPCResponse/doctorToolsListResult shapes declared above.
-func doctorCheckHandshake(out io.Writer, failed *int, execPath string) {
+func doctorCheckHandshake(out io.Writer, failed, warned *int, execPath string) {
 	if execPath == "" {
 		fmt.Fprintln(out, "✗ Handshake: no binary path available")
 		*failed++
 		return
 	}
 
-	toolCount, err := doctorRunHandshake(execPath)
+	toolCount, serverVersion, err := doctorRunHandshake(execPath)
 	if err != nil {
 		fmt.Fprintf(out, "✗ Handshake: %v\n", err)
 		*failed++
@@ -254,6 +264,28 @@ func doctorCheckHandshake(out io.Writer, failed *int, execPath string) {
 	}
 
 	fmt.Fprintf(out, "✓ Handshake: initialize OK, tools/list OK (%d tools)\n", toolCount)
+	doctorCheckVersionMatch(out, warned, serverVersion)
+}
+
+// doctorCheckVersionMatch compares the MCP server's reported version
+// (serverInfo.version from the initialize response) against this doctor
+// binary's own Version. A mismatch means the AI assistant is still talking
+// to a stale `virgil serve` process (e.g. after an upgrade, before the
+// assistant is restarted) -- this is informational, not a handshake
+// failure, so it is reported as a warning rather than incrementing failed.
+// The comparison is skipped when either side is empty or "dev", since dev
+// builds (Version's default, unset via -ldflags) carry no meaningful
+// version to compare.
+func doctorCheckVersionMatch(out io.Writer, warned *int, serverVersion string) {
+	if serverVersion == "" || serverVersion == "dev" || Version == "" || Version == "dev" {
+		return
+	}
+	if serverVersion == Version {
+		return
+	}
+
+	fmt.Fprintf(out, "⚠ MCP server version (v%s) differs from doctor version (v%s). Restart your AI assistant to use the latest version.\n", serverVersion, Version)
+	*warned++
 }
 
 // doctorRunHandshake spawns `execPath serve` as a subprocess bounded by a
@@ -261,8 +293,10 @@ func doctorCheckHandshake(out io.Writer, failed *int, execPath string) {
 // notifications/initialized notification (with an explicit "id":null, which
 // exercises the JSONRPCRequest.IsNotification null-id path), and a
 // tools/list request, then decodes the two expected responses and returns
-// how many tools were reported.
-func doctorRunHandshake(execPath string) (int, error) {
+// how many tools were reported and the server's reported version
+// (serverInfo.version from the initialize response, used by the
+// doctorCheckVersionMatch warning).
+func doctorRunHandshake(execPath string) (toolCount int, serverVersion string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -270,14 +304,14 @@ func doctorRunHandshake(execPath string) (int, error) {
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return 0, fmt.Errorf("open stdin pipe: %w", err)
+		return 0, "", fmt.Errorf("open stdin pipe: %w", err)
 	}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	if err := cmd.Start(); err != nil {
-		return 0, fmt.Errorf("start serve subprocess: %w", err)
+		return 0, "", fmt.Errorf("start serve subprocess: %w", err)
 	}
 
 	requestLines := []string{
@@ -289,41 +323,46 @@ func doctorRunHandshake(execPath string) (int, error) {
 		if _, err := io.WriteString(stdin, line+"\n"); err != nil {
 			_ = stdin.Close()
 			_ = cmd.Wait()
-			return 0, fmt.Errorf("write request: %w", err)
+			return 0, "", fmt.Errorf("write request: %w", err)
 		}
 	}
 	if err := stdin.Close(); err != nil {
 		_ = cmd.Wait()
-		return 0, fmt.Errorf("close stdin: %w", err)
+		return 0, "", fmt.Errorf("close stdin: %w", err)
 	}
 
 	waitErr := cmd.Wait()
 	if ctx.Err() == context.DeadlineExceeded {
-		return 0, fmt.Errorf("timed out waiting for serve subprocess")
+		return 0, "", fmt.Errorf("timed out waiting for serve subprocess")
 	}
 	if waitErr != nil {
-		return 0, fmt.Errorf("serve subprocess exited with error: %w (stderr=%q)", waitErr, stderr.String())
+		return 0, "", fmt.Errorf("serve subprocess exited with error: %w (stderr=%q)", waitErr, stderr.String())
 	}
 
 	responses, err := doctorParseResponses(stdout.Bytes())
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 	if len(responses) != 2 {
-		return 0, fmt.Errorf("expected 2 responses (initialize, tools/list), got %d (stderr=%q)", len(responses), stderr.String())
+		return 0, "", fmt.Errorf("expected 2 responses (initialize, tools/list), got %d (stderr=%q)", len(responses), stderr.String())
 	}
 	if responses[0].Error != nil {
-		return 0, fmt.Errorf("initialize returned error: %s", responses[0].Error.Message)
+		return 0, "", fmt.Errorf("initialize returned error: %s", responses[0].Error.Message)
 	}
 	if responses[1].Error != nil {
-		return 0, fmt.Errorf("tools/list returned error: %s", responses[1].Error.Message)
+		return 0, "", fmt.Errorf("tools/list returned error: %s", responses[1].Error.Message)
+	}
+
+	var initResult doctorInitializeResult
+	if err := json.Unmarshal(responses[0].Result, &initResult); err != nil {
+		return 0, "", fmt.Errorf("decode initialize result: %w", err)
 	}
 
 	var toolsResult doctorToolsListResult
 	if err := json.Unmarshal(responses[1].Result, &toolsResult); err != nil {
-		return 0, fmt.Errorf("decode tools/list result: %w", err)
+		return 0, "", fmt.Errorf("decode tools/list result: %w", err)
 	}
-	return len(toolsResult.Tools), nil
+	return len(toolsResult.Tools), initResult.ServerInfo.Version, nil
 }
 
 // doctorParseResponses scans stdout line by line, decoding each non-blank

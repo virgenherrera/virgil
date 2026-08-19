@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -87,6 +88,9 @@ type appSimpleResult struct {
 }
 
 // appProjectState mirrors mcp.ProjectState for decoding virgil_status.
+// PlanningComplete and Notice mirror the planning-boundary fields that
+// LoadState sets once every task in the project has reached "refined": see
+// TestApp_T0ServeFullPlanningPipeline for the scenario that exercises them.
 type appProjectState struct {
 	Initialized      bool   `json:"Initialized"`
 	ProjectID        string `json:"ProjectID"`
@@ -100,6 +104,8 @@ type appProjectState struct {
 		Done     int `json:"Done"`
 		Released int `json:"Released"`
 	} `json:"TaskCounts"`
+	PlanningComplete bool   `json:"PlanningComplete"`
+	Notice           string `json:"Notice"`
 }
 
 // serveSession is a live `virgil serve` subprocess wired up for JSON-RPC
@@ -1421,5 +1427,330 @@ func TestApp_T0ServeBreadcrumbNavigation(t *testing.T) {
 	statusResult := decodeToolCallResult(t, statusResp)
 	if statusResult.IsError {
 		t.Fatalf("virgil_status returned isError=true after breadcrumb-bearing writes: %s", statusResult.Content[0].Text)
+	}
+}
+
+// TestApp_T0ServeFullPlanningPipeline drives the complete Virgil planning
+// lifecycle end to end through `virgil serve`: install (to materialize the
+// installed schema), init, one idea, two requirements (functional and
+// non-functional), one design carrying a mermaid diagram, two tasks written
+// at the default "backlog" status, both transitioned to "refined", and a
+// final virgil_status call. It asserts across seven categories: the
+// installed-schema pointer in virgil.json, the AGENTS.md formatting
+// guidelines (including all 13 mermaid diagram types), breadcrumb
+// navigation on every generated doc, the comprehensive docs/README.md
+// index (and absence of regional README.md files), the planning-complete
+// boundary notice that fires once every task reaches "refined" (both in
+// virgil_status and in the second transition's SimpleResult.Message), the
+// "<!-- virgil:meta -->" frontmatter format (including post-transition
+// status), and that the project directory contains no source code files.
+func TestApp_T0ServeFullPlanningPipeline(t *testing.T) {
+	homeDir := t.TempDir()
+	projectDir := t.TempDir()
+
+	stdout, stderr, exitCode := runCLI(t, homeDir, "install")
+	if exitCode != 0 {
+		t.Fatalf("virgil install exited %d; stdout=%q stderr=%q", exitCode, stdout, stderr)
+	}
+
+	session := startServeSessionWithHome(t, projectDir, homeDir)
+	session.initialize(t)
+	session.notify(t, "notifications/initialized", nil)
+
+	nextID := 2
+	call := func(name string, args map[string]any) appToolCallResult {
+		t.Helper()
+		id := nextID
+		nextID++
+		resp := session.call(t, id, "tools/call", map[string]any{
+			"name":      name,
+			"arguments": args,
+		})
+		result := decodeToolCallResult(t, resp)
+		if result.IsError {
+			t.Fatalf("%s (id=%d) returned isError=true: %s", name, id, result.Content[0].Text)
+		}
+		return result
+	}
+	writeDoc := func(args map[string]any) {
+		t.Helper()
+		call("virgil_write", args)
+	}
+
+	call("virgil_init", map[string]any{"project_id": "test-pipeline"}) // id=2
+
+	writeDoc(map[string]any{ // id=3
+		"doc_kind": "idea",
+		"content":  "# Test Project\n\nA test project for E2E validation.",
+	})
+	writeDoc(map[string]any{ // id=4
+		"doc_kind": "requirement",
+		"category": "functional",
+		"slug":     "core-feature",
+		"content": "# Core Feature\n\n" +
+			"The system shall allow users to perform the core workflow end to end.\n\n" +
+			"## Acceptance Criteria\n\n" +
+			"- Given a valid input, when the user submits it, then the system processes it successfully.\n" +
+			"- Given an invalid input, when the user submits it, then the system returns a clear validation error.\n",
+	})
+	writeDoc(map[string]any{ // id=5
+		"doc_kind": "requirement",
+		"category": "non-functional",
+		"slug":     "performance",
+		"content": "# Performance\n\n" +
+			"The system shall respond to core operations within acceptable latency bounds.\n\n" +
+			"## Acceptance Criteria\n\n" +
+			"- Given typical load, when a core operation is invoked, then it completes within 200ms at the 95th percentile.\n",
+	})
+	writeDoc(map[string]any{ // id=6
+		"doc_kind": "design",
+		"category": "arch",
+		"slug":     "system-design",
+		"content": "# System Design\n\n" +
+			"Describes the high-level architecture for the core feature.\n\n" +
+			"```mermaid\n" +
+			"flowchart TD\n" +
+			"    Client --> API\n" +
+			"    API --> CoreService\n" +
+			"    CoreService --> Database\n" +
+			"```\n\n" +
+			"## Overview\n\n" +
+			"The system is composed of a client, an API layer, a core service, and a database.\n",
+	})
+	writeDoc(map[string]any{ // id=7 (no status -- defaults to backlog)
+		"doc_kind": "task",
+		"slug":     "implement-core",
+		"content": "# Implement Core Feature\n\n" +
+			"Implements the core workflow described in requirement functional-core-feature.\n",
+	})
+	writeDoc(map[string]any{ // id=8 (no status -- defaults to backlog)
+		"doc_kind": "task",
+		"slug":     "setup-ci",
+		"content": "# Setup CI\n\n" +
+			"Sets up continuous integration for the project, gated on requirement functional-core-feature.\n",
+	})
+
+	call("virgil_transition", map[string]any{ // id=9
+		"task_slug":  "implement-core",
+		"new_status": "refined",
+	})
+	transitionResult := call("virgil_transition", map[string]any{ // id=10
+		"task_slug":  "setup-ci",
+		"new_status": "refined",
+	})
+	statusResult := call("virgil_status", map[string]any{}) // id=11
+
+	// -- 1. Schema ------------------------------------------------------
+
+	schemaPath := installedSchemaPath(homeDir)
+	if _, err := os.Stat(schemaPath); err != nil {
+		t.Fatalf("installed schema not found at %s: %v", schemaPath, err)
+	}
+
+	configData, err := os.ReadFile(filepath.Join(projectDir, "virgil.json"))
+	if err != nil {
+		t.Fatalf("read virgil.json: %v", err)
+	}
+	var config virgilConfigFile
+	if err := json.Unmarshal(configData, &config); err != nil {
+		t.Fatalf("parse virgil.json: %v; content=%q", err, string(configData))
+	}
+	wantSchemaSuffix := filepath.Join(".virgil", "schemas", "virgil-config.schema.json")
+	if !filepath.IsAbs(config.Schema) || !strings.HasSuffix(config.Schema, wantSchemaSuffix) {
+		t.Fatalf("virgil.json $schema = %q, want an absolute path ending in %q", config.Schema, wantSchemaSuffix)
+	}
+	if config.Schema != schemaPath {
+		t.Fatalf("virgil.json $schema = %q, want %q", config.Schema, schemaPath)
+	}
+
+	schemaData, err := os.ReadFile(schemaPath)
+	if err != nil {
+		t.Fatalf("read schema file at %s: %v", schemaPath, err)
+	}
+	var schemaDoc map[string]any
+	if err := json.Unmarshal(schemaData, &schemaDoc); err != nil {
+		t.Fatalf("schema file at %s is not valid JSON: %v", schemaPath, err)
+	}
+
+	// -- 2. Formatting Guidelines -----------------------------------------
+
+	agentsMDRaw, err := os.ReadFile(filepath.Join(projectDir, "AGENTS.md"))
+	if err != nil {
+		t.Fatalf("read AGENTS.md: %v", err)
+	}
+	agentsMD := string(agentsMDRaw)
+	if !strings.Contains(agentsMD, "Document Formatting Guidelines") {
+		t.Fatalf("AGENTS.md missing 'Document Formatting Guidelines' section:\n%s", agentsMD)
+	}
+	for _, mermaidType := range []string{
+		"flowchart", "sequenceDiagram", "classDiagram", "stateDiagram-v2",
+		"erDiagram", "gantt", "pie", "journey", "gitgraph", "mindmap",
+		"timeline", "quadrantChart", "block-beta",
+	} {
+		if !strings.Contains(agentsMD, mermaidType) {
+			t.Fatalf("AGENTS.md missing mermaid type %q", mermaidType)
+		}
+	}
+	if !strings.Contains(agentsMD, "Table of Contents") {
+		t.Fatalf("AGENTS.md missing 'Table of Contents'")
+	}
+
+	// -- 3. Breadcrumbs ----------------------------------------------------
+
+	readDoc := func(relative string) string {
+		t.Helper()
+		raw, err := os.ReadFile(filepath.Join(projectDir, filepath.FromSlash(relative)))
+		if err != nil {
+			t.Fatalf("read %s: %v", relative, err)
+		}
+		return string(raw)
+	}
+	const frontmatterCloseMarker = "-->\n\n"
+
+	ideaRaw := readDoc("docs/idea.md")
+	ideaCloseIdx := strings.Index(ideaRaw, frontmatterCloseMarker)
+	if ideaCloseIdx < 0 {
+		t.Fatalf("docs/idea.md missing frontmatter close marker:\n%s", ideaRaw)
+	}
+	ideaRest := ideaRaw[ideaCloseIdx+len(frontmatterCloseMarker):]
+	ideaHeadingIdx := strings.Index(ideaRest, "#")
+	if ideaHeadingIdx < 0 || !strings.Contains(ideaRest[:ideaHeadingIdx], "> [Docs](README.md)") {
+		t.Fatalf("docs/idea.md breadcrumb missing or misplaced between frontmatter and heading:\n%s", ideaRest)
+	}
+
+	assertNestedBreadcrumb := func(relative string) {
+		t.Helper()
+		raw := readDoc(relative)
+		closeIdx := strings.Index(raw, frontmatterCloseMarker)
+		if closeIdx < 0 {
+			t.Fatalf("%s missing frontmatter close marker:\n%s", relative, raw)
+		}
+		rest := raw[closeIdx+len(frontmatterCloseMarker):]
+		headingIdx := strings.Index(rest, "#")
+		if headingIdx < 0 || !strings.Contains(rest[:headingIdx], "../README.md") {
+			t.Fatalf("%s breadcrumb missing ../README.md between frontmatter and heading:\n%s", relative, rest)
+		}
+	}
+	assertNestedBreadcrumb("docs/requirements/functional-core-feature.md")
+	assertNestedBreadcrumb("docs/design/arch-system-design.md")
+	assertNestedBreadcrumb("docs/tasks/implement-core.md")
+
+	// -- 4. Comprehensive README -------------------------------------------
+
+	readme := readDoc("docs/README.md")
+	for _, want := range []string{
+		"```mermaid",
+		"flowchart",
+		"idea.md",
+		"functional-core-feature.md",
+		"non-functional-performance.md",
+		"arch-system-design.md",
+		"implement-core.md",
+		"setup-ci.md",
+	} {
+		if !strings.Contains(readme, want) {
+			t.Fatalf("docs/README.md missing %q:\n%s", want, readme)
+		}
+	}
+	for _, regional := range []string{
+		"docs/requirements/README.md",
+		"docs/design/README.md",
+		"docs/tasks/README.md",
+	} {
+		regionalPath := filepath.Join(projectDir, filepath.FromSlash(regional))
+		if _, err := os.Stat(regionalPath); !os.IsNotExist(err) {
+			t.Fatalf("expected regional README %s to not exist, stat err = %v", regionalPath, err)
+		}
+	}
+
+	// -- 5. Planning Boundary -----------------------------------------------
+
+	var state appProjectState
+	if err := json.Unmarshal([]byte(statusResult.Content[0].Text), &state); err != nil {
+		t.Fatalf("decode virgil_status content: %v", err)
+	}
+	if !state.PlanningComplete {
+		t.Fatalf("expected PlanningComplete=true after both tasks reached refined, got %+v", state)
+	}
+	const wantNotice = "Planning complete. Implementation requires explicit human authorization."
+	if state.Notice != wantNotice {
+		t.Fatalf("virgil_status Notice = %q, want %q", state.Notice, wantNotice)
+	}
+
+	var transitionSimple appSimpleResult
+	if err := json.Unmarshal([]byte(transitionResult.Content[0].Text), &transitionSimple); err != nil {
+		t.Fatalf("decode virgil_transition (setup-ci) content: %v", err)
+	}
+	if !strings.Contains(transitionSimple.Message, "Planning complete") {
+		t.Fatalf("virgil_transition (setup-ci) Message = %q, want it to contain %q", transitionSimple.Message, "Planning complete")
+	}
+
+	// -- 6. Frontmatter Format -----------------------------------------------
+
+	extractFrontmatter := func(relative string) map[string]any {
+		t.Helper()
+		raw := readDoc(relative)
+		const frontmatterOpenMarker = "<!-- virgil:meta\n"
+		if !strings.HasPrefix(raw, frontmatterOpenMarker) {
+			t.Fatalf("%s does not start with %q:\n%s", relative, frontmatterOpenMarker, raw)
+		}
+		if strings.HasPrefix(raw, "---") {
+			t.Fatalf("%s unexpectedly starts with a legacy '---' marker:\n%s", relative, raw)
+		}
+		closeIdx := strings.Index(raw, frontmatterCloseMarker)
+		if closeIdx < 0 {
+			t.Fatalf("%s missing frontmatter close marker:\n%s", relative, raw)
+		}
+		block := raw[len(frontmatterOpenMarker):closeIdx]
+		var frontmatter map[string]any
+		if err := json.Unmarshal([]byte(block), &frontmatter); err != nil {
+			t.Fatalf("%s frontmatter is not valid JSON: %v; block=%q", relative, err, block)
+		}
+		return frontmatter
+	}
+
+	allDocs := []string{
+		"docs/idea.md",
+		"docs/requirements/functional-core-feature.md",
+		"docs/requirements/non-functional-performance.md",
+		"docs/design/arch-system-design.md",
+		"docs/tasks/implement-core.md",
+		"docs/tasks/setup-ci.md",
+	}
+	for _, relative := range allDocs {
+		frontmatter := extractFrontmatter(relative)
+		if _, ok := frontmatter["doc_kind"]; !ok {
+			t.Fatalf("%s frontmatter missing doc_kind: %+v", relative, frontmatter)
+		}
+		if _, ok := frontmatter["project_id"]; !ok {
+			t.Fatalf("%s frontmatter missing project_id: %+v", relative, frontmatter)
+		}
+	}
+	for _, relative := range []string{"docs/tasks/implement-core.md", "docs/tasks/setup-ci.md"} {
+		frontmatter := extractFrontmatter(relative)
+		if frontmatter["status"] != "refined" {
+			t.Fatalf("%s frontmatter status = %v, want %q", relative, frontmatter["status"], "refined")
+		}
+	}
+
+	// -- 7. No Code Files ----------------------------------------------------
+
+	forbiddenExtensions := map[string]bool{
+		".ts": true, ".js": true, ".go": true, ".py": true,
+		".rs": true, ".java": true, ".rb": true,
+	}
+	if err := filepath.WalkDir(projectDir, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		if forbiddenExtensions[filepath.Ext(path)] {
+			t.Fatalf("unexpected code file in project directory: %s", path)
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("walk project directory: %v", err)
 	}
 }
