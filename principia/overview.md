@@ -12,6 +12,10 @@ Si algo contradice este documento, este documento gana.
 - [4. Por que actua asi](#4-por-que-actua-asi)
 - [5. Que partes lo componen](#5-que-partes-lo-componen)
 - [6. Como interactuan las partes](#6-como-interactuan-las-partes)
+- [7. Como garantiza calidad](#7-como-garantiza-calidad)
+- [8. Donde vive el conocimiento](#8-donde-vive-el-conocimiento)
+- [9. Como fluye el contexto](#9-como-fluye-el-contexto)
+- [10. Como se recupera](#10-como-se-recupera)
 - [Regla de auto-referencia](#regla-de-auto-referencia)
 
 ### Documentos del Principia
@@ -154,6 +158,11 @@ stateDiagram-v2
 La maquina de estados del proyecto (via virgil_status) indica en que
 fase esta cada feature y el proyecto en general. Un feature no avanza
 hasta que su artefacto esta consolidado.
+
+**PlanningGapDetected**: si execution descubre que un artefacto aprobado
+es ambiguo, contradictorio o insuficiente, emite esta senal, bloquea
+solo el scope afectado y devuelve el control a planning. Execution
+nunca reescribe un artefacto aprobado.
 
 ### 3b. Flujo de una invocacion
 
@@ -379,6 +388,407 @@ flowchart TD
 ```
 
 Estas invariantes fundamentales — que Virgil conoce sin inflar contextos — se aplican de forma idéntica en ambos modos operativos, generando una propiedad notable: Virgil es tanto herramienta como objeto bajo las mismas reglas.
+
+---
+
+## 7. Como garantiza calidad
+
+Cinco mecanismos forman un ciclo de accountability anidado. Ninguno
+funciona aislado.
+
+### 7a. Echo System — pipeline determinista
+
+Secuencia de 5 pasos que se ejecuta en TODO ambiente (dev, CI, CD).
+Los pasos son siempre los mismos y en el mismo orden. Lo que varia
+es el scope (dev prioriza feedback rapido, CI prioriza completitud).
+
+```mermaid
+flowchart LR
+    S1["1. Setup\nDependencias,\naudit clean"]
+    S2["2. Build\nFuente →\nejecutables"]
+    S3["3. Static\nLinting,\nformatting"]
+    S4["4. Dynamic\nTests app-level,\ncoverage"]
+    S5["5. E2E\nSolucion completa,\ncero mocks"]
+
+    S1 --> S2 --> S3 --> S4 --> S5
+
+    style S1 fill:#47a,stroke:#333,color:#fff
+    style S2 fill:#47a,stroke:#333,color:#fff
+    style S3 fill:#47a,stroke:#333,color:#fff
+    style S4 fill:#47a,stroke:#333,color:#fff
+    style S5 fill:#47a,stroke:#333,color:#fff
+```
+
+| Ambiente | Scope | Trigger | Enforcement |
+|----------|-------|---------|-------------|
+| Dev | Selectivo, feedback rapido | git hooks | Pre-commit, pre-push |
+| CI | Completo | Push, PR | Pipeline stages |
+| CD | Confianza absoluta | Tag, merge a main | Deployment gates |
+
+### 7b. Artifact System — build vs planning
+
+Dos tipos de artefactos que no deben confundirse.
+
+```mermaid
+flowchart TD
+    subgraph PLANNING["Artefactos de Planning"]
+        PA["idea.md, spec.md,\ndesign.md, tasks.md,\nhandoff.md"]
+        PA_WHERE["Viven en ArtifactStore\n(repo-docs o externo)"]
+        PA_WHO["Gestionados por TPM"]
+    end
+
+    subgraph BUILD["Artefactos de Build"]
+        BA["Binarios, reportes,\ncoverage, docs API,\nbundle analysis"]
+        BA_WHERE["Carpeta gitignoreada\ndentro del repo"]
+        BA_WHO["Generados por Echo\nefimeros, regenerables"]
+    end
+
+    PA --- PA_WHERE --- PA_WHO
+    BA --- BA_WHERE --- BA_WHO
+
+    PLANNING -.-|"alimentan"| EXECUTION["Execution"]
+    BUILD -.-|"consumidos por"| QA["QA / Accept"]
+
+    style PLANNING fill:#47a,stroke:#333,color:#fff
+    style BUILD fill:#a74,stroke:#333,color:#fff
+```
+
+### 7c. Macro Red/Green/Refactor — TDD por lotes
+
+TDD a nivel de batch, no funcion por funcion. Primero TODA la suite de
+tests, luego TODA la implementacion, luego TODO el refactoring.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Red
+
+    state Red {
+        [*] --> testPlan : escribir plan
+        testPlan --> testContract : definir contratos
+        testContract --> testImpl : implementar tests
+        testImpl --> [*] : todos fallan
+    }
+
+    Red --> Green : suite completa, todos fallan
+
+    state Green {
+        [*] --> Implement : codigo para pasar tests
+        Implement --> [*] : todos pasan
+    }
+
+    Green --> Refactor : todos pasan
+
+    state Refactor {
+        [*] --> Metrics : mutation, CRAP, complexity
+        Metrics --> Cleanup : metricas OK
+        Cleanup --> [*] : tests siguen pasando
+    }
+
+    Refactor --> Accept : metricas dentro de umbral
+    Accept --> [*] : certificado
+
+    Red --> Red : gap detectado
+    Green --> Red : test faltante
+    Refactor --> Red : regresion
+```
+
+El dogma actual define 5 gates dentro de este ciclo:
+**R0** (handoff completo) → **R1** (red valida) → **G1** (green
+production-safe) → **F1** (refactor seguro) → **V1** (verify
+independiente).
+
+### 7d. Testing Matrix — modelo de boundaries
+
+El valor de un test depende de DONDE se ubica la frontera del mock,
+no de la piramide clasica.
+
+```mermaid
+flowchart TD
+    subgraph PROHIBIDO["PROHIBIDO"]
+        FILE["File / Unit\nMocks internos\nvalor = 0"]
+    end
+
+    subgraph DERIVADO["DERIVADO (no se desarrolla)"]
+        MODULE["Module / Integration\nSe filtra desde appTests"]
+        SMOKE["Regression / Smoke\nSe deriva por tags"]
+    end
+
+    subgraph EXPLICITO["DESARROLLO EXPLICITO"]
+        APP["App / Servicio\nStack real, sin mocks\nTier PRIMARIO\nCoverage alta obligatoria"]
+        E2E["Solution / E2E\nMulti-servicio, cero mocks\nDeploys, tags, merges"]
+    end
+
+    subgraph CONDICIONAL["CONDICIONAL"]
+        PERF["Performance / Load\nSolo si design.md\ndeclara SLAs"]
+    end
+
+    FILE -.->|"reemplazado por"| APP
+    MODULE -.->|"derivado de"| APP
+    SMOKE -.->|"derivado de"| APP & E2E
+
+    style PROHIBIDO fill:#c44,stroke:#333,color:#fff
+    style DERIVADO fill:#777,stroke:#333,color:#fff
+    style EXPLICITO fill:#4a4,stroke:#333,color:#fff
+    style CONDICIONAL fill:#a74,stroke:#333,color:#fff
+```
+
+El dogma actual de Virgil define ademas T0 (protocol/app replay),
+T1 (agent-in-the-loop) y T2 (host-adapter conformance) como niveles
+especificos para validar el propio Virgil.
+
+#### Patron de trazabilidad: matriz → codigo
+
+Durante Red, los casos de prueba se definen como una matriz con
+nombres estaticos. El codigo de la prueba importa esos nombres. Esto
+crea un enlace RAG-searchable desde la matriz documentada hasta la
+implementacion del test.
+
+```mermaid
+flowchart LR
+    MATRIX["Matriz de Pruebas\n(clase/struct con\nnombres estaticos)"]
+    MATRIX -->|"import"| TEST["Codigo del Test\nusa el nombre\ncomo descripcion"]
+    TEST -->|"ejecuta contra"| APP["App real\n(boundary App/E2E)"]
+
+    RAG["RAG / Search"]
+    RAG -.->|"encuentra"| MATRIX
+    RAG -.->|"encuentra"| TEST
+
+    style MATRIX fill:#47a,stroke:#333,color:#fff
+    style TEST fill:#4a4,stroke:#333,color:#fff
+    style RAG fill:#777,stroke:#333,color:#fff
+```
+
+El patron es agnostico de tecnologia: en TypeScript es una clase con
+`static readonly`, en Go seria un `const` block o struct, en Rust un
+`mod` con constantes. Lo que importa es que la matriz y el test
+compartan un identificador rastreable.
+
+### 7e. QA / Acceptance Gates — certificacion
+
+La certificacion es determinista y basada en metricas, no en revision
+subjetiva de codigo.
+
+```mermaid
+flowchart TD
+    ECHO["Echo completo\n5 pasos green"] --> FUNC
+    FUNC["Verificacion funcional\nCada AC tiene test\nque pasa"] --> CONTRACT
+    CONTRACT["Verificacion de contratos\nAPIs, schemas, interfaces\nrespetan definiciones"] --> COV
+    COV["Coverage gate\nSin regresion\nnuevo codigo cubierto"] --> METRICS
+    METRICS["Metricas de calidad\nMutation score\nCRAP, complejidad\ndependencias"] --> SEC
+    SEC["Seguridad\nScanners report\ncero criticos"] --> ARCH
+    ARCH["Alineacion arquitectonica\nImplementacion = design.md"] --> CERT
+
+    CERT["CERTIFICADO"]
+    CERT -->|"aprobado"| DELIVER["Deliver"]
+    CERT -->|"rechazado"| ESCALATE["Escalar a fase\ncorrespondiente"]
+
+    style CERT fill:#4a4,stroke:#333,color:#fff
+    style ESCALATE fill:#c44,stroke:#333,color:#fff
+```
+
+### 7f. droppableCode — cobertura como herramienta
+
+Codigo con 0% de cobertura en appTests no tiene justificacion para
+existir. La cobertura no es metrica de vanidad — es detector de
+codigo muerto.
+
+```mermaid
+flowchart LR
+    CODE["Codigo"] --> Q{{"Cubierto por\nappTests?"}}
+    Q -->|"Si"| LIVE["Codigo vivo\nprotegido por tests"]
+    Q -->|"No"| DROP["droppableCode\ncandidato a eliminar"]
+
+    style LIVE fill:#4a4,stroke:#333,color:#fff
+    style DROP fill:#c44,stroke:#333,color:#fff
+```
+
+El threshold de cobertura es obligatorio y **nunca se reduce**. Se
+mide solo sobre archivos con logica real (cobertura selectiva).
+
+### 7g. complianceByDesign — compliance como efecto secundario
+
+Si cada test aserta la forma EXACTA del DTO (campos presentes, campos
+ausentes, tipos), se obtiene verificacion de compliance sin suites
+separadas.
+
+```mermaid
+flowchart TD
+    STRICT["Aserciones estrictas\nforma completa del DTO"]
+    ABUSE["abuseCases\ntesting adversarial"]
+    STRUCT["Validacion estructural\nschemas, hashing,\nencryption, A11y"]
+
+    STRICT & ABUSE & STRUCT --> COMPLIANCE["Compliance\ncomo efecto secundario"]
+
+    COMPLIANCE --> HIPAA["HIPAA"]
+    COMPLIANCE --> PCI["PCI DSS"]
+    COMPLIANCE --> GDPR["GDPR"]
+    COMPLIANCE --> SOC["SOC 2"]
+
+    style COMPLIANCE fill:#4a4,stroke:#333,color:#fff
+```
+
+Alcance: cubre la capa de DATOS (minimizacion, control de acceso por
+campo, validacion de forma). NO cubre controles organizacionales,
+fisicos, legales o procedimentales.
+
+### Ciclo cerrado
+
+Estos 7 mecanismos forman un ciclo cerrado: el Echo ejecuta, los
+Artifacts capturan outputs, Red/Green/Refactor estructura la ejecucion,
+la Testing Matrix define que vale como prueba, droppableCode detecta
+codigo muerto, complianceByDesign verifica cumplimiento, y QA certifica
+el resultado. Si QA rechaza, se escala a la fase que corresponda.
+
+---
+
+## 8. Donde vive el conocimiento
+
+El ArtifactStore es donde Virgil persiste los artefactos de planning.
+El default es local (`repo-docs`); los adapters externos son
+intercambiables via contrato.
+
+```mermaid
+flowchart TD
+    VIRGIL["Virgil Kernel"]
+    VIRGIL -->|"persiste via"| ASA["ArtifactStoreAdapter\n(contrato)"]
+
+    ASA --> DEFAULT["repo-docs (default)\n{target}/docs/virgil/\nlocal, RAG-friendly,\nsin dependencias externas"]
+
+    ASA --> EXT["Adapters externos (TBD)"]
+
+    subgraph EXTERNOS["Opciones via contrato"]
+        JIRA["Jira"]
+        CONF["Confluence"]
+        AZURE["Azure DevOps"]
+        ASANA["Asana"]
+        GH["GitHub Projects/Issues"]
+        OTROS["Otros\n(via contrato de adapter)"]
+    end
+
+    EXT --> EXTERNOS
+
+    style DEFAULT fill:#4a4,stroke:#333,color:#fff
+    style EXT fill:#777,stroke:#333,color:#fff
+    style EXTERNOS fill:#777,stroke:#333,color:#fff
+```
+
+### Separacion de namespaces
+
+```mermaid
+flowchart LR
+    subgraph VIRGIL_DOCS["Virgil/docs/"]
+        DOGMA["Dogma de Virgil\nread-only para consumidores\nnormativo y versionado"]
+    end
+
+    subgraph TARGET_DOCS["{target}/docs/"]
+        MANAGED["{target}/docs/virgil/\nManaged namespace\nVIRGIL escribe aqui"]
+        CORPUS["{target}/docs/**\nCorpus del proyecto\nread-only para Virgil\n(opt-in para RAG)"]
+    end
+
+    DOGMA -.-|"NO son lo mismo"| TARGET_DOCS
+    MANAGED -.-|"write scope\ndelimitado"| CORPUS
+
+    style DOGMA fill:#47a,stroke:#333,color:#fff
+    style MANAGED fill:#4a4,stroke:#333,color:#fff
+    style CORPUS fill:#777,stroke:#333,color:#fff
+```
+
+El RAG opera sobre una proyeccion de lectura reconstruible. No es la
+autoridad del proceso — el Ledger, el ArtifactRepository y la
+evidencia son la fuente de verdad. El RAG es una optimizacion.
+
+> **Invariante**: `Virgil/docs/` (dogma) y `{target}/docs/` (proyecto)
+> comparten el nombre `docs` pero NO comparten identidad, ownership ni
+> write policy.
+
+---
+
+## 9. Como fluye el contexto
+
+Regla fundamental: **nunca se pasa contexto crudo a un sub-agente**.
+El contexto se entrega compilado (ContextBrief) o como referencia
+(topic_key) para que el sub-agente lea del RAG.
+
+### 9a. ContextBrief
+
+El ContextCompiler selecciona artefactos, hechos y limites para
+producir un ContextBrief acotado al objetivo del actor. La seleccion
+queda trazable: que se incluyo, de donde salio, que se excluyo.
+
+### 9b. Dos patrones de entrega
+
+```mermaid
+flowchart TD
+    NEED["Sub-agente necesita contexto"]
+    NEED --> Q{{"Target conocido\ny deterministico?"}}
+
+    Q -->|"Si"| PB["PatternB\nSM pasa topic_key\nsub-agente lee directo del RAG\n6x mas barato"]
+    Q -->|"No"| PA["PatternA\nSM busca, cura, inyecta\ncalidad sobre costo"]
+
+    style PB fill:#4a4,stroke:#333,color:#fff
+    style PA fill:#47a,stroke:#333,color:#fff
+```
+
+| Patron | Cuando | Costo | Calidad |
+|--------|--------|-------|---------|
+| PatternB (default) | Target conocido, deterministico | Bajo (6x) | Buena |
+| PatternA | Busqueda fuzzy, fan-out alto (8+) | Alto | Optima |
+
+### 9c. Delegacion: SM → sub-agente → PDC
+
+```mermaid
+sequenceDiagram
+    participant SM as SM
+    participant SUB as Sub-agente
+    participant TPM as TPM
+
+    SM->>SUB: delegationContract<br/>(6 campos obligatorios)
+    activate SUB
+    SUB-->>SM: Output + Status Report
+    deactivate SUB
+
+    Note over SM: PDC obligatorio
+    SM->>SM: ECHO - coherente?
+    SM->>SM: VERIFY - completo?
+    SM->>TPM: MARK - persistir
+    SM->>SM: DECIDE - avanzar?
+```
+
+Sin Status Report en el output, el SM lo trata como FAILED.
+Tres fallos consecutivos al mismo rol activan el circuitBreaker
+(ver [circuit-breaker.md](circuit-breaker.md)).
+
+Detalle completo en [delegation-pdc.md](delegation-pdc.md).
+
+---
+
+## 10. Como se recupera
+
+Despues de un crash, compactacion o nueva sesion, el estado se
+reconstruye — no se pierde.
+
+```mermaid
+sequenceDiagram
+    participant SM as SM
+    participant TPM as TPM
+    participant STORE as ArtifactStore
+
+    SM->>TPM: que artefactos existen?
+    TPM->>STORE: scan estados
+    STORE-->>TPM: lista + revisiones
+    TPM-->>SM: artefactos + estados + historial de fallos
+
+    SM->>SM: derivar fase actual
+    SM->>SM: consultar historial<br/>(ajustar estrategia)
+    SM->>SM: continuar desde<br/>fase derivada
+```
+
+- El SM deriva la fase por los artefactos existentes (no la almacena)
+- El historial de fallos es per-artefacto y cross-session
+- `lastVerifiedAt` evita re-verificacion innecesaria si el codigo
+  no toco el scope del artefacto
+- Cambios externos se clasifican: aditivos (registrar), contradictorios
+  (decision del MIM), o de otro ciclo (registrar como contexto)
 
 ---
 
