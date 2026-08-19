@@ -643,9 +643,12 @@ el resultado. Si QA rechaza, se escala a la fase que corresponda.
 
 ## 8. Donde vive el conocimiento
 
-El ArtifactStore es donde Virgil persiste los artefactos de planning.
-El default es local (`repo-docs`); los adapters externos son
-intercambiables via contrato.
+Dos concerns separados: donde se PERSISTEN los artefactos
+(ArtifactStore) y como se CONSULTAN (RAG). El RAG actua como DBMS
+del contexto — ningun agente lee archivos directamente; todo agente
+consulta el RAG con queries acotadas.
+
+### 8a. ArtifactStore — persistencia
 
 ```mermaid
 flowchart TD
@@ -672,7 +675,7 @@ flowchart TD
     style EXTERNOS fill:#777,stroke:#333,color:#fff
 ```
 
-### Separacion de namespaces
+### 8b. Separacion de namespaces
 
 ```mermaid
 flowchart LR
@@ -693,13 +696,121 @@ flowchart LR
     style CORPUS fill:#777,stroke:#333,color:#fff
 ```
 
-El RAG opera sobre una proyeccion de lectura reconstruible. No es la
-autoridad del proceso — el Ledger, el ArtifactRepository y la
-evidencia son la fuente de verdad. El RAG es una optimizacion.
-
 > **Invariante**: `Virgil/docs/` (dogma) y `{target}/docs/` (proyecto)
 > comparten el nombre `docs` pero NO comparten identidad, ownership ni
 > write policy.
+
+### 8c. RAG dual — DBMS de contexto
+
+Regla fundamental: **ningun agente lee archivos directamente**. Todo
+agente consulta el RAG con queries acotadas. Contextualizacion via
+queries, no via prompts — ahorro directo de tokens.
+
+```mermaid
+flowchart TD
+    subgraph INCORRECTO["INCORRECTO"]
+        A1["Agente lee archivo completo\n(miles de tokens en prompt)"]
+    end
+
+    subgraph CORRECTO["CORRECTO"]
+        A2["Agente hace query al RAG\n(tokens minimos, scope acotado)"]
+    end
+
+    INCORRECTO -.-|"reemplazado por"| CORRECTO
+
+    style INCORRECTO fill:#c44,stroke:#333,color:#fff
+    style CORRECTO fill:#4a4,stroke:#333,color:#fff
+```
+
+Virgil define dos instancias del mismo patron RAG-como-DBMS, una por
+cada modo operativo.
+
+```mermaid
+flowchart TD
+    subgraph DEVRAG["devRag — Modo Desarrollo"]
+        DR_SRC["Fuentes:\n./principia/ (inmutable)\n./docs/ (normativo)"]
+        DR_ST["Storage:\narchivos del proyecto Virgil"]
+        DR_ROL["Rol: DBMS de CTX\npara desarrollar Virgil"]
+    end
+
+    subgraph CONSRAG["consumerRag — Modo Consumo"]
+        CR_SRC["Fuentes:\nVirgil dogma +\nRAG propio del proyecto"]
+        CR_ST["Storage default:\n{target}/docs/\noverride via adapter"]
+        CR_ROL["Rol: DBMS de CTX\npara el proyecto consumidor"]
+    end
+
+    PRINCIPIA["Principia\n(inmutable)"] -->|"alimenta"| DEVRAG
+    DEVRAG -->|"echo:\nmismo patron\ndiferente scope"| CONSRAG
+
+    style DEVRAG fill:#47a,stroke:#333,color:#fff
+    style CONSRAG fill:#a74,stroke:#333,color:#fff
+    style PRINCIPIA fill:#2b5,stroke:#333,color:#fff
+```
+
+| Aspecto | devRag | consumerRag |
+|---------|--------|-------------|
+| Modo | Desarrollo | Consumo |
+| Fuentes | `./principia/` + `./docs/` | Virgil dogma + RAG propio del proyecto |
+| Storage | Archivos del proyecto Virgil | `{target}/docs/` (default) |
+| Override | N/A (fuente fija) | Adapter interfaces: Jira, Confluence, Azure DevOps, Asana, WordPress, DBMS |
+| Rol | DBMS de CTX para Virgil | DBMS de CTX para el proyecto consumidor |
+
+El consumerRag define **interfaces** — el cliente las implementa con
+el backend que necesite. Lo que se conecte, se conecta, mientras
+cumpla con el contrato del adapter.
+
+### 8d. Visibilidad escalonada
+
+El agente principal (orquestador) tiene visibilidad completa del RAG
+si asi lo estima necesario. Los sub-agentes reciben un scope reducido:
+solo lo necesario para su tarea.
+
+```mermaid
+flowchart TD
+    RAG["RAG\n(devRag | consumerRag)"]
+
+    RAG -->|"100% visibilidad\n(si lo estima necesario)"| ORCH["Orquestador\n(agente principal)\nve TODO el inventario"]
+
+    RAG -->|"scope acotado"| SUB1["Sub-agente A\nve solo artefactos\nde su tarea"]
+    RAG -->|"scope acotado"| SUB2["Sub-agente B\nve solo artefactos\nde su tarea"]
+
+    ORCH -->|"define scope via\ndelegationContract"| SUB1 & SUB2
+
+    style ORCH fill:#4a4,stroke:#333,color:#fff
+    style SUB1 fill:#47a,stroke:#333,color:#fff
+    style SUB2 fill:#47a,stroke:#333,color:#fff
+    style RAG fill:#a74,stroke:#333,color:#fff
+```
+
+El scope del sub-agente se define en el `delegationContract` (seccion
+9c). El orquestador decide que topic_keys o queries son visibles para
+cada delegacion.
+
+### 8e. Memoizacion
+
+El RAG mantiene una capa de cache en memoria para acelerar queries
+repetidas. Fallback a almacenamiento persistente cuando la cache se
+invalida o la sesion se reinicia.
+
+```mermaid
+flowchart LR
+    QUERY["Query"] --> CACHE{{"Cache\nen memoria?"}}
+    CACHE -->|"hit"| RESULT["Resultado\n(inmediato)"]
+    CACHE -->|"miss"| FALLBACK["Fallback\nengram | sqlite\n(tech TBD)"]
+    FALLBACK --> RESULT
+    FALLBACK -->|"popular cache"| CACHE
+
+    style CACHE fill:#4a4,stroke:#333,color:#fff
+    style FALLBACK fill:#777,stroke:#333,color:#fff
+```
+
+El RAG no es la autoridad del proceso — el Ledger, el
+ArtifactRepository y la evidencia son la fuente de verdad. El RAG es
+una proyeccion de lectura optimizada, reconstruible y memoizada.
+
+Con el conocimiento organizado como DBMS de contexto y la visibilidad
+escalonada por rol, el paso siguiente es entender como ese contexto
+fluye entre agentes durante la ejecucion.
 
 ---
 
@@ -733,6 +844,9 @@ flowchart TD
 |--------|--------|-------|---------|
 | PatternB (default) | Target conocido, deterministico | Bajo (6x) | Buena |
 | PatternA | Busqueda fuzzy, fan-out alto (8+) | Alto | Optima |
+
+Ambos patrones operan sobre el RAG dual (seccion 8c): devRag en Modo
+Desarrollo, consumerRag en Modo Consumo.
 
 ### 9c. Delegacion: SM → sub-agente → PDC
 
