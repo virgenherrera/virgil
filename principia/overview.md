@@ -7,6 +7,7 @@ Si algo contradice este documento, este documento gana.
 
 ### En este documento
 - [1. Que es Virgil](#1-que-es-virgil)
+  - [1a. Regla anti-drift interpretativa](#1a-regla-anti-drift-interpretativa)
 - [2. Como es (estructura)](#2-como-es-estructura)
 - [3. Como actua](#3-como-actua)
   - [3a. Ciclo de vida de un proyecto](#3a-ciclo-de-vida-de-un-proyecto)
@@ -45,7 +46,7 @@ Si algo contradice este documento, este documento gana.
 - [11. Como se ejecuta](#11-como-se-ejecuta)
   - [11a. Pipeline de ejecucion](#11a-pipeline-de-ejecucion)
   - [11b. Contratos primero — habilitador de paralelismo](#11b-contratos-primero--habilitador-de-paralelismo)
-  - [11c. Git strategy — worktrees y branches](#11c-git-strategy--worktrees-y-branches)
+  - [11c. Git strategy — aislamiento y trazabilidad](#11c-git-strategy--aislamiento-y-trazabilidad)
   - [11d. Verificacion mecanica — review humano condicional](#11d-verificacion-mecanica--review-humano-condicional)
   - [11e. Accept/Reject — certificacion por gates](#11e-acceptreject--certificacion-por-gates)
   - [11f. Evidencia como dato queryable](#11f-evidencia-como-dato-queryable)
@@ -56,15 +57,6 @@ Si algo contradice este documento, este documento gana.
 - [Regla de auto-referencia](#regla-de-auto-referencia)
 - [Glosario](#glosario)
 - [Nota de autoridad](#nota-de-autoridad)
-
-### Documentos del Principia
-- [actors-and-modes.md](actors-and-modes.md) — Roles de agentes y modos operativos
-- [governance-principles.md](governance-principles.md) — Principios de gobierno
-- [role-architecture.md](role-architecture.md) — Arquitectura de responsabilidades
-- [delegation-pdc.md](delegation-pdc.md) — Delegacion y contratos
-- [fast-forward.md](fast-forward.md) — Modo acelerado de transiciones
-- [binding-layer.md](binding-layer.md) — Capa de enlace operativo
-- [circuit-breaker.md](circuit-breaker.md) — Mecanismos de interrupcion
 
 ---
 
@@ -101,8 +93,7 @@ flowchart TD
     style PDC fill:#a74,stroke:#333,color:#fff
 ```
 
-Detalle completo en [actors-and-modes.md](actors-and-modes.md) y
-[delegation-pdc.md](delegation-pdc.md).
+Detalle de delegacion y PDC en la seccion 9c de este documento.
 
 > **Delegacion de aprobaciones MIM.** En equipos donde el MIM es tambien el unico desarrollador, los puntos de aprobacion MIM (excepciones de cobertura, declaracion de perfil de compliance del proyecto, break-glass) pueden consolidarse mediante autorizacion permanente documentada: el MIM emite una politica de proyecto que pre-autoriza categorias especificas, reduciendo la friccion sin eliminar la trazabilidad. Nota: lo delegable es la DECLARACION del perfil regulatorio del proyecto, no la activacion del gate de review humano — esa activacion es automatica e incondicional una vez declarado el perfil (ver seccion 7g).
 
@@ -152,6 +143,51 @@ incluir:
 > **Pendiente de definicion**: el AGENTS.md actual documenta wire protocol y operaciones. El patron de orquestacion y la gestion de tokens se especificaran en el Method Pack correspondiente, no en este documento ancla. Este item queda fuera del alcance del Principia.
 
 > **Alcance de este documento.** El Principia es el dogma fundacional: filosofia, arquitectura e invariantes. NO es un documento de go-to-market, guia de adopcion ni manual de usuario. El perfil de consumidor objetivo (ICP), la estrategia de MVP, el posicionamiento competitivo y las guias de onboarding son deliverables separados que se derivan DEL Principia pero no forman parte de el. El Kernel + el Method Pack Scrum (el unico implementado) constituyen el slice minimo viable; los demas Method Packs, codebaseMemory y extensiones son provisiones arquitectonicas, no requisitos de v1.
+
+### 1a. Regla anti-drift interpretativa
+
+Este documento debe interpretarse preservando el **ciclo cerrado de accountability** de Virgil. Un revisor — humano o agente — NO debe abstraerlo hacia un framework generico de policies, observers o tooling intercambiable si esa abstraccion elimina o vuelve opcionales los mecanismos que el Principia declara constitucionales.
+
+La frontera canonica es:
+
+```text
+planning deliverables
+        ↓
+R/G/R + Echo System
+        ↓
+canonical build artifacts
+        ↓
+EvidenceIngestion + Binding Layer
+        ↓
+certification gates
+        ↓
+Ledger / TraceabilityGraph
+```
+
+**No son detalles de implementacion y NO son overrideables por proyecto:**
+
+- El Echo System de cinco pasos: Setup → Build → Static → Dynamic → E2E
+- El orden de Echo; puede variar el scope, no la secuencia
+- Macro Red/Green/Refactor y su independencia por fase
+- La existencia de build artifacts regenerables como salida canonica de Echo
+- La asociacion inequívoca `EchoRun + sourceRevision + buildArtifactSet`
+- EvidenceIngestion, Binding Layer y las gates minimas de calidad del Kernel
+- La regla de que certificacion se decide sobre evidencia producida por el camino canonico, no sobre afirmaciones del agente
+
+**Si son sustituibles/configurables mientras preserven esos contratos:**
+
+- Herramientas concretas usadas dentro de cada etapa de Echo
+- Comandos, runners, scanners y proveedores CI/CD
+- Triggers que disparan Echo (hooks, CI, CD u otros adapters)
+- Estrategia Git, nombres de branches, worktrees y convenciones de commits
+- Ubicacion fisica de build artifacts, siempre que conserven identidad, procedencia y reproducibilidad
+- Backends de HostAdapter, ArtifactStoreAdapter, RAG y otras extensiones expresamente definidas por contrato
+
+**Prueba anti-drift:** si una reinterpretacion permite que Virgil simplemente "observe lo que haya ocurrido" y certifique evidencia arbitraria sin pasar por Echo/build artifacts, esa reinterpretacion contradice este Principia. Virgil no es un auditor pasivo: define el protocolo mediante el cual la ejecucion adquiere evidencia certificable.
+
+**Fuerza normativa deliberada.** Las declaraciones absolutas del Principia representan obligaciones de conformidad y direccion arquitectonica, no descripciones del estado actual de implementacion. Una IA o implementador NO debe: debilitarlas porque hoy una herramienta no pueda enforcearlas completamente; reemplazarlas por una abstraccion mas generica; reinterpretar mecanismos fundacionales como detalles accidentales; ni introducir salvedades operativas dentro del Principia cuando pertenecen al Dogma o adapters. La incapacidad actual de enforcement crea trabajo pendiente de implementacion, no una excepcion al principio.
+
+> **Nota de nombres:** `ECHO` dentro del PDC (ECHO → VERIFY → MARK → DECIDE) es el paso de coherence check del checkpoint. No es el **Echo System** (Setup → Build → Static → Dynamic → E2E). Son conceptos distintos aunque compartan nombre.
 
 ---
 
@@ -227,10 +263,10 @@ stateDiagram-v2
     Handoff --> Execution : handoff aprobado
 
     state EXECUTION {
-        Execution --> Verify : codigo certificado
+        Execution --> Verify : implementacion candidata
     }
 
-    Verify --> Deliver
+    Verify --> Deliver : certificado
     Deliver --> Operation : si aplica
 
     note right of PLANNING : Virgil IMPONE convergencia<br/>mecanica via maquina de estados.<br/>SM ORQUESTA delegaciones.<br/>MIM DIRIGE decisiones de producto.
@@ -250,7 +286,7 @@ nunca reescribe un deliverable aprobado.
 **FastForward**: el SM no siempre ejecuta todas las fases con la misma
 ceremonia. Evalua un gradiente de certeza (FF-1 a FF-4) sobre el contexto
 existente y comprime las fases proporcionalmente — desde ceremonia
-completa (score 0-2) hasta ejecucion directa (score 6-8). El SM computa el score sobre estado observable y verificable. La formula de scoring esta publicada en `fast-forward.md` y los inputs + resultado se registran en el Ledger, haciendolo auditable. FastForward comprime CEREMONIA de planning (fases de deliberacion), no gates de calidad del Kernel — los gates de certificacion (R/G/R, mutation testing, fitness functions) se ejecutan integros en TODOS los niveles de FastForward, desde FF-1 hasta FF-4. Detalle en [fast-forward.md](fast-forward.md).
+completa (score 0-2) hasta ejecucion directa (score 6-8). El SM computa el score sobre estado observable y verificable. La formula de scoring y los inputs + resultado se registran en el Ledger, haciendolo auditable. FastForward comprime CEREMONIA de planning (fases de deliberacion), no gates de calidad del Kernel — los gates de certificacion (R/G/R, mutation testing, fitness functions) se ejecutan integros en TODOS los niveles de FastForward, desde FF-1 hasta FF-4.
 
 ### 3b. Flujo de una invocacion
 
@@ -278,9 +314,9 @@ sequenceDiagram
     HA-->>ACT: respuesta
 ```
 
-Este flujo canonico tiene pasos deterministas y pasos mediados por juicio. Las gates de certificacion (test pass/fail, mutation score, CRAP, coverage, CVE scan) son deterministas — binarias, sin subjetividad. Los pasos de planning, escalacion, compilacion de ContextBrief y verificacion de coherencia (PDC) involucran juicio del agente orquestador y no son deterministas. El Principia distingue ambos tipos explicitamente.
+Este flujo canonico tiene pasos deterministas y pasos mediados por juicio. Las gates de certificacion (test pass/fail, mutation score, CRAP, coverage, CVE scan) son deterministas — binarias, sin subjetividad. Los pasos de planning, escalacion, compilacion de ContextBrief, alineacion arquitectonica y verificacion de coherencia (PDC) involucran juicio del agente orquestador, no son deterministas y deben dejar evidencia trazable. El Principia distingue ambos tipos explicitamente.
 
-El PDC es un safeguard de coherencia de orquestacion que opera durante la ejecucion, pero NO es un gate de certificacion. La certificacion la determinan exclusivamente las gates mecanicas (seccion 7e, 11d). El PDC puede detener una delegacion incoherente, pero no certifica ni aprueba codigo.
+El PDC es un safeguard de coherencia de orquestacion que opera durante la ejecucion, pero NO es un gate de certificacion. La certificacion la determinan exclusivamente las gates del pipeline de QA definidas por el Kernel: gates mecanicas deterministas (seccion 7e, 11d) y verificacion estructurada de alineacion arquitectonica (seccion 7e, gate ARCH). Cuando el proyecto declara un perfil de compliance regulatoria, el review humano se agrega como gate blocking adicional (seccion 7g). El PDC puede detener una delegacion incoherente, pero no certifica ni aprueba codigo.
 
 > **Atomicidad**: el flujo muestra pasos secuenciales (persistir →
 > ingerir evidencia → registrar transicion). Si el proceso falla entre
@@ -308,7 +344,7 @@ flowchart TD
     GP3["GP-3. Gestion nivel superior"]
     GP4["GP-4. Constraint > confianza"]
     GP5["GP-5. Handoff paralelo"]
-    GP6["GP-6. Gates deterministicos"]
+    GP6["GP-6. Gates mecanicas\ndeterministas"]
 
     GP1 --- GP2 --- GP3
     GP4 --- GP5 --- GP6
@@ -326,9 +362,9 @@ flowchart TD
 | 1 | Metodologia e2e | Idea → codigo certificado → operacion. Sin saltos. |
 | 2 | Trazabilidad + fortaleza | No basta que el enlace exista; debe ser fuerte. |
 | 3 | Gestion nivel superior | Dashboard de salud, no revision linea a linea. |
-| 4 | Constraint > confianza | Hooks y gates, no promesas del agente. |
+| 4 | Constraint > confianza | Constraints enforceables y gates, no promesas del agente. |
 | 5 | Handoff paralelo | Claiming sobre un handoff, no handoffs separados. |
-| 6 | Gates de certificacion deterministicos | Binario en ejecucion: pasa o no pasa. Planning y escalacion involucran juicio. |
+| 6 | Gates mecanicas deterministas | Binario en ejecucion: pasa o no pasa. Planning y escalacion involucran juicio; la verificacion estructurada (ARCH) queda acotada y trazable (ver 7e). |
 
 ### 4b. Arquitectura — COMO se construye
 
@@ -417,7 +453,7 @@ flowchart TD
     style CUSTOM fill:#777,stroke:#333,color:#fff
 ```
 
-Cada componente tiene una responsabilidad clara. El Kernel impone invariantes de calidad universales (Echo, testing, binding layer) independientemente de la metodologia. El Method Pack define la ceremonia: cuantos roles participan, que gates se comprimen, como se itera. La calidad es del Kernel; la ceremonia es del Pack.
+Cada componente tiene una responsabilidad clara. El Kernel impone invariantes de calidad universales (Echo, testing, binding layer) independientemente de la metodologia. El Method Pack define la ceremonia: cuantos roles participan, que gates ceremoniales se comprimen, como se itera. La calidad es del Kernel; la ceremonia es del Pack.
 
 Los Method Packs heredan los gates de calidad (Red/Green/Refactor, mutation testing, fitness functions) como invariantes universales no negociables. Un Pack puede definir mecanismos de calidad ADICIONALES pero no puede reducir el minimo del Kernel. "Ceremonia-agnostico" significa que el Pack elige la ceremonia (sprints, kanban boards, ciclos de Shape Up); "calidad universal" significa que el pipeline de verificacion R/G/R + fitness functions aplica sin excepcion, independientemente de la ceremonia elegida.
 
@@ -502,7 +538,7 @@ Estas invariantes fundamentales — que Virgil conoce sin inflar contextos — s
 
 [↑ Volver al indice](#indice)
 
-Siete mecanismos forman un ciclo de accountability anidado. Ninguno
+Ocho mecanismos forman un ciclo de accountability anidado. Ninguno
 funciona aislado.
 
 ### 7a. Echo System — pipeline determinista
@@ -528,13 +564,15 @@ flowchart LR
     style S5 fill:#47a,stroke:#333,color:#fff
 ```
 
-| Ambiente | Scope | Trigger | Enforcement |
-|----------|-------|---------|-------------|
+| Ambiente | Scope | Trigger por defecto | Enforcement |
+|----------|-------|---------------------|-------------|
 | Dev | Selectivo, feedback rapido | git hooks | Pre-commit, pre-push |
 | CI | Completo | Push, PR | Pipeline stages |
 | CD | Confianza absoluta | Tag, merge a main | Deployment gates |
 
-Los hooks de pre-commit ejecutan verificaciones ESTRUCTURALES de feedback rapido (lint, type-check, formato, analisis estatico). Los tests de integracion contra stack real (tier App/Servicio) se ejecutan en pre-push o en el pipeline de CI, no en pre-commit. "Feedback rapido" en el contexto de Dev se refiere a las verificaciones estructurales, no a la suite completa de integracion.
+Los triggers son adapters de operacion y pueden cambiar por proyecto; **Echo no cambia**. Un proyecto puede disparar el mismo scope mediante hooks, CI, un runner local u otro mecanismo siempre que: (a) produzca el mismo contrato de Echo y sus build artifacts identificados, y (b) el trigger sea automatico — no omitible por el agente ejecutor.
+
+En la configuracion por defecto, los hooks de pre-commit ejecutan verificaciones ESTRUCTURALES de feedback rapido (lint, type-check, formato, analisis estatico). Los tests de integracion contra stack real (tier App/Servicio) se ejecutan en pre-push o en el pipeline de CI, no en pre-commit. "Feedback rapido" en el contexto de Dev se refiere a las verificaciones estructurales, no a la suite completa de integracion.
 
 ### 7b. Deliverables vs Build Artifacts
 
@@ -552,8 +590,8 @@ flowchart TD
     end
 
     subgraph BUILDART["Build Artifacts"]
-        BA["Binarios, coverage,\ndist/, contenedores,\nbundle analysis,\nOpenAPI JSON/YAML"]
-        BA_WHERE["Carpeta gitignoreada\ndentro del repo"]
+        BA["Binarios, coverage,\ndist/, contenedores,\nbundle analysis,\nOpenAPI generado/derivado"]
+        BA_WHERE["Storage efimero/regenerable\nlocal gitignored o CI artifact store"]
         BA_WHO["Generados por Echo\nefimeros, regenerables"]
     end
 
@@ -561,7 +599,7 @@ flowchart TD
     BA --- BA_WHERE --- BA_WHO
 
     DELIVERABLES -.-|"alimentan"| EXECUTION["Execution"]
-    BUILDART -.-|"consumidos por"| QA["QA / Accept"]
+    BUILDART -.-|"consumidos por"| QA["QA / Verify"]
 
     style DELIVERABLES fill:#47a,stroke:#333,color:#fff
     style BUILDART fill:#a74,stroke:#333,color:#fff
@@ -572,6 +610,10 @@ flowchart TD
 > entidades gestionan **deliverables**, no build artifacts. La
 > nomenclatura de codigo es historica; este Principia define la
 > terminologia canonica.
+
+> **Identidad de evidencia**: cada conjunto de build artifacts DEBE quedar ligado de forma inequívoca al `EchoRun` y a la `sourceRevision` que lo produjo. QA nunca certifica "el ultimo reporte" de forma implicita; certifica un `buildArtifactSet` atribuible a una revision concreta. La ubicacion fisica del artifact puede variar, su identidad y procedencia no.
+
+> **OpenAPI**: el contrato fuente definido en `prePhase` es un deliverable/contrato normativo. Un OpenAPI JSON/YAML generado por build a partir de ese contrato o del codigo es un build artifact derivado. No comparten autoridad aunque puedan representar la misma interfaz.
 
 ### 7c. Macro Red/Green/Refactor — TDD por lotes
 
@@ -604,8 +646,8 @@ stateDiagram-v2
         Cleanup --> [*] : tests siguen pasando
     }
 
-    Refactor --> Accept : metricas dentro de umbral
-    Accept --> [*] : certificado
+    Refactor --> Verify : metricas dentro de umbral
+    Verify --> [*] : certificado
 
     Red --> Red : gap detectado
     Green --> Red : test faltante
@@ -619,10 +661,15 @@ independiente).
 
 #### compositeAgent — ejecucion paralela de R/G/R
 
-Cuando la ejecucion se paraleliza en multiples lanes (worktrees),
-cada lane recibe un compositeAgent: un sub-agente que asume multiples
-personalidades secuencialmente dentro del mismo worktree, evitando
-conflictos de filesystem.
+Cuando la ejecucion se paraleliza en multiples lanes, cada lane opera
+dentro de un **mutation domain aislado** y recibe un compositeAgent: un
+sub-agente que asume multiples personalidades secuencialmente dentro de
+ese mismo dominio, evitando conflictos de filesystem. Worktrees son la
+implementacion de referencia del Dogma actual. El invariante del
+Principia es el aislamiento, no el mecanismo: un mutation domain valido
+debe proveer (a) filesystem aislado que no interfiera con otros lanes,
+(b) deteccion de conflictos al integrar, y (c) identidad de revision
+por lane.
 
 ```mermaid
 sequenceDiagram
@@ -630,9 +677,9 @@ sequenceDiagram
     participant TE as testEngineer
     participant IMPL as Implementor
     participant FF as fitnessFunction
-    participant WT as Worktree
+    participant WT as Isolation Domain
 
-    ORCH->>WT: crear worktree (lane)
+    ORCH->>WT: crear mutation domain (lane)
 
     Note over TE: Invocacion 1 (stateless)
     ORCH->>TE: spec + contratos
@@ -741,7 +788,7 @@ durante el ciclo R/G/R:
 | verified | Refactor | Mutation testing confirmo fortaleza real |
 
 Solo `verified` certifica fortaleza — los demas solo confirman
-existencia. Detalle en [binding-layer.md](binding-layer.md).
+existencia.
 
 ### 7e. QA / Acceptance Gates — certificacion
 
@@ -780,6 +827,8 @@ flowchart LR
     style LIVE fill:#4a4,stroke:#333,color:#fff
     style DROP fill:#c44,stroke:#333,color:#fff
 ```
+
+Codigo detectado como droppableCode debe eliminarse o justificar su existencia con una excepcion explicita, documentada y revisable. El concepto **safeToAutoDelete** identifica el subconjunto de droppableCode que cumple criterios mecanicos de eliminacion segura: **sin dependientes vivos, sin ejecucion observada durante N ciclos y sin cobertura transitiva**. safeToAutoDelete habilita eliminacion mecanica automatica; droppableCode sin esos criterios requiere decision humana (eliminar o justificar excepcion).
 
 El threshold de cobertura es obligatorio y **nunca se reduce** sin
 autorizacion explicita del MIM. Se mide solo sobre archivos con
@@ -907,8 +956,19 @@ Tres concerns separados: donde se PERSISTEN los deliverables
 (ArtifactStore), como se CONSULTAN deliverables y documentacion (RAG),
 y como se COMPRENDE la estructura del codigo (codebaseMemory). El RAG
 actua como DBMS del contexto documental; el codebaseMemory actua como
-grafo estructural del codigo. Ningun agente lee archivos directamente
-— todo agente consulta la herramienta apropiada con queries acotadas.
+grafo estructural del codigo. Ambas proyecciones son **versionadas**:
+declaran un watermark (la revision contra la cual estan sincronizadas)
+y pueden detectar drift respecto al estado actual del repositorio.
+
+El camino canonico de contextualizacion es consultar la herramienta
+apropiada con queries acotadas, no cargar archivos completos en el
+prompt. La lectura directa de archivos no esta prohibida pero tiene
+un costo: consume tokens innecesariamente y opera fuera de la
+trazabilidad de Virgil. Toda modificacion que genere nuevos commits
+fuera del flujo de Virgil desplaza HEAD mas alla del watermark y
+requiere un **re-sync** que actualice la proyeccion. Ninguna
+certificacion es valida si la proyeccion RAG no esta sincronizada
+con la revision que se certifica.
 
 ### 8a. ArtifactStore — persistencia
 
@@ -967,10 +1027,56 @@ flowchart LR
 Principio arquitectonico: **los agentes consultan en lugar de leer**.
 La arquitectura favorece queries al RAG (deliverables, documentacion)
 y al codebaseMemory (estructura del codigo, seccion 8f) sobre lectura
-directa de archivos. Virgil inyecta esta guia via AGENTS.md, pero no
-controla la ejecucion del agente — es un principio arquitectonico, no
-un constraint enforceable por hook. Contextualizacion via queries, no
-via prompts — ahorro directo de tokens.
+directa de archivos. Virgil inyecta esta guia via AGENTS.md.
+Contextualizacion via queries, no via prompts — ahorro directo de
+tokens.
+
+#### Watermark y re-sync
+
+El RAG y el codebaseMemory mantienen un **watermark**: la revision
+(commit SHA) contra la cual la proyeccion fue construida o
+sincronizada por ultima vez. Este watermark es la base de tres
+mecanismos:
+
+1. **Deteccion de drift**: al recibir una query, la proyeccion compara
+   su watermark contra el HEAD actual. Si hay divergencia, reporta:
+   "ultimo sync: `{sha}`, `{N}` commits atras" y sugiere re-sync.
+2. **Bloqueo de certificacion**: Virgil NO certifica codigo cuya
+   `sourceRevision` no sea alcanzable desde el watermark del RAG. El
+   invariante es mecanico: sourceRevision debe ser alcanzable desde
+   watermark en el grafo de commits (equivalente a
+   `git merge-base --is-ancestor sourceRevision watermark`). El
+   watermark es propiedad exclusiva del Kernel y solo se actualiza
+   como efecto de un re-sync que reconstruye o actualiza la
+   proyeccion — un agente no puede modificar el watermark sin
+   ejecutar el proceso de sincronizacion.
+3. **Re-sync explicito**: el MIM o el agente puede disparar un re-sync
+   que actualiza la proyeccion al HEAD actual. El trigger puede ser:
+   - Explicito: el MIM instruye al agente ("sincroniza Virgil").
+   - Via PR: el PR incluye deltas del RAG y firma de sync (la
+     especificacion de la firma la define el Dogma); al merge, la
+     proyeccion queda up-to-date sin intervencion manual.
+   - Via hook (opt-in): un post-merge hook dispara re-sync
+     automaticamente. Es decision del consumidor, no obligacion del
+     Principia.
+
+```mermaid
+flowchart TD
+    QUERY["Query al RAG"]
+    QUERY --> CHECK{{"HEAD alcanzable\ndesde watermark?"}}
+    CHECK -->|"Si"| RESULT["Resultado\ncon certeza"]
+    CHECK -->|"No"| WARN["Aviso: RAG\ndesactualizado\nsugerir re-sync"]
+
+    CERT["Certificacion"]
+    CERT --> GATE{{"sourceRevision\nalcanzable desde\nwatermark?"}}
+    GATE -->|"Si"| PASS["Gate pasa"]
+    GATE -->|"No"| BLOCK["BLOQUEADO\nre-sync requerido"]
+
+    style RESULT fill:#4a4,stroke:#333,color:#fff
+    style WARN fill:#a74,stroke:#333,color:#fff
+    style PASS fill:#4a4,stroke:#333,color:#fff
+    style BLOCK fill:#c44,stroke:#333,color:#fff
+```
 
 ```mermaid
 flowchart TD
@@ -1129,8 +1235,11 @@ flowchart TD
 #### Construccion determinista
 
 El grafo se construye por un parser AST determinista, no por inferencia
-de un LLM. Esto garantiza: completitud (no se saltan archivos),
-velocidad (segundos, no minutos), y cero alucinaciones en los edges.
+de un LLM. Esto garantiza cobertura determinista del corpus parseable,
+velocidad y **soundness conservadora** de los edges: una relacion se
+registra solo cuando existe evidencia estructural suficiente. Los edges
+ambiguos se omiten; ausencia de edge no prueba ausencia de una relacion
+runtime o dinamica.
 
 ```mermaid
 flowchart LR
@@ -1175,7 +1284,12 @@ como un grafo de nodos — sin cargar codigo fuente en el prompt, sin
 quemar tokens, y con ownership total de la estructura. Es la
 herramienta que permite a Virgil "ver" el codigo sin "leerlo".
 
-En escenarios de lanes paralelos (seccion 11c), cada worktree mantiene su propia instancia del grafo. Los grafos divergentes se reconcilian al merge: el merge de codigo dispara reconstruccion incremental del grafo desde el AST del resultado del merge. No hay grafo compartido entre lanes divergentes.
+El codebaseMemory mantiene su propio watermark, independiente del RAG.
+La actualizacion incremental via file watcher actualiza el watermark
+automaticamente al commit que disparo el cambio. El invariante de
+certificacion (seccion 8c) aplica a ambas proyecciones.
+
+En escenarios de lanes paralelos (seccion 11c), cada mutation domain aislado mantiene su propia instancia del grafo. En la implementacion de referencia esos dominios son worktrees. Los grafos divergentes se reconcilian al integrar codigo: la revision integrada dispara reconstruccion incremental del grafo desde su AST. No hay grafo compartido entre lanes divergentes.
 
 Con el conocimiento organizado como DBMS documental (RAG), grafo
 estructural (codebaseMemory) y visibilidad escalonada por rol, el
@@ -1216,7 +1330,7 @@ flowchart TD
 
 | Patron | Cuando | Costo | Calidad |
 |--------|--------|-------|---------|
-| PatternB (default) | Target conocido, deterministico | Bajo (reutiliza ContextBrief compilado) | Buena |
+| PatternB (default) | Target conocido, deterministico | Bajo (pasa `topic_key`; evita materializar contexto) | Buena |
 | PatternA | Busqueda fuzzy, fan-out alto (8+) | Alto | Optima |
 
 Ambos patrones operan sobre el RAG dual (seccion 8c): devRag en Modo
@@ -1242,11 +1356,29 @@ sequenceDiagram
     SM->>SM: DECIDE - avanzar?
 ```
 
-Sin Status Report en el output, el SM lo trata como FAILED.
-Tres fallos consecutivos al mismo rol activan el circuitBreaker
-(ver [circuit-breaker.md](circuit-breaker.md)).
+Los 6 campos obligatorios del delegationContract:
 
-Detalle completo en [delegation-pdc.md](delegation-pdc.md).
+| Campo | Que define |
+|-------|------------|
+| Identidad | Nombre de rol, tier de razonamiento (busqueda / implementacion / arquitectura), constraints de comportamiento |
+| Scope | Limite explicito del alcance — que archivos, que acciones, que esta fuera |
+| Objetivo verificable | Criterio binario que el SM evalua contra el output |
+| Input | Datos resueltos que el sub-agente necesita — sin referencias que deba perseguir |
+| Output schema | Estructura exacta del resultado esperado |
+| Reglas inyectadas | Reglas del proyecto y constraints como texto literal en el briefing — el sub-agente NO busca su propio contexto |
+
+La **identidad** no es decorativa — define como razona y opera el
+sub-agente. El tier de razonamiento se asigna por complejidad de la
+tarea, no por preferencia: una busqueda no requiere capacidad
+arquitectonica; una decision de diseno no se delega a capacidad de
+busqueda. Las reglas llegan pre-digeridas porque un sub-agente sin
+estado (GP-4: constraint > confianza) no tiene acceso al registro de
+origen ni responsabilidad de buscarlo.
+
+Sin Status Report en el output, el SM lo trata como FAILED.
+Tres fallos consecutivos al mismo rol activan el circuitBreaker.
+
+> **No confundir**: el paso `ECHO` del PDC valida coherencia del output delegado. El **Echo System** ejecuta Setup → Build → Static → Dynamic → E2E y produce build artifacts. El primero es un checkpoint de orquestacion; el segundo es el pipeline canonico de evidencia.
 
 ---
 
@@ -1273,7 +1405,8 @@ sequenceDiagram
     SM->>SM: continuar desde<br/>fase derivada
 ```
 
-- El SM deriva la fase por los deliverables existentes (no la almacena)
+- El SM deriva la fase por **revisiones consolidadas** de deliverables, no por mera existencia de archivos. Una revision solo participa en la derivacion de estado cuando su persistencia y su gate/evidencia requerida quedaron confirmados; una revision parcial despues de un crash no hace avanzar la fase.
+- El estado de fase no se almacena como puntero autoritativo; se deriva de esas revisiones consolidadas y del Ledger
 - El historial de fallos es per-deliverable y cross-session
 - `lastVerifiedAt` evita re-verificacion innecesaria si el codigo
   no toco el scope del deliverable
@@ -1287,8 +1420,10 @@ sequenceDiagram
 [↑ Volver al indice](#indice)
 
 Despues de que planning produce un handoff aprobado, la ejecucion
-transforma ese handoff en codigo certificado. Virgil OBSERVA — no
-dirige, no implementa. Emite PlanningGapDetected si detecta vacios.
+transforma ese handoff en una implementacion candidata y **Verify** la
+certifica contra los artifacts/evidencia del camino canonico. Virgil
+OBSERVA — no dirige, no implementa. Emite PlanningGapDetected si
+detecta vacios.
 
 ### 11a. Pipeline de ejecucion
 
@@ -1300,24 +1435,24 @@ flowchart LR
     RED["Red\nToda la suite\nde tests\n(todos fallan)"]
     GREEN["Green\nCodigo que\npase tests\n(todos pasan)"]
     REFACTOR["Refactor\nVerificacion\nmecanica\n(metricas OK)"]
-    ACCEPT["Accept\nCertificacion\ndeterminista\n(QA gate)"]
+    VERIFY["Verify\nCertificacion\n(QA gate)"]
 
-    PRE --> RED --> GREEN --> REFACTOR --> ACCEPT
+    PRE --> RED --> GREEN --> REFACTOR --> VERIFY
 
     style PRE fill:#777,stroke:#333,color:#fff
     style RED fill:#c44,stroke:#333,color:#fff
     style GREEN fill:#4a4,stroke:#333,color:#fff
     style REFACTOR fill:#47a,stroke:#333,color:#fff
-    style ACCEPT fill:#2b5,stroke:#333,color:#fff
+    style VERIFY fill:#2b5,stroke:#333,color:#fff
 ```
 
 | Fase | Que produce | Gate de salida |
 |------|-------------|----------------|
-| prePhase | Contratos (OpenAPI, schemas, interfaces) | Todos los contratos definidos |
+| prePhase | Contratos fuente (OpenAPI source, schemas, interfaces) | Todos los contratos definidos |
 | Red | Suite completa de tests | Todos fallan (red valido) |
 | Green | Implementacion | Todos pasan |
 | Refactor | Metricas dentro de umbral | Mutation, CRAP, complejidad OK |
-| Accept | Certificacion | Gates mecanicas + verificacion estructurada (ver 7e) |
+| Verify | Certificacion | Gates mecanicas + verificacion estructurada (ver 7e) |
 
 ### 11b. Contratos primero — habilitador de paralelismo
 
@@ -1338,7 +1473,16 @@ flowchart TD
     style INTEGRATION fill:#4a4,stroke:#333,color:#fff
 ```
 
-### 11c. Git strategy — worktrees y branches
+### 11c. Git strategy — aislamiento y trazabilidad
+
+El Principia NO impone GitFlow, trunk-based ni nombres de branches concretos. Impone cuatro invariantes:
+
+1. Lanes concurrentes deben tener **mutation domains aislados** mientras divergen (filesystem aislado, deteccion de conflictos al integrar, identidad de revision por lane).
+2. Cada `buildArtifactSet` producido por Echo debe estar ligado inequívocamente a la `sourceRevision` que lo genero.
+3. La integracion de lanes debe volver a ejecutar el Echo requerido sobre la revision integrada antes de que esa revision pueda certificarse.
+4. La identidad y procedencia de cada lane debe **sobrevivir la integracion** y ser mecanicamente verificable en el historial. El enforcement canonico es `--no-ff` (no fast-forward merge); una estrategia alternativa solo es admisible si preserva evidencia equivalente de identidad y procedencia de lane.
+
+La estrategia Git concreta es configurable por proyecto dentro de estos invariantes. El Dogma actual provee worktrees + branches como implementacion de referencia:
 
 ```mermaid
 flowchart TD
@@ -1346,7 +1490,7 @@ flowchart TD
     DEV["develop\n(integracion)"]
     ITER["exec/iter-N\n(iteracion)"]
 
-    subgraph LANES["Lanes paralelos (worktrees)"]
+    subgraph LANES["Referencia: lanes paralelos con worktrees"]
         L1["exec/iter-N/lane-auth"]
         L2["exec/iter-N/lane-api"]
         L3["exec/iter-N/lane-ui"]
@@ -1361,14 +1505,14 @@ flowchart TD
     style LANES fill:#a74,stroke:#333,color:#fff
 ```
 
-Cada lane se ejecuta en un worktree aislado. Un compositeAgent
-(seccion 7c) opera dentro de cada worktree, cambiando de personalidad
-por fase (testEngineer → Implementor → fitnessFunction).
+Con esa implementacion, cada lane se ejecuta en un worktree aislado y un compositeAgent (seccion 7c) opera dentro de ese mutation domain. Otro proyecto puede usar otro mecanismo de aislamiento siempre que satisfaga las propiedades del mutation domain y los cuatro invariantes de esta seccion.
 
 Si una lane detecta violacion de contrato mid-flight, el SM emite PlanningGapDetected y detiene ESA lane. Las demas lanes en ejecucion que dependen del mismo contrato reciben notificacion de contrato invalidado y entran en estado de pausa pendiente de reconciliacion. Las lanes independientes (sin dependencia del contrato violado) continuan sin interrupcion.
 
-| Fase | Prefijo de commit | Frecuencia |
-|------|-------------------|------------|
+Las convenciones de commits son defaults del Dogma y pueden ser overrideadas por proyecto siempre que Virgil pueda reconstruir fase, revision y evidencia **por parseo determinista** (no por inferencia de un LLM):
+
+| Fase | Prefijo default | Frecuencia default |
+|------|-----------------|--------------------|
 | prePhase | `contract:` | 1 por tipo |
 | Red | `test:` | 1 por test o grupo |
 | Green | `feat:` | 1 por test que pasa |
@@ -1397,7 +1541,7 @@ flowchart TD
     end
 
     MECANICO -->|"gate"| PASS{{"Pasa?"}}
-    PASS -->|"Si"| ACCEPT["Accept"]
+    PASS -->|"Si"| VERIFY["Verify"]
     PASS -->|"No"| BACK["Re-delegar a\nfase correspondiente"]
 
     style MECANICO fill:#47a,stroke:#333,color:#fff
@@ -1460,10 +1604,12 @@ flowchart LR
 
 | Restriccion | Regla |
 |-------------|-------|
-| Autorizacion | Solo el MIM puede activar break-glass |
+| Autorizacion | Solo el MIM puede activar break-glass. En equipos con MIM no siempre disponible, una standing policy emitida por el MIM puede pre-autorizar activaciones bajo condiciones mecanicamente verificables: tipos de incidente cubiertos, fecha de expiracion de la policy, y notificacion obligatoria al MIM dentro de un plazo definido |
 | Scope | Exclusivamente el fix del incidente — cero features |
 | Certificacion | Certificacion completa post-hoc dentro de 72 horas (configurable por el Method Pack, minimo 24h, maximo 168h) |
 | Registro | El Ledger registra la activacion como evento auditable |
+
+Una standing policy no transfiere autoridad ni amplia scope: declara condiciones cerradas bajo las cuales break-glass puede activarse sin presencia del MIM. Cada activacion debe demostrar que cumplio las condiciones pre-autorizadas, quedar atribuida a la politica MIM vigente, y notificar al MIM dentro del plazo declarado en la policy.
 
 El break-glass NO es un atajo — es un camino documentado con
 restricciones explicitas. Un fix sin certificacion post-hoc dentro
@@ -1472,7 +1618,12 @@ de las 72 horas (o el plazo configurado) se trata como deuda tecnica critica.
 ### 11f. Evidencia como dato queryable
 
 Todo lo que ocurre durante ejecucion se ingiere como evidencia
-queryable, no como documentacion narrativa.
+queryable, no como documentacion narrativa. Para **certificacion de
+codigo**, los resultados de tests, coverage, metricas, scanners y builds
+solo son elegibles cuando estan ligados a un `EchoRun` y su
+`buildArtifactSet`. Evidencia de planning, decisiones humanas o eventos
+de operacion puede provenir de otras fuentes, pero no sustituye el camino
+Echo para certificar codigo.
 
 ```mermaid
 flowchart TD
@@ -1502,9 +1653,11 @@ mecanica (mutation testing) lo mueve a `verified`.
 
 [↑ Volver al indice](#indice)
 
-La fase de operacion se activa SOLO si el proyecto tiene superficie
-operacional (APIs, CLIs, servicios). No aplica para librerias ni
-deliverables de un solo uso.
+La fase de operacion se activa SOLO si el producto tiene superficie
+operacional activa (APIs, CLIs, servicios o herramientas operadas).
+Una libreria por si sola no activa Operation; su API reference pertenece
+a Delivery/support documentation. Tampoco aplica a deliverables de un
+solo uso.
 
 ### 12a. Activacion y rol
 
@@ -1527,14 +1680,14 @@ flowchart TD
 
 ### 12b. Adapters de operacion
 
-Tres tipos de documentacion operacional, segun el tipo de producto.
+Dos tipos de documentacion pertenecen directamente a Operation; las librerias mantienen `api-reference` como artifact de Delivery/support, sin activar por si mismas la fase operacional.
 
 ```mermaid
 flowchart LR
     OP["Operacion"]
     OP --> RUNBOOK["ops-runbook\n(servicios, APIs)"]
     OP --> USAGE["usage-guide\n(CLIs, herramientas)"]
-    OP --> APIREF["api-reference\n(librerias)"]
+    DELIVERY["Delivery / Support"] --> APIREF["api-reference\n(librerias)"]
 
     style RUNBOOK fill:#47a,stroke:#333,color:#fff
     style USAGE fill:#47a,stroke:#333,color:#fff
@@ -1592,30 +1745,37 @@ flowchart TD
 
 | Termino | Definicion |
 |---------|-----------|
-| Binding Layer | Tres niveles de confianza para contratos: declared (definido), inferred (derivado de evidencia), verified (confirmado por ejecucion). Ver [binding-layer.md](binding-layer.md) |
-| Break-glass | Lane de emergencia para incidentes P1 que comprime ceremonia con autorizacion MIM y certificacion post-hoc obligatoria (seccion 11f) |
+| Binding Layer | Tres niveles de confianza para contratos: declared (definido), inferred (derivado de evidencia), verified (confirmado por ejecucion) (seccion 7d) |
+| Break-glass | Lane de emergencia para incidentes P1 que comprime ceremonia con autoridad MIM y certificacion post-hoc obligatoria (seccion 11e) |
+| buildArtifactSet | Conjunto de build artifacts producidos por un EchoRun, ligados inequivocamente a una sourceRevision (seccion 7b) |
 | bumpDependencies | Ciclo de mantenimiento de tres pasos (security fix → update check → security fix) para actualizar dependencias exactas sin introducir vulnerabilidades (seccion 7h) |
-| circuitBreaker | Mecanismo que detiene delegaciones tras 3 fallos consecutivos y escala al MIM. Ver [circuit-breaker.md](circuit-breaker.md) |
+| circuitBreaker | Mecanismo que detiene delegaciones tras 3 fallos consecutivos y escala al MIM (seccion 9c) |
 | codebaseMemory | Grafo estructural del codigo derivado de AST. Complementa al RAG con consultas de relaciones entre entidades de codigo (seccion 8f) |
-| compositeAgent | Secuencia de invocaciones independientes (testEngineer → Implementor → fitnessFunction) orquestadas bajo una etiqueta comun dentro de un worktree (seccion 7c) |
+| compositeAgent | Secuencia de invocaciones independientes (testEngineer → Implementor → fitnessFunction) orquestadas bajo una etiqueta comun dentro de un mutation domain aislado; worktree es una implementacion posible (seccion 7c) |
 | complianceByDesign | Aserciones de forma de datos integradas en el desarrollo. Cubre exclusivamente controles tecnicos de datos (seccion 7g) |
 | ContextBrief | Paquete de contexto compilado por el ContextCompiler para alimentar una delegacion. Incluye deliverables seleccionados con trazabilidad de origen (seccion 9a) |
 | ContextCompiler | Componente del Kernel que selecciona y compila deliverables relevantes en un ContextBrief. Paso de juicio con superficie de alucinacion documentada (seccion 9a) |
 | CRAP score | Change Risk Anti-Patterns — metrica que combina complejidad y cobertura para evaluar riesgo de cambio |
-| delegationContract | Contrato que acompana cada delegacion del SM: define scope, criterios de salida, recursos y restricciones. Ver [delegation-pdc.md](delegation-pdc.md) |
-| droppableCode | Codigo que cumple criterios de eliminacion automatica: sin dependientes vivos, sin ejecucion en N ciclos, sin cobertura transitiva (seccion 7f) |
+| delegationContract | Contrato de 6 campos obligatorios que acompana cada delegacion del SM: identidad (rol, tier, constraints), scope, objetivo verificable, input resuelto, output schema, reglas inyectadas como texto (seccion 9c) |
+| droppableCode | Codigo con 0% de cobertura en appTests. Debe eliminarse o justificar su existencia con excepcion documentada. Ver safeToAutoDelete para eliminacion mecanica segura (seccion 7f) |
 | Echo System | Pipeline de 5 pasos para la ejecucion de cada fase: Setup → Build → Static → Dynamic → E2E (seccion 7a) |
-| FastForward | Gradiente de certeza (FF-1 a FF-4) que permite comprimir ceremonia de planning cuando la evidencia observable lo soporta (seccion 3a). Ver [fast-forward.md](fast-forward.md) |
+| EchoRun | Instancia concreta de ejecucion del Echo System que produce un buildArtifactSet ligado a una sourceRevision (seccion 7b) |
+| FastForward | Gradiente de certeza (FF-1 a FF-4) que permite comprimir ceremonia de planning cuando la evidencia observable lo soporta (seccion 3a) |
 | Kernel | Nucleo ceremonia-agnostico de Virgil. Contiene Ledger, TraceabilityGraph, ArtifactRepository, EvidenceIngestion, ContextCompiler, RAG (seccion 5) |
 | Ledger | Registro inmutable de eventos, transiciones e historial del proyecto |
+| mutation domain | Dominio de aislamiento donde un lane de ejecucion opera sin interferir con otros lanes concurrentes. Debe proveer filesystem aislado, deteccion de conflictos al integrar, e identidad de revision por lane. Worktrees son la implementacion de referencia (seccion 7c, 11c) |
 | Method Pack | Capa de ceremonia que se monta sobre el Kernel. Define roles, flujos y gates adicionales. Pack Scrum es el unico implementado (seccion 5) |
 | PDC | Post-Delegation Checkpoint: safeguard de coherencia de orquestacion (ECHO → VERIFY → MARK → DECIDE). No es gate de certificacion (seccion 3b) |
 | PlanningGapDetected | Senal de escalacion cuando la ejecucion detecta un defecto de planning. Dispara re-planificacion |
 | RAG | Proyeccion de lectura optimizada sobre deliverables y documentacion. No es fuente de verdad — es reconstruible (seccion 8e) |
+| re-sync | Proceso que actualiza una proyeccion (RAG o codebaseMemory) al HEAD actual y avanza su watermark. Puede dispararse de forma explicita, via PR con deltas, o via hook post-merge (seccion 8c) |
 | securityAudit | Gate blocking del Echo paso 1 (Setup): escaneo de vulnerabilidades sobre el arbol de dependencias. El Kernel impone la ejecucion; el Method Pack define el umbral de severidad (seccion 7h) |
+| sourceRevision | Commit SHA que identifica la revision del codigo que produjo un buildArtifactSet. Debe ser alcanzable desde el watermark para que la certificacion sea valida (seccion 7b, 8c) |
+| safeToAutoDelete | Subconjunto de droppableCode que cumple criterios mecanicos de eliminacion segura: sin dependientes vivos, sin ejecucion observada en N ciclos, sin cobertura transitiva. Habilita eliminacion mecanica automatica (seccion 7f) |
 | Supply Chain Integrity | Tres invariantes sobre dependencias: version pinning exacto, security audit como gate, y bumpDependencies como ciclo de actualizacion controlada (seccion 7h) |
 | TraceabilityGraph | Proyeccion derivada que conecta intencion → decision → trabajo → evidencia. Reconstruible desde el Ledger (seccion 5, 8e) |
 | versionPinning | Invariante que requiere versiones exactas (sin rangos) para todas las dependencias y el gestor de dependencias. Garantiza reproducibilidad absoluta (seccion 7h) |
+| watermark | Revision (commit SHA) contra la cual una proyeccion (RAG o codebaseMemory) fue construida o sincronizada por ultima vez. Propiedad exclusiva del Kernel. Gate de certificacion: sourceRevision debe ser alcanzable desde watermark en el grafo de commits (seccion 8c) |
 
 ---
 
