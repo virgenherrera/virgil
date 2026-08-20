@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "8f-concept"
 title: "codebaseMemory — grafo estructural del codigo"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1187, 1210]
 layer: knowledge
 constitutional: true

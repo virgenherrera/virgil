@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "2"
 title: "Como es (estructura)"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [194, 234]
 layer: structure
 constitutional: true

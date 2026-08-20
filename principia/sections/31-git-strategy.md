@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "11c"
 title: "Git strategy — aislamiento y trazabilidad"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1476, 1520]
 layer: execution
 constitutional: true

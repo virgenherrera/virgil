@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "7e"
 title: "QA / Acceptance Gates — certificacion"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [793, 814]
 layer: quality
 constitutional: true

@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "6"
 title: "Como interactuan las partes"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [462, 534]
 layer: interaction
 constitutional: true

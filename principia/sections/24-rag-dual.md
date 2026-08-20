@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "8c-dual"
 title: "devRag y consumerRag"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1097, 1135]
 layer: knowledge
 constitutional: false

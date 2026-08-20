@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "10"
 title: "Como se recupera"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1385, 1415]
 layer: recovery
 constitutional: true

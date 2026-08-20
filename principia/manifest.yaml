@@ -1,9 +1,9 @@
 # Virgil Principia — Manifest
 # Machine-readable index for CLI discovery and RAG routing.
-# Source: principia/overview.md (sealed, immutable)
+# Source: principia/constitution.md (sealed, immutable)
 
 version: 1
-source: principia/overview.md
+source: principia/constitution.md
 source_commit: 1d2dfa7
 
 # Layer taxonomy:
@@ -24,6 +24,14 @@ source_commit: 1d2dfa7
 #   reference   — glossary and term definitions
 
 chunks:
+  - id: constitution
+    file: constitution.md
+    document_type: constitution
+    layer: authority
+    constitutional: true
+    title: Principio Fundador — documento ancla
+    keywords: [Principio Fundador, documento ancla, fuente de verdad, sealed]
+
   - id: navigation
     file: sections/00-navigation.md
     section_id: "index"

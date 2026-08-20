@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "7c-composite"
 title: "compositeAgent — ejecucion paralela de R/G/R"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [662, 711]
 layer: quality
 constitutional: true

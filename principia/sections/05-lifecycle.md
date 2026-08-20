@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "3a"
 title: "Ciclo de vida de un proyecto"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [237, 290]
 layer: lifecycle
 constitutional: false

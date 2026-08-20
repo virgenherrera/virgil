@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "11e-routing"
 title: "Accept/Reject — certificacion por gates"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1557, 1587]
 layer: execution
 constitutional: true

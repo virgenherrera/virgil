@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "7h-bump"
 title: "bumpDependencies y el ciclo cerrado de calidad"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [909, 948]
 layer: quality
 constitutional: true

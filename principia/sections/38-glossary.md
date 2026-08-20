@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "glossary"
 title: "Glosario"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1742, 1779]
 layer: reference
 constitutional: true

@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "7a"
 title: "Echo System — pipeline determinista"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [537, 576]
 layer: quality
 constitutional: true

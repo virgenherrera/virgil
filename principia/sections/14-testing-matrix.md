@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "7d-tiers"
 title: "Testing Matrix — modelo de boundaries"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [712, 750]
 layer: quality
 constitutional: true

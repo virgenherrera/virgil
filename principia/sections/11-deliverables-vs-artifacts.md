@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "7b"
 title: "Deliverables vs Build Artifacts"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [577, 617]
 layer: quality
 constitutional: true

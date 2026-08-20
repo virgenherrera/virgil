@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "vocabulary"
 title: "Vocabulario de actores"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [63, 99]
 layer: identity
 constitutional: true

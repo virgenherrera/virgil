@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "4"
 title: "Por que actua asi — Gobierno y Arquitectura"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [332, 416]
 layer: principles
 constitutional: true

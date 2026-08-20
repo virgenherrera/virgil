@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "5"
 title: "Que partes lo componen"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [419, 459]
 layer: components
 constitutional: true

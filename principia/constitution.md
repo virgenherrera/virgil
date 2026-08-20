@@ -1,3 +1,20 @@
+<!-- Virgil Principia
+document_type: "constitution"
+title: "Principio Fundador — documento ancla"
+status: sealed
+sealed_commit: 1d2dfa7
+total_chunks: 39
+manifest: "principia/manifest.yaml"
+layer: authority
+constitutional: true
+keywords:
+  - Principio Fundador
+  - documento ancla
+  - fuente de verdad constitucional
+  - sealed immutable
+  - Virgil
+-->
+
 # Virgil — Principio Fundador
 
 Documento ancla. Todo lo que Virgil es, hace y por que lo hace.
@@ -1783,6 +1800,6 @@ flowchart TD
 
 Este documento es inmutable una vez consolidado.
 
-**Fuente de verdad**: `principia/overview.md`
+**Fuente de verdad**: `principia/constitution.md`
 
 Este Principia gobierna con igual fuerza el **Modo Desarrollo** (donde Virgil es el objeto sobre el cual se trabaja) y el **Modo Consumo** (donde Virgil es la herramienta con la cual se trabaja). Ambos modos heredan los mismos principios de gobierno, arquitectura, contratos y gates.

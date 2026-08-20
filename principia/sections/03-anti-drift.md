@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "1a"
 title: "Regla anti-drift interpretativa"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [147, 191]
 layer: identity
 constitutional: true

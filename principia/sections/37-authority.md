@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "authority"
 title: "Autoridad y auto-referencia"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [[1720, 1738], [1782, 1788]]
 source_lines_note: "Non-contiguous. Lines 1742-1779 (Glosario) belong entirely to chunk glossary (38); this chunk wraps around it, covering only 'Regla de auto-referencia' (1720-1738) and 'Nota de autoridad' (1782-1788)."
 layer: authority
@@ -50,6 +50,6 @@ flowchart TD
 
 Este documento es inmutable una vez consolidado.
 
-**Fuente de verdad**: `principia/overview.md`
+**Fuente de verdad**: `principia/constitution.md`
 
 Este Principia gobierna con igual fuerza el **Modo Desarrollo** (donde Virgil es el objeto sobre el cual se trabaja) y el **Modo Consumo** (donde Virgil es la herramienta con la cual se trabaja). Ambos modos heredan los mismos principios de gobierno, arquitectura, contratos y gates.

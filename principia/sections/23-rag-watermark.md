@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "8c-watermark"
 title: "Watermark y re-sync"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1034, 1080]
 layer: knowledge
 constitutional: true

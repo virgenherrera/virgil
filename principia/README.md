@@ -1,11 +1,11 @@
 # Virgil — Principio Fundador
 
 Documento ancla. Todo lo que Virgil es, hace y por que lo hace.
-Si algo contradice el [overview](overview.md), el overview gana.
+Si algo contradice la [constitution](constitution.md), la constitution gana.
 
 > Este README es un indice de navegacion sobre los chunks RAG-friendly
 > bajo `sections/`. La fuente de verdad constitucional es
-> [`overview.md`](overview.md) (sealed, immutable).
+> [`constitution.md`](constitution.md) (sealed, immutable).
 
 ## Indice
 

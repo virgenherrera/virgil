@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "8f-construction"
 title: "codebaseMemory — construccion, indexado y watermark"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1211, 1298]
 layer: knowledge
 constitutional: true

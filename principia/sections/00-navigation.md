@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "index"
 title: "Indice"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1, 60]
 layer: navigation
 constitutional: false

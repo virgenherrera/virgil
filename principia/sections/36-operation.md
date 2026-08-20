@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "12"
 title: "Como opera (opcional)"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1652, 1717]
 layer: operation
 constitutional: false

@@ -4,7 +4,7 @@
 # decomposition (principia/sections/*.md + principia/manifest.yaml).
 #
 # Checks performed:
-#   1. Watermark:        manifest source_commit == overview.md HEAD
+#   1. Watermark:        manifest source_commit == constitution.md HEAD
 #   2. File existence:   every manifest `file:` path exists on disk
 #   3. section_id:       no two chunks declare the same section_id
 #   4. Reference targets: depends_on / referenced_by resolve to a section_id
@@ -84,12 +84,12 @@ echo
 
 # 1. Watermark check ----------------------------------------------------
 manifest_commit=$(awk -F': ' '/^source_commit:/ {print $2; exit}' "$MANIFEST" | tr -d ' \t\r\n')
-overview_commit=$(git -C "$SCRIPT_DIR" log -1 --format=%H -- overview.md)
+overview_commit=$(git -C "$SCRIPT_DIR" log -1 --format=%H -- constitution.md)
 case "$overview_commit" in
   "$manifest_commit"*)
-    pass "watermark: manifest source_commit ($manifest_commit) matches overview.md HEAD" ;;
+    pass "watermark: manifest source_commit ($manifest_commit) matches constitution.md HEAD" ;;
   *)
-    fail "watermark: manifest source_commit ($manifest_commit) != overview.md HEAD ($overview_commit)"
+    fail "watermark: manifest source_commit ($manifest_commit) != constitution.md HEAD ($overview_commit)"
     echo "  All $N chunks may be stale: ${ID[*]}" ;;
 esac
 echo

@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "7d-binding"
 title: "Binding Layer — confianza del enlace"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [751, 792]
 layer: quality
 constitutional: true

@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "7h-pinning"
 title: "Supply Chain Integrity — versionPinning y securityAudit"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [869, 908]
 layer: quality
 constitutional: true

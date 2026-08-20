@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "11a-11b"
 title: "Como se ejecuta — pipeline y contratos primero"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1418, 1475]
 layer: execution
 constitutional: true

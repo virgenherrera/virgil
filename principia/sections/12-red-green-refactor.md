@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "7c-rgr"
 title: "Macro Red/Green/Refactor — TDD por lotes"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [618, 661]
 layer: quality
 constitutional: true

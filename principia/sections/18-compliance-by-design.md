@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "7g"
 title: "complianceByDesign — compliance como efecto secundario"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [843, 868]
 layer: quality
 constitutional: false

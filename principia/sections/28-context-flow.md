@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "9"
 title: "Como fluye el contexto"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1301, 1382]
 layer: context
 constitutional: true

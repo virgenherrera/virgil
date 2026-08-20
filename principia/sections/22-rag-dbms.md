@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "8c-dbms"
 title: "RAG dual — DBMS de contexto"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [[1025, 1040], [1081, 1096]]
 source_lines_note: "Non-contiguous. Lines 1041-1080 (drift/re-sync mechanisms + first mermaid diagram) belong to chunk 8c-watermark (23). Lines 1034-1040 (the '#### Watermark y re-sync' heading and its lead sentence) are duplicated verbatim in chunk 23, which owns the full 1034-1080 range including body content."
 layer: knowledge

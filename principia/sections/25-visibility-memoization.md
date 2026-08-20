@@ -1,7 +1,7 @@
 <!-- Virgil Principia
 section_id: "8d-8e"
 title: "Visibilidad escalonada y memoizacion"
-source: "principia/overview.md"
+source: "principia/constitution.md"
 source_lines: [1136, 1186]
 layer: knowledge
 constitutional: true
