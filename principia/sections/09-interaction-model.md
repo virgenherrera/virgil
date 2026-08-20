@@ -8,7 +8,7 @@ constitutional: true
 actors: [Desarrollador, Implementador]
 glossary_terms: [Modo Desarrollo, Modo Consumo, Principia, Method Pack, HostAdapter, ArtifactStoreAdapter, global ownership, global context injection]
 depends_on: ["5"]
-referenced_by: ["7"]
+referenced_by: ["authority"]
 keywords:
   - actores y modos
   - Modo Desarrollo
@@ -21,6 +21,7 @@ keywords:
   - global context injection
   - invariante fundamental
   - MCP JSON-RPC
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Method Pack, HostAdapter y ArtifactStoreAdapter son los componentes descritos en la seccion 5 (catalogo de partes); aqui se muestra como esos componentes y los dos modos operativos de Virgil interactuan entre si sin mezclar responsabilidades.

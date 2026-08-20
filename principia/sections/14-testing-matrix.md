@@ -8,7 +8,7 @@ constitutional: true
 actors: []
 glossary_terms: [Testing Matrix, File/Unit, Module/Integration, App/Servicio, Solution/E2E, Performance/Load, T0, T1, T2]
 depends_on: [7c-rgr]
-referenced_by: [7d-binding, 7e]
+referenced_by: [7d-binding, 7e, 7f]
 keywords:
   - testing matrix
   - boundary de mocks
@@ -19,6 +19,7 @@ keywords:
   - T0 protocol app replay
   - T1 agent-in-the-loop
   - T2 host-adapter conformance
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Pertenece al capitulo 7 ("Como garantiza calidad"), inmediatamente despues del ciclo Red/Green/Refactor (7c). Define donde debe ubicarse la frontera del mock para que un test tenga valor, reemplazando la piramide de testing clasica por un modelo de boundaries.

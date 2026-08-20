@@ -1,7 +1,6 @@
 # Virgil Principia — Manifest
 # Machine-readable index for CLI discovery and RAG routing.
 # Source: principia/overview.md (sealed, immutable)
-# Generated from: commit 29871bb
 
 version: 1
 source: principia/overview.md
@@ -31,6 +30,7 @@ chunks:
     layer: navigation
     constitutional: false
     title: Indice del documento
+    keywords: [indice, tabla de contenidos, documentos del Principia, navegacion]
 
   - id: vocabulary
     file: sections/01-vocabulary.md
@@ -38,6 +38,7 @@ chunks:
     layer: identity
     constitutional: true
     title: Vocabulario de actores
+    keywords: [actors, roles, modos, Desarrollo]
 
   - id: identity
     file: sections/02-identity.md
@@ -45,6 +46,7 @@ chunks:
     layer: identity
     constitutional: true
     title: Que es Virgil
+    keywords: [que es Virgil, knowledge plane, control plane, identidad]
 
   - id: anti-drift
     file: sections/03-anti-drift.md
@@ -52,6 +54,7 @@ chunks:
     layer: identity
     constitutional: true
     title: Regla anti-drift interpretativa
+    keywords: [anti-drift, ciclo cerrado de accountability, Echo System, certification gates]
 
   - id: structure
     file: sections/04-structure.md
@@ -59,6 +62,7 @@ chunks:
     layer: structure
     constitutional: true
     title: Estructura de tres capas
+    keywords: [estructura, tres capas concentricas, Principia, Dogma]
 
   - id: lifecycle
     file: sections/05-lifecycle.md
@@ -66,6 +70,7 @@ chunks:
     layer: lifecycle
     constitutional: false
     title: Ciclo de vida de un proyecto
+    keywords: [ciclo de vida, state machine, maquina de estados, PlanningGapDetected]
 
   - id: invocation-flow
     file: sections/06-invocation-flow.md
@@ -73,6 +78,7 @@ chunks:
     layer: lifecycle
     constitutional: true
     title: Flujo de una invocacion
+    keywords: [flujo de invocacion, HostAdapter, Virgil Kernel, ArtifactStore]
 
   - id: governance-architecture
     file: sections/07-governance-architecture.md
@@ -80,6 +86,7 @@ chunks:
     layer: principles
     constitutional: true
     title: Gobierno y arquitectura
+    keywords: [gobierno, arquitectura, principios de gobierno, invariantes arquitectonicas]
 
   - id: components
     file: sections/08-components.md
@@ -87,6 +94,7 @@ chunks:
     layer: components
     constitutional: true
     title: Catalogo de componentes
+    keywords: [componentes, Kernel, Adapters, Method Packs]
 
   - id: interaction-model
     file: sections/09-interaction-model.md
@@ -94,6 +102,7 @@ chunks:
     layer: interaction
     constitutional: true
     title: Modelo de interaccion
+    keywords: [actores y modos, Modo Desarrollo, Modo Consumo, separacion de concerns]
 
   - id: echo-system
     file: sections/10-echo-system.md
@@ -101,6 +110,7 @@ chunks:
     layer: quality
     constitutional: true
     title: Echo System
+    keywords: [Echo System, pipeline determinista, Setup, Build]
 
   - id: deliverables-vs-artifacts
     file: sections/11-deliverables-vs-artifacts.md
@@ -108,6 +118,7 @@ chunks:
     layer: quality
     constitutional: true
     title: Deliverables vs Build Artifacts
+    keywords: [deliverables, build artifacts, ArtifactStore, ArtifactRepository]
 
   - id: red-green-refactor
     file: sections/12-red-green-refactor.md
@@ -115,6 +126,7 @@ chunks:
     layer: quality
     constitutional: true
     title: Macro Red/Green/Refactor
+    keywords: [macro TDD, Red Green Refactor, test plan, test contract]
 
   - id: composite-agent
     file: sections/13-composite-agent.md
@@ -122,6 +134,7 @@ chunks:
     layer: quality
     constitutional: true
     title: compositeAgent y mutation domains
+    keywords: [compositeAgent, mutation domain, worktree, aislamiento de filesystem]
 
   - id: testing-matrix
     file: sections/14-testing-matrix.md
@@ -129,6 +142,7 @@ chunks:
     layer: quality
     constitutional: true
     title: Testing Matrix
+    keywords: [testing matrix, boundary de mocks, piramide de testing, App/Servicio tier primario]
 
   - id: binding-layer
     file: sections/15-binding-layer.md
@@ -136,6 +150,7 @@ chunks:
     layer: quality
     constitutional: true
     title: Binding Layer y trazabilidad
+    keywords: [trazabilidad matriz codigo, RAG-searchable, Binding Layer, declared inferred verified]
 
   - id: qa-gates
     file: sections/16-qa-gates.md
@@ -143,6 +158,7 @@ chunks:
     layer: quality
     constitutional: true
     title: QA / Acceptance Gates
+    keywords: [QA, acceptance gates, certificacion, mutation score]
 
   - id: droppable-code
     file: sections/17-droppable-code.md
@@ -150,6 +166,7 @@ chunks:
     layer: quality
     constitutional: true
     title: droppableCode
+    keywords: [droppableCode, safeToAutoDelete, codigo muerto, coverage threshold]
 
   - id: compliance-by-design
     file: sections/18-compliance-by-design.md
@@ -157,6 +174,7 @@ chunks:
     layer: quality
     constitutional: false
     title: complianceByDesign
+    keywords: [complianceByDesign, aserciones estrictas de DTO, abuseCases, validacion estructural]
 
   - id: supply-chain-pinning
     file: sections/19-supply-chain-pinning.md
@@ -164,6 +182,7 @@ chunks:
     layer: quality
     constitutional: true
     title: versionPinning y securityAudit
+    keywords: [supply chain integrity, versionPinning, version exacta, lock file]
 
   - id: supply-chain-bump
     file: sections/20-supply-chain-bump.md
@@ -171,6 +190,7 @@ chunks:
     layer: quality
     constitutional: true
     title: bumpDependencies
+    keywords: [bumpDependencies, tech debt, update check, security fix]
 
   - id: knowledge-storage
     file: sections/21-knowledge-storage.md
@@ -178,6 +198,7 @@ chunks:
     layer: knowledge
     constitutional: true
     title: Donde vive el conocimiento
+    keywords: [ArtifactStore, RAG, codebaseMemory, watermark]
 
   - id: rag-dbms
     file: sections/22-rag-dbms.md
@@ -185,6 +206,7 @@ chunks:
     layer: knowledge
     constitutional: true
     title: RAG como DBMS
+    keywords: [RAG, DBMS de contexto, codebaseMemory, watermark]
 
   - id: rag-watermark
     file: sections/23-rag-watermark.md
@@ -192,6 +214,7 @@ chunks:
     layer: knowledge
     constitutional: true
     title: Watermark y re-sync
+    keywords: [watermark, re-sync, drift, certificacion]
 
   - id: rag-dual
     file: sections/24-rag-dual.md
@@ -199,6 +222,7 @@ chunks:
     layer: knowledge
     constitutional: false
     title: devRag vs consumerRag
+    keywords: [devRag, consumerRag, modo desarrollo, modo consumo]
 
   - id: visibility-memoization
     file: sections/25-visibility-memoization.md
@@ -206,6 +230,7 @@ chunks:
     layer: knowledge
     constitutional: true
     title: Visibilidad y memoizacion
+    keywords: [visibilidad escalonada, scope acotado, delegationContract, memoizacion]
 
   - id: codebase-memory-concept
     file: sections/26-codebase-memory-concept.md
@@ -213,6 +238,7 @@ chunks:
     layer: knowledge
     constitutional: true
     title: codebaseMemory concepto
+    keywords: [codebaseMemory, grafo AST, consulta semantica, consulta estructural]
 
   - id: codebase-memory-construction
     file: sections/27-codebase-memory-construction.md
@@ -220,6 +246,7 @@ chunks:
     layer: knowledge
     constitutional: true
     title: codebaseMemory construccion
+    keywords: [codebaseMemory, parser AST, construccion determinista, actualizacion incremental]
 
   - id: context-flow
     file: sections/28-context-flow.md
@@ -227,6 +254,7 @@ chunks:
     layer: context
     constitutional: true
     title: Flujo de contexto
+    keywords: [ContextBrief, topic_key, PatternA, PatternB]
 
   - id: recovery
     file: sections/29-recovery.md
@@ -234,6 +262,7 @@ chunks:
     layer: recovery
     constitutional: true
     title: Recuperacion
+    keywords: [recovery, crash, compactacion, nueva sesion]
 
   - id: execution-pipeline
     file: sections/30-execution-pipeline.md
@@ -241,6 +270,7 @@ chunks:
     layer: execution
     constitutional: true
     title: Pipeline de ejecucion
+    keywords: [prePhase, Red, Green, Refactor]
 
   - id: git-strategy
     file: sections/31-git-strategy.md
@@ -248,6 +278,7 @@ chunks:
     layer: execution
     constitutional: true
     title: Git strategy
+    keywords: [mutation domain, "--no-ff", worktrees, branches]
 
   - id: mechanical-verification
     file: sections/32-mechanical-verification.md
@@ -255,6 +286,7 @@ chunks:
     layer: execution
     constitutional: true
     title: Verificacion mecanica
+    keywords: [verificacion mecanica, mutation testing, CRAP score, complejidad ciclomatica]
 
   - id: accept-reject
     file: sections/33-accept-reject.md
@@ -262,6 +294,7 @@ chunks:
     layer: execution
     constitutional: true
     title: Accept/Reject routing
+    keywords: [QA gate, virgil health, git tag qa/approved, gap de implementacion]
 
   - id: break-glass
     file: sections/34-break-glass.md
@@ -269,6 +302,7 @@ chunks:
     layer: execution
     constitutional: false
     title: Break-glass
+    keywords: [break-glass, incidente P1, autorizacion MIM, standing policy]
 
   - id: evidence-queryable
     file: sections/35-evidence-queryable.md
@@ -276,6 +310,7 @@ chunks:
     layer: execution
     constitutional: true
     title: Evidencia queryable
+    keywords: [evidencia queryable, EvidenceIngestion, Ledger inmutable, Binding Layer]
 
   - id: operation
     file: sections/36-operation.md
@@ -283,6 +318,7 @@ chunks:
     layer: operation
     constitutional: false
     title: Fase de operacion
+    keywords: [operacion, superficie operacional, operationalAssistant, ops-runbook]
 
   - id: authority
     file: sections/37-authority.md
@@ -290,6 +326,7 @@ chunks:
     layer: authority
     constitutional: true
     title: Autoridad, auto-referencia y nota de autoridad
+    keywords: [regla de auto-referencia, Modo Desarrollo, Modo Consumo, mismos principios]
 
   - id: glossary
     file: sections/38-glossary.md
@@ -297,6 +334,7 @@ chunks:
     layer: reference
     constitutional: true
     title: Glosario
+    keywords: [Binding Layer, Break-glass, buildArtifactSet, bumpDependencies]
 
 cross_cutting:
   - name: pdc-vs-echo-disambiguation

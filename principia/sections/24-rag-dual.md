@@ -8,7 +8,7 @@ constitutional: false
 actors: []
 glossary_terms: [devRag, consumerRag, Principia, adapter]
 depends_on: ["8", "8c-dbms"]
-referenced_by: []
+referenced_by: ["9"]
 keywords:
   - devRag
   - consumerRag
@@ -19,6 +19,7 @@ keywords:
   - Confluence
   - Azure DevOps
   - Asana
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** El RAG opera como DBMS del contexto documental (seccion 8c). Virgil instancia ese mismo patron en dos variantes segun el modo operativo: `devRag` cuando se desarrolla el propio Virgil, y `consumerRag` cuando un proyecto consumidor lo utiliza.

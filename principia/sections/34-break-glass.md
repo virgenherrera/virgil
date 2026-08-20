@@ -18,6 +18,7 @@ keywords:
   - 72 horas
   - Ledger
   - deuda tecnica critica
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** El break-glass es un camino excepcional dentro de la fase de ejecucion (seccion 11e), reservado para incidentes P1 en produccion. No reemplaza la ceremonia de certificacion — la comprime y la difiere, nunca la elimina.

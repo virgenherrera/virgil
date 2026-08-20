@@ -8,7 +8,7 @@ constitutional: true
 actors: []
 glossary_terms: [codebaseMemory, watermark, mutation domain, worktree, soundness conservadora]
 depends_on: ["8f-concept", "8c-watermark"]
-referenced_by: ["7c", "11c"]
+referenced_by: ["7c-composite", "11c"]
 keywords:
   - codebaseMemory
   - parser AST
@@ -20,6 +20,7 @@ keywords:
   - worktree
   - lanes paralelos
   - soundness conservadora
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** El codebaseMemory (seccion 8f-concept) es el grafo estructural determinista que mapea entidades y relaciones del codigo, complementario al RAG (seccion 8c). Este fragmento detalla que indexa, como se construye, como se actualiza incrementalmente, y como mantiene su propio watermark (mecanismo compartido con el RAG, seccion 8c-watermark). Tambien conecta con los mutation domains aislados descritos en las secciones 7c y 11c.

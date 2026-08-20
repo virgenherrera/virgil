@@ -8,7 +8,7 @@ constitutional: true
 actors: []
 glossary_terms: [codebaseMemory, RAG, grafo AST]
 depends_on: ["8", "8c-dbms"]
-referenced_by: ["8f-construction"]
+referenced_by: ["8f-construction", "9"]
 keywords:
   - codebaseMemory
   - grafo AST
@@ -16,6 +16,7 @@ keywords:
   - consulta estructural
   - routing
   - RAG
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** El RAG (seccion 8c) indexa deliverables y documentacion de forma semantica. El codigo fuente requiere un tratamiento distinto: esta subseccion introduce el codebaseMemory, la herramienta complementaria que mapea la estructura del codigo sin embeddings (la mecanica de construccion se detalla en la seccion 8f-construction).

@@ -19,6 +19,7 @@ keywords:
   - persistencia
   - DBMS del contexto
   - grafo estructural
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Introduce los tres concerns de gestion de conocimiento en Virgil — persistencia (ArtifactStore), consulta documental (RAG) y comprension estructural del codigo (codebaseMemory) — que se desarrollan en detalle en las subsecciones siguientes (8c-8f).

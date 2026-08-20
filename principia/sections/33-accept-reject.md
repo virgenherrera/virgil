@@ -7,8 +7,8 @@ layer: execution
 constitutional: true
 actors: [SM]
 glossary_terms: [PDC]
-depends_on: ["11a", "11d"]
-referenced_by: ["11f"]
+depends_on: ["11a-11b", "11d"]
+referenced_by: ["11f", "11e-breakglass"]
 keywords:
   - QA gate
   - virgil health
@@ -20,6 +20,7 @@ keywords:
   - PlanningGapDetected
   - re-delegacion
   - PDC
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Esta seccion cierra el pipeline de ejecucion (seccion 11a) describiendo como la fase Verify certifica o rechaza una revision, y a que fase especifica se re-delega cuando se detecta un gap.

@@ -7,8 +7,8 @@ layer: execution
 constitutional: true
 actors: []
 glossary_terms: [EchoRun, buildArtifactSet, Ledger, Binding Layer]
-depends_on: ["7b", "8c", "11a"]
-referenced_by: []
+depends_on: ["7b", "8c-watermark", "11a-11b"]
+referenced_by: ["12"]
 keywords:
   - evidencia queryable
   - EvidenceIngestion
@@ -20,6 +20,7 @@ keywords:
   - test results
   - coverage
   - mutation testing
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Esta seccion cierra el pipeline de ejecucion (seccion 11a) explicando como toda la evidencia generada se ingiere de forma estructurada, ligada al EchoRun canonico (seccion 7b), y como alimenta la progresion del Binding Layer.

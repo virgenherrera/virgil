@@ -17,6 +17,7 @@ keywords:
   - mutation testing confirma fortaleza
   - static readonly
   - acceptance criteria
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Cierra la seccion 7d (Testing Matrix), continuando el capitulo 7 ("Como garantiza calidad"). Describe primero como los casos de prueba definidos como matriz durante Red se enlazan al codigo del test, y luego los tres niveles de confianza (Binding Layer) que ese enlace atraviesa durante el ciclo R/G/R descrito en 7c. El detalle completo del Binding Layer vive en su propio documento y tambien se referencia en la seccion 11f (evidencia como dato queryable).

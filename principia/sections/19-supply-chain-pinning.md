@@ -18,6 +18,7 @@ keywords:
   - escaneo de vulnerabilidades
   - gate blocking Setup
   - pnpm audit go vuln cargo audit pip-audit
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Abre la seccion 7h del capitulo 7 ("Como garantiza calidad"), sobre integridad de la cadena de suministro. El securityAudit descrito aqui es una gate blocking del paso 1 (Setup) del Echo System definido en la seccion 7a.

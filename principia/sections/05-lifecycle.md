@@ -8,7 +8,7 @@ constitutional: false
 actors: [MIM, SM]
 glossary_terms: [FastForward, PlanningGapDetected]
 depends_on: []
-referenced_by: [7c, 11a]
+referenced_by: [7c-rgr, 11a-11b, 3b]
 keywords:
   - ciclo de vida
   - state machine
@@ -18,6 +18,7 @@ keywords:
   - planning
   - execution
   - handoff
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** MIM (humano que dirige decisiones de producto) y SM (agente orquestador que delega el trabajo) son los actores que operan esta maquina de estados. El ciclo de vida es configurable por Method Pack — el Kernel impone la convergencia mecanica, pero la ceremonia especifica de cada fase puede variar segun el Pack activo.

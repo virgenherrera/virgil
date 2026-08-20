@@ -8,7 +8,7 @@ constitutional: true
 actors: [orquestador]
 glossary_terms: [delegationContract, RAG, Ledger, ArtifactRepository, TraceabilityGraph]
 depends_on: ["8"]
-referenced_by: ["9c"]
+referenced_by: ["9", "10"]
 keywords:
   - visibilidad escalonada
   - scope acotado
@@ -18,6 +18,7 @@ keywords:
   - Ledger
   - TraceabilityGraph
   - proyecciones derivadas
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** El RAG (devRag | consumerRag, seccion 8c) es la proyeccion documental de Virgil. Estas subsecciones describen como se controla el acceso a esa proyeccion segun el rol del agente (visibilidad escalonada) y como se optimiza el rendimiento de las consultas (memoizacion), ademas de aclarar la relacion de autoridad entre el RAG y las fuentes autoritativas del sistema.

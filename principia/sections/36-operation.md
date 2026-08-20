@@ -21,6 +21,7 @@ keywords:
   - bug detectado
   - feature request
   - doc faltante
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** La fase de Operation es opcional y se activa unicamente cuando el producto entregado tiene superficie operacional activa. No aplica a librerias ni a deliverables de un solo uso, cuya documentacion pertenece a Delivery/support.

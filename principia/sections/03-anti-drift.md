@@ -16,6 +16,7 @@ keywords:
   - certification gates
   - frontera canonica
   - fuerza normativa
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Esta seccion establece la regla de interpretacion que protege los mecanismos constitucionales del Principia (definidos en detalle en 7a Echo System, 7b Deliverables vs Build Artifacts, y 7e QA/Acceptance Gates) frente a abstracciones que los diluirian.

@@ -7,8 +7,8 @@ layer: execution
 constitutional: true
 actors: [SM]
 glossary_terms: [PDC, CRAP score]
-depends_on: ["7e", "7g", "11a"]
-referenced_by: ["11e"]
+depends_on: ["7e", "7g", "11a-11b"]
+referenced_by: ["11e-routing"]
 keywords:
   - verificacion mecanica
   - mutation testing
@@ -21,6 +21,7 @@ keywords:
   - compliance regulatoria
   - Method Pack
   - PDC
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Esta seccion describe la fase Refactor del pipeline de ejecucion (seccion 11a). Se apoya en las gates mecanicas y la verificacion estructurada definidas en la seccion 7e, y en el mecanismo de review por perfil de compliance de la seccion 7g.

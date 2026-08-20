@@ -8,7 +8,7 @@ constitutional: true
 actors: [SM, testEngineer, Implementor, fitnessFunction]
 glossary_terms: [compositeAgent, mutation domain, worktree, delegationContract]
 depends_on: [7c-rgr]
-referenced_by: [8f, 11c]
+referenced_by: [8f-construction, 11c]
 keywords:
   - compositeAgent
   - mutation domain
@@ -18,6 +18,7 @@ keywords:
   - invariante de independencia
   - GP-4 constraint sobre confianza
   - lanes paralelos
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Continua directamente la seccion 7c (Macro Red/Green/Refactor). Cuando la ejecucion de un batch se paraleliza en multiples lanes, cada lane usa un compositeAgent para atravesar Red/Green/Refactor dentro de un dominio aislado. Los mutation domains tambien se mencionan en las secciones 8f (grafo estructural del codigo) y 11c (git strategy).

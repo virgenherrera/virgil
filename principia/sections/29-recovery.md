@@ -7,8 +7,8 @@ layer: recovery
 constitutional: true
 actors: [SM, TPM]
 glossary_terms: [Ledger, ArtifactStore]
-depends_on: ["5", "8e"]
-referenced_by: ["11a"]
+depends_on: ["5", "8d-8e"]
+referenced_by: ["11a-11b"]
 keywords:
   - recovery
   - crash
@@ -19,6 +19,7 @@ keywords:
   - historial de fallos
   - lastVerifiedAt
   - cambios externos
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** El estado de un proyecto Virgil no se pierde ante un crash, compactacion o nueva sesion — se reconstruye a partir del Ledger y de las revisiones consolidadas de deliverables gestionadas por el TPM (seccion 5).

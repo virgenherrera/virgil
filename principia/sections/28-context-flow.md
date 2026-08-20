@@ -7,8 +7,8 @@ layer: context
 constitutional: true
 actors: [SM, sub-agente, TPM, ContextCompiler]
 glossary_terms: [ContextBrief, ContextCompiler, PDC, delegationContract, circuitBreaker]
-depends_on: ["8c", "8e", "8f"]
-referenced_by: ["3b", "10", "11e"]
+depends_on: ["8c-dual", "8d-8e", "8f-concept"]
+referenced_by: ["3b", "10", "11e-routing"]
 keywords:
   - ContextBrief
   - topic_key
@@ -20,6 +20,7 @@ keywords:
   - Status Report
   - circuitBreaker
   - devRag consumerRag
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Con el conocimiento organizado como DBMS documental (RAG), grafo estructural (codebaseMemory) y visibilidad escalonada por rol (seccion 8), el paso siguiente es entender como ese contexto fluye entre agentes durante la ejecucion.

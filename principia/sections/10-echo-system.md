@@ -8,7 +8,7 @@ constitutional: true
 actors: [SM, MIM]
 glossary_terms: [Echo System, EchoRun, build artifact]
 depends_on: []
-referenced_by: [7b, 7c, 7e, 7h, 8f, 11a, 11f]
+referenced_by: [7b, 7c-rgr, 7e, 7h-pinning, 8f-construction, 11a-11b, 11f, 1a]
 keywords:
   - Echo System
   - pipeline determinista
@@ -20,6 +20,7 @@ keywords:
   - dev CI CD
   - triggers automaticos
   - pre-commit pre-push
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Esta seccion abre el capitulo 7 ("Como garantiza calidad"), que describe ocho mecanismos de accountability anidados. El primero es el Echo System, el pipeline determinista que produce los build artifacts que las demas gates consumen.

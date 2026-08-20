@@ -8,7 +8,7 @@ constitutional: true
 actors: [SM, Virgil]
 glossary_terms: [PlanningGapDetected]
 depends_on: ["7a", "7e"]
-referenced_by: ["11c", "11d", "11e", "11f"]
+referenced_by: ["11c", "11d", "11e-routing", "11f"]
 keywords:
   - prePhase
   - Red
@@ -20,6 +20,7 @@ keywords:
   - lanes
   - PlanningGapDetected
   - gate de salida
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Despues de que planning produce un handoff aprobado, la ejecucion transforma ese handoff en una implementacion candidata y Verify la certifica contra los artifacts/evidencia del camino canonico (Echo System, seccion 7a). Virgil observa la ejecucion pero no la dirige.

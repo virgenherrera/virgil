@@ -8,7 +8,7 @@ constitutional: true
 actors: [SM]
 glossary_terms: [Red, Green, Refactor, R0, R1, G1, F1, V1]
 depends_on: [7a]
-referenced_by: [7c-composite, 7d-tiers, 7d-binding, 11a]
+referenced_by: [7c-composite, 7d-tiers, 7d-binding, 11a-11b]
 keywords:
   - macro TDD
   - Red Green Refactor
@@ -18,6 +18,7 @@ keywords:
   - CRAP
   - gates R0 R1 G1 F1 V1
   - batch TDD
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Esta seccion pertenece al capitulo 7 ("Como garantiza calidad"), inmediatamente despues de la distincion deliverables vs build artifacts (7b). Describe el ciclo TDD macro que estructura la ejecucion de un batch completo, antes de introducir el compositeAgent que lo paraleliza (seccion 7c-composite).

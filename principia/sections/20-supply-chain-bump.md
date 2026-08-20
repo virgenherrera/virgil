@@ -18,6 +18,7 @@ keywords:
   - mantenimiento de dependencias
   - ciclo cerrado
   - QA certifica resultado
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Cierra la seccion 7h del capitulo 7 ("Como garantiza calidad"), sobre integridad de la cadena de suministro. Complementa el versionPinning y securityAudit descritos en la parte anterior de 7h: mientras esos invariantes fijan versiones exactas, bumpDependencies es el proceso controlado que las actualiza sin reintroducir riesgo. La ultima subseccion ("Ciclo cerrado") resume como se articulan todos los mecanismos del capitulo 7.

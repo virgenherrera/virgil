@@ -7,8 +7,8 @@ layer: execution
 constitutional: true
 actors: [SM, compositeAgent, MIM]
 glossary_terms: [mutation domain, buildArtifactSet, sourceRevision, compositeAgent, PlanningGapDetected]
-depends_on: ["7c", "8f", "11a"]
-referenced_by: ["11d", "11e"]
+depends_on: ["7c-composite", "8f-construction", "11a-11b"]
+referenced_by: ["11d", "11e-routing"]
 keywords:
   - mutation domain
   - --no-ff
@@ -19,6 +19,7 @@ keywords:
   - sourceRevision
   - convenciones de commits
   - invariantes
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Esta seccion detalla la estrategia de control de versiones que sostiene el pipeline de ejecucion (seccion 11a). Se apoya en el concepto de mutation domain (seccion 7c) y en la trazabilidad estructural del codigo (seccion 8f).

@@ -8,7 +8,7 @@ constitutional: true
 actors: [MIM, Desarrollador, Implementador, Virgil, SM, TPM, PDC]
 glossary_terms: [MIM, SM, TPM, PDC, compositeAgent]
 depends_on: []
-referenced_by: [1, 2, 6a]
+referenced_by: [1, 2, 6]
 keywords:
   - actors
   - roles
@@ -16,6 +16,7 @@ keywords:
   - Desarrollo
   - Consumo
   - vocabulario
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Esta tabla y diagrama definen los actores canonicos de Virgil (MIM, Desarrollador, Implementador, Virgil, SM, TPM, PDC) referenciados a lo largo del Principia, incluyendo la seccion "1. Que es Virgil" y "6a. Actores y modos".

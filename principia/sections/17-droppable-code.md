@@ -8,7 +8,7 @@ constitutional: true
 actors: [MIM]
 glossary_terms: [droppableCode, safeToAutoDelete, cobertura selectiva]
 depends_on: [7d-tiers]
-referenced_by: []
+referenced_by: [7g]
 keywords:
   - droppableCode
   - safeToAutoDelete
@@ -17,6 +17,7 @@ keywords:
   - excepciones documentadas
   - mutation testing excepciones
   - eliminacion mecanica automatica
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Pertenece al capitulo 7 ("Como garantiza calidad"). Usa la cobertura de tests del tier App/Servicio (definido en la seccion 7d, Testing Matrix) no como metrica de vanidad sino como detector de codigo muerto.

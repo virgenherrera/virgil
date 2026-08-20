@@ -8,7 +8,7 @@ constitutional: true
 actors: [QA]
 glossary_terms: [gate mecanica, gate de verificacion estructurada, ARCH, CERTIFICADO]
 depends_on: [7a, 7d-tiers]
-referenced_by: [11e]
+referenced_by: [11e-routing, 1a, 11a-11b, 11d]
 keywords:
   - QA
   - acceptance gates
@@ -20,6 +20,7 @@ keywords:
   - alineacion arquitectonica
   - comparacion semantica
   - escalar a fase
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Pertenece al capitulo 7 ("Como garantiza calidad"). Describe la gate final que certifica el resultado combinando verificaciones mecanicas deterministas (producidas por el Echo System de 7a) con verificacion estructurada de alineacion arquitectonica, sujeta al mismo deslinde epistemico descrito en la seccion 3b del Principia.

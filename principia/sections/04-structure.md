@@ -16,6 +16,7 @@ keywords:
   - Dogma
   - Runtime
   - arquitectura
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Esta seccion describe la arquitectura de tres capas concentricas de Virgil — Principia, Dogma y Runtime — donde cada capa interna gobierna a las externas.

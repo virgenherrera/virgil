@@ -77,6 +77,15 @@ Si algo contradice el [overview](overview.md), el overview gana.
 ### Glosario
 - [Glosario](sections/38-glossary.md) — 31 terminos canonicos
 
+## Validacion de integridad
+
+```bash
+./principia/validate-chunks.sh
+```
+
+Verifica watermark, existencia de archivos, integridad del grafo de
+dependencias y consistencia del glosario.
+
 ---
 
 **Navegacion**: [Indice del overview original](sections/00-navigation.md) ·

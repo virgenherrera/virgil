@@ -8,7 +8,7 @@ constitutional: true
 actors: [TPM]
 glossary_terms: [deliverable, build artifact, ArtifactStore, EchoRun, sourceRevision, buildArtifactSet, prePhase]
 depends_on: [7a]
-referenced_by: [8a, 8b, 11f]
+referenced_by: [8, 11f, 1a]
 keywords:
   - deliverables
   - build artifacts
@@ -19,6 +19,7 @@ keywords:
   - DevOps CI-CD
   - trazabilidad de evidencia
   - OpenAPI
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Esta seccion pertenece al capitulo 7 ("Como garantiza calidad"). Distingue los outputs de planning (deliverables) de los outputs del Echo System descrito en 7a (build artifacts), una distincion terminologica que el resto del Principia asume como canonica.

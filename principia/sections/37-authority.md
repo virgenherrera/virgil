@@ -2,7 +2,8 @@
 section_id: "authority"
 title: "Autoridad y auto-referencia"
 source: "principia/overview.md"
-source_lines: [1720, 1788]
+source_lines: [[1720, 1738], [1782, 1788]]
+source_lines_note: "Non-contiguous. Lines 1742-1779 (Glosario) belong entirely to chunk glossary (38); this chunk wraps around it, covering only 'Regla de auto-referencia' (1720-1738) and 'Nota de autoridad' (1782-1788)."
 layer: authority
 constitutional: true
 actors: []
@@ -20,6 +21,7 @@ keywords:
   - inmutable
   - fuente de verdad
   - nota de autoridad
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Esta regla establece que el Principia tiene la misma autoridad constitucional sobre ambos modos de uso descritos en el documento: Modo Desarrollo (donde Virgil es el objeto de trabajo) y Modo Consumo (donde Virgil es la herramienta que asiste otro trabajo).

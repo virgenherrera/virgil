@@ -41,6 +41,7 @@ keywords:
   - TraceabilityGraph
   - versionPinning
   - watermark
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Este glosario recopila las definiciones canonicas de los terminos utilizados a lo largo de todo el Principia. Cada entrada referencia la seccion donde el termino se define en profundidad.

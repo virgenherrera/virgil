@@ -8,7 +8,7 @@ constitutional: true
 actors: [PDC]
 glossary_terms: [ContextBrief, Ledger, PDC, ARCH]
 depends_on: [3a]
-referenced_by: [7e, 7g, 11d]
+referenced_by: [7e, 7g, 11d, 4]
 keywords:
   - flujo de invocacion
   - HostAdapter
@@ -19,6 +19,7 @@ keywords:
   - PDC
   - gates deterministas
   - certificacion
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Este flujo canonico ocurre dentro de cada transicion del ciclo de vida descrito en la seccion 3a. El PDC (Coherencia de Delegacion Orquestal) es un safeguard de orquestacion — importante distinguirlo de las gates de certificacion del pipeline de QA (Echo System, detallado en seccion 7), que son las unicas que determinan si el codigo esta certificado.

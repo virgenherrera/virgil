@@ -8,7 +8,7 @@ constitutional: false
 actors: [MIM]
 glossary_terms: [complianceByDesign, abuseCases, perfil de compliance]
 depends_on: [7f]
-referenced_by: []
+referenced_by: [11d]
 keywords:
   - complianceByDesign
   - aserciones estrictas de DTO
@@ -19,6 +19,7 @@ keywords:
   - GDPR
   - review humano obligatorio
   - gate blocking regulatoria
+editorial_additions: [context_paragraph]
 -->
 
 > **Context:** Pertenece al capitulo 7 ("Como garantiza calidad"). Es condicional: la capacidad tecnica descrita aqui es universal, pero la activacion del gate de review humano depende de si el proyecto declara un perfil de compliance regulatoria — de ahi que este chunk no sea constitucional en el mismo sentido que los mecanismos mecanicos de calidad.
