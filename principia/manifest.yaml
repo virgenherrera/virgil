@@ -1,0 +1,365 @@
+# Virgil Principia — Manifest
+# Machine-readable index for CLI discovery and RAG routing.
+# Source: principia/overview.md (sealed, immutable)
+# Generated from: commit 29871bb
+
+version: 1
+source: principia/overview.md
+source_commit: 1d2dfa7
+
+# Layer taxonomy:
+#   navigation  — document structure and routing
+#   identity    — what Virgil IS (foundational definitions)
+#   structure   — how Virgil is built (layer model)
+#   lifecycle   — how projects flow through states
+#   principles  — governance and architectural invariants
+#   components  — what parts compose the system
+#   interaction — how parts and actors relate
+#   quality     — how quality is guaranteed (Echo, TDD, testing, supply chain)
+#   knowledge   — where knowledge lives (persistence, RAG, codebaseMemory)
+#   context     — how context flows between agents
+#   recovery    — how state is recovered after failure
+#   execution   — how work is executed (pipeline, Git, verification, gates)
+#   operation   — post-delivery operational phase
+#   authority   — constitutional authority and self-reference
+#   reference   — glossary and term definitions
+
+chunks:
+  - id: navigation
+    file: sections/00-navigation.md
+    section_id: "index"
+    layer: navigation
+    constitutional: false
+    title: Indice del documento
+
+  - id: vocabulary
+    file: sections/01-vocabulary.md
+    section_id: "vocabulary"
+    layer: identity
+    constitutional: true
+    title: Vocabulario de actores
+
+  - id: identity
+    file: sections/02-identity.md
+    section_id: "1"
+    layer: identity
+    constitutional: true
+    title: Que es Virgil
+
+  - id: anti-drift
+    file: sections/03-anti-drift.md
+    section_id: "1a"
+    layer: identity
+    constitutional: true
+    title: Regla anti-drift interpretativa
+
+  - id: structure
+    file: sections/04-structure.md
+    section_id: "2"
+    layer: structure
+    constitutional: true
+    title: Estructura de tres capas
+
+  - id: lifecycle
+    file: sections/05-lifecycle.md
+    section_id: "3a"
+    layer: lifecycle
+    constitutional: false
+    title: Ciclo de vida de un proyecto
+
+  - id: invocation-flow
+    file: sections/06-invocation-flow.md
+    section_id: "3b"
+    layer: lifecycle
+    constitutional: true
+    title: Flujo de una invocacion
+
+  - id: governance-architecture
+    file: sections/07-governance-architecture.md
+    section_id: "4"
+    layer: principles
+    constitutional: true
+    title: Gobierno y arquitectura
+
+  - id: components
+    file: sections/08-components.md
+    section_id: "5"
+    layer: components
+    constitutional: true
+    title: Catalogo de componentes
+
+  - id: interaction-model
+    file: sections/09-interaction-model.md
+    section_id: "6"
+    layer: interaction
+    constitutional: true
+    title: Modelo de interaccion
+
+  - id: echo-system
+    file: sections/10-echo-system.md
+    section_id: "7a"
+    layer: quality
+    constitutional: true
+    title: Echo System
+
+  - id: deliverables-vs-artifacts
+    file: sections/11-deliverables-vs-artifacts.md
+    section_id: "7b"
+    layer: quality
+    constitutional: true
+    title: Deliverables vs Build Artifacts
+
+  - id: red-green-refactor
+    file: sections/12-red-green-refactor.md
+    section_id: "7c-rgr"
+    layer: quality
+    constitutional: true
+    title: Macro Red/Green/Refactor
+
+  - id: composite-agent
+    file: sections/13-composite-agent.md
+    section_id: "7c-composite"
+    layer: quality
+    constitutional: true
+    title: compositeAgent y mutation domains
+
+  - id: testing-matrix
+    file: sections/14-testing-matrix.md
+    section_id: "7d-tiers"
+    layer: quality
+    constitutional: true
+    title: Testing Matrix
+
+  - id: binding-layer
+    file: sections/15-binding-layer.md
+    section_id: "7d-binding"
+    layer: quality
+    constitutional: true
+    title: Binding Layer y trazabilidad
+
+  - id: qa-gates
+    file: sections/16-qa-gates.md
+    section_id: "7e"
+    layer: quality
+    constitutional: true
+    title: QA / Acceptance Gates
+
+  - id: droppable-code
+    file: sections/17-droppable-code.md
+    section_id: "7f"
+    layer: quality
+    constitutional: true
+    title: droppableCode
+
+  - id: compliance-by-design
+    file: sections/18-compliance-by-design.md
+    section_id: "7g"
+    layer: quality
+    constitutional: false
+    title: complianceByDesign
+
+  - id: supply-chain-pinning
+    file: sections/19-supply-chain-pinning.md
+    section_id: "7h-pinning"
+    layer: quality
+    constitutional: true
+    title: versionPinning y securityAudit
+
+  - id: supply-chain-bump
+    file: sections/20-supply-chain-bump.md
+    section_id: "7h-bump"
+    layer: quality
+    constitutional: true
+    title: bumpDependencies
+
+  - id: knowledge-storage
+    file: sections/21-knowledge-storage.md
+    section_id: "8"
+    layer: knowledge
+    constitutional: true
+    title: Donde vive el conocimiento
+
+  - id: rag-dbms
+    file: sections/22-rag-dbms.md
+    section_id: "8c-dbms"
+    layer: knowledge
+    constitutional: true
+    title: RAG como DBMS
+
+  - id: rag-watermark
+    file: sections/23-rag-watermark.md
+    section_id: "8c-watermark"
+    layer: knowledge
+    constitutional: true
+    title: Watermark y re-sync
+
+  - id: rag-dual
+    file: sections/24-rag-dual.md
+    section_id: "8c-dual"
+    layer: knowledge
+    constitutional: false
+    title: devRag vs consumerRag
+
+  - id: visibility-memoization
+    file: sections/25-visibility-memoization.md
+    section_id: "8d-8e"
+    layer: knowledge
+    constitutional: true
+    title: Visibilidad y memoizacion
+
+  - id: codebase-memory-concept
+    file: sections/26-codebase-memory-concept.md
+    section_id: "8f-concept"
+    layer: knowledge
+    constitutional: true
+    title: codebaseMemory concepto
+
+  - id: codebase-memory-construction
+    file: sections/27-codebase-memory-construction.md
+    section_id: "8f-construction"
+    layer: knowledge
+    constitutional: true
+    title: codebaseMemory construccion
+
+  - id: context-flow
+    file: sections/28-context-flow.md
+    section_id: "9"
+    layer: context
+    constitutional: true
+    title: Flujo de contexto
+
+  - id: recovery
+    file: sections/29-recovery.md
+    section_id: "10"
+    layer: recovery
+    constitutional: true
+    title: Recuperacion
+
+  - id: execution-pipeline
+    file: sections/30-execution-pipeline.md
+    section_id: "11a-11b"
+    layer: execution
+    constitutional: true
+    title: Pipeline de ejecucion
+
+  - id: git-strategy
+    file: sections/31-git-strategy.md
+    section_id: "11c"
+    layer: execution
+    constitutional: true
+    title: Git strategy
+
+  - id: mechanical-verification
+    file: sections/32-mechanical-verification.md
+    section_id: "11d"
+    layer: execution
+    constitutional: true
+    title: Verificacion mecanica
+
+  - id: accept-reject
+    file: sections/33-accept-reject.md
+    section_id: "11e-routing"
+    layer: execution
+    constitutional: true
+    title: Accept/Reject routing
+
+  - id: break-glass
+    file: sections/34-break-glass.md
+    section_id: "11e-breakglass"
+    layer: execution
+    constitutional: false
+    title: Break-glass
+
+  - id: evidence-queryable
+    file: sections/35-evidence-queryable.md
+    section_id: "11f"
+    layer: execution
+    constitutional: true
+    title: Evidencia queryable
+
+  - id: operation
+    file: sections/36-operation.md
+    section_id: "12"
+    layer: operation
+    constitutional: false
+    title: Fase de operacion
+
+  - id: authority
+    file: sections/37-authority.md
+    section_id: "authority"
+    layer: authority
+    constitutional: true
+    title: Autoridad, auto-referencia y nota de autoridad
+
+  - id: glossary
+    file: sections/38-glossary.md
+    section_id: "glossary"
+    layer: reference
+    constitutional: true
+    title: Glosario
+
+cross_cutting:
+  - name: pdc-vs-echo-disambiguation
+    sections: ["3b", "7a", "9"]
+    description: PDC es safeguard de orquestacion, Echo es pipeline de certificacion
+
+  - name: certification-chain
+    sections: ["7b", "8c-watermark", "8f-construction", "11f"]
+    description: watermark → sourceRevision → buildArtifactSet → EchoRun
+
+  - name: mutation-domain
+    sections: ["7c-composite", "8f-construction", "11c"]
+    description: aislamiento, compositeAgent, worktrees, reconciliacion de grafos
+
+  - name: deterministic-vs-judgment
+    sections: ["3b", "7e", "9", "11d"]
+    description: que es mecanico-determinista y que requiere evaluacion
+
+  - name: mim-authority
+    sections: ["vocabulary", "7f", "7g", "11e-breakglass"]
+    description: donde el MIM tiene veto explicito o autoridad final
+
+  - name: planning-gap-detected
+    sections: ["3a", "11c", "11e-routing"]
+    description: senal de escalacion transversal de ejecucion a planning
+
+  - name: modes-duality
+    sections: ["6", "8c-dual", "authority"]
+    description: Modo Desarrollo vs Modo Consumo, mismos principios
+
+  - name: binding-layer-progression
+    sections: ["7d-binding", "11f"]
+    description: declared → inferred → verified trust progression
+
+glossary_index:
+  Binding Layer: binding-layer
+  Break-glass: break-glass
+  buildArtifactSet: deliverables-vs-artifacts
+  bumpDependencies: supply-chain-bump
+  circuitBreaker: context-flow
+  codebaseMemory: codebase-memory-concept
+  compositeAgent: composite-agent
+  complianceByDesign: compliance-by-design
+  ContextBrief: context-flow
+  ContextCompiler: context-flow
+  CRAP score: qa-gates
+  delegationContract: context-flow
+  droppableCode: droppable-code
+  Echo System: echo-system
+  EchoRun: deliverables-vs-artifacts
+  FastForward: lifecycle
+  Kernel: components
+  Ledger: components
+  mutation domain: composite-agent
+  Method Pack: components
+  PDC: invocation-flow
+  PlanningGapDetected: lifecycle
+  RAG: rag-dbms
+  re-sync: rag-watermark
+  securityAudit: supply-chain-pinning
+  sourceRevision: deliverables-vs-artifacts
+  safeToAutoDelete: droppable-code
+  Supply Chain Integrity: supply-chain-pinning
+  TraceabilityGraph: components
+  versionPinning: supply-chain-pinning
+  watermark: rag-watermark
