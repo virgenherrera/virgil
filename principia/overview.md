@@ -717,10 +717,12 @@ escala a la fase que corresponda.
 
 ## 8. Donde vive el conocimiento
 
-Dos concerns separados: donde se PERSISTEN los deliverables
-(ArtifactStore) y como se CONSULTAN (RAG). El RAG actua como DBMS
-del contexto — ningun agente lee archivos directamente; todo agente
-consulta el RAG con queries acotadas.
+Tres concerns separados: donde se PERSISTEN los deliverables
+(ArtifactStore), como se CONSULTAN deliverables y documentacion (RAG),
+y como se COMPRENDE la estructura del codigo (codebaseMemory). El RAG
+actua como DBMS del contexto documental; el codebaseMemory actua como
+grafo estructural del codigo. Ningun agente lee archivos directamente
+— todo agente consulta la herramienta apropiada con queries acotadas.
 
 ### 8a. ArtifactStore — persistencia
 
@@ -777,8 +779,10 @@ flowchart LR
 ### 8c. RAG dual — DBMS de contexto
 
 Regla fundamental: **ningun agente lee archivos directamente**. Todo
-agente consulta el RAG con queries acotadas. Contextualizacion via
-queries, no via prompts — ahorro directo de tokens.
+agente consulta la herramienta apropiada: RAG para deliverables y
+documentacion, codebaseMemory para estructura del codigo (seccion 8f).
+Contextualizacion via queries, no via prompts — ahorro directo de
+tokens.
 
 ```mermaid
 flowchart TD
@@ -882,9 +886,107 @@ El RAG no es la autoridad del proceso — el Ledger, el
 ArtifactRepository y la evidencia son la fuente de verdad. El RAG es
 una proyeccion de lectura optimizada, reconstruible y memoizada.
 
-Con el conocimiento organizado como DBMS de contexto y la visibilidad
-escalonada por rol, el paso siguiente es entender como ese contexto
-fluye entre agentes durante la ejecucion.
+### 8f. codebaseMemory — grafo estructural del codigo
+
+El RAG opera sobre deliverables y documentacion — datos estructurados
+que se indexan semanticamente. El codigo fuente es diferente: no se
+puede (ni se debe) meterlo completo en un RAG. Para el codigo, Virgil
+utiliza una herramienta complementaria: un grafo estructural
+determinista que mapea relaciones sin embeddings.
+
+```mermaid
+flowchart TD
+    subgraph ROUTING["Routing de consulta"]
+        Q_SEM["Consulta semantica\n'que dice el spec sobre auth?'\n'cual es la decision de diseno?'"]
+        Q_STR["Consulta estructural\n'quien llama a esta funcion?'\n'que se rompe si cambio X?'\n'que tests cubren este modulo?'"]
+    end
+
+    Q_SEM -->|"RAG"| RAG["devRag | consumerRag\n(deliverables, docs)"]
+    Q_STR -->|"codebaseMemory"| CBM["Grafo AST\n(entidades, relaciones)"]
+
+    style Q_SEM fill:#47a,stroke:#333,color:#fff
+    style Q_STR fill:#4a4,stroke:#333,color:#fff
+    style RAG fill:#47a,stroke:#333,color:#fff
+    style CBM fill:#4a4,stroke:#333,color:#fff
+```
+
+#### Que indexa vs que excluye
+
+El codebaseMemory indexa ESTRUCTURA, no contenido.
+
+```mermaid
+flowchart TD
+    subgraph INDEXA["Indexa (liviano, determinista)"]
+        ENT["Entidades\narchivos, modulos, clases,\nfunciones, interfaces, tipos,\ntests, rutas"]
+        REL["Relaciones\ncalls, imports, herencia,\ncontiene, test-covers,\ndata-flow"]
+        META["Metadata\nsignaturas, ubicacion,\nassociacion con commits"]
+    end
+
+    subgraph EXCLUYE["Excluye (mantiene liviano)"]
+        EMB["Embeddings de\ncodigo fuente completo"]
+        VEC["Chunks vectoriales\nlinea por linea"]
+        AMB["Edges ambiguos\n(sin edge > edge dudoso)"]
+    end
+
+    INDEXA -.-|"linea clara"| EXCLUYE
+
+    style INDEXA fill:#4a4,stroke:#333,color:#fff
+    style EXCLUYE fill:#c44,stroke:#333,color:#fff
+```
+
+#### Construccion determinista
+
+El grafo se construye por parsing AST (tree-sitter), no por inferencia
+de un LLM. Esto garantiza: completitud (no se saltan archivos),
+velocidad (segundos, no minutos), y cero alucinaciones en los edges.
+
+```mermaid
+flowchart LR
+    SRC["Codigo fuente"] --> PARSE["Parser AST\n(tree-sitter)"]
+    PARSE --> GRAPH["Grafo de nodos\nentidades + relaciones"]
+    GRAPH --> STORE["Storage liviano\n(sqlite, en proyecto)"]
+    STORE --> QUERY["Queries\nestructurales"]
+
+    CHANGES["Cambio en archivo"] -->|"watcher +\ncontent hash"| PARSE
+
+    style PARSE fill:#47a,stroke:#333,color:#fff
+    style GRAPH fill:#4a4,stroke:#333,color:#fff
+    style STORE fill:#777,stroke:#333,color:#fff
+```
+
+La actualizacion es incremental: un file watcher detecta cambios,
+compara hashes, y re-parsea solo los archivos modificados. No hay
+rebuild completo en cada cambio.
+
+#### Complemento del RAG, no reemplazo
+
+```mermaid
+flowchart TD
+    VIRGIL["Virgil"]
+    VIRGIL --> RAG["RAG\nDBMS de deliverables\n(semantico)"]
+    VIRGIL --> CBM["codebaseMemory\nGrafo de codigo\n(estructural)"]
+
+    RAG --> R_Q["'que dice el design\nsobre el modulo auth?'"]
+    CBM --> C_Q["'que funciones dependen\nde AuthMiddleware?\nque tests las cubren?'"]
+
+    RAG ~~~ CBM
+
+    NOTE["Misma visibilidad escalonada:\norquestador ve todo el grafo,\nsub-agentes ven scope acotado\n(via delegationContract)"]
+
+    style RAG fill:#47a,stroke:#333,color:#fff
+    style CBM fill:#4a4,stroke:#333,color:#fff
+    style NOTE fill:none,stroke:none
+```
+
+El codebaseMemory habilita la visualizacion on-demand del proyecto
+como un grafo de nodos — sin cargar codigo fuente en el prompt, sin
+quemar tokens, y con ownership total de la estructura. Es la
+herramienta que permite a Virgil "ver" el codigo sin "leerlo".
+
+Con el conocimiento organizado como DBMS documental (RAG), grafo
+estructural (codebaseMemory) y visibilidad escalonada por rol, el
+paso siguiente es entender como ese contexto fluye entre agentes
+durante la ejecucion.
 
 ---
 
