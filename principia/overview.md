@@ -16,6 +16,8 @@ Si algo contradice este documento, este documento gana.
 - [8. Donde vive el conocimiento](#8-donde-vive-el-conocimiento)
 - [9. Como fluye el contexto](#9-como-fluye-el-contexto)
 - [10. Como se recupera](#10-como-se-recupera)
+- [11. Como se ejecuta](#11-como-se-ejecuta)
+- [12. Como opera (opcional)](#12-como-opera-opcional)
 - [Regla de auto-referencia](#regla-de-auto-referencia)
 
 ### Documentos del Principia
@@ -975,6 +977,254 @@ sequenceDiagram
   no toco el scope del deliverable
 - Cambios externos se clasifican: aditivos (registrar), contradictorios
   (decision del MIM), o de otro ciclo (registrar como contexto)
+
+---
+
+## 11. Como se ejecuta
+
+Despues de que planning produce un handoff aprobado, la ejecucion
+transforma ese handoff en codigo certificado. Virgil OBSERVA — no
+dirige, no implementa. Emite PlanningGapDetected si detecta vacios.
+
+### 11a. Pipeline de ejecucion
+
+Cinco fases secuenciales. Cada fase tiene su gate de salida.
+
+```mermaid
+flowchart LR
+    PRE["prePhase\nContratos:\nAPIs, schemas,\ninterfaces"]
+    RED["Red\nToda la suite\nde tests\n(todos fallan)"]
+    GREEN["Green\nCodigo que\npase tests\n(todos pasan)"]
+    REFACTOR["Refactor\nVerificacion\nmecanica\n(metricas OK)"]
+    ACCEPT["Accept\nCertificacion\ndeterminista\n(QA gate)"]
+
+    PRE --> RED --> GREEN --> REFACTOR --> ACCEPT
+
+    style PRE fill:#777,stroke:#333,color:#fff
+    style RED fill:#c44,stroke:#333,color:#fff
+    style GREEN fill:#4a4,stroke:#333,color:#fff
+    style REFACTOR fill:#47a,stroke:#333,color:#fff
+    style ACCEPT fill:#2b5,stroke:#333,color:#fff
+```
+
+| Fase | Que produce | Gate de salida |
+|------|-------------|----------------|
+| prePhase | Contratos (OpenAPI, schemas, interfaces) | Todos los contratos definidos |
+| Red | Suite completa de tests | Todos fallan (red valido) |
+| Green | Implementacion | Todos pasan |
+| Refactor | Metricas dentro de umbral | Mutation, CRAP, complejidad OK |
+| Accept | Certificacion | Determinista: pasa o no pasa |
+
+### 11b. Contratos primero — habilitador de paralelismo
+
+La prePhase define contratos ANTES de implementar. Esto permite que
+multiples lanes trabajen en paralelo contra la misma interfaz.
+
+```mermaid
+flowchart TD
+    CONTRACTS["prePhase\nAPIs, schemas, interfaces\n(definidos y aprobados)"]
+
+    CONTRACTS --> LANE1["Lane A\n(frontend)"]
+    CONTRACTS --> LANE2["Lane B\n(backend)"]
+    CONTRACTS --> LANE3["Lane C\n(infra)"]
+
+    LANE1 & LANE2 & LANE3 -->|"merge"| INTEGRATION["Integration\n(tests cruzados)"]
+
+    style CONTRACTS fill:#47a,stroke:#333,color:#fff
+    style INTEGRATION fill:#4a4,stroke:#333,color:#fff
+```
+
+### 11c. Git strategy — worktrees y branches
+
+```mermaid
+flowchart TD
+    MAIN["main\n(estable, produccion)"]
+    DEV["develop\n(integracion)"]
+    ITER["exec/iter-N\n(iteracion)"]
+
+    subgraph LANES["Lanes paralelos (worktrees)"]
+        L1["exec/iter-N/lane-auth"]
+        L2["exec/iter-N/lane-api"]
+        L3["exec/iter-N/lane-ui"]
+    end
+
+    L1 & L2 & L3 -->|"--no-ff"| ITER
+    ITER -->|"--no-ff"| DEV
+    DEV -->|"merge o squash\n(MIM decide)"| MAIN
+
+    style MAIN fill:#4a4,stroke:#333,color:#fff
+    style ITER fill:#47a,stroke:#333,color:#fff
+    style LANES fill:#a74,stroke:#333,color:#fff
+```
+
+Cada lane se ejecuta en un worktree aislado. Un compositeAgent
+(seccion 7c) opera dentro de cada worktree, cambiando de personalidad
+por fase (testEngineer → Implementor → fitnessFunction).
+
+| Fase | Prefijo de commit | Frecuencia |
+|------|-------------------|------------|
+| prePhase | `contract:` | 1 por tipo |
+| Red | `test:` | 1 por test o grupo |
+| Green | `feat:` | 1 por test que pasa |
+| Refactor | `refactor:` | 1 por refactor atomico |
+
+### 11d. Verificacion mecanica — no hay code review humano
+
+La fase Refactor reemplaza la revision de codigo humana con
+verificacion mecanica basada en metricas. El juicio subjetivo
+no participa en la certificacion.
+
+```mermaid
+flowchart TD
+    subgraph MECANICO["Verificacion mecanica (obligatoria)"]
+        MUT["Mutation testing\nfuerza real de tests"]
+        CRAP["CRAP score\nriesgo de cambio"]
+        CYCL["Complejidad ciclomatica\nfunciones simples"]
+        SIZE["Tamano de modulo\nLOC acotado"]
+        DEPS["Estructura de dependencias\ncero ciclos"]
+        SEC["Seguridad\ncero CVEs criticos"]
+    end
+
+    subgraph RESIDUAL["Residual review (opcional, no-blocking)"]
+        AUTH["Logica de autorizacion"]
+        DDD["Modelado de dominio"]
+    end
+
+    MECANICO -->|"gate"| PASS{{"Pasa?"}}
+    PASS -->|"Si"| ACCEPT["Accept"]
+    PASS -->|"No"| BACK["Re-delegar a\nfase correspondiente"]
+
+    style MECANICO fill:#47a,stroke:#333,color:#fff
+    style RESIDUAL fill:#777,stroke:#333,color:#fff
+    style PASS fill:#4a4,stroke:#333,color:#fff
+    style BACK fill:#c44,stroke:#333,color:#fff
+```
+
+Los umbrales especificos (mutation score, CRAP maximo, complejidad)
+los define el dogma por tier (strict, standard, relaxed). El
+Principia define el principio: **mecanico, no subjetivo**.
+
+### 11e. Accept/Reject — certificacion determinista
+
+```mermaid
+flowchart TD
+    QA{{"QA: virgil health"}}
+
+    QA -->|"pasa"| CERT["CERTIFICADO\ngit tag: qa/approved"]
+    QA -->|"gap de implementacion"| GREEN["→ Green"]
+    QA -->|"gap de testing"| RED["→ Red"]
+    QA -->|"gap de contratos"| PRE["→ prePhase"]
+    QA -->|"gap de planning"| PLANNING["→ Planning\n(PlanningGapDetected)"]
+
+    style CERT fill:#4a4,stroke:#333,color:#fff
+    style GREEN fill:#c44,stroke:#333,color:#fff
+    style RED fill:#c44,stroke:#333,color:#fff
+    style PRE fill:#c44,stroke:#333,color:#fff
+    style PLANNING fill:#c44,stroke:#333,color:#fff
+```
+
+| Tipo de gap | Rechazo | Re-delegar a |
+|-------------|---------|--------------|
+| Codigo no satisface test | Implementacion incompleta | Green |
+| Suite de tests incompleta | Tests faltantes | Red |
+| Contrato violado | Interfaz rota | prePhase |
+| Diseno no reflejado en codigo | Arquitectura divergente | Refactor |
+| Feature faltante en planning | Deliverable insuficiente | Planning |
+
+El rechazo es ESPECIFICO — identifica la fase exacta que debe
+corregirse, no un generico "arreglar". Cada re-delegacion pasa por
+el PDC completo (seccion 9c).
+
+### 11f. Evidencia como dato queryable
+
+Todo lo que ocurre durante ejecucion se ingiere como evidencia
+queryable, no como documentacion narrativa.
+
+```mermaid
+flowchart TD
+    subgraph FUENTES["Fuentes de evidencia"]
+        TESTS["Test results\npass/fail + AC ref"]
+        COV["Coverage reports\n% por archivo"]
+        METRICS["Metricas\nmutation, CRAP,\ncomplejidad"]
+        COMMITS["Commits\nSHA + fase + test ref"]
+        PIPELINE["Echo pipeline\nlogs, reports"]
+    end
+
+    FUENTES --> INGESTION["EvidenceIngestion\n(kernel)"]
+    INGESTION --> LEDGER["Ledger\n(inmutable)"]
+    INGESTION --> BINDING["Binding Layer\ndeclared → inferred → verified"]
+
+    style INGESTION fill:#47a,stroke:#333,color:#fff
+    style LEDGER fill:#4a4,stroke:#333,color:#fff
+```
+
+La evidencia alimenta el Binding Layer: cada commit con referencia
+a un test mueve el enlace de `declared` a `inferred`. La verificacion
+mecanica (mutation testing) lo mueve a `verified`.
+
+---
+
+## 12. Como opera (opcional)
+
+La fase de operacion se activa SOLO si el proyecto tiene superficie
+operacional (APIs, CLIs, servicios). No aplica para librerias ni
+deliverables de un solo uso.
+
+### 12a. Activacion y rol
+
+```mermaid
+flowchart TD
+    DELIVER["Delivery\ncompleta"]
+    DELIVER --> Q{{"Superficie\noperacional?"}}
+    Q -->|"Si\n(API, CLI, servicio)"| ACTIVE["Operation ACTIVA\nVirgil ASISTE\n(reactivo)"]
+    Q -->|"No\n(libreria, one-shot)"| INACTIVE["Operation\nNO APLICA"]
+
+    style ACTIVE fill:#47a,stroke:#333,color:#fff
+    style INACTIVE fill:#777,stroke:#333,color:#fff
+```
+
+| Actor | Rol en operacion |
+|-------|-----------------|
+| MIM | Usuario — consume el producto |
+| Agente | operationalAssistant — ejecuta solicitudes del MIM dentro del contexto del producto |
+| Virgil | Asiste al agente con contexto, NO dirige |
+
+### 12b. Adapters de operacion
+
+Tres tipos de documentacion operacional, segun el tipo de producto.
+
+```mermaid
+flowchart LR
+    OP["Operacion"]
+    OP --> RUNBOOK["ops-runbook\n(servicios, APIs)"]
+    OP --> USAGE["usage-guide\n(CLIs, herramientas)"]
+    OP --> APIREF["api-reference\n(librerias)"]
+
+    style RUNBOOK fill:#47a,stroke:#333,color:#fff
+    style USAGE fill:#47a,stroke:#333,color:#fff
+    style APIREF fill:#47a,stroke:#333,color:#fff
+```
+
+### 12c. Escalacion
+
+Si operacion detecta problemas, escala de vuelta al ciclo
+correspondiente.
+
+```mermaid
+flowchart TD
+    OP["Operacion"]
+    OP -->|"bug detectado"| EXEC["→ Execution\n(ciclo Red-Green)"]
+    OP -->|"feature request"| PLAN["→ Planning\n(nuevo ciclo)"]
+    OP -->|"doc faltante"| DOC["→ Planning\n(producir runbook/guide)"]
+
+    style EXEC fill:#a74,stroke:#333,color:#fff
+    style PLAN fill:#47a,stroke:#333,color:#fff
+    style DOC fill:#47a,stroke:#333,color:#fff
+```
+
+Operacion nunca corrige bugs inline ni agrega features sin pasar
+por el ciclo completo. El principio de metodologia e2e (gobierno
+principio 1) aplica igual en post-entrega.
 
 ---
 
