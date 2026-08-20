@@ -121,7 +121,7 @@ Con esta estructura inmutable como cimiento, Virgil se manifiesta a través de c
 
 ### 3a. Ciclo de vida de un proyecto
 
-Cada fase itera hasta consolidar su artefacto. No es una linea recta —
+Cada fase itera hasta consolidar su deliverable. No es una linea recta —
 es un loop que converge hacia un handoff bien acotado.
 
 ```mermaid
@@ -157,12 +157,18 @@ stateDiagram-v2
 
 La maquina de estados del proyecto (via virgil_status) indica en que
 fase esta cada feature y el proyecto en general. Un feature no avanza
-hasta que su artefacto esta consolidado.
+hasta que su deliverable esta consolidado.
 
-**PlanningGapDetected**: si execution descubre que un artefacto aprobado
+**PlanningGapDetected**: si execution descubre que un deliverable aprobado
 es ambiguo, contradictorio o insuficiente, emite esta senal, bloquea
 solo el scope afectado y devuelve el control a planning. Execution
-nunca reescribe un artefacto aprobado.
+nunca reescribe un deliverable aprobado.
+
+**FastForward**: el SM no siempre ejecuta todas las fases con la misma
+ceremonia. Evalua un gradiente de certeza (F1-F4) sobre el contexto
+existente y comprime las fases proporcionalmente — desde ceremonia
+completa (score 0-2) hasta ejecucion directa (score 6-8). Detalle
+en [fast-forward.md](fast-forward.md).
 
 ### 3b. Flujo de una invocacion
 
@@ -180,7 +186,7 @@ sequenceDiagram
     VK->>VK: validar source != target
     VK->>VK: compilar ContextBrief
     VK->>VK: ejecutar operacion canonica
-    VK->>SA: persistir artefacto
+    VK->>SA: persistir deliverable
     SA-->>VK: confirmacion
     VK->>VK: ingerir evidencia
     VK->>VK: registrar transicion en Ledger
@@ -393,7 +399,7 @@ Estas invariantes fundamentales — que Virgil conoce sin inflar contextos — s
 
 ## 7. Como garantiza calidad
 
-Cinco mecanismos forman un ciclo de accountability anidado. Ninguno
+Siete mecanismos forman un ciclo de accountability anidado. Ninguno
 funciona aislado.
 
 ### 7a. Echo System — pipeline determinista
@@ -613,6 +619,21 @@ El patron es agnostico de tecnologia: en TypeScript es una clase con
 `mod` con constantes. Lo que importa es que la matriz y el test
 compartan un identificador rastreable.
 
+#### Binding Layer — confianza del enlace
+
+El enlace entre un test y el codigo que lo satisface no es binario
+(existe/no existe). Tiene tres niveles de confianza que progresan
+durante el ciclo R/G/R:
+
+| Estado | Fase | Garantiza |
+|--------|------|-----------|
+| declared | Red | El test existe y referencia un AC |
+| inferred | Green | Un hook detecto que codigo ejercita el test |
+| verified | Refactor | Mutation testing confirmo fortaleza real |
+
+Solo `verified` certifica fortaleza — los demas solo confirman
+existencia. Detalle en [binding-layer.md](binding-layer.md).
+
 ### 7e. QA / Acceptance Gates — certificacion
 
 La certificacion es determinista y basada en metricas, no en revision
@@ -694,7 +715,7 @@ escala a la fase que corresponda.
 
 ## 8. Donde vive el conocimiento
 
-Dos concerns separados: donde se PERSISTEN los artefactos
+Dos concerns separados: donde se PERSISTEN los deliverables
 (ArtifactStore) y como se CONSULTAN (RAG). El RAG actua como DBMS
 del contexto — ningun agente lee archivos directamente; todo agente
 consulta el RAG con queries acotadas.
@@ -822,8 +843,8 @@ flowchart TD
 
     RAG -->|"100% visibilidad\n(si lo estima necesario)"| ORCH["Orquestador\n(agente principal)\nve TODO el inventario"]
 
-    RAG -->|"scope acotado"| SUB1["Sub-agente A\nve solo artefactos\nde su tarea"]
-    RAG -->|"scope acotado"| SUB2["Sub-agente B\nve solo artefactos\nde su tarea"]
+    RAG -->|"scope acotado"| SUB1["Sub-agente A\nve solo deliverables\nde su tarea"]
+    RAG -->|"scope acotado"| SUB2["Sub-agente B\nve solo deliverables\nde su tarea"]
 
     ORCH -->|"define scope via\ndelegationContract"| SUB1 & SUB2
 
@@ -873,7 +894,7 @@ El contexto se entrega compilado (ContextBrief) o como referencia
 
 ### 9a. ContextBrief
 
-El ContextCompiler selecciona artefactos, hechos y limites para
+El ContextCompiler selecciona deliverables, hechos y limites para
 producir un ContextBrief acotado al objetivo del actor. La seleccion
 queda trazable: que se incluyo, de donde salio, que se excluyo.
 
@@ -938,20 +959,20 @@ sequenceDiagram
     participant TPM as TPM
     participant STORE as ArtifactStore
 
-    SM->>TPM: que artefactos existen?
+    SM->>TPM: que deliverables existen?
     TPM->>STORE: scan estados
     STORE-->>TPM: lista + revisiones
-    TPM-->>SM: artefactos + estados + historial de fallos
+    TPM-->>SM: deliverables + estados + historial de fallos
 
     SM->>SM: derivar fase actual
     SM->>SM: consultar historial<br/>(ajustar estrategia)
     SM->>SM: continuar desde<br/>fase derivada
 ```
 
-- El SM deriva la fase por los artefactos existentes (no la almacena)
-- El historial de fallos es per-artefacto y cross-session
+- El SM deriva la fase por los deliverables existentes (no la almacena)
+- El historial de fallos es per-deliverable y cross-session
 - `lastVerifiedAt` evita re-verificacion innecesaria si el codigo
-  no toco el scope del artefacto
+  no toco el scope del deliverable
 - Cambios externos se clasifican: aditivos (registrar), contradictorios
   (decision del MIM), o de otro ciclo (registrar como contexto)
 
