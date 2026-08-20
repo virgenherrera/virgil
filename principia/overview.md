@@ -9,16 +9,53 @@ Si algo contradice este documento, este documento gana.
 - [1. Que es Virgil](#1-que-es-virgil)
 - [2. Como es (estructura)](#2-como-es-estructura)
 - [3. Como actua](#3-como-actua)
+  - [3a. Ciclo de vida de un proyecto](#3a-ciclo-de-vida-de-un-proyecto)
+  - [3b. Flujo de una invocacion](#3b-flujo-de-una-invocacion)
 - [4. Por que actua asi](#4-por-que-actua-asi)
+  - [4a. Gobierno — COMO se gobierna](#4a-gobierno--como-se-gobierna)
+  - [4b. Arquitectura — COMO se construye](#4b-arquitectura--como-se-construye)
+  - [4c. Como se relacionan las dos capas](#4c-como-se-relacionan-las-dos-capas)
 - [5. Que partes lo componen](#5-que-partes-lo-componen)
 - [6. Como interactuan las partes](#6-como-interactuan-las-partes)
+  - [6a. Actores y modos](#6a-actores-y-modos)
+  - [6b. Separacion de concerns](#6b-separacion-de-concerns)
+  - [6c. Invariante fundamental](#6c-invariante-fundamental)
 - [7. Como garantiza calidad](#7-como-garantiza-calidad)
+  - [7a. Echo System — pipeline determinista](#7a-echo-system--pipeline-determinista)
+  - [7b. Deliverables vs Build Artifacts](#7b-deliverables-vs-build-artifacts)
+  - [7c. Macro Red/Green/Refactor — TDD por lotes](#7c-macro-redgreenrefactor--tdd-por-lotes)
+  - [7d. Testing Matrix — modelo de boundaries](#7d-testing-matrix--modelo-de-boundaries)
+  - [7e. QA / Acceptance Gates — certificacion](#7e-qa--acceptance-gates--certificacion)
+  - [7f. droppableCode — cobertura como herramienta](#7f-droppablecode--cobertura-como-herramienta)
+  - [7g. complianceByDesign — compliance como efecto secundario](#7g-compliancebydesign--compliance-como-efecto-secundario)
+  - [7h. Supply Chain Integrity — dependencias seguras](#7h-supply-chain-integrity--dependencias-seguras)
+  - [Ciclo cerrado](#ciclo-cerrado)
 - [8. Donde vive el conocimiento](#8-donde-vive-el-conocimiento)
+  - [8a. ArtifactStore — persistencia](#8a-artifactstore--persistencia)
+  - [8b. Separacion de namespaces](#8b-separacion-de-namespaces)
+  - [8c. RAG dual — DBMS de contexto](#8c-rag-dual--dbms-de-contexto)
+  - [8d. Visibilidad escalonada](#8d-visibilidad-escalonada)
+  - [8e. Memoizacion](#8e-memoizacion)
+  - [8f. codebaseMemory — grafo estructural del codigo](#8f-codebasememory--grafo-estructural-del-codigo)
 - [9. Como fluye el contexto](#9-como-fluye-el-contexto)
+  - [9a. ContextBrief](#9a-contextbrief)
+  - [9b. Dos patrones de entrega](#9b-dos-patrones-de-entrega)
+  - [9c. Delegacion: SM → sub-agente → PDC](#9c-delegacion-sm--sub-agente--pdc)
 - [10. Como se recupera](#10-como-se-recupera)
 - [11. Como se ejecuta](#11-como-se-ejecuta)
+  - [11a. Pipeline de ejecucion](#11a-pipeline-de-ejecucion)
+  - [11b. Contratos primero — habilitador de paralelismo](#11b-contratos-primero--habilitador-de-paralelismo)
+  - [11c. Git strategy — worktrees y branches](#11c-git-strategy--worktrees-y-branches)
+  - [11d. Verificacion mecanica — review humano condicional](#11d-verificacion-mecanica--review-humano-condicional)
+  - [11e. Accept/Reject — certificacion por gates](#11e-acceptreject--certificacion-por-gates)
+  - [11f. Evidencia como dato queryable](#11f-evidencia-como-dato-queryable)
 - [12. Como opera (opcional)](#12-como-opera-opcional)
+  - [12a. Activacion y rol](#12a-activacion-y-rol)
+  - [12b. Adapters de operacion](#12b-adapters-de-operacion)
+  - [12c. Escalacion](#12c-escalacion)
 - [Regla de auto-referencia](#regla-de-auto-referencia)
+- [Glosario](#glosario)
+- [Nota de autoridad](#nota-de-autoridad)
 
 ### Documentos del Principia
 - [actors-and-modes.md](actors-and-modes.md) — Roles de agentes y modos operativos
@@ -31,7 +68,47 @@ Si algo contradice este documento, este documento gana.
 
 ---
 
+### Vocabulario de actores
+
+| Actor | Que es | Cuando actua |
+|-------|--------|-------------|
+| MIM | Humano con autoridad final de decision | Siempre — aprueba, rechaza, desempata |
+| Desarrollador | Humano + agente trabajando SOBRE Virgil | Modo Desarrollo |
+| Implementador | Agente externo trabajando CON Virgil | Modo Consumo |
+| Virgil | El binario — knowledge/control plane | Ambos modos |
+| SM | SM (Session Manager) — Agente orquestador. El Method Pack inyecta este rol: en el Pack Scrum cumple funciones de Scrum Master; en otros Packs cumple el rol de orquestacion equivalente definido por ese Pack. Virgil (el binario) no ES el SM — el SM es un rol que opera DENTRO de Virgil. | Ejecucion — delega, verifica, decide |
+| TPM | Funcion de tracking de deliverables | Ejecucion — persiste estado, reporta |
+| PDC | Post-Delegation Checkpoint (ECHO → VERIFY → MARK → DECIDE) | Despues de cada delegacion del SM |
+
+```mermaid
+flowchart TD
+    MIM["MIM\n(humano)\nautoridad final"]
+    MIM -->|"dirige"| SM["SM\n(agente orquestador)"]
+    SM -->|"delega via\ndelegationContract"| SUB["Sub-agentes"]
+    SM -->|"ejecuta"| PDC["PDC\n(checkpoint\npost-delegacion)"]
+    SM -->|"registra en"| TPM["TPM\n(tracking)"]
+
+    subgraph MODOS["Modos operativos"]
+        DEV["Desarrollador\ntrabaja SOBRE Virgil"]
+        IMPL["Implementador\ntrabaja CON Virgil"]
+    end
+
+    MIM ---|"es el"| DEV
+    MIM ---|"dirige al"| IMPL
+
+    style MIM fill:#4a4,stroke:#333,color:#fff
+    style SM fill:#47a,stroke:#333,color:#fff
+    style PDC fill:#a74,stroke:#333,color:#fff
+```
+
+Detalle completo en [actors-and-modes.md](actors-and-modes.md) y
+[delegation-pdc.md](delegation-pdc.md).
+
+> **Delegacion de aprobaciones MIM.** En equipos donde el MIM es tambien el unico desarrollador, los puntos de aprobacion MIM (excepciones de cobertura, declaracion de perfil de compliance del proyecto, break-glass) pueden consolidarse mediante autorizacion permanente documentada: el MIM emite una politica de proyecto que pre-autoriza categorias especificas, reduciendo la friccion sin eliminar la trazabilidad. Nota: lo delegable es la DECLARACION del perfil regulatorio del proyecto, no la activacion del gate de review humano — esa activacion es automatica e incondicional una vez declarado el perfil (ver seccion 7g).
+
 ## 1. Que es Virgil
+
+[↑ Volver al indice](#indice)
 
 Virgil es el knowledge/control plane de un proyecto. No es un
 framework, no es un Scrum Master, no ejecuta codigo. Mantiene
@@ -72,13 +149,15 @@ incluir:
 - Ownership y housekeeping de tokens (como gestionar contexto)
 - Planning boundary y stop conditions (cuando detenerse)
 
-> **GAP**: el AGENTS.md actual documenta wire protocol y operaciones,
-> pero no el patron de orquestacion ni la gestion de tokens. Pendiente
-> de definir en Principia y codificar en el template.
+> **Pendiente de definicion**: el AGENTS.md actual documenta wire protocol y operaciones. El patron de orquestacion y la gestion de tokens se especificaran en el Method Pack correspondiente, no en este documento ancla. Este item queda fuera del alcance del Principia.
+
+> **Alcance de este documento.** El Principia es el dogma fundacional: filosofia, arquitectura e invariantes. NO es un documento de go-to-market, guia de adopcion ni manual de usuario. El perfil de consumidor objetivo (ICP), la estrategia de MVP, el posicionamiento competitivo y las guias de onboarding son deliverables separados que se derivan DEL Principia pero no forman parte de el. El Kernel + el Method Pack Scrum (el unico implementado) constituyen el slice minimo viable; los demas Method Packs, codebaseMemory y extensiones son provisiones arquitectonicas, no requisitos de v1.
 
 ---
 
 ## 2. Como es (estructura)
+
+[↑ Volver al indice](#indice)
 
 Tres capas concentricas. Cada capa interna gobierna a las externas.
 
@@ -121,6 +200,8 @@ Con esta estructura inmutable como cimiento, Virgil se manifiesta a través de c
 
 ## 3. Como actua
 
+[↑ Volver al indice](#indice)
+
 ### 3a. Ciclo de vida de un proyecto
 
 Cada fase itera hasta consolidar su deliverable. No es una linea recta —
@@ -152,7 +233,7 @@ stateDiagram-v2
     Verify --> Deliver
     Deliver --> Operation : si aplica
 
-    note right of PLANNING : Virgil DIRIGE<br/>cada fase itera<br/>hasta convergencia
+    note right of PLANNING : Virgil IMPONE convergencia<br/>mecanica via maquina de estados.<br/>SM ORQUESTA delegaciones.<br/>MIM DIRIGE decisiones de producto.
     note right of Execution : Virgil OBSERVA<br/>emite PlanningGapDetected<br/>si hay vacios
     note right of Operation : Virgil ASISTE<br/>reactivo, opcional
 ```
@@ -167,10 +248,9 @@ solo el scope afectado y devuelve el control a planning. Execution
 nunca reescribe un deliverable aprobado.
 
 **FastForward**: el SM no siempre ejecuta todas las fases con la misma
-ceremonia. Evalua un gradiente de certeza (F1-F4) sobre el contexto
+ceremonia. Evalua un gradiente de certeza (FF-1 a FF-4) sobre el contexto
 existente y comprime las fases proporcionalmente — desde ceremonia
-completa (score 0-2) hasta ejecucion directa (score 6-8). Detalle
-en [fast-forward.md](fast-forward.md).
+completa (score 0-2) hasta ejecucion directa (score 6-8). El SM computa el score sobre estado observable y verificable. La formula de scoring esta publicada en `fast-forward.md` y los inputs + resultado se registran en el Ledger, haciendolo auditable. FastForward comprime CEREMONIA de planning (fases de deliberacion), no gates de calidad del Kernel — los gates de certificacion (R/G/R, mutation testing, fitness functions) se ejecutan integros en TODOS los niveles de FastForward, desde FF-1 hasta FF-4. Detalle en [fast-forward.md](fast-forward.md).
 
 ### 3b. Flujo de una invocacion
 
@@ -198,11 +278,24 @@ sequenceDiagram
     HA-->>ACT: respuesta
 ```
 
-Este flujo canonico es determinista por diseño. Detras de cada paso hay un principio deliberado que descubrimos a continuación.
+Este flujo canonico tiene pasos deterministas y pasos mediados por juicio. Las gates de certificacion (test pass/fail, mutation score, CRAP, coverage, CVE scan) son deterministas — binarias, sin subjetividad. Los pasos de planning, escalacion, compilacion de ContextBrief y verificacion de coherencia (PDC) involucran juicio del agente orquestador y no son deterministas. El Principia distingue ambos tipos explicitamente.
+
+El PDC es un safeguard de coherencia de orquestacion que opera durante la ejecucion, pero NO es un gate de certificacion. La certificacion la determinan exclusivamente las gates mecanicas (seccion 7e, 11d). El PDC puede detener una delegacion incoherente, pero no certifica ni aprueba codigo.
+
+> **Atomicidad**: el flujo muestra pasos secuenciales (persistir →
+> ingerir evidencia → registrar transicion). Si el proceso falla entre
+> pasos, el mecanismo de recovery (seccion 10) reconcilia el estado
+> derivando la fase actual desde los deliverables existentes, no desde
+> un puntero almacenado. El Ledger implementa idempotencia: registrar
+> una transicion ya registrada es un no-op.
+
+Detras de cada paso hay un principio deliberado que descubrimos a continuación.
 
 ---
 
 ## 4. Por que actua asi
+
+[↑ Volver al indice](#indice)
 
 Dos capas de principios complementarias. No se mezclan.
 
@@ -210,22 +303,22 @@ Dos capas de principios complementarias. No se mezclan.
 
 ```mermaid
 flowchart TD
-    G1["1. Metodologia e2e"]
-    G2["2. Trazabilidad + fortaleza"]
-    G3["3. Gestion nivel superior"]
-    G4["4. Constraint > confianza"]
-    G5["5. Handoff paralelo"]
-    G6["6. Gates deterministicos"]
+    GP1["GP-1. Metodologia e2e"]
+    GP2["GP-2. Trazabilidad + fortaleza"]
+    GP3["GP-3. Gestion nivel superior"]
+    GP4["GP-4. Constraint > confianza"]
+    GP5["GP-5. Handoff paralelo"]
+    GP6["GP-6. Gates deterministicos"]
 
-    G1 --- G2 --- G3
-    G4 --- G5 --- G6
+    GP1 --- GP2 --- GP3
+    GP4 --- GP5 --- GP6
 
-    style G1 fill:#47a,stroke:#333,color:#fff
-    style G2 fill:#47a,stroke:#333,color:#fff
-    style G3 fill:#47a,stroke:#333,color:#fff
-    style G4 fill:#47a,stroke:#333,color:#fff
-    style G5 fill:#47a,stroke:#333,color:#fff
-    style G6 fill:#47a,stroke:#333,color:#fff
+    style GP1 fill:#47a,stroke:#333,color:#fff
+    style GP2 fill:#47a,stroke:#333,color:#fff
+    style GP3 fill:#47a,stroke:#333,color:#fff
+    style GP4 fill:#47a,stroke:#333,color:#fff
+    style GP5 fill:#47a,stroke:#333,color:#fff
+    style GP6 fill:#47a,stroke:#333,color:#fff
 ```
 
 | # | Principio | En una frase |
@@ -235,7 +328,7 @@ flowchart TD
 | 3 | Gestion nivel superior | Dashboard de salud, no revision linea a linea. |
 | 4 | Constraint > confianza | Hooks y gates, no promesas del agente. |
 | 5 | Handoff paralelo | Claiming sobre un handoff, no handoffs separados. |
-| 6 | Gates deterministicos | Binario: pasa o no pasa. Sin aprobacion subjetiva. |
+| 6 | Gates de certificacion deterministicos | Binario en ejecucion: pasa o no pasa. Planning y escalacion involucran juicio. |
 
 ### 4b. Arquitectura — COMO se construye
 
@@ -289,11 +382,13 @@ Ambas capas de principios confluyen en el Principia. Lo que falta es conocer sus
 
 ## 5. Que partes lo componen
 
+[↑ Volver al indice](#indice)
+
 ```mermaid
 flowchart TD
-    subgraph KERNEL["Kernel (metodologia-agnostico)"]
+    subgraph KERNEL["Kernel (ceremonia-agnostico, calidad universal)"]
         LEDGER["Ledger\nEventos, transiciones,\nhistorial inmutable"]
-        TRACER["TraceabilityGraph\nIntencion → decision →\ntrabajo → evidencia"]
+        TRACER["TraceabilityGraph\nIntencion → decision →\ntrabajo → evidencia\n(proyeccion derivada,\nreconstruible desde Ledger)"]
         REPO["ArtifactRepository\nDeliverables, revisiones,\nprocedencia"]
         EVIDENCE["EvidenceIngestion\nTests, commits, builds,\ndecisiones humanas"]
         CONTEXT["ContextCompiler\nSelecciona deliverables →\nContextBrief"]
@@ -322,11 +417,15 @@ flowchart TD
     style CUSTOM fill:#777,stroke:#333,color:#fff
 ```
 
-Cada componente tiene una responsabilidad clara. Su verdadera potencia emerge en cómo colaboran bajo restricciones.
+Cada componente tiene una responsabilidad clara. El Kernel impone invariantes de calidad universales (Echo, testing, binding layer) independientemente de la metodologia. El Method Pack define la ceremonia: cuantos roles participan, que gates se comprimen, como se itera. La calidad es del Kernel; la ceremonia es del Pack.
+
+Los Method Packs heredan los gates de calidad (Red/Green/Refactor, mutation testing, fitness functions) como invariantes universales no negociables. Un Pack puede definir mecanismos de calidad ADICIONALES pero no puede reducir el minimo del Kernel. "Ceremonia-agnostico" significa que el Pack elige la ceremonia (sprints, kanban boards, ciclos de Shape Up); "calidad universal" significa que el pipeline de verificacion R/G/R + fitness functions aplica sin excepcion, independientemente de la ceremonia elegida.
 
 ---
 
 ## 6. Como interactuan las partes
+
+[↑ Volver al indice](#indice)
 
 ### 6a. Actores y modos
 
@@ -401,6 +500,8 @@ Estas invariantes fundamentales — que Virgil conoce sin inflar contextos — s
 
 ## 7. Como garantiza calidad
 
+[↑ Volver al indice](#indice)
+
 Siete mecanismos forman un ciclo de accountability anidado. Ninguno
 funciona aislado.
 
@@ -432,6 +533,8 @@ flowchart LR
 | Dev | Selectivo, feedback rapido | git hooks | Pre-commit, pre-push |
 | CI | Completo | Push, PR | Pipeline stages |
 | CD | Confianza absoluta | Tag, merge a main | Deployment gates |
+
+Los hooks de pre-commit ejecutan verificaciones ESTRUCTURALES de feedback rapido (lint, type-check, formato, analisis estatico). Los tests de integracion contra stack real (tier App/Servicio) se ejecutan en pre-push o en el pipeline de CI, no en pre-commit. "Feedback rapido" en el contexto de Dev se refiere a las verificaciones estructurales, no a la suite completa de integracion.
 
 ### 7b. Deliverables vs Build Artifacts
 
@@ -524,36 +627,40 @@ conflictos de filesystem.
 ```mermaid
 sequenceDiagram
     participant ORCH as Orquestador
-    participant CA as compositeAgent
+    participant TE as testEngineer
+    participant IMPL as Implementor
+    participant FF as fitnessFunction
     participant WT as Worktree
 
     ORCH->>WT: crear worktree (lane)
-    ORCH->>CA: asignar lane
 
-    Note over CA: Fase Red
-    CA->>CA: asumir rol testEngineer
-    CA->>WT: escribir tests
+    Note over TE: Invocacion 1 (stateless)
+    ORCH->>TE: spec + contratos
+    TE->>WT: escribir tests
+    TE-->>ORCH: deliverables Red
 
-    Note over CA: Fase Green
-    CA->>CA: asumir rol Implementor
-    CA->>WT: escribir codigo
+    Note over IMPL: Invocacion 2 (stateless)
+    ORCH->>IMPL: deliverables Red
+    IMPL->>WT: escribir codigo
+    IMPL-->>ORCH: deliverables Green
 
-    Note over CA: Fase Refactor
-    CA->>CA: ejecutar fitnessFunction
-    CA->>WT: verificacion mecanica + residualReview
-
-    CA-->>ORCH: resultado del lane
+    Note over FF: Invocacion 3 (stateless)
+    ORCH->>FF: deliverables Green
+    FF->>WT: verificacion mecanica + residualReview
+    FF-->>ORCH: resultado del lane
 ```
 
-| Fase | Personalidad | Responsabilidad |
-|------|-------------|-----------------|
-| Red | testEngineer | Escribir tests segun spec |
-| Green | Implementor | Codigo que pase los tests |
-| Refactor | fitnessFunction | Mutation, CRAP, complejidad + residualReview |
+| Fase | Invocacion | Responsabilidad |
+|------|-----------|-----------------|
+| Red | testEngineer (sesion independiente) | Escribir tests segun spec |
+| Green | Implementor (sesion independiente) | Codigo que pase los tests |
+| Refactor | fitnessFunction (sesion independiente) | Mutation, CRAP, complejidad + residualReview |
 
-Un compositeAgent NO es un agente que hace todo — es un agente que
-CAMBIA de rol secuencialmente. Cada fase tiene su propio contrato
-y criterio de salida.
+Un compositeAgent NO es un agente monolitico — es una SECUENCIA de
+invocaciones independientes orquestadas bajo una etiqueta comun.
+Cada fase tiene su propio contrato y criterio de salida.
+
+**Invariante de independencia**: cada fase del compositeAgent (testEngineer, Implementor, fitnessFunction) se ejecuta como invocacion independiente del agente — nueva sesion, sin historial conversacional. El Kernel implementa este reset como constraint tecnico (invocacion stateless por fase), no como instruccion al agente. Cada fase recibe unicamente los deliverables y build artifacts producidos por la fase anterior, no la historia de razonamiento. Este mecanismo satisface el Principio GP-4 (constraint > confianza): la independencia es estructural, no una promesa de comportamiento.
 
 ### 7d. Testing Matrix — modelo de boundaries
 
@@ -638,8 +745,7 @@ existencia. Detalle en [binding-layer.md](binding-layer.md).
 
 ### 7e. QA / Acceptance Gates — certificacion
 
-La certificacion es determinista y basada en metricas, no en revision
-subjetiva de codigo.
+La certificacion combina gates mecanicas deterministas (test pass/fail, mutation score, coverage, CRAP, CVE scan, tamano de modulo) y gates de verificacion estructurada (alineacion arquitectonica). Las gates mecanicas son binarias: pasan o no pasan. Las gates de verificacion estructurada (ARCH: implementacion alineada con design.md) utilizan comparacion semantica documentada y trazable, sujeta al mismo deslinde de la seccion 3b.
 
 ```mermaid
 flowchart TD
@@ -649,7 +755,7 @@ flowchart TD
     COV["Coverage gate\nSin regresion\nnuevo codigo cubierto"] --> METRICS
     METRICS["Metricas de calidad\nMutation score\nCRAP, complejidad\ndependencias"] --> SEC
     SEC["Seguridad\nScanners report\ncero criticos"] --> ARCH
-    ARCH["Alineacion arquitectonica\nImplementacion = design.md"] --> CERT
+    ARCH["Alineacion arquitectonica\n(verificacion estructurada)\nImplementacion = design.md"] --> CERT
 
     CERT["CERTIFICADO"]
     CERT -->|"aprobado"| DELIVER["Deliver"]
@@ -675,8 +781,15 @@ flowchart LR
     style DROP fill:#c44,stroke:#333,color:#fff
 ```
 
-El threshold de cobertura es obligatorio y **nunca se reduce**. Se
-mide solo sobre archivos con logica real (cobertura selectiva).
+El threshold de cobertura es obligatorio y **nunca se reduce** sin
+autorizacion explicita del MIM. Se mide solo sobre archivos con
+logica real (cobertura selectiva). Excepciones documentadas: codigo
+defensivo para failure modes raros, paths de feature flags no activos,
+boilerplate de adapters para interfaces externas aun no ejercitadas,
+y codigo legado en proceso de migracion. Cada excepcion requiere un
+tag explicito en el archivo y revision periodica.
+
+El mismo mecanismo de excepcion aplica a mutation testing: el MIM puede autorizar excepciones documentadas para codigo donde mutation testing es computacionalmente prohibitivo (test suites de integracion pesada, codigo generado, adapters de terceros). Cada excepcion requiere tag explicito, justificacion y revision periodica. Los umbrales de mutation score siguen siendo no-relajables para el codigo no exceptuado.
 
 ### 7g. complianceByDesign — compliance como efecto secundario
 
@@ -692,17 +805,87 @@ flowchart TD
 
     STRICT & ABUSE & STRUCT --> COMPLIANCE["Compliance\ncomo efecto secundario"]
 
-    COMPLIANCE --> HIPAA["HIPAA"]
-    COMPLIANCE --> PCI["PCI DSS"]
-    COMPLIANCE --> GDPR["GDPR"]
-    COMPLIANCE --> SOC["SOC 2"]
+    COMPLIANCE --> HIPAA["HIPAA\n(capa de datos)"]
+    COMPLIANCE --> PCI["PCI DSS\n(capa de datos)"]
+    COMPLIANCE --> GDPR["GDPR\n(capa de datos)"]
 
     style COMPLIANCE fill:#4a4,stroke:#333,color:#fff
 ```
 
-Alcance: cubre la capa de DATOS (minimizacion, control de acceso por
-campo, validacion de forma). NO cubre controles organizacionales,
-fisicos, legales o procedimentales.
+Alcance: cubre EXCLUSIVAMENTE la capa de controles tecnicos de datos
+(minimizacion, control de acceso por campo, validacion de forma). NO
+cubre controles organizacionales, fisicos, legales, procedimentales
+ni segregacion de responsabilidades. Cuando el proyecto declara un perfil de compliance regulatoria (HIPAA, PCI DSS, GDPR), el Method Pack DEBE activar review humano obligatorio sobre logica de autorizacion y modelado de dominio como gate blocking. Esta activacion es automatica para perfiles regulados, no opt-in. Para proyectos sin perfil regulatorio, el review humano permanece opcional y no-blocking. El Principia define la capacidad tecnica; el perfil de compliance del proyecto determina si el review humano es requerido.
+
+### 7h. Supply Chain Integrity — dependencias seguras
+
+[↑ Volver al indice](#indice)
+
+Las dependencias externas son superficie de ataque y fuente de tech debt. Virgil impone tres invariantes sobre la cadena de suministro, agnosticos de lenguaje y plataforma.
+
+#### versionPinning — reproducibilidad absoluta
+
+Todas las dependencias se declaran con version EXACTA (sin rangos, sin prefijos de compatibilidad). El gestor de dependencias y su version tambien se declaran de forma explicita en el proyecto.
+
+| Invariante | Que significa | Por que |
+|------------|--------------|---------|
+| Version exacta | `1.2.3`, nunca `^1.2.3` ni `~1.2.3` | Elimina version drift entre ambientes. Lo que pasa en CI es lo que corre en produccion |
+| Gestor de dependencias versionado | Version del gestor pinneada al proyecto | Garantiza paridad de resolucion de dependencias en todos los ambientes |
+| Lock file como artefacto | El lock file se versiona y se respeta como fuente de verdad | Captura el arbol completo de dependencias transitivas |
+
+El invariante aplica independientemente del ecosistema (npm/pnpm/yarn, Go modules, Cargo, pip/uv, Maven/Gradle, etc.). La implementacion concreta varia; el principio es universal: **cero ambiguedad en versiones**.
+
+#### securityAudit — gate de dependencias
+
+Antes de construir, se ejecuta un escaneo de vulnerabilidades sobre el arbol de dependencias. Esta verificacion es una gate BLOCKING del paso 1 (Setup) del Echo System (seccion 7a).
+
+```mermaid
+flowchart LR
+    DEPS["Arbol de\ndependencias"] --> AUDIT["securityAudit\n(escaneo de\nvulnerabilidades)"]
+    AUDIT -->|"0 vulnerabilidades\naltas/criticas"| BUILD["→ Build\n(Echo paso 2)"]
+    AUDIT -->|"vulnerabilidades\ndetectadas"| BLOCK["BLOQUEADO\nResolver antes\nde continuar"]
+
+    style BUILD fill:#4a4,stroke:#333,color:#fff
+    style BLOCK fill:#c44,stroke:#333,color:#fff
+```
+
+| Ambiente | Comportamiento |
+|----------|---------------|
+| Dev | Pre-push hook — alerta, no bloquea |
+| CI | Pipeline stage — gate blocking |
+| CD | Deployment gate — bloqueo absoluto |
+
+El umbral de severidad (high, critical, o ambos) lo define el Method Pack. El Kernel impone que el escaneo se ejecute; el Pack decide el umbral. La herramienta de escaneo es agnostica: cada ecosistema tiene su equivalente (`pnpm audit`, `go vuln check`, `cargo audit`, `pip-audit`, `mvn dependency-check`, etc.).
+
+#### bumpDependencies — mitigacion controlada de tech debt
+
+Las versiones exactas previenen drift pero acumulan tech debt si no se actualizan. El ciclo bumpDependencies resuelve esta tension con un proceso de tres pasos:
+
+```mermaid
+flowchart LR
+    S1["1. Security Fix\nResolver\nvulnerabilidades\nconocidas"]
+    S2["2. Update Check\nIdentificar y aplicar\nactualizaciones\ndisponibles"]
+    S3["3. Security Fix\nRe-verificar\npost-actualizacion"]
+
+    S1 --> S2 --> S3
+
+    S3 -->|"clean"| ECHO["Echo completo\n(5 pasos)"]
+    S3 -->|"vulnerabilidades"| ROLLBACK["Rollback +\ninvestigar"]
+
+    style S1 fill:#47a,stroke:#333,color:#fff
+    style S2 fill:#47a,stroke:#333,color:#fff
+    style S3 fill:#47a,stroke:#333,color:#fff
+    style ECHO fill:#4a4,stroke:#333,color:#fff
+    style ROLLBACK fill:#c44,stroke:#333,color:#fff
+```
+
+1. **Security Fix**: resolver vulnerabilidades conocidas en las versiones actuales
+2. **Update Check**: ejecutar un verificador de actualizaciones que identifique versiones nuevas de todas las dependencias, aplicando las actualizaciones con version exacta (sin introducir rangos)
+3. **Security Fix**: re-ejecutar el escaneo de seguridad contra las versiones actualizadas — una actualizacion puede INTRODUCIR vulnerabilidades nuevas
+
+Despues del ciclo completo, el Echo System se ejecuta integro (5 pasos). Si alguna gate falla, se revierte la actualizacion y se investiga la causa.
+
+bumpDependencies no es un paso del Echo — es un proceso de mantenimiento que PRECEDE al Echo. Se ejecuta de forma explicita (no automatica), tipicamente en una cadencia definida por el equipo (semanal, por sprint, o pre-release). El MIM puede delegar la cadencia al Method Pack.
 
 ### Ciclo cerrado
 
@@ -710,12 +893,15 @@ Estos mecanismos forman un ciclo cerrado: el Echo ejecuta, los build
 artifacts capturan outputs, Red/Green/Refactor estructura la ejecucion
 (paralelizable via compositeAgent), la Testing Matrix define que vale
 como prueba, droppableCode detecta codigo muerto, complianceByDesign
-verifica cumplimiento, y QA certifica el resultado. Si QA rechaza, se
+verifica cumplimiento, Supply Chain Integrity asegura dependencias
+seguras y actualizadas, y QA certifica el resultado. Si QA rechaza, se
 escala a la fase que corresponda.
 
 ---
 
 ## 8. Donde vive el conocimiento
+
+[↑ Volver al indice](#indice)
 
 Tres concerns separados: donde se PERSISTEN los deliverables
 (ArtifactStore), como se CONSULTAN deliverables y documentacion (RAG),
@@ -778,26 +964,28 @@ flowchart LR
 
 ### 8c. RAG dual — DBMS de contexto
 
-Regla fundamental: **ningun agente lee archivos directamente**. Todo
-agente consulta la herramienta apropiada: RAG para deliverables y
-documentacion, codebaseMemory para estructura del codigo (seccion 8f).
-Contextualizacion via queries, no via prompts — ahorro directo de
-tokens.
+Principio arquitectonico: **los agentes consultan en lugar de leer**.
+La arquitectura favorece queries al RAG (deliverables, documentacion)
+y al codebaseMemory (estructura del codigo, seccion 8f) sobre lectura
+directa de archivos. Virgil inyecta esta guia via AGENTS.md, pero no
+controla la ejecucion del agente — es un principio arquitectonico, no
+un constraint enforceable por hook. Contextualizacion via queries, no
+via prompts — ahorro directo de tokens.
 
 ```mermaid
 flowchart TD
-    subgraph INCORRECTO["INCORRECTO"]
+    subgraph EVITAR["EVITAR (anti-patron)"]
         A1["Agente lee archivo completo\n(miles de tokens en prompt)"]
     end
 
-    subgraph CORRECTO["CORRECTO"]
-        A2["Agente hace query al RAG\n(tokens minimos, scope acotado)"]
+    subgraph PREFERIR["PREFERIR (patron recomendado)"]
+        A2["Agente hace query al RAG\no codebaseMemory\n(tokens minimos, scope acotado)"]
     end
 
-    INCORRECTO -.-|"reemplazado por"| CORRECTO
+    EVITAR -.-|"reemplazado por"| PREFERIR
 
-    style INCORRECTO fill:#c44,stroke:#333,color:#fff
-    style CORRECTO fill:#4a4,stroke:#333,color:#fff
+    style EVITAR fill:#c44,stroke:#333,color:#fff
+    style PREFERIR fill:#4a4,stroke:#333,color:#fff
 ```
 
 Virgil define dos instancias del mismo patron RAG-como-DBMS, una por
@@ -837,6 +1025,8 @@ El consumerRag define **interfaces** — el cliente las implementa con
 el backend que necesite. Lo que se conecte, se conecta, mientras
 cumpla con el contrato del adapter.
 
+Para consultas hibridas (ejemplo: "que funciones implementan la decision de diseno X descrita en design.md"), el router ejecuta ambas queries en paralelo: Q_SEM al RAG para localizar la decision, Q_STR al codebaseMemory para las funciones. Los resultados se fusionan por el ContextCompiler con trazabilidad de origen.
+
 ### 8d. Visibilidad escalonada
 
 El agente principal (orquestador) tiene visibilidad completa del RAG
@@ -874,7 +1064,7 @@ invalida o la sesion se reinicia.
 flowchart LR
     QUERY["Query"] --> CACHE{{"Cache\nen memoria?"}}
     CACHE -->|"hit"| RESULT["Resultado\n(inmediato)"]
-    CACHE -->|"miss"| FALLBACK["Fallback\nengram | sqlite\n(tech TBD)"]
+    CACHE -->|"miss"| FALLBACK["Fallback\nalmacenamiento local\nestructurado\n(tech TBD)"]
     FALLBACK --> RESULT
     FALLBACK -->|"popular cache"| CACHE
 
@@ -883,8 +1073,10 @@ flowchart LR
 ```
 
 El RAG no es la autoridad del proceso — el Ledger, el
-ArtifactRepository y la evidencia son la fuente de verdad. El RAG es
-una proyeccion de lectura optimizada, reconstruible y memoizada.
+ArtifactRepository y la evidencia son la fuente de verdad. El RAG y
+el TraceabilityGraph son proyecciones derivadas, reconstruibles desde
+el Ledger y los deliverables. Ninguna proyeccion es fuente de verdad;
+si se desincroniza, se reconstruye desde las fuentes autoritativas.
 
 ### 8f. codebaseMemory — grafo estructural del codigo
 
@@ -936,15 +1128,15 @@ flowchart TD
 
 #### Construccion determinista
 
-El grafo se construye por parsing AST (tree-sitter), no por inferencia
+El grafo se construye por un parser AST determinista, no por inferencia
 de un LLM. Esto garantiza: completitud (no se saltan archivos),
 velocidad (segundos, no minutos), y cero alucinaciones en los edges.
 
 ```mermaid
 flowchart LR
-    SRC["Codigo fuente"] --> PARSE["Parser AST\n(tree-sitter)"]
+    SRC["Codigo fuente"] --> PARSE["Parser AST\n(determinista)"]
     PARSE --> GRAPH["Grafo de nodos\nentidades + relaciones"]
-    GRAPH --> STORE["Storage liviano\n(sqlite, en proyecto)"]
+    GRAPH --> STORE["Almacenamiento local\nestructurado"]
     STORE --> QUERY["Queries\nestructurales"]
 
     CHANGES["Cambio en archivo"] -->|"watcher +\ncontent hash"| PARSE
@@ -983,6 +1175,8 @@ como un grafo de nodos — sin cargar codigo fuente en el prompt, sin
 quemar tokens, y con ownership total de la estructura. Es la
 herramienta que permite a Virgil "ver" el codigo sin "leerlo".
 
+En escenarios de lanes paralelos (seccion 11c), cada worktree mantiene su propia instancia del grafo. Los grafos divergentes se reconcilian al merge: el merge de codigo dispara reconstruccion incremental del grafo desde el AST del resultado del merge. No hay grafo compartido entre lanes divergentes.
+
 Con el conocimiento organizado como DBMS documental (RAG), grafo
 estructural (codebaseMemory) y visibilidad escalonada por rol, el
 paso siguiente es entender como ese contexto fluye entre agentes
@@ -991,6 +1185,8 @@ durante la ejecucion.
 ---
 
 ## 9. Como fluye el contexto
+
+[↑ Volver al indice](#indice)
 
 Regla fundamental: **nunca se pasa contexto crudo a un sub-agente**.
 El contexto se entrega compilado (ContextBrief) o como referencia
@@ -1002,6 +1198,8 @@ El ContextCompiler selecciona deliverables, hechos y limites para
 producir un ContextBrief acotado al objetivo del actor. La seleccion
 queda trazable: que se incluyo, de donde salio, que se excluyo.
 
+La compilacion del ContextBrief es un paso de juicio (seccion 3b) con superficie de alucinacion inherente: la seleccion/resumen puede omitir o distorsionar informacion. La trazabilidad (que se incluyo, de donde salio, que se excluyo) permite auditoria post-hoc, pero NO previene la omision en tiempo de compilacion. Este riesgo se mitiga con el PDC (coherence check post-delegacion) y con la reconstruccion del ContextBrief ante PlanningGapDetected.
+
 ### 9b. Dos patrones de entrega
 
 ```mermaid
@@ -1009,7 +1207,7 @@ flowchart TD
     NEED["Sub-agente necesita contexto"]
     NEED --> Q{{"Target conocido\ny deterministico?"}}
 
-    Q -->|"Si"| PB["PatternB\nSM pasa topic_key\nsub-agente lee directo del RAG\n6x mas barato"]
+    Q -->|"Si"| PB["PatternB\nSM pasa topic_key\nsub-agente lee directo del RAG\nsignificativamente mas economico"]
     Q -->|"No"| PA["PatternA\nSM busca, cura, inyecta\ncalidad sobre costo"]
 
     style PB fill:#4a4,stroke:#333,color:#fff
@@ -1018,7 +1216,7 @@ flowchart TD
 
 | Patron | Cuando | Costo | Calidad |
 |--------|--------|-------|---------|
-| PatternB (default) | Target conocido, deterministico | Bajo (6x) | Buena |
+| PatternB (default) | Target conocido, deterministico | Bajo (reutiliza ContextBrief compilado) | Buena |
 | PatternA | Busqueda fuzzy, fan-out alto (8+) | Alto | Optima |
 
 Ambos patrones operan sobre el RAG dual (seccion 8c): devRag en Modo
@@ -1054,6 +1252,8 @@ Detalle completo en [delegation-pdc.md](delegation-pdc.md).
 
 ## 10. Como se recupera
 
+[↑ Volver al indice](#indice)
+
 Despues de un crash, compactacion o nueva sesion, el estado se
 reconstruye — no se pierde.
 
@@ -1083,6 +1283,8 @@ sequenceDiagram
 ---
 
 ## 11. Como se ejecuta
+
+[↑ Volver al indice](#indice)
 
 Despues de que planning produce un handoff aprobado, la ejecucion
 transforma ese handoff en codigo certificado. Virgil OBSERVA — no
@@ -1115,7 +1317,7 @@ flowchart LR
 | Red | Suite completa de tests | Todos fallan (red valido) |
 | Green | Implementacion | Todos pasan |
 | Refactor | Metricas dentro de umbral | Mutation, CRAP, complejidad OK |
-| Accept | Certificacion | Determinista: pasa o no pasa |
+| Accept | Certificacion | Gates mecanicas + verificacion estructurada (ver 7e) |
 
 ### 11b. Contratos primero — habilitador de paralelismo
 
@@ -1163,6 +1365,8 @@ Cada lane se ejecuta en un worktree aislado. Un compositeAgent
 (seccion 7c) opera dentro de cada worktree, cambiando de personalidad
 por fase (testEngineer → Implementor → fitnessFunction).
 
+Si una lane detecta violacion de contrato mid-flight, el SM emite PlanningGapDetected y detiene ESA lane. Las demas lanes en ejecucion que dependen del mismo contrato reciben notificacion de contrato invalidado y entran en estado de pausa pendiente de reconciliacion. Las lanes independientes (sin dependencia del contrato violado) continuan sin interrupcion.
+
 | Fase | Prefijo de commit | Frecuencia |
 |------|-------------------|------------|
 | prePhase | `contract:` | 1 por tipo |
@@ -1170,11 +1374,11 @@ por fase (testEngineer → Implementor → fitnessFunction).
 | Green | `feat:` | 1 por test que pasa |
 | Refactor | `refactor:` | 1 por refactor atomico |
 
-### 11d. Verificacion mecanica — no hay code review humano
+### 11d. Verificacion mecanica — review humano condicional
 
-La fase Refactor reemplaza la revision de codigo humana con
-verificacion mecanica basada en metricas. El juicio subjetivo
-no participa en la certificacion.
+La fase Refactor utiliza verificacion mecanica basada en metricas como mecanismo primario de certificacion. Las gates mecanicas (seccion 7e) son el canal principal de calidad. Para proyectos con perfil de compliance regulatoria, el Method Pack activa adicionalmente review humano blocking sobre logica de autorizacion y modelado de dominio (ver seccion 7g). En ambos casos, la certificacion final requiere que TODAS las gates aplicables pasen — tanto las mecanicas como las de review humano cuando estan activas.
+
+Las gates de certificacion combinan verificacion mecanica determinista (test pass/fail, mutation score, coverage, CRAP, CVE scan) y verificacion estructurada (alineacion arquitectonica — ver seccion 7e). El review humano, cuando esta activo por perfil de compliance, tambien forma parte de las gates aplicables. El PDC opera durante la ejecucion como safeguard de coherencia (seccion 3b), pero no forma parte del pipeline de certificacion — puede detener una delegacion incoherente, no certifica ni aprueba codigo.
 
 ```mermaid
 flowchart TD
@@ -1187,7 +1391,7 @@ flowchart TD
         SEC["Seguridad\ncero CVEs criticos"]
     end
 
-    subgraph RESIDUAL["Residual review (opcional, no-blocking)"]
+    subgraph RESIDUAL["Review AUTH/DDD (opcional por defecto; blocking con perfil de compliance — ver 7g)"]
         AUTH["Logica de autorizacion"]
         DDD["Modelado de dominio"]
     end
@@ -1206,7 +1410,7 @@ Los umbrales especificos (mutation score, CRAP maximo, complejidad)
 los define el dogma por tier (strict, standard, relaxed). El
 Principia define el principio: **mecanico, no subjetivo**.
 
-### 11e. Accept/Reject — certificacion determinista
+### 11e. Accept/Reject — certificacion por gates
 
 ```mermaid
 flowchart TD
@@ -1236,6 +1440,34 @@ flowchart TD
 El rechazo es ESPECIFICO — identifica la fase exacta que debe
 corregirse, no un generico "arreglar". Cada re-delegacion pasa por
 el PDC completo (seccion 9c).
+
+#### Lane de emergencia (break-glass)
+
+Para incidentes P1 en produccion, existe un camino expedito que
+comprime la ceremonia sin eliminarla:
+
+```mermaid
+flowchart LR
+    P1["Incidente P1\ndetectado"]
+    P1 -->|"MIM autoriza\nbreak-glass"| FIX["Fix directo\n(Red + Green\ncomprimidos)"]
+    FIX -->|"deploy\ninmediato"| PROD["Produccion\nestabilizada"]
+    PROD -->|"dentro de 72h\n(configurable:\nmin 24h, max 168h)"| CERT["Certificacion\ncompleta\npost-hoc"]
+
+    style P1 fill:#c44,stroke:#333,color:#fff
+    style FIX fill:#a74,stroke:#333,color:#fff
+    style CERT fill:#4a4,stroke:#333,color:#fff
+```
+
+| Restriccion | Regla |
+|-------------|-------|
+| Autorizacion | Solo el MIM puede activar break-glass |
+| Scope | Exclusivamente el fix del incidente — cero features |
+| Certificacion | Certificacion completa post-hoc dentro de 72 horas (configurable por el Method Pack, minimo 24h, maximo 168h) |
+| Registro | El Ledger registra la activacion como evento auditable |
+
+El break-glass NO es un atajo — es un camino documentado con
+restricciones explicitas. Un fix sin certificacion post-hoc dentro
+de las 72 horas (o el plazo configurado) se trata como deuda tecnica critica.
 
 ### 11f. Evidencia como dato queryable
 
@@ -1267,6 +1499,8 @@ mecanica (mutation testing) lo mueve a `verified`.
 ---
 
 ## 12. Como opera (opcional)
+
+[↑ Volver al indice](#indice)
 
 La fase de operacion se activa SOLO si el proyecto tiene superficie
 operacional (APIs, CLIs, servicios). No aplica para librerias ni
@@ -1332,6 +1566,8 @@ principio 1) aplica igual en post-entrega.
 
 ## Regla de auto-referencia
 
+[↑ Volver al indice](#indice)
+
 Este Principia gobierna AMBOS modos con la misma autoridad:
 
 ```mermaid
@@ -1347,6 +1583,39 @@ flowchart TD
     style P fill:#2b5,stroke:#333,color:#fff
     style MISMOS fill:#47a,stroke:#333,color:#fff
 ```
+
+---
+
+## Glosario
+
+[↑ Volver al indice](#indice)
+
+| Termino | Definicion |
+|---------|-----------|
+| Binding Layer | Tres niveles de confianza para contratos: declared (definido), inferred (derivado de evidencia), verified (confirmado por ejecucion). Ver [binding-layer.md](binding-layer.md) |
+| Break-glass | Lane de emergencia para incidentes P1 que comprime ceremonia con autorizacion MIM y certificacion post-hoc obligatoria (seccion 11f) |
+| bumpDependencies | Ciclo de mantenimiento de tres pasos (security fix → update check → security fix) para actualizar dependencias exactas sin introducir vulnerabilidades (seccion 7h) |
+| circuitBreaker | Mecanismo que detiene delegaciones tras 3 fallos consecutivos y escala al MIM. Ver [circuit-breaker.md](circuit-breaker.md) |
+| codebaseMemory | Grafo estructural del codigo derivado de AST. Complementa al RAG con consultas de relaciones entre entidades de codigo (seccion 8f) |
+| compositeAgent | Secuencia de invocaciones independientes (testEngineer → Implementor → fitnessFunction) orquestadas bajo una etiqueta comun dentro de un worktree (seccion 7c) |
+| complianceByDesign | Aserciones de forma de datos integradas en el desarrollo. Cubre exclusivamente controles tecnicos de datos (seccion 7g) |
+| ContextBrief | Paquete de contexto compilado por el ContextCompiler para alimentar una delegacion. Incluye deliverables seleccionados con trazabilidad de origen (seccion 9a) |
+| ContextCompiler | Componente del Kernel que selecciona y compila deliverables relevantes en un ContextBrief. Paso de juicio con superficie de alucinacion documentada (seccion 9a) |
+| CRAP score | Change Risk Anti-Patterns — metrica que combina complejidad y cobertura para evaluar riesgo de cambio |
+| delegationContract | Contrato que acompana cada delegacion del SM: define scope, criterios de salida, recursos y restricciones. Ver [delegation-pdc.md](delegation-pdc.md) |
+| droppableCode | Codigo que cumple criterios de eliminacion automatica: sin dependientes vivos, sin ejecucion en N ciclos, sin cobertura transitiva (seccion 7f) |
+| Echo System | Pipeline de 5 pasos para la ejecucion de cada fase: Setup → Build → Static → Dynamic → E2E (seccion 7a) |
+| FastForward | Gradiente de certeza (FF-1 a FF-4) que permite comprimir ceremonia de planning cuando la evidencia observable lo soporta (seccion 3a). Ver [fast-forward.md](fast-forward.md) |
+| Kernel | Nucleo ceremonia-agnostico de Virgil. Contiene Ledger, TraceabilityGraph, ArtifactRepository, EvidenceIngestion, ContextCompiler, RAG (seccion 5) |
+| Ledger | Registro inmutable de eventos, transiciones e historial del proyecto |
+| Method Pack | Capa de ceremonia que se monta sobre el Kernel. Define roles, flujos y gates adicionales. Pack Scrum es el unico implementado (seccion 5) |
+| PDC | Post-Delegation Checkpoint: safeguard de coherencia de orquestacion (ECHO → VERIFY → MARK → DECIDE). No es gate de certificacion (seccion 3b) |
+| PlanningGapDetected | Senal de escalacion cuando la ejecucion detecta un defecto de planning. Dispara re-planificacion |
+| RAG | Proyeccion de lectura optimizada sobre deliverables y documentacion. No es fuente de verdad — es reconstruible (seccion 8e) |
+| securityAudit | Gate blocking del Echo paso 1 (Setup): escaneo de vulnerabilidades sobre el arbol de dependencias. El Kernel impone la ejecucion; el Method Pack define el umbral de severidad (seccion 7h) |
+| Supply Chain Integrity | Tres invariantes sobre dependencias: version pinning exacto, security audit como gate, y bumpDependencies como ciclo de actualizacion controlada (seccion 7h) |
+| TraceabilityGraph | Proyeccion derivada que conecta intencion → decision → trabajo → evidencia. Reconstruible desde el Ledger (seccion 5, 8e) |
+| versionPinning | Invariante que requiere versiones exactas (sin rangos) para todas las dependencias y el gestor de dependencias. Garantiza reproducibilidad absoluta (seccion 7h) |
 
 ---
 
