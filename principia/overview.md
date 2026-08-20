@@ -286,9 +286,9 @@ flowchart TD
     subgraph KERNEL["Kernel (metodologia-agnostico)"]
         LEDGER["Ledger\nEventos, transiciones,\nhistorial inmutable"]
         TRACER["TraceabilityGraph\nIntencion → decision →\ntrabajo → evidencia"]
-        REPO["ArtifactRepository\nArtefactos, revisiones,\nprocedencia"]
+        REPO["ArtifactRepository\nDeliverables, revisiones,\nprocedencia"]
         EVIDENCE["EvidenceIngestion\nTests, commits, builds,\ndecisiones humanas"]
-        CONTEXT["ContextCompiler\nSelecciona artefactos →\nContextBrief"]
+        CONTEXT["ContextCompiler\nSelecciona deliverables →\nContextBrief"]
         RAG["RetrievalProjection\nBusqueda lexico/vectorial\n(no es autoridad)"]
     end
 
@@ -425,20 +425,23 @@ flowchart LR
 | CI | Completo | Push, PR | Pipeline stages |
 | CD | Confianza absoluta | Tag, merge a main | Deployment gates |
 
-### 7b. Artifact System — build vs planning
+### 7b. Deliverables vs Build Artifacts
 
-Dos tipos de artefactos que no deben confundirse.
+Dos tipos de outputs que no deben confundirse. Los documentos de
+planning son **deliverables** (PMBOK/ISO 21500). Los outputs del build
+pipeline son **build artifacts** (DevOps/CI-CD). Virgil gestiona
+deliverables; el Echo System genera build artifacts.
 
 ```mermaid
 flowchart TD
-    subgraph PLANNING["Artefactos de Planning"]
+    subgraph DELIVERABLES["Deliverables (planning)"]
         PA["idea.md, spec.md,\ndesign.md, tasks.md,\nhandoff.md"]
         PA_WHERE["Viven en ArtifactStore\n(repo-docs o externo)"]
         PA_WHO["Gestionados por TPM"]
     end
 
-    subgraph BUILD["Artefactos de Build"]
-        BA["Binarios, reportes,\ncoverage, docs API,\nbundle analysis"]
+    subgraph BUILDART["Build Artifacts"]
+        BA["Binarios, coverage,\ndist/, contenedores,\nbundle analysis,\nOpenAPI JSON/YAML"]
         BA_WHERE["Carpeta gitignoreada\ndentro del repo"]
         BA_WHO["Generados por Echo\nefimeros, regenerables"]
     end
@@ -446,12 +449,18 @@ flowchart TD
     PA --- PA_WHERE --- PA_WHO
     BA --- BA_WHERE --- BA_WHO
 
-    PLANNING -.-|"alimentan"| EXECUTION["Execution"]
-    BUILD -.-|"consumidos por"| QA["QA / Accept"]
+    DELIVERABLES -.-|"alimentan"| EXECUTION["Execution"]
+    BUILDART -.-|"consumidos por"| QA["QA / Accept"]
 
-    style PLANNING fill:#47a,stroke:#333,color:#fff
-    style BUILD fill:#a74,stroke:#333,color:#fff
+    style DELIVERABLES fill:#47a,stroke:#333,color:#fff
+    style BUILDART fill:#a74,stroke:#333,color:#fff
 ```
+
+> **Nomenclatura**: el codigo de Virgil usa "Artifact" en entidades
+> como ArtifactStore, ArtifactRepository y ArtifactStoreAdapter. Estas
+> entidades gestionan **deliverables**, no build artifacts. La
+> nomenclatura de codigo es historica; este Principia define la
+> terminologia canonica.
 
 ### 7c. Macro Red/Green/Refactor — TDD por lotes
 
@@ -496,6 +505,47 @@ El dogma actual define 5 gates dentro de este ciclo:
 **R0** (handoff completo) → **R1** (red valida) → **G1** (green
 production-safe) → **F1** (refactor seguro) → **V1** (verify
 independiente).
+
+#### compositeAgent — ejecucion paralela de R/G/R
+
+Cuando la ejecucion se paraleliza en multiples lanes (worktrees),
+cada lane recibe un compositeAgent: un sub-agente que asume multiples
+personalidades secuencialmente dentro del mismo worktree, evitando
+conflictos de filesystem.
+
+```mermaid
+sequenceDiagram
+    participant ORCH as Orquestador
+    participant CA as compositeAgent
+    participant WT as Worktree
+
+    ORCH->>WT: crear worktree (lane)
+    ORCH->>CA: asignar lane
+
+    Note over CA: Fase Red
+    CA->>CA: asumir rol testEngineer
+    CA->>WT: escribir tests
+
+    Note over CA: Fase Green
+    CA->>CA: asumir rol Implementor
+    CA->>WT: escribir codigo
+
+    Note over CA: Fase Refactor
+    CA->>CA: ejecutar fitnessFunction
+    CA->>WT: verificacion mecanica + residualReview
+
+    CA-->>ORCH: resultado del lane
+```
+
+| Fase | Personalidad | Responsabilidad |
+|------|-------------|-----------------|
+| Red | testEngineer | Escribir tests segun spec |
+| Green | Implementor | Codigo que pase los tests |
+| Refactor | fitnessFunction | Mutation, CRAP, complejidad + residualReview |
+
+Un compositeAgent NO es un agente que hace todo — es un agente que
+CAMBIA de rol secuencialmente. Cada fase tiene su propio contrato
+y criterio de salida.
 
 ### 7d. Testing Matrix — modelo de boundaries
 
@@ -633,11 +683,12 @@ fisicos, legales o procedimentales.
 
 ### Ciclo cerrado
 
-Estos 7 mecanismos forman un ciclo cerrado: el Echo ejecuta, los
-Artifacts capturan outputs, Red/Green/Refactor estructura la ejecucion,
-la Testing Matrix define que vale como prueba, droppableCode detecta
-codigo muerto, complianceByDesign verifica cumplimiento, y QA certifica
-el resultado. Si QA rechaza, se escala a la fase que corresponda.
+Estos mecanismos forman un ciclo cerrado: el Echo ejecuta, los build
+artifacts capturan outputs, Red/Green/Refactor estructura la ejecucion
+(paralelizable via compositeAgent), la Testing Matrix define que vale
+como prueba, droppableCode detecta codigo muerto, complianceByDesign
+verifica cumplimiento, y QA certifica el resultado. Si QA rechaza, se
+escala a la fase que corresponda.
 
 ---
 
