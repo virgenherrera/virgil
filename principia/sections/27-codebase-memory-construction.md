@@ -7,7 +7,7 @@ layer: knowledge
 constitutional: true
 actors: []
 glossary_terms: [codebaseMemory, watermark, mutation domain, worktree, soundness conservadora]
-depends_on: ["8f-concept", "8c-watermark"]
+depends_on: ["8f-concept", "8c-watermark", "7a", "7c-composite", "8"]
 referenced_by: ["7c-composite", "11c"]
 keywords:
   - codebaseMemory

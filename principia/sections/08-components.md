@@ -7,7 +7,7 @@ layer: components
 constitutional: true
 actors: []
 glossary_terms: [Kernel, Ledger, TraceabilityGraph, ArtifactRepository, EvidenceIngestion, ContextCompiler, RetrievalProjection, HostAdapter, ArtifactStoreAdapter, Method Pack, ContextBrief]
-depends_on: ["4"]
+depends_on: ["4", "1", "2"]
 referenced_by: ["6", "8", "10"]
 keywords:
   - componentes
@@ -25,7 +25,7 @@ keywords:
   - Scrum
   - ceremonia-agnostico
   - calidad universal
-editorial_additions: [context_paragraph]
+editorial_additions: [context_paragraph, synonym_note]
 -->
 
 > **Context:** La distincion entre "calidad universal" (Kernel) y "ceremonia" (Method Pack) proviene de las dos capas de principios descritas en la seccion 4: gobierno (reglas del juego) y arquitectura (reglas de construccion). Este catalogo de componentes es donde ambas capas se materializan en piezas concretas.
@@ -66,6 +66,8 @@ flowchart TD
     style TBD fill:#777,stroke:#333,color:#fff
     style CUSTOM fill:#777,stroke:#333,color:#fff
 ```
+
+> **Sinonimo**: `RetrievalProjection` es el nombre formal del componente del Kernel; `RAG` es el termino operativo usado en el resto de este documento. Ambos designan la misma proyeccion de lectura reconstruible.
 
 Cada componente tiene una responsabilidad clara. El Kernel impone invariantes de calidad universales (Echo, testing, binding layer) independientemente de la metodologia. El Method Pack define la ceremonia: cuantos roles participan, que gates ceremoniales se comprimen, como se itera. La calidad es del Kernel; la ceremonia es del Pack.
 

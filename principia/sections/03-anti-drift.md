@@ -7,7 +7,7 @@ layer: identity
 constitutional: true
 actors: []
 glossary_terms: [Echo System, EvidenceIngestion, Binding Layer, Ledger, TraceabilityGraph, PDC, Macro Red/Green/Refactor, build artifacts]
-depends_on: [7a, 7b, 7e]
+depends_on: [7a, 7b, 7e, 1]
 referenced_by: []
 keywords:
   - anti-drift

@@ -7,7 +7,7 @@ layer: identity
 constitutional: true
 actors: [MIM, Virgil]
 glossary_terms: [Virgil, MCP, AGENTS.md, Open Agentic Standard, Kernel, Method Pack]
-depends_on: []
+depends_on: ["vocabulary"]
 referenced_by: [1a, 2, 5, 6]
 keywords:
   - que es Virgil

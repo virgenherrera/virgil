@@ -7,7 +7,7 @@ layer: execution
 constitutional: true
 actors: [SM]
 glossary_terms: [PDC, CRAP score]
-depends_on: ["7e", "7g", "11a-11b"]
+depends_on: ["7e", "7g", "11a-11b", "3b", "4", "11c"]
 referenced_by: ["11e-routing"]
 keywords:
   - verificacion mecanica

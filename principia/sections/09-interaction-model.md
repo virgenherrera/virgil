@@ -7,7 +7,7 @@ layer: interaction
 constitutional: true
 actors: [Desarrollador, Implementador]
 glossary_terms: [Modo Desarrollo, Modo Consumo, Principia, Method Pack, HostAdapter, ArtifactStoreAdapter, global ownership, global context injection]
-depends_on: ["5"]
+depends_on: ["5", "vocabulary", "1", "2"]
 referenced_by: ["authority"]
 keywords:
   - actores y modos

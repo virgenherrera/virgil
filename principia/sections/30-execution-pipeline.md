@@ -7,7 +7,7 @@ layer: execution
 constitutional: true
 actors: [SM, Virgil]
 glossary_terms: [PlanningGapDetected]
-depends_on: ["7a", "7e"]
+depends_on: ["7a", "7e", "3a", "7c-rgr", "10"]
 referenced_by: ["11c", "11d", "11e-routing", "11f"]
 keywords:
   - prePhase

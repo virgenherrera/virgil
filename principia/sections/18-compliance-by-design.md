@@ -7,7 +7,7 @@ layer: quality
 constitutional: false
 actors: [MIM]
 glossary_terms: [complianceByDesign, abuseCases, perfil de compliance]
-depends_on: [7f]
+depends_on: [7f, 3b]
 referenced_by: [11d]
 keywords:
   - complianceByDesign

@@ -7,8 +7,8 @@ layer: structure
 constitutional: true
 actors: []
 glossary_terms: [Principia, Dogma, Runtime, Kernel, Method Pack, Ledger, Tracer]
-depends_on: []
-referenced_by: []
+depends_on: ["vocabulary", "1"]
+referenced_by: ["5", "6"]
 keywords:
   - estructura
   - tres capas concentricas

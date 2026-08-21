@@ -7,7 +7,7 @@ layer: quality
 constitutional: true
 actors: [SM]
 glossary_terms: [Red, Green, Refactor, R0, R1, G1, F1, V1]
-depends_on: [7a]
+depends_on: [7a, 3a]
 referenced_by: [7c-composite, 7d-tiers, 7d-binding, 11a-11b]
 keywords:
   - macro TDD

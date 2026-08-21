@@ -7,7 +7,7 @@ layer: execution
 constitutional: true
 actors: [SM]
 glossary_terms: [PDC]
-depends_on: ["11a-11b", "11d"]
+depends_on: ["11a-11b", "11d", "9", "11c"]
 referenced_by: ["11f", "11e-breakglass"]
 keywords:
   - QA gate

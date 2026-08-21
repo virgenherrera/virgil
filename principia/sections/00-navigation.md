@@ -14,7 +14,10 @@ keywords:
   - tabla de contenidos
   - documentos del Principia
   - navegacion
+editorial_additions: [context_paragraph, navigation_note]
 -->
+
+> **Nota de navegacion:** Este indice reproduce la tabla de contenidos original de constitution.md. Los anchors internos apuntan a secciones de constitution.md, no a este archivo. Para navegacion entre chunks RAG, usar el [README](../README.md).
 
 # Virgil — Principio Fundador
 

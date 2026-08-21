@@ -7,7 +7,7 @@ layer: quality
 constitutional: true
 actors: [TPM]
 glossary_terms: [deliverable, build artifact, ArtifactStore, EchoRun, sourceRevision, buildArtifactSet, prePhase]
-depends_on: [7a]
+depends_on: [7a, 8c-watermark]
 referenced_by: [8, 11f, 1a]
 keywords:
   - deliverables

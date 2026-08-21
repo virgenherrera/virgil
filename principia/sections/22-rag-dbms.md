@@ -18,7 +18,7 @@ keywords:
   - anti-patron
   - queries acotadas
   - ahorro de tokens
-editorial_additions: [context_paragraph]
+editorial_additions: [context_paragraph, cross_reference_note]
 -->
 
 > **Context:** El RAG y el codebaseMemory (grafo estructural del codigo, seccion 8f) son las dos proyecciones de conocimiento versionadas introducidas en la seccion 8. Este fragmento establece el principio arquitectonico de consultar en lugar de leer, y presenta el mecanismo de watermark que garantiza que esas proyecciones esten sincronizadas con el repositorio (mecanica detallada en la seccion 8c-watermark).
@@ -54,3 +54,5 @@ flowchart TD
     style EVITAR fill:#c44,stroke:#333,color:#fff
     style PREFERIR fill:#4a4,stroke:#333,color:#fff
 ```
+
+> **Referencia cruzada:** La mecanica completa del watermark (drift detection, `git merge-base --is-ancestor`, triggers de re-sync) se especifica en la [seccion 8c-watermark](23-rag-watermark.md). Esta seccion introduce el concepto; la seccion 8c-watermark define el mecanismo.

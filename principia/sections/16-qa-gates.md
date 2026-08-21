@@ -7,7 +7,7 @@ layer: quality
 constitutional: true
 actors: [QA]
 glossary_terms: [gate mecanica, gate de verificacion estructurada, ARCH, CERTIFICADO]
-depends_on: [7a, 7d-tiers]
+depends_on: [7a, 7d-tiers, 3b, 4]
 referenced_by: [11e-routing, 1a, 11a-11b, 11d]
 keywords:
   - QA

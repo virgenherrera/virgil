@@ -7,7 +7,7 @@ layer: recovery
 constitutional: true
 actors: [SM, TPM]
 glossary_terms: [Ledger, ArtifactStore]
-depends_on: ["5", "8d-8e"]
+depends_on: ["5", "8d-8e", "9"]
 referenced_by: ["11a-11b"]
 keywords:
   - recovery

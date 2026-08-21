@@ -8,7 +8,7 @@ layer: authority
 constitutional: true
 actors: []
 glossary_terms: []
-depends_on: []
+depends_on: ["6"]
 referenced_by: []
 keywords:
   - regla de auto-referencia

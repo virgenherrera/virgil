@@ -24,7 +24,7 @@ Si algo contradice la [constitution](constitution.md), la constitution gana.
 - [Flujo de una invocacion](sections/06-invocation-flow.md) — pipeline determinista, PDC
 
 ### 4. Por que actua asi
-- [Gobierno y arquitectura](sections/07-governance-architecture.md) — GP-1..GP-5 + AP-1..AP-5
+- [Gobierno y arquitectura](sections/07-governance-architecture.md) — GP-1..GP-6 + A1..A9
 
 ### 5. Que partes lo componen
 - [Catalogo de componentes](sections/08-components.md) — Kernel, Method Pack, Ledger, RAG
@@ -75,7 +75,7 @@ Si algo contradice la [constitution](constitution.md), la constitution gana.
 - [Autoridad y auto-referencia](sections/37-authority.md) — regla constitucional
 
 ### Glosario
-- [Glosario](sections/38-glossary.md) — 31 terminos canonicos
+- [Glosario](sections/38-glossary.md) — 46 terminos canonicos
 
 ## Validacion de integridad
 
@@ -85,6 +85,13 @@ Si algo contradice la [constitution](constitution.md), la constitution gana.
 
 Verifica watermark, existencia de archivos, integridad del grafo de
 dependencias y consistencia del glosario.
+
+## Taxonomia de layers
+
+El [manifest](manifest.yaml) clasifica cada chunk en uno de 15 layers:
+navigation, identity, structure, lifecycle, principles, components,
+interaction, quality, knowledge, context, recovery, execution,
+operation, authority, reference. Usar para filtrado y routing en CLI.
 
 ---
 

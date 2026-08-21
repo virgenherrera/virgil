@@ -6,8 +6,8 @@ source_lines: [291, 329]
 layer: lifecycle
 constitutional: true
 actors: [PDC]
-glossary_terms: [ContextBrief, Ledger, PDC, ARCH]
-depends_on: [3a]
+glossary_terms: [ContextBrief, Ledger, PDC, ARCH, DogmaRef, ProjectRef, RunContext]
+depends_on: [3a, 9]
 referenced_by: [7e, 7g, 11d, 4]
 keywords:
   - flujo de invocacion
@@ -53,6 +53,8 @@ sequenceDiagram
 Este flujo canonico tiene pasos deterministas y pasos mediados por juicio. Las gates de certificacion (test pass/fail, mutation score, CRAP, coverage, CVE scan) son deterministas — binarias, sin subjetividad. Los pasos de planning, escalacion, compilacion de ContextBrief, alineacion arquitectonica y verificacion de coherencia (PDC) involucran juicio del agente orquestador, no son deterministas y deben dejar evidencia trazable. El Principia distingue ambos tipos explicitamente.
 
 El PDC es un safeguard de coherencia de orquestacion que opera durante la ejecucion, pero NO es un gate de certificacion. La certificacion la determinan exclusivamente las gates del pipeline de QA definidas por el Kernel: gates mecanicas deterministas (seccion 7e, 11d) y verificacion estructurada de alineacion arquitectonica (seccion 7e, gate ARCH). Cuando el proyecto declara un perfil de compliance regulatoria, el review humano se agrega como gate blocking adicional (seccion 7g). El PDC puede detener una delegacion incoherente, pero no certifica ni aprueba codigo.
+
+> **Identidades de invocacion**: `DogmaRef`, `ProjectRef` y `RunContext` son las tres identidades que el HostAdapter resuelve al inicio de cada invocacion. Este Principia las nombra como participantes del flujo canonico pero no especifica sus campos — ese contrato pertenece al layer de protocolo (docs/protocol/).
 
 > **Atomicidad**: el flujo muestra pasos secuenciales (persistir →
 > ingerir evidencia → registrar transicion). Si el proceso falla entre

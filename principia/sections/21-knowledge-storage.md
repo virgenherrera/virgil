@@ -7,7 +7,7 @@ layer: knowledge
 constitutional: true
 actors: []
 glossary_terms: [ArtifactStore, RAG, codebaseMemory, watermark, re-sync, ArtifactStoreAdapter]
-depends_on: []
+depends_on: ["5", "7b"]
 referenced_by: ["8c-dbms", "8c-watermark", "8c-dual", "8d-8e", "8f-concept", "8f-construction"]
 keywords:
   - ArtifactStore

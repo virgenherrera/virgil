@@ -7,7 +7,7 @@ layer: execution
 constitutional: true
 actors: []
 glossary_terms: [EchoRun, buildArtifactSet, Ledger, Binding Layer]
-depends_on: ["7b", "8c-watermark", "11a-11b"]
+depends_on: ["7b", "8c-watermark", "11a-11b", "7a", "7d-binding", "11e-routing"]
 referenced_by: ["12"]
 keywords:
   - evidencia queryable

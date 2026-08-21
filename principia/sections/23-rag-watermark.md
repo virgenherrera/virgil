@@ -18,10 +18,12 @@ keywords:
   - HEAD
   - merge-base
   - Dogma
-editorial_additions: [context_paragraph]
+editorial_additions: [context_paragraph, cross_reference_note]
 -->
 
 > **Context:** El RAG (DBMS de contexto documental) y el codebaseMemory (grafo estructural del codigo, seccion 8f) son proyecciones versionadas del repositorio (seccion 8). El **watermark** es el commit SHA contra el cual una de esas proyecciones fue construida o sincronizada por ultima vez. Este mecanismo conecta con la cadena de certificacion descrita en las secciones 7b (deliverables vs build artifacts) y 11f (evidencia como dato queryable).
+
+> **Continuacion de:** [RAG como DBMS](22-rag-dbms.md) introduce el concepto de watermark. Esta seccion define el mecanismo completo.
 
 #### Watermark y re-sync
 

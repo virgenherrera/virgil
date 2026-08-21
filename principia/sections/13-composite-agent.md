@@ -7,7 +7,7 @@ layer: quality
 constitutional: true
 actors: [SM, testEngineer, Implementor, fitnessFunction]
 glossary_terms: [compositeAgent, mutation domain, worktree, delegationContract]
-depends_on: [7c-rgr]
+depends_on: [7c-rgr, 8f-construction]
 referenced_by: [8f-construction, 11c]
 keywords:
   - compositeAgent
@@ -18,7 +18,7 @@ keywords:
   - invariante de independencia
   - GP-4 constraint sobre confianza
   - lanes paralelos
-editorial_additions: [context_paragraph]
+editorial_additions: [context_paragraph, synonym_note]
 -->
 
 > **Context:** Continua directamente la seccion 7c (Macro Red/Green/Refactor). Cuando la ejecucion de un batch se paraleliza en multiples lanes, cada lane usa un compositeAgent para atravesar Red/Green/Refactor dentro de un dominio aislado. Los mutation domains tambien se mencionan en las secciones 8f (grafo estructural del codigo) y 11c (git strategy).
@@ -61,6 +61,8 @@ sequenceDiagram
     FF-->>ORCH: resultado del lane
 ```
 
+> **Sinonimo**: `Isolation Domain` es el nombre descriptivo usado en el diagrama de secuencia; `mutation domain` es el termino canonico del glosario. Ambos designan el dominio de aislamiento donde opera un lane de ejecucion.
+
 | Fase | Invocacion | Responsabilidad |
 |------|-----------|-----------------|
 | Red | testEngineer (sesion independiente) | Escribir tests segun spec |
@@ -72,3 +74,5 @@ invocaciones independientes orquestadas bajo una etiqueta comun.
 Cada fase tiene su propio contrato y criterio de salida.
 
 **Invariante de independencia**: cada fase del compositeAgent (testEngineer, Implementor, fitnessFunction) se ejecuta como invocacion independiente del agente — nueva sesion, sin historial conversacional. El Kernel implementa este reset como constraint tecnico (invocacion stateless por fase), no como instruccion al agente. Cada fase recibe unicamente los deliverables y build artifacts producidos por la fase anterior, no la historia de razonamiento. Este mecanismo satisface el Principio GP-4 (constraint > confianza): la independencia es estructural, no una promesa de comportamiento.
+
+> **Desambiguacion**: "fitness functions" (plural, generico) designa una CATEGORIA de gate de calidad (junto con mutation testing y R/G/R) aplicable a todo el pipeline. `fitnessFunction` (singular, camelCase) designa un ROL ESPECIFICO de invocacion dentro de la secuencia compositeAgent (testEngineer → Implementor → fitnessFunction). No confundir: la categoria es universal; el rol es una instancia de invocacion dentro de un mutation domain.
