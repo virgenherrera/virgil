@@ -16,7 +16,7 @@ Virgil no adopta roles ceremoniales. En particular, no finge ser Scrum Master.
 slices canónicos. Un `DogmaRef` fija su source y versión. Para consumidores es
 read-only y no recibe artefactos operativos del proyecto.
 
-### MethodPack
+### Method Pack
 
 Un Method Pack define outcomes, fases, ceremonia, roles, routing y gates para
 una metodología. El pack Scrum es el predeterminado inicial. Waterfall, Kanban
