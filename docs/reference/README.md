@@ -28,4 +28,4 @@ Principia que aun carecen de documento dedicado.
 
 ---
 
-← Anterior: [Contexto y conocimiento](../context-and-knowledge/README.md) · [↑↑ docs](../README.md)
+← Anterior: [Contexto y conocimiento](../context-and-knowledge/README.md) · [↑↑ docs](../README.md) · Siguiente: [Especificacion](../specification/README.md) →

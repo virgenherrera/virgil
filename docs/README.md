@@ -6,21 +6,29 @@ El Principia (`principia/constitution.md`) es la fuente de verdad constitucional
 
 ## Orden de lectura recomendado
 
-1. [Que es Virgil](getting-started/que-es-virgil.md) -- identidad, limites y comunicacion
-2. [Modos y roles](getting-started/modos-y-roles.md) -- actores del sistema y modos operativos
-3. [Modelo de tres capas](getting-started/modelo-tres-capas.md) -- Principia, Dogma y Runtime
+1. [Getting Started](getting-started/README.md) -- que es Virgil, actores, capas
+2. [Ciclo de vida](lifecycle/README.md) -- maquina de estados, transiciones, recuperacion
+3. [Ejecucion](execution/README.md) -- pipeline, contratos primero, estrategia Git
+4. [Garantia de Calidad](quality/README.md) -- Echo System, R/G/R, testing matrix, gates
+5. [Arquitectura](architecture/README.md) -- invariantes, principios, componentes
+6. [Contexto y conocimiento](context-and-knowledge/README.md) -- RAG, ArtifactStore, codebaseMemory
+7. [Referencia](reference/README.md) -- glosario, configurabilidad, mapa de trazabilidad
+8. [Especificacion](specification/README.md) -- contratos wire-level, protocolos, modelo de estado
+9. [Implementacion](implementation/README.md) -- decisiones tecnicas concretas, Go runtime, CI/CD
 
 ## Indice de secciones
 
 | Directorio | Contenido |
 |---|---|
 | `getting-started/` | Introduccion a Virgil: que es, quien participa, como se estructura |
-| `architecture/` | Invariantes arquitectonicos y principios de construccion |
 | `lifecycle/` | Ciclo de vida del proyecto, maquina de estados y transiciones |
-| `quality/` | Echo System, R/G/R, testing matrix, gates de certificacion |
 | `execution/` | Pipeline de ejecucion, contratos primero, estrategia Git |
+| `quality/` | Echo System, R/G/R, testing matrix, gates de certificacion |
+| `architecture/` | Invariantes arquitectonicos y principios de construccion |
 | `context-and-knowledge/` | RAG dual, codebaseMemory, ArtifactStore, flujo de contexto |
 | `reference/` | Glosario, mapa de trazabilidad al Principia y referencia de configurabilidad |
+| `specification/` | Contratos wire-level: protocolo de operaciones, modelo de estado, adapter repo-docs, contratos de skills |
+| `implementation/` | Decisiones tecnicas concretas: Go runtime, Echo System instanciado, artefactos de build |
 
 ## Relacion con el Principia
 

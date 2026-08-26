@@ -53,6 +53,20 @@ declarada en cada archivo.
 | reference/glosario.md | Glosario | reference |
 | reference/que-es-configurable.md | S1a | identity |
 | reference/mapa-principia.md | Todo el documento (meta) | authority |
+| specification/README.md | S3a, S3b, S5, S8a, S8b (indice) | navigation |
+| specification/operation-protocol.md | S3b, S5 | lifecycle, components |
+| specification/state-model.md | S3a, S8a | lifecycle, knowledge |
+| specification/repo-docs-adapter.md | S8a, S8b | knowledge |
+| specification/skill-contracts.md | S3b, S5, S9c | lifecycle, components, context |
+| implementation/README.md | S5, S7a, S7b, S7h (indice) | navigation |
+| implementation/go-runtime.md | S5, S7h, S3b | components, quality, execution |
+| implementation/echo-system-go.md | S7a, S7d, S7h | quality |
+| implementation/artifacts.md | S7a, S7b, S11f | quality, execution |
+| implementation/ci-cd.md | S7a, S7h, S11c | quality, execution |
+| implementation/releases.md | S7h, S4b | quality, principles |
+| implementation/conformance.md | S3b, S7d, S8a, S10 | lifecycle, quality, knowledge, recovery |
+| implementation/testing-strategy.md | S7d, S7f | quality |
+| implementation/production-safe-green.md | S7c, S7d | quality |
 
 ## Tabla inversa: seccion del Principia a documentos docs/
 
@@ -68,35 +82,35 @@ dedicado)". La estructura de secciones y capas proviene de
 | S1 | Que es Virgil | getting-started/que-es-virgil.md | identity |
 | S1a | Regla anti-drift interpretativa | getting-started/que-es-virgil.md, reference/que-es-configurable.md | identity |
 | S2 | Estructura de tres capas | getting-started/modelo-tres-capas.md | structure |
-| S3a | Ciclo de vida de un proyecto | lifecycle/maquina-de-estados.md, lifecycle/fastforward.md | lifecycle |
-| S3b | Flujo de una invocacion | lifecycle/flujo-de-invocacion.md | lifecycle |
+| S3a | Ciclo de vida de un proyecto | lifecycle/maquina-de-estados.md, lifecycle/fastforward.md, specification/state-model.md | lifecycle |
+| S3b | Flujo de una invocacion | lifecycle/flujo-de-invocacion.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md, implementation/conformance.md | lifecycle |
 | S4a | Gobierno | architecture/principios-de-gobierno.md | principles |
-| S4b-S4c | Invariantes arquitectonicos | architecture/invariantes-arquitectonicos.md | principles |
-| S5 | Catalogo de componentes | architecture/componentes.md | components |
+| S4b-S4c | Invariantes arquitectonicos | architecture/invariantes-arquitectonicos.md, implementation/releases.md | principles |
+| S5 | Catalogo de componentes | architecture/componentes.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md | components |
 | S6a | Actores y modos | getting-started/modos-y-roles.md | interaction |
 | S6b-S6c | Separacion de concerns e invariante fundamental | architecture/modelo-de-interaccion.md | interaction |
-| S7a | Echo System | quality/echo-system.md | quality |
-| S7b | Deliverables vs Build Artifacts | quality/README.md (sin documento dedicado) | quality |
-| S7c (R/G/R) | Macro Red/Green/Refactor | quality/red-green-refactor.md | quality |
+| S7a | Echo System | quality/echo-system.md, implementation/README.md, implementation/echo-system-go.md, implementation/artifacts.md, implementation/ci-cd.md | quality |
+| S7b | Deliverables vs Build Artifacts | quality/README.md, implementation/README.md, implementation/artifacts.md | quality |
+| S7c (R/G/R) | Macro Red/Green/Refactor | quality/red-green-refactor.md, implementation/production-safe-green.md | quality |
 | S7c (compositeAgent) | compositeAgent y mutation domains | execution/agente-compuesto.md | quality |
-| S7d (tiers) | Testing Matrix | quality/matriz-de-testing.md | quality |
+| S7d (tiers) | Testing Matrix | quality/matriz-de-testing.md, implementation/echo-system-go.md, implementation/conformance.md, implementation/testing-strategy.md, implementation/production-safe-green.md | quality |
 | S7d (binding) | Binding Layer y trazabilidad | quality/binding-layer.md | quality |
 | S7e | QA / Acceptance Gates | quality/qa-gates.md | quality |
-| S7f | droppableCode | quality/droppable-code.md | quality |
+| S7f | droppableCode | quality/droppable-code.md, implementation/testing-strategy.md | quality |
 | S7g | complianceByDesign | quality/compliance.md | quality |
-| S7h | Supply Chain Integrity | quality/supply-chain.md | quality |
-| S8a-S8b | ArtifactStore y namespaces | context-and-knowledge/artifact-store.md | knowledge |
+| S7h | Supply Chain Integrity | quality/supply-chain.md, implementation/README.md, implementation/go-runtime.md, implementation/echo-system-go.md, implementation/ci-cd.md, implementation/releases.md | quality |
+| S8a-S8b | ArtifactStore y namespaces | context-and-knowledge/artifact-store.md, specification/state-model.md, specification/repo-docs-adapter.md, implementation/conformance.md | knowledge |
 | S8c | RAG dual, watermark, re-sync | context-and-knowledge/sistema-rag.md | knowledge |
 | S8d-S8e | Visibilidad y memoizacion | context-and-knowledge/sistema-rag.md | knowledge |
 | S8f | codebaseMemory | context-and-knowledge/codebase-memory.md | knowledge |
-| S9 | Flujo de contexto | context-and-knowledge/flujo-de-contexto.md | context |
-| S10 | Recuperacion | lifecycle/recuperacion.md | recovery |
+| S9 | Flujo de contexto | context-and-knowledge/flujo-de-contexto.md, specification/skill-contracts.md | context |
+| S10 | Recuperacion | lifecycle/recuperacion.md, implementation/conformance.md | recovery |
 | S11a-S11b | Pipeline de ejecucion | execution/pipeline.md | execution |
-| S11c | Git strategy | execution/estrategia-git.md | execution |
+| S11c | Git strategy | execution/estrategia-git.md, implementation/ci-cd.md | execution |
 | S11d | Verificacion mecanica | quality/qa-gates.md | execution |
 | S11e (routing) | Accept/Reject routing | execution/aceptar-rechazar.md | execution |
 | S11e (break-glass) | Break-glass | execution/break-glass.md | execution |
-| S11f | Evidencia queryable | (sin documento dedicado) | execution |
+| S11f | Evidencia queryable | implementation/artifacts.md | execution |
 | S12 | Fase de operacion | (sin documento dedicado) | operation |
 | Autoridad | Autoridad, auto-referencia y nota de autoridad | (sin documento dedicado) | authority |
 | Glosario | Glosario | reference/glosario.md | reference |
@@ -111,15 +125,15 @@ definidas en `principia/manifest.yaml`.
 | navigation | Indice | README.md, READMEs de seccion | Cubierta |
 | identity | Vocabulario, S1, S1a | getting-started/que-es-virgil.md, getting-started/modos-y-roles.md, reference/que-es-configurable.md | Cubierta |
 | structure | S2 | getting-started/modelo-tres-capas.md | Cubierta |
-| lifecycle | S3a, S3b | lifecycle/maquina-de-estados.md, lifecycle/flujo-de-invocacion.md, lifecycle/fastforward.md | Cubierta |
+| lifecycle | S3a, S3b | lifecycle/maquina-de-estados.md, lifecycle/flujo-de-invocacion.md, lifecycle/fastforward.md, specification/operation-protocol.md, specification/state-model.md, specification/skill-contracts.md | Cubierta |
 | principles | S4a, S4b, S4c | architecture/principios-de-gobierno.md, architecture/invariantes-arquitectonicos.md | Cubierta |
-| components | S5 | architecture/componentes.md | Cubierta |
+| components | S5 | architecture/componentes.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md | Cubierta |
 | interaction | S6a, S6b, S6c | getting-started/modos-y-roles.md, architecture/modelo-de-interaccion.md | Cubierta |
-| quality | S7a-S7h | quality/echo-system.md, quality/red-green-refactor.md, quality/matriz-de-testing.md, quality/binding-layer.md, quality/qa-gates.md, quality/droppable-code.md, quality/compliance.md, quality/supply-chain.md | Cubierta (S7b solo via README) |
-| knowledge | S8a-S8f | context-and-knowledge/artifact-store.md, context-and-knowledge/sistema-rag.md, context-and-knowledge/codebase-memory.md | Cubierta |
-| context | S9 | context-and-knowledge/flujo-de-contexto.md | Cubierta |
+| quality | S7a-S7h | quality/echo-system.md, quality/red-green-refactor.md, quality/matriz-de-testing.md, quality/binding-layer.md, quality/qa-gates.md, quality/droppable-code.md, quality/compliance.md, quality/supply-chain.md, implementation/echo-system-go.md, implementation/artifacts.md, implementation/ci-cd.md, implementation/releases.md, implementation/testing-strategy.md, implementation/production-safe-green.md | Cubierta |
+| knowledge | S8a-S8f | context-and-knowledge/artifact-store.md, context-and-knowledge/sistema-rag.md, context-and-knowledge/codebase-memory.md, specification/state-model.md, specification/repo-docs-adapter.md | Cubierta |
+| context | S9 | context-and-knowledge/flujo-de-contexto.md, specification/skill-contracts.md | Cubierta |
 | recovery | S10 | lifecycle/recuperacion.md | Cubierta |
-| execution | S11a-S11f | execution/pipeline.md, execution/estrategia-git.md, quality/qa-gates.md, execution/aceptar-rechazar.md, execution/break-glass.md | Parcial (S11f pendiente) |
+| execution | S11a-S11f | execution/pipeline.md, execution/estrategia-git.md, quality/qa-gates.md, execution/aceptar-rechazar.md, execution/break-glass.md, implementation/artifacts.md, implementation/ci-cd.md | Cubierta |
 | operation | S12 | (sin documentos dedicados) | Pendiente |
 | authority | Autoridad, auto-referencia | (sin documentos dedicados) | Pendiente |
 | reference | Glosario | reference/glosario.md, reference/que-es-configurable.md, reference/mapa-principia.md | Cubierta |
