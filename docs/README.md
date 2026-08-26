@@ -1,91 +1,34 @@
-# Documentación canónica de Virgil
+# Documentacion de Virgil (Dogma)
 
-## Estado normativo
+Este directorio contiene la documentacion normativa y versionada de Virgil: la proyeccion operativa del Principia hacia guias consumibles por desarrolladores y agentes.
 
-Este directorio contiene el **dogma operativo canónico y normativo** de
-Virgil: protocolo, boundaries, Method Packs, quality y slices. Es read-only
-para proyectos consumidores. Por ahora se mantiene únicamente en español para
-evitar que una traducción se convierta en una segunda fuente de verdad.
+El Principia (`principia/constitution.md`) es la fuente de verdad constitucional e inmutable. Todo lo que existe en `docs/` se **deriva** del Principia y esta sujeto a el. Si algo en esta documentacion contradice al Principia, el Principia gana.
 
-En estos documentos:
+## Orden de lectura recomendado
 
-- **DEBE** expresa una invariante obligatoria.
-- **NO DEBE** expresa una prohibición obligatoria.
-- **PUEDE** expresa una capacidad opcional.
-- El [roadmap](roadmap/vertical-slices.md) describe intención de entrega, no
-  capacidades ya implementadas.
+1. [Que es Virgil](getting-started/que-es-virgil.md) -- identidad, limites y comunicacion
+2. [Modos y roles](getting-started/modos-y-roles.md) -- actores del sistema y modos operativos
+3. [Modelo de tres capas](getting-started/modelo-tres-capas.md) -- Principia, Dogma y Runtime
 
-## Alcance
+## Indice de secciones
 
-Virgil **es el project knowledge/control plane**, agnóstico de agente y
-metodología. Posee identidad, ledger, trazabilidad,
-context briefs y la aplicación y registro de transiciones. Busca acompañar un
-cambio desde una idea hasta su entrega y, cuando aplique, su operación.
+| Directorio | Contenido |
+|---|---|
+| `getting-started/` | Introduccion a Virgil: que es, quien participa, como se estructura |
+| `architecture/` | Invariantes arquitectonicos y principios de construccion |
+| `lifecycle/` | Ciclo de vida del proyecto, maquina de estados y transiciones |
+| `quality/` | Echo System, R/G/R, testing matrix, gates de certificacion |
+| `execution/` | Pipeline de ejecucion, contratos primero, estrategia Git |
+| `context-and-knowledge/` | RAG dual, codebaseMemory, ArtifactStore, flujo de contexto |
+| `reference/` | Glosario, mapa de trazabilidad al Principia y referencia de configurabilidad |
 
-La ceremonia, los roles, el routing y los gates pertenecen a un **Method
-Pack**. Scrum Master no es infraestructura core de Virgil: es un rol opcional
-que puede definir el pack Scrum. Otros packs pueden definir roles diferentes o
-ninguno.
+## Relacion con el Principia
 
-Los Method Packs objetivo son:
+```text
+principia/constitution.md   (inmutable, constitucional)
+        |
+        v
+    docs/                    (normativo, versionado, derivado)
+```
 
-- Scrum, como pack predeterminado inicial.
-- Waterfall.
-- Kanban.
-- Shape Up.
-
-El kernel NO DEBE hardcodear sprints, roles Scrum, WIP limits, bets ni otra
-ceremonia particular.
-
-## Dos namespaces `docs/`
-
-- `Virgil/docs/` es el dogma de Virgil y nunca funciona como store operativo
-  de un consumidor.
-- `{consumer}/docs/` es el corpus operativo y, con el adapter local
-  `repo-docs`, el artifact store del proyecto consumidor. Puede
-  leerse/indexarse según policy; el índice RAG es derivado y las escrituras se
-  limitan al namespace administrado, recomendado `{target}/docs/virgil/`.
-
-Skills y tools gobiernan la interoperabilidad principalmente desde el contexto
-del repo consumidor. Jira, Confluence, Basecamp, GitHub Projects/Issues y otros
-sistemas pueden ofrecer adapters equivalentes sin cambiar el kernel.
-
-## Invariantes centrales
-
-1. `DogmaRef`, proyecto objetivo, `ArtifactStoreRef` y cada run/change tienen
-   identidades explícitas y separadas; `method_source != target`.
-2. `global ownership != global context injection`: conocer y custodiar el
-   mapa completo no autoriza a copiar todo el contexto a cada agente.
-3. El RAG es una proyección de lectura reconstruible. No es la autoridad del
-   proceso.
-4. La ejecución NO redefine planificación aprobada. Si encuentra un vacío o
-   contradicción, emite `PlanningGapDetected`.
-5. Toda afirmación de progreso debe poder vincularse a artefactos o evidencia
-   con procedencia.
-6. Planning SOLO escribe mediante el ArtifactStoreAdapter configurado. En
-   `repo-docs`, el write scope predeterminado es `{target}/docs/virgil/`;
-   código, producto y configuración permanecen prohibidos.
-7. Virgil no asume ni finge un rol ceremonial definido por un Method Pack.
-8. HostAdapter y ArtifactStoreAdapter son concerns distintos: el primero
-   gobierna discovery/invocación del host; el segundo, persistencia y retrieval.
-9. Cada adapter declara capabilities y degradaciones; el kernel no presupone
-   subagentes, paralelismo, Git, shell ni acceso directo a un store.
-
-## Navegación
-
-- [Visión y fundamentos](foundations/vision.md)
-- [Límites del sistema](architecture/system-boundaries.md)
-- [Rol arquitectónico](architecture/role.md)
-- [Runtime Go T0 — contrato de implementación](architecture/go-runtime.md)
-- [Contratos conceptuales mínimos](protocol/core-contracts.md)
-- [Estrategia de validación](quality/validation-strategy.md)
-- [Production-Safe Green](quality/production-safe-green.md)
-- [Roadmap por vertical slices](roadmap/vertical-slices.md)
-- [Slice 1 — Planning: idea → handoff](slices/01-planning/README.md)
-
-## Lo que todavía no es normativo
-
-No son contratos vigentes los schemas exhaustivos, formatos no definidos por
-un slice, prompts de roles, thresholds de calidad ni estrategias de
-paralelismo. Se definirán dentro del slice que los necesite y con evidencia de
-implementación.
+Cada documento en `docs/` incluye una referencia a la seccion del Principia de la cual se deriva. Ante cualquier ambiguedad, consulta la fuente original.
