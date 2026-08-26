@@ -1,0 +1,198 @@
+{
+  "schema_version": "virgil.dev/scripted-actor/v1alpha1",
+  "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
+  "script_id": "script-t0-init-idempotent-retry",
+  "script_revision": "v2",
+  "actor": {
+    "actor_id": "scripted-agent",
+    "kind": "agent",
+    "authority": [
+      "virgil.operation.invoke"
+    ]
+  },
+  "actions": [
+    {
+      "action_id": "invoke-init-a",
+      "sequence": 0,
+      "kind": "invoke",
+      "process_id": "process-a",
+      "after_trace_kind": "activation_decision",
+      "operation_request": {
+        "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
+        "operation": "virgil.init",
+        "request_id": "init-retry-001-a",
+        "idempotency_key": "init-retry-v1",
+        "dogma_ref": {
+          "dogma_id": "virgil-dogma",
+          "version": "fixture-v1",
+          "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169",
+          "source": {
+            "uri": "fixture://dogma/virgil/v1",
+            "revision": "fixture-v1",
+            "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169"
+          },
+          "method_pack": {
+            "pack_id": "virgil",
+            "pack_version": "fixture-v1"
+          }
+        },
+        "project_ref": {
+          "project_id": "consumer-retry",
+          "target": {
+            "uri": "fixture://targets/consumer-retry",
+            "canonical_path": "/fixtures/targets/consumer-retry",
+            "baseline": "baseline-v1"
+          },
+          "dogma_ref_id": "virgil-dogma",
+          "artifact_store_ref_id": "store-consumer-retry"
+        },
+        "artifact_store_ref": {
+          "store_ref_id": "store-consumer-retry",
+          "adapter": {
+            "adapter_id": "repo-docs",
+            "adapter_version": "v1alpha1"
+          },
+          "project_id": "consumer-retry",
+          "namespace": "docs",
+          "policy": {
+            "policy_version": "repo-docs/v1alpha1",
+            "read_allowlist": [
+              "docs/**"
+            ],
+            "write_allowlist": [
+              "docs/**"
+            ]
+          }
+        },
+        "host": {
+          "adapter": {
+            "adapter_id": "generic-host",
+            "adapter_version": "v1alpha1"
+          },
+          "capabilities": {
+            "supported": [
+              "operation.invoke",
+              "effect.observe",
+              "trace.emit",
+              "fresh_process"
+            ],
+            "guarantees": [
+              "structured_envelope",
+              "deterministic_replay"
+            ]
+          }
+        },
+        "actor": {
+          "actor_id": "scripted-agent",
+          "kind": "agent",
+          "authority": [
+            "virgil.operation.invoke"
+          ]
+        },
+        "input": {
+          "project_id": "consumer-retry"
+        }
+      }
+    },
+    {
+      "action_id": "restart-after-first-result",
+      "sequence": 1,
+      "kind": "restart_process",
+      "process_id": "process-b",
+      "after_trace_kind": "operation_decided",
+      "reason": "Discard process A and recover only from persisted references."
+    },
+    {
+      "action_id": "retry-init-b",
+      "sequence": 2,
+      "kind": "retry",
+      "process_id": "process-b",
+      "retries_action_id": "invoke-init-a",
+      "after_trace_kind": "recovery",
+      "operation_request": {
+        "protocol_version": "virgil.dev/planning-slice2/v1alpha1",
+        "operation": "virgil.init",
+        "request_id": "init-retry-001-b",
+        "idempotency_key": "init-retry-v1",
+        "dogma_ref": {
+          "dogma_id": "virgil-dogma",
+          "version": "fixture-v1",
+          "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169",
+          "source": {
+            "uri": "fixture://dogma/virgil/v1",
+            "revision": "fixture-v1",
+            "digest": "sha256:dc7670bf2e78e1a1cfa9f68a770a473b77c760f701fc9a1ce1eeb6d6211cd169"
+          },
+          "method_pack": {
+            "pack_id": "virgil",
+            "pack_version": "fixture-v1"
+          }
+        },
+        "project_ref": {
+          "project_id": "consumer-retry",
+          "target": {
+            "uri": "fixture://targets/consumer-retry",
+            "canonical_path": "/fixtures/targets/consumer-retry",
+            "baseline": "baseline-v1"
+          },
+          "dogma_ref_id": "virgil-dogma",
+          "artifact_store_ref_id": "store-consumer-retry"
+        },
+        "artifact_store_ref": {
+          "store_ref_id": "store-consumer-retry",
+          "adapter": {
+            "adapter_id": "repo-docs",
+            "adapter_version": "v1alpha1"
+          },
+          "project_id": "consumer-retry",
+          "namespace": "docs",
+          "policy": {
+            "policy_version": "repo-docs/v1alpha1",
+            "read_allowlist": [
+              "docs/**"
+            ],
+            "write_allowlist": [
+              "docs/**"
+            ]
+          }
+        },
+        "host": {
+          "adapter": {
+            "adapter_id": "generic-host",
+            "adapter_version": "v1alpha1"
+          },
+          "capabilities": {
+            "supported": [
+              "operation.invoke",
+              "effect.observe",
+              "trace.emit",
+              "fresh_process"
+            ],
+            "guarantees": [
+              "structured_envelope",
+              "deterministic_replay"
+            ]
+          }
+        },
+        "actor": {
+          "actor_id": "scripted-agent",
+          "kind": "agent",
+          "authority": [
+            "virgil.operation.invoke"
+          ]
+        },
+        "input": {
+          "project_id": "consumer-retry"
+        }
+      }
+    },
+    {
+      "action_id": "stop-after-replay",
+      "sequence": 3,
+      "kind": "stop",
+      "process_id": "process-b",
+      "after_trace_kind": "operation_decided",
+      "reason": "The replay result was recovered without duplicate writes."
+    }
+  ]
+}

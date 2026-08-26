@@ -1,0 +1,339 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.virgil.dev/planning-slice1/v1alpha1/evidence-bundle.schema.json",
+  "title": "Virgil EvidenceBundle Manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "protocol_version",
+    "bundle_id",
+    "layer",
+    "fixture",
+    "source_revision",
+    "target_baseline",
+    "adapter_profile",
+    "runtime_capabilities",
+    "environment",
+    "trace",
+    "runner_report",
+    "contents",
+    "diffs",
+    "checks",
+    "outcome",
+    "secret_redaction",
+    "published_atomically",
+    "published_at",
+    "integrity"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "virgil.dev/evidence-bundle/v1alpha1"
+    },
+    "protocol_version": {
+      "const": "virgil.dev/planning-slice2/v1alpha1"
+    },
+    "bundle_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "layer": {
+      "enum": ["T0", "T1", "T2"]
+    },
+    "fixture": {
+      "$ref": "agent-interaction-trace.schema.json#/$defs/FixtureRef"
+    },
+    "source_revision": {
+      "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
+    },
+    "target_baseline": {
+      "$ref": "common.schema.json#/$defs/TargetRef"
+    },
+    "adapter_profile": {
+      "$ref": "scenario-fixture.schema.json#/$defs/AdapterProfile"
+    },
+    "runtime_capabilities": {
+      "$ref": "common.schema.json#/$defs/HostRef"
+    },
+    "environment": {
+      "$ref": "#/$defs/EnvironmentSnapshot"
+    },
+    "trace": {
+      "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
+    },
+    "runner_report": {
+      "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
+    },
+    "contents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/BundleContent"
+      }
+    },
+    "diffs": {
+      "$ref": "#/$defs/DiffSet"
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "runner-observation-report.schema.json#/$defs/CheckResult"
+      }
+    },
+    "outcome": {
+      "$ref": "scenario-fixture.schema.json#/$defs/ExpectedOutcome"
+    },
+    "secret_redaction": {
+      "$ref": "#/$defs/SecretRedaction"
+    },
+    "published_atomically": {
+      "const": true
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "integrity": {
+      "$ref": "agent-interaction-trace.schema.json#/$defs/Integrity"
+    }
+  },
+  "allOf": [
+    {
+      "properties": {
+        "contents": {
+          "contains": {
+            "properties": {
+              "role": { "const": "trace" }
+            },
+            "required": ["role"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "contents": {
+          "contains": {
+            "properties": {
+              "role": { "const": "project_state" }
+            },
+            "required": ["role"]
+          },
+          "minContains": 0,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "contents": {
+          "contains": {
+            "properties": {
+              "role": { "const": "runner_report" }
+            },
+            "required": ["role"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "contents": {
+          "contains": {
+            "properties": {
+              "role": { "const": "filesystem_snapshot" }
+            },
+            "required": ["role"]
+          },
+          "minContains": 2
+        }
+      }
+    },
+    {
+      "properties": {
+        "contents": {
+          "contains": {
+            "properties": {
+              "role": { "const": "filesystem_diff" }
+            },
+            "required": ["role"]
+          },
+          "minContains": 2
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "EnvironmentSnapshot": {
+      "type": "object",
+      "required": ["os", "architecture", "isolation", "network_profile"],
+      "properties": {
+        "os": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        },
+        "architecture": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        },
+        "isolation": {
+          "$ref": "scenario-fixture.schema.json#/$defs/ComponentProfile"
+        },
+        "network_profile": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        },
+        "image_digest": {
+          "$ref": "common.schema.json#/$defs/Digest"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BundleContent": {
+      "type": "object",
+      "required": ["role", "schema_id", "media_type", "resource"],
+      "properties": {
+        "role": {
+          "enum": [
+            "trace",
+            "project_state",
+            "filesystem_snapshot",
+            "filesystem_diff",
+            "runner_report"
+          ]
+        },
+        "schema_id": {
+          "enum": [
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/agent-interaction-trace.schema.json",
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/virgil-config.schema.json",
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-snapshot.schema.json",
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-diff.schema.json",
+            "https://schemas.virgil.dev/planning-slice1/v1alpha1/runner-observation-report.schema.json"
+          ]
+        },
+        "media_type": {
+          "enum": ["application/json", "application/x-ndjson"]
+        },
+        "resource": {
+          "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "role": { "const": "trace" }
+            },
+            "required": ["role"]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/agent-interaction-trace.schema.json"
+              },
+              "media_type": { "const": "application/json" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": { "const": "project_state" }
+            },
+            "required": ["role"]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/virgil-config.schema.json"
+              },
+              "media_type": { "const": "application/json" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": { "const": "filesystem_snapshot" }
+            },
+            "required": ["role"]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-snapshot.schema.json"
+              },
+              "media_type": { "const": "application/json" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": { "const": "filesystem_diff" }
+            },
+            "required": ["role"]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/filesystem-diff.schema.json"
+              },
+              "media_type": { "const": "application/json" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": { "const": "runner_report" }
+            },
+            "required": ["role"]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "https://schemas.virgil.dev/planning-slice1/v1alpha1/runner-observation-report.schema.json"
+              },
+              "media_type": { "const": "application/json" }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "DiffSet": {
+      "type": "object",
+      "required": ["target", "store"],
+      "properties": {
+        "target": {
+          "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
+        },
+        "store": {
+          "$ref": "common.schema.json#/$defs/ImmutableResourceRef"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SecretRedaction": {
+      "type": "object",
+      "required": ["status", "mechanism", "findings"],
+      "properties": {
+        "status": {
+          "enum": ["passed", "failed"]
+        },
+        "mechanism": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/NonEmptyString"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

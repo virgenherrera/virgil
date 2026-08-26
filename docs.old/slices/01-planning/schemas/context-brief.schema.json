@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.virgil.dev/planning-slice1/v1alpha1/context-brief.schema.json",
+  "title": "Virgil Context Brief",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "protocol_version",
+    "brief_id",
+    "change_id",
+    "project_id",
+    "artifact_kind",
+    "objective",
+    "sources",
+    "excluded_sources",
+    "budget",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "virgil.dev/context-brief/v1alpha1"
+    },
+    "protocol_version": {
+      "const": "virgil.dev/planning-slice2/v1alpha1"
+    },
+    "brief_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "change_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "project_id": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "artifact_kind": {
+      "enum": ["idea", "spec", "design", "tasks", "handoff"]
+    },
+    "objective": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/BriefSource"
+      }
+    },
+    "excluded_sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ExcludedSource"
+      }
+    },
+    "budget": {
+      "$ref": "#/$defs/BriefBudget"
+    },
+    "baseline_revision": {
+      "$ref": "common.schema.json#/$defs/NonEmptyString"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "BriefSource": {
+      "type": "object",
+      "required": ["uri", "provenance", "digest"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "minLength": 1,
+          "format": "uri-reference"
+        },
+        "provenance": {
+          "$ref": "common.schema.json#/$defs/SourceProvenance"
+        },
+        "digest": {
+          "$ref": "common.schema.json#/$defs/Digest"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ExcludedSource": {
+      "type": "object",
+      "required": ["uri", "reason"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "minLength": 1,
+          "format": "uri-reference"
+        },
+        "reason": {
+          "$ref": "common.schema.json#/$defs/NonEmptyString"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BriefBudget": {
+      "type": "object",
+      "required": ["max_tokens", "used_tokens"],
+      "properties": {
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "used_tokens": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
