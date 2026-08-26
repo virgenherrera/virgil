@@ -10,15 +10,15 @@ Fuente: `principia/constitution.md`, Secciones 7a, 7d, 7h.
 
 | Paso | Constitucional | Comando Go | Artefacto |
 |---|---|---|---|
-| 0 | Setup: dependencias + audit | `go mod download && go mod verify && govulncheck ./...` | `go.sum` verificado, audit limpio |
-| 1 | Build: compilar | `go build ./...` | Binario en `dist/` |
-| 2 | Static: lint/format | `go vet ./... && golangci-lint run && gofmt -l .` | Reporte de lint |
-| 3 | Dynamic: tests boundary | `go test ./test/app/... -coverprofile=dist/coverage.out` | Coverage profile |
-| 4 | E2E: integracion completa | `go test ./test/e2e/... -tags=e2e` | Reporte E2E |
+| 1 | Setup: dependencias + audit | `go mod download && go mod verify && govulncheck ./...` | `go.sum` verificado, audit limpio |
+| 2 | Build: compilar | `go build ./...` | Binario en `dist/` |
+| 3 | Static: lint/format | `go vet ./... && golangci-lint run && gofmt -l .` | Reporte de lint |
+| 4 | Dynamic: tests boundary | `go test ./test/app/... -coverprofile=dist/coverage.out` | Coverage profile |
+| 5 | E2E: integracion completa | `go test ./test/e2e/... -tags=e2e` | Reporte E2E |
 
 El orden es constitucional y no se reordena (principia S7a). Si un paso falla, los posteriores no se ejecutan.
 
-## Paso 0: Setup
+## Paso 1: Setup
 
 ```bash
 go mod download
@@ -28,11 +28,11 @@ govulncheck ./...
 
 - `go mod download`: descarga dependencias declaradas en `go.mod`.
 - `go mod verify`: confirma que los modulos descargados coinciden con los checksums de `go.sum` (principia S7h: versionPinning).
-- `govulncheck`: gate blocking de seguridad (principia S7h: securityAudit). Cero vulnerabilidades altas/criticas para avanzar a Build.
+- `govulncheck`: gate de seguridad (principia S7h: securityAudit). En CI/CD es blocking (cero vulnerabilidades altas/criticas para avanzar a Build). En Dev (pre-push hook) alerta sin bloquear.
 
 `govulncheck` se instala como herramienta de desarrollo, no como dependencia del modulo.
 
-## Paso 1: Build
+## Paso 2: Build
 
 ```bash
 CGO_ENABLED=0 go build -o dist/virgil ./cmd/virgil
@@ -40,7 +40,7 @@ CGO_ENABLED=0 go build -o dist/virgil ./cmd/virgil
 
 Produce el binario estatico. Si la compilacion falla, no hay artefacto que validar.
 
-## Paso 2: Static
+## Paso 3: Static
 
 ```bash
 go vet ./...
@@ -52,7 +52,7 @@ test -z "$(gofmt -l .)"
 - `golangci-lint`: linters configurados en `.golangci.yml` (errcheck, staticcheck, gosimple, govet, ineffassign, unused como minimo).
 - `gofmt -l .`: verifica formato canonico. Si la lista no esta vacia, falla.
 
-## Paso 3: Dynamic (tests boundary)
+## Paso 4: Dynamic (tests boundary)
 
 ```bash
 go test ./test/app/... -coverprofile=dist/coverage.out -count=1
@@ -64,7 +64,7 @@ Los tests de este paso son boundary tests a nivel de aplicacion (principia S7d: 
 
 Coverage se mide sobre archivos con logica real (cobertura selectiva, principia S7f).
 
-## Paso 4: E2E (integracion completa)
+## Paso 5: E2E (integracion completa)
 
 ```bash
 go test ./test/e2e/... -tags=e2e -count=1

@@ -19,10 +19,10 @@ test/
   testutil/        <- helpers compartidos (NO mocks)
 ```
 
-Fuente: `principia/constitution.md`, Seccion 7d. Los tests `internal/*_test.go` solo
-se permiten para funciones puras algoritmicas (parsers, formatters) que necesitan
-cero mocks. Si una funcion necesita un mock para ser testeada, el test pertenece a
-`test/app/`.
+Fuente: `principia/constitution.md`, Seccion 7d. No existen archivos `*_test.go`
+dentro de `internal/`. El tier File/Unit esta PROHIBIDO (valor = 0). Si se necesitan
+tests de funciones puras (parsers, formatters), viven en `test/` con el prefijo
+`TestUnit_` y no participan en las gates de certificacion.
 
 ## Decisiones de framework
 
@@ -76,12 +76,12 @@ preserva el contrato aunque el actor no coopere (GP-4: constraint > confianza).
 
 | # | Intento del actor | Comportamiento requerido |
 |---|-------------------|--------------------------|
-| A1 | Escribir codigo/config fuera del write scope | Bloquea efecto, registra intento (C7) |
-| A2 | Pedir "todo el contexto" | Aplica allowlist y budget, registra solicitado vs entregado (C10) |
-| A3 | Saltar un gate o aprobacion | Rechaza transicion, mantiene paso derivado (C9) |
-| A4 | Mutar artefacto aprobado | Rechaza mutacion, exige revision sucesora trazable (C9) |
-| A5 | Usar capability no declarada | Responde `unsupported`, sin fallback silencioso (C11) |
-| A6 | Inventar estado o phase | Ignora afirmacion, deriva paso desde ledger (C4) |
+| A1 | Escribir codigo/config fuera del write scope | Bloquea efecto, registra intento (C6) |
+| A2 | Pedir "todo el contexto" | Aplica allowlist y budget, registra solicitado vs entregado (C12) |
+| A3 | Saltar un gate o aprobacion | Rechaza transicion, mantiene paso derivado (C10) |
+| A4 | Mutar artefacto aprobado | Rechaza mutacion, exige revision sucesora trazable (C11) |
+| A5 | Usar capability no declarada | Responde `unsupported`, sin fallback silencioso (C13) |
+| A6 | Inventar estado o phase | Ignora afirmacion, deriva paso desde ledger (C10) |
 | A7 | Ignorar stop condition e insistir | No ejecuta efectos, registra intento, escala (C15) |
 
 Cada scenario adversarial es un test en `test/app/` con prefijo `TestApp_Adversarial_`.

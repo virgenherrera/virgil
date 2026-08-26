@@ -13,16 +13,17 @@ Referencia constitucional: Principia S8a (ArtifactStore), S8b (separacion de nam
 {target}/
   virgil.json                    # archivo de control (raiz del target)
   docs/
-    {change_id}/                 # subdirectorio por cambio
-      00-idea.md
-      01-spec.md
-      02-design.md
-      03-tasks.md
-      04-handoff.md
+    virgil/                      # managed namespace (S8b)
+      {change_id}/               # subdirectorio por cambio
+        00-idea.md
+        01-spec.md
+        02-design.md
+        03-tasks.md
+        04-handoff.md
 ```
 
-Cada cambio publica sus artefactos bajo `docs/{change_id}/`. Multiples cambios coexisten
-sin colision de nombres (`docs/users-rbac/`, `docs/pokemon-module/`).
+Cada cambio publica sus artefactos bajo `docs/virgil/{change_id}/`. Multiples cambios
+coexisten sin colision de nombres (`docs/virgil/users-rbac/`, `docs/virgil/pokemon-module/`).
 
 ## virgil.json
 
@@ -32,7 +33,7 @@ Archivo de control del adapter. Unica autoridad de identidad del proyecto.
 |---|---|---|
 | `project_id` | string | Identidad estable del proyecto |
 | `adapter` | string | `repo-docs` |
-| `managed_root` | string | `docs/` |
+| `managed_root` | string | `docs/virgil/` |
 | `active_change` | object | Cambio activo (`change_id`, `intention`, `created_at`) |
 
 Slice 1 soporta un unico cambio activo por proyecto. `active_change` no es una lista.
@@ -67,9 +68,9 @@ sin dependencia de parsing YAML.
 El adapter PUEDE leer o indexar `docs/` segun una allowlist explicita. Solo PUEDE escribir:
 
 - `virgil.json` (raiz del target)
-- `docs/{change_id}/{NN}-{kind}.md` que el mismo administra
+- `docs/virgil/{change_id}/{NN}-{kind}.md` que el mismo administra
 
-Los documentos existentes en `docs/` fuera de esos nombres son read-only y no producen
+Los documentos existentes en `docs/` fuera de `docs/virgil/` son read-only y no producen
 `CORRUPT_LEDGER`: conviven con el corpus del consumidor. Codigo, producto y configuracion
 permanecen fuera del write scope de planning. Referencia: Principia S8b.
 
@@ -90,13 +91,14 @@ responde `unsupported`. No degrada a last-write-wins.
 - **Retirar**: reescribe frontmatter (`status: withdrawn`).
 - **Nueva revision**: reutiliza el mismo archivo, incrementa `revision` (`rev-000002`).
 
-Git es el ledger: el historial de revisiones vive en el historial de git, no en un
-`events.jsonl` paralelo.
+En Slice 1, el historial de git actua como backend de registro para las revisiones.
+Las propiedades completas del Ledger constitucional (idempotencia de transiciones,
+inmutabilidad) se implementaran progresivamente en slices posteriores.
 
 ## Derivacion de estado
 
 `repo-docs` no persiste `derived_step`. Lo recalcula en cada operacion escaneando
-`docs/{change_id}/` y leyendo el `status` de cada frontmatter. El primer artefacto
+`docs/virgil/{change_id}/` y leyendo el `status` de cada frontmatter. El primer artefacto
 de la secuencia que no esta en `approved` es el `derived_step` actual. Si los cinco
 estan `approved`, `derived_step` es `complete`.
 

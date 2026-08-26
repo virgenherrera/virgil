@@ -82,6 +82,7 @@ go build -o dist/virgil ./cmd/virgil
 | Linux ARM64 | linux | arm64 | Servidores ARM |
 | macOS x86_64 | darwin | amd64 | Dev Intel |
 | macOS ARM64 | darwin | arm64 | Dev Apple Silicon |
+| Windows x86_64 | windows | amd64 | Soporte CLI multiplataforma |
 
 **CGO**: deshabilitado (`CGO_ENABLED=0`). Todas las dependencias actuales son Go puro. Si tree-sitter (codebaseMemory, principia S8f) se integra en el futuro, esta restriccion se re-evaluara: tree-sitter requiere CGO, lo cual impactaria cross-compilacion y el invariante de binario estatico.
 

@@ -18,11 +18,11 @@ El pipeline mapea 1:1 a los 5 pasos del Echo System. El orden es constitucional 
 
 | Paso Echo | Stage CI | Que ejecuta | Gate |
 |---|---|---|---|
-| 0. Setup | `setup` | Checkout, setup Go, restore cache, `govulncheck ./...` | securityAudit blocking (S7h) |
-| 1. Build | `build` | `CGO_ENABLED=0 go build -o dist/virgil ./cmd/virgil` | Binario compila sin errores |
-| 2. Static | `static` | `go vet ./...`, `golangci-lint run`, `gofmt -l .` | Cero findings |
-| 3. Dynamic | `dynamic` | `go test ./test/app/... -coverprofile=dist/coverage.out -count=1` | Coverage sin regresion |
-| 4. E2E | `e2e` | `go test ./test/e2e/... -tags=e2e -count=1` | Conformance scenarios pasan |
+| 1. Setup | `setup` | Checkout, setup Go, restore cache, `govulncheck ./...` | securityAudit blocking (S7h) |
+| 2. Build | `build` | `CGO_ENABLED=0 go build -o dist/virgil ./cmd/virgil` | Binario compila sin errores |
+| 3. Static | `static` | `go vet ./...`, `golangci-lint run`, `gofmt -l .` | Cero findings |
+| 4. Dynamic | `dynamic` | `go test ./test/app/... -coverprofile=dist/coverage.out -count=1` | Coverage sin regresion |
+| 5. E2E | `e2e` | `go test ./test/e2e/... -tags=e2e -count=1` | Conformance scenarios pasan |
 
 ### Caching
 

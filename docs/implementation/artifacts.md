@@ -12,7 +12,7 @@ Los build artifacts NO son deliverables (principia S7b). Los deliverables (idea.
 
 | Tipo | Ejemplo | Donde vive | Gestionado por |
 |---|---|---|---|
-| Deliverable | `project.json`, `events.jsonl` | ArtifactStore (`{target}/docs/virgil/`) | TPM |
+| Deliverable | `virgil.json`, `{NN}-{kind}.md` | ArtifactStore (`{target}/docs/virgil/`) | TPM |
 | Build artifact | Binario, coverage, lint report | `dist/` (local, gitignored) o CI artifact store | Echo System |
 
 ## Estructura de dist

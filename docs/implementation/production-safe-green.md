@@ -5,8 +5,9 @@
 Contrato concreto para la fase Green de Virgil en Go. Define que significa "Green",
 que campos debe contener cada handoff, que esta prohibido, y como se verifica.
 
-Fuente: `principia/constitution.md`, Secciones 7c y 7d.
-Adaptado de: `docs.old/quality/production-safe-green.md`.
+Marco constitucional: `principia/constitution.md`, Secciones 7c (R/G/R) y 7d (boundaries).
+Campos H1-H7 y prohibiciones P1-P9: implementacion concreta adaptada de
+`docs.old/quality/production-safe-green.md`.
 
 ## Definicion de Green
 

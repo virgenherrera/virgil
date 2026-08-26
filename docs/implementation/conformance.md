@@ -15,7 +15,7 @@ Los conformance scenarios se ejecutan en dos tiers:
 | T0 | Self-hosted (binario contra fixtures embebidas) | Protocolo, contratos, idempotencia, recovery |
 | T1 | Consumer project (proyecto TypeScript externo) | Flujo e2e real, MCP discovery, handoff quality |
 
-En CI, T0 corre como parte del paso E2E del Echo System (`go test ./test/app -run '^TestApp_'`). T1 se ejecuta manualmente como validacion pre-release (Challenge-A).
+En CI, T0 corre como parte del paso 4 Dynamic del Echo System (`go test ./test/app/... -run '^TestApp_'`). T1 se ejecuta manualmente como validacion pre-release (Challenge-A).
 
 ## Aislamiento
 
