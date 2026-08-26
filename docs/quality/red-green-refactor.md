@@ -1,5 +1,7 @@
 # Red/Green/Refactor
 
+[← docs/](../README.md) · [← quality/](./README.md)
+
 Virgil aplica TDD por lotes (batch TDD), no TDD metodo por metodo. Primero se escribe
 toda la suite de tests, luego toda la implementacion, luego todo el refactoring. Cada
 fase es una invocacion independiente con su propio criterio de salida.
@@ -97,3 +99,7 @@ No confundir: la categoria es universal; el rol es una instancia de invocacion.
 - [Testing Matrix](matriz-de-testing.md) -- que constituye un test valido dentro de R/G/R
 - [Binding Layer](binding-layer.md) -- como progresa la confianza del enlace durante R/G/R
 - [QA Gates](qa-gates.md) -- certificacion final en V1
+
+---
+
+← Anterior: [Echo System](./echo-system.md) · [↑ quality](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Testing Matrix](./matriz-de-testing.md) →

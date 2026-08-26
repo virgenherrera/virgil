@@ -1,5 +1,7 @@
 # Echo System
 
+[← docs/](../README.md) · [← quality/](./README.md)
+
 El Echo System es el pipeline determinista de calidad que se ejecuta en todo ambiente.
 Cinco pasos (Setup, Build, Static, Dynamic, E2E), siempre los mismos, siempre en el
 mismo orden. Lo que varia es el scope, nunca la secuencia.
@@ -77,3 +79,7 @@ Seccion 7b del Principia.
 - [Red/Green/Refactor](red-green-refactor.md) -- como se estructura la ejecucion dentro de Echo
 - [QA Gates](qa-gates.md) -- como se certifica el resultado de Echo
 - [Supply Chain](supply-chain.md) -- security audit como gate del paso Setup
+
+---
+
+[↑ quality](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Red/Green/Refactor](./red-green-refactor.md) →

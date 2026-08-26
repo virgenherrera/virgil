@@ -1,5 +1,7 @@
 # Modelo de tres capas
 
+[← docs/](../README.md) · [← getting-started/](./README.md)
+
 Virgil se organiza en tres capas concentricas. Cada capa interna gobierna a las externas. Nada en una capa exterior puede contradecir a una capa interior.
 
 Fuente: `principia/constitution.md`, Seccion 2.
@@ -91,3 +93,7 @@ La calidad es del Kernel. La ceremonia es del Pack. Un Pack puede agregar mecani
 ## Siguiente lectura
 
 Con la estructura base clara, continua con [Arquitectura](../architecture/) para conocer los 9 invariantes que rigen la construccion de Virgil.
+
+---
+
+← Anterior: [Modos y roles](./modos-y-roles.md) · [↑ getting-started](./README.md) · [↑↑ docs](../README.md)

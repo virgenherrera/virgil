@@ -1,5 +1,7 @@
 # Flujo de contexto
 
+[← docs/](../README.md) · [← context-and-knowledge/](./README.md)
+
 Como fluye el contexto entre agentes durante la ejecucion: compilacion,
 patrones de entrega, contratos de delegacion y checkpoints
 post-delegacion.
@@ -135,3 +137,7 @@ intervencion humana cuando un rol no puede cumplir su objetivo.
   -- invariante fundamental (ownership no es igual a injection)
 - [Principios de gobierno](../architecture/principios-de-gobierno.md)
   -- GP-4 (constraint sobre confianza) fundamenta el delegationContract
+
+---
+
+← Anterior: [Codebase Memory](./codebase-memory.md) · [↑ context-and-knowledge](./README.md) · [↑↑ docs](../README.md)

@@ -1,5 +1,7 @@
 # Glosario canonico
 
+[← docs/](../README.md) · [← reference/](./README.md)
+
 Referencia terminologica autoritativa de Virgil. Todos los terminos derivan de
 `principia/constitution.md` (Glosario, seccion final).
 
@@ -72,3 +74,7 @@ frecuencia:
 | TraceabilityGraph | Proyeccion derivada que conecta intencion, decision, trabajo y evidencia. Reconstruible desde el Ledger y los deliverables. No es fuente de verdad; si se desincroniza, se reconstruye. | S5, S8e |
 | versionPinning | Invariante que requiere versiones exactas (sin rangos, sin `^`, sin `~`) para todas las dependencias y el gestor de dependencias. Garantiza reproducibilidad absoluta. Aplica independientemente del ecosistema. | S7h |
 | watermark | Revision (commit SHA) contra la cual una proyeccion (RAG o codebaseMemory) fue construida o sincronizada por ultima vez. Propiedad exclusiva del Kernel; solo se actualiza via re-sync. Gate de certificacion: sourceRevision debe ser alcanzable desde watermark. | S8c |
+
+---
+
+[↑ reference](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Que es configurable](./que-es-configurable.md) →

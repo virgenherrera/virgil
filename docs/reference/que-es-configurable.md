@@ -1,5 +1,7 @@
 # Que es configurable y que no
 
+[← docs/](../README.md) · [← reference/](./README.md)
+
 Guia rapida para distinguir lo que un proyecto puede adaptar de lo que el
 Principia declara invariante. Fuente: `principia/constitution.md`, Seccion 1a
 (Regla anti-drift interpretativa).
@@ -183,3 +185,7 @@ Para verificar si una reinterpretacion es valida, aplica esta prueba:
 > artifacts, esa reinterpretacion contradice el Principia.
 
 Fuente: `principia/constitution.md`, Seccion 1a.
+
+---
+
+← Anterior: [Glosario](./glosario.md) · [↑ reference](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Mapa de trazabilidad](./mapa-principia.md) →

@@ -1,5 +1,7 @@
 # Modos y roles
 
+[← docs/](../README.md) · [← getting-started/](./README.md)
+
 Virgil define 7 actores canonicos y 2 modos operativos. Este documento explica quien es quien en el sistema y como se relacionan.
 
 Fuente: `principia/constitution.md`, Vocabulario de actores y Seccion 6a.
@@ -83,3 +85,7 @@ El SM nunca actua sin direccion del MIM. Los sub-agentes nunca actuan sin un del
 ## Siguiente lectura
 
 Ahora que conoces los actores y modos, aprende como se estructura Virgil en [tres capas concentricas](modelo-tres-capas.md).
+
+---
+
+← Anterior: [Que es Virgil](./que-es-virgil.md) · [↑ getting-started](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Modelo de tres capas](./modelo-tres-capas.md) →

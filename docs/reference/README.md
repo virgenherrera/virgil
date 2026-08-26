@@ -1,5 +1,7 @@
 # Referencia
 
+[← docs/](../README.md)
+
 Material de consulta rapida: terminologia canonica, reglas de configurabilidad
 y trazabilidad bidireccional entre la documentacion y el Principia.
 
@@ -23,3 +25,7 @@ Principia que aun carecen de documento dedicado.
 - [Que es Virgil](../getting-started/que-es-virgil.md) -- identidad y limites
   del sistema
 - [Principia](../../principia/constitution.md) -- fuente de verdad constitucional
+
+---
+
+← Anterior: [Contexto y conocimiento](../context-and-knowledge/README.md) · [↑↑ docs](../README.md)

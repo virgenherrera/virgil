@@ -1,5 +1,7 @@
 # Contexto y conocimiento
 
+[← docs/](../README.md)
+
 Como Virgil gestiona conocimiento, persistencia y retrieval. Tres
 concerns separados que no se mezclan: donde se persisten los
 deliverables, como se consultan, y como se comprende la estructura
@@ -41,3 +43,7 @@ fuentes autoritativas.
   componentes del Kernel (Ledger, ContextCompiler, etc.)
 - [Invariantes arquitectonicos](../architecture/invariantes-arquitectonicos.md)
   -- A2 (autoridad separada de retrieval), A9 (dogma separado de RAG)
+
+---
+
+← Anterior: [Arquitectura](../architecture/README.md) · [↑↑ docs](../README.md) · Siguiente: [Referencia](../reference/README.md) →

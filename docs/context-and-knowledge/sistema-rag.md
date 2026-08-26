@@ -1,5 +1,7 @@
 # Sistema RAG
 
+[← docs/](../README.md) · [← context-and-knowledge/](./README.md)
+
 El RAG opera como DBMS de contexto documental: los agentes consultan
 en lugar de leer archivos completos. Virgil define dos instancias del
 mismo patron, mecanismos de watermark para deteccion de drift y
@@ -116,3 +118,7 @@ origen.
   entrega el contexto
 - [Artifact Store](./artifact-store.md) -- donde se persisten los
   deliverables que el RAG indexa
+
+---
+
+← Anterior: [Artifact Store](./artifact-store.md) · [↑ context-and-knowledge](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Codebase Memory](./codebase-memory.md) →

@@ -1,5 +1,7 @@
 # Invariantes arquitectonicos
 
+[← docs/](../README.md) · [← architecture/](./README.md)
+
 Los 9 invariantes arquitectonicos definen las reglas de construccion:
 como se estructura Virgil internamente, como fluye la informacion,
 como se acoplan los componentes.
@@ -155,3 +157,7 @@ La separacion es deliberada: un principio de gobierno como GP-4
 de A3 (contexto compilado por contrato) y del invariante de
 independencia del compositeAgent. Pero la motivacion (gobierno) y la
 realizacion (arquitectura) viven en capas distintas.
+
+---
+
+← Anterior: [Principios de gobierno](./principios-de-gobierno.md) · [↑ architecture](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Componentes](./componentes.md) →

@@ -1,5 +1,7 @@
 # Artifact Store
 
+[← docs/](../README.md) · [← context-and-knowledge/](./README.md)
+
 Donde se persisten los deliverables de planning de un proyecto.
 El ArtifactStoreAdapter traduce entre el Kernel y el sistema de
 almacenamiento externo.
@@ -80,3 +82,7 @@ define la terminologia canonica.
   persistidos
 - [Componentes](../architecture/componentes.md) -- ArtifactRepository
   y ArtifactStoreAdapter en el catalogo
+
+---
+
+[↑ context-and-knowledge](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Sistema RAG](./sistema-rag.md) →

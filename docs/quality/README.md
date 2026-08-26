@@ -1,5 +1,7 @@
 # Garantia de Calidad
 
+[← docs/](../README.md)
+
 Virgil garantiza calidad mediante un ciclo cerrado de accountability: ocho mecanismos
 interconectados donde cada uno alimenta al siguiente y ninguno funciona de forma aislada.
 Si QA rechaza, el rechazo es especifico y escala a la fase exacta que debe corregirse.
@@ -48,3 +50,7 @@ canonico (Echo + build artifacts), nunca sobre afirmaciones.
 Una vez que comprendas el sistema de calidad, continua con
 [Ejecucion](../execution/) para ver como se implementa el pipeline completo
 de prePhase a Verify.
+
+---
+
+← Anterior: [Ejecucion](../execution/README.md) · [↑↑ docs](../README.md) · Siguiente: [Arquitectura](../architecture/README.md) →

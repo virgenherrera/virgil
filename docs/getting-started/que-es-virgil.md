@@ -1,5 +1,7 @@
 # Que es Virgil
 
+[← docs/](../README.md) · [← getting-started/](./README.md)
+
 Virgil es el knowledge/control plane de un proyecto de software. Mantiene identidad, trazabilidad, contexto y transiciones a lo largo de todo el ciclo de vida, desde la idea hasta la operacion.
 
 Fuente: `principia/constitution.md`, Seccion 1 y 1a.
@@ -61,3 +63,7 @@ Si una reinterpretacion de Virgil permite que simplemente "observe lo que haya o
 ## Siguiente lectura
 
 Ahora que sabes que es Virgil, conoce a los [actores y modos operativos](modos-y-roles.md) que participan en el sistema.
+
+---
+
+[↑ getting-started](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Modos y roles](./modos-y-roles.md) →

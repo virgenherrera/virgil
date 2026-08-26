@@ -1,5 +1,7 @@
 # Binding Layer
 
+[← docs/](../README.md) · [← quality/](./README.md)
+
 El enlace entre un test y el codigo que lo satisface no es binario (existe / no existe).
 Tiene tres niveles de confianza que progresan durante el ciclo Red/Green/Refactor.
 El Binding Layer es el mecanismo que convierte la trazabilidad en algo accionable.
@@ -76,3 +78,7 @@ Esta progresion es mecanica y trazable. No depende de afirmaciones del agente.
 - [Red/Green/Refactor](red-green-refactor.md) -- las fases donde progresa la confianza
 - [Testing Matrix](matriz-de-testing.md) -- que tests son validos para crear enlaces
 - [QA Gates](qa-gates.md) -- como se usa la confianza del enlace en certificacion
+
+---
+
+← Anterior: [Testing Matrix](./matriz-de-testing.md) · [↑ quality](./README.md) · [↑↑ docs](../README.md) · Siguiente: [QA Gates](./qa-gates.md) →

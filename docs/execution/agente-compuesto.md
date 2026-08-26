@@ -1,5 +1,7 @@
 # Agente compuesto (compositeAgent)
 
+[← docs/](../README.md) · [← execution/](./README.md)
+
 Un compositeAgent es una secuencia de invocaciones stateless orquestadas bajo una etiqueta comun dentro de un mutation domain aislado. No es un agente monolitico: es la ejecucion coordinada de tres roles independientes que mapean directamente a las fases Red, Green y Refactor del pipeline.
 
 Fuente: `principia/constitution.md`, Seccion 7c.
@@ -70,3 +72,7 @@ Las fases **prePhase** y **Verify** quedan fuera del compositeAgent:
 - El [pipeline de ejecucion](pipeline.md) describe las cinco fases dentro de las cuales el compositeAgent opera
 - La [estrategia Git](estrategia-git.md) describe como se implementan los mutation domains con worktrees
 - [Aceptar y rechazar](aceptar-rechazar.md) describe que ocurre cuando el resultado del compositeAgent no pasa Verify
+
+---
+
+← Anterior: [Pipeline de ejecucion](./pipeline.md) · [↑ execution](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Estrategia Git](./estrategia-git.md) →

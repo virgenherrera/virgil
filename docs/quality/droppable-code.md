@@ -1,5 +1,7 @@
 # droppableCode
 
+[← docs/](../README.md) · [← quality/](./README.md)
+
 Codigo con 0% de cobertura en appTests no tiene justificacion para existir.
 La cobertura no es metrica de vanidad: es un detector mecanico de codigo muerto.
 
@@ -75,3 +77,7 @@ Los umbrales de mutation score son no-relajables para el codigo no exceptuado.
 - [Testing Matrix](matriz-de-testing.md) -- define appTests como tier primario
 - [QA Gates](qa-gates.md) -- coverage gate en el pipeline de certificacion
 - [Red/Green/Refactor](red-green-refactor.md) -- la fase Refactor donde se evaluan metricas
+
+---
+
+← Anterior: [QA Gates](./qa-gates.md) · [↑ quality](./README.md) · [↑↑ docs](../README.md) · Siguiente: [complianceByDesign](./compliance.md) →

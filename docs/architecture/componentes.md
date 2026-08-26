@@ -1,5 +1,7 @@
 # Componentes de Virgil
 
+[← docs/](../README.md) · [← architecture/](./README.md)
+
 Catalogo de componentes organizados por capa. Cada componente tiene una
 responsabilidad clara y un boundary definido.
 
@@ -122,3 +124,7 @@ invariantes universales no negociables:
 
 Estas gates se ejecutan integras en TODOS los niveles de FastForward,
 desde FF-1 (ceremonia completa) hasta FF-4 (ejecucion directa).
+
+---
+
+← Anterior: [Invariantes arquitectonicos](./invariantes-arquitectonicos.md) · [↑ architecture](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Modelo de interaccion](./modelo-de-interaccion.md) →

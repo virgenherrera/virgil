@@ -1,5 +1,7 @@
 # Ciclo de vida
 
+[← docs/](../README.md)
+
 Esta seccion cubre el flujo temporal de un proyecto gestionado por Virgil: desde que nace una idea hasta que opera en produccion. Aqui se describe como Virgil impone convergencia, gestiona transiciones y recupera estado despues de interrupciones.
 
 ## Que encontraras aqui
@@ -20,3 +22,7 @@ Esta seccion cubre el flujo temporal de un proyecto gestionado por Virgil: desde
 | 4 | [Recuperacion](recuperacion.md) | Reconstruccion de estado tras crash o nueva sesion |
 
 Fuente: `principia/constitution.md`, Secciones 3a, 3b, 10.
+
+---
+
+← Anterior: [Getting Started](../getting-started/README.md) · [↑↑ docs](../README.md) · Siguiente: [Ejecucion](../execution/README.md) →

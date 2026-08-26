@@ -1,5 +1,7 @@
 # Maquina de estados del proyecto
 
+[← docs/](../README.md) · [← lifecycle/](./README.md)
+
 Virgil gestiona cada proyecto como una maquina de estados finita. Un feature no avanza a la siguiente fase hasta que su deliverable esta consolidado. No es una linea recta: es un loop que converge hacia un handoff bien acotado.
 
 Fuente: `principia/constitution.md`, Seccion 3a.
@@ -72,3 +74,7 @@ El loopback tambien ocurre dentro de planning: si Design detecta un gap en Requi
 - La compresion de ceremonia en las fases de planning se describe en [FastForward](fastforward.md).
 - Cada transicion se ejecuta a traves del [flujo de invocacion](flujo-de-invocacion.md).
 - La reconstruccion del estado de la maquina tras interrupciones se cubre en [Recuperacion](recuperacion.md).
+
+---
+
+[↑ lifecycle](./README.md) · [↑↑ docs](../README.md) · Siguiente: [FastForward](./fastforward.md) →

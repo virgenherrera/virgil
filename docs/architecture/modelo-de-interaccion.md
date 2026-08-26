@@ -1,5 +1,7 @@
 # Modelo de interaccion
 
+[← docs/](../README.md) · [← architecture/](./README.md)
+
 Como interactuan los componentes de Virgil: separacion de concerns,
 independencia de adapters e invariante fundamental de contexto.
 
@@ -109,3 +111,7 @@ de agencia.
   A6 (Host/Store independientes) y A3 (contexto por contrato)
 - [Flujo de contexto](../context-and-knowledge/flujo-de-contexto.md)
   -- como fluye el contexto entre agentes
+
+---
+
+← Anterior: [Componentes](./componentes.md) · [↑ architecture](./README.md) · [↑↑ docs](../README.md)

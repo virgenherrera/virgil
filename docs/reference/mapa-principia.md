@@ -1,5 +1,7 @@
 # Mapa de trazabilidad Principia
 
+[← docs/](../README.md) · [← reference/](./README.md)
+
 Referencia bidireccional entre `docs/` y `principia/constitution.md`. Permite
 verificar que cualquier afirmacion en la documentacion tiene respaldo
 constitucional y que toda seccion del Principia tiene cobertura documental.
@@ -140,3 +142,7 @@ consistente con todas las secciones implicadas.
 | modes-duality | S6, S8c, Autoridad | Modo Desarrollo vs Modo Consumo, mismos principios |
 | binding-layer-progression | S7d, S11f | Progresion declared, inferred, verified |
 | testing-quality-pipeline | S7a, S7c, S7d, S7e, S7f, S11a-S11b, S11d | Pipeline completo de testing y quality |
+
+---
+
+← Anterior: [Que es configurable](./que-es-configurable.md) · [↑ reference](./README.md) · [↑↑ docs](../README.md)

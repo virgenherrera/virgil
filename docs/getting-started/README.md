@@ -1,5 +1,7 @@
 # Getting Started
 
+[← docs/](../README.md)
+
 Esta seccion introduce los conceptos fundamentales de Virgil: que es, quien participa y como se organiza su arquitectura de conocimiento.
 
 Al terminar estos tres documentos, tendras una imagen clara de la identidad de Virgil, tu rol dentro del sistema y la estructura que gobierna todo lo que Virgil hace.
@@ -13,3 +15,7 @@ Al terminar estos tres documentos, tendras una imagen clara de la identidad de V
 ## Siguiente lectura
 
 Una vez que entiendas la estructura base, continua con [Arquitectura](../architecture/) para conocer los invariantes que rigen la construccion de Virgil.
+
+---
+
+[↑↑ docs](../README.md) · Siguiente: [Ciclo de vida](../lifecycle/README.md) →

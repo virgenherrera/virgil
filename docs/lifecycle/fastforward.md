@@ -1,5 +1,7 @@
 # FastForward
 
+[← docs/](../README.md) · [← lifecycle/](./README.md)
+
 FastForward es el gradiente de certeza que permite al SM (Session Manager) adaptar la profundidad de deliberacion en planning segun la certeza observable del contexto existente. La certeza es el input; la compresion de ceremonia es el output. No es un atajo: es un mecanismo auditado que comprime pasos ceremoniales, nunca gates de calidad.
 
 Fuente: `principia/constitution.md`, Seccion 3a.
@@ -55,3 +57,7 @@ El mecanismo de FastForward esta disenado para ser auditable:
 - FastForward opera dentro de la [maquina de estados](maquina-de-estados.md) del proyecto, comprimiendo las fases de planning.
 - Cada transicion, comprimida o no, pasa por el [flujo de invocacion](flujo-de-invocacion.md) canonico.
 - Las gates de calidad que FastForward nunca comprime se detallan en [docs de calidad](../quality/).
+
+---
+
+← Anterior: [Maquina de estados](./maquina-de-estados.md) · [↑ lifecycle](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Flujo de invocacion](./flujo-de-invocacion.md) →

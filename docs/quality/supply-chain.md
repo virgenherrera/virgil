@@ -1,5 +1,7 @@
 # Supply Chain Integrity
 
+[← docs/](../README.md) · [← quality/](./README.md)
+
 Las dependencias externas son superficie de ataque y fuente de tech debt. Virgil
 impone tres invariantes sobre la cadena de suministro, agnosticos de lenguaje y
 plataforma.
@@ -96,3 +98,7 @@ automatica ni silenciosa. Siempre es un acto deliberado.
 
 - [Echo System](echo-system.md) -- securityAudit es gate del paso 1 (Setup)
 - [QA Gates](qa-gates.md) -- seguridad como gate del pipeline de certificacion
+
+---
+
+← Anterior: [complianceByDesign](./compliance.md) · [↑ quality](./README.md) · [↑↑ docs](../README.md)

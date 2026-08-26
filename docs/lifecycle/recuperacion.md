@@ -1,5 +1,7 @@
 # Recuperacion de estado
 
+[← docs/](../README.md) · [← lifecycle/](./README.md)
+
 Despues de un crash, compactacion de contexto o inicio de nueva sesion, Virgil reconstruye el estado del proyecto sin perderlo. El estado no se almacena como puntero: se deriva de la evidencia persistida.
 
 Fuente: `principia/constitution.md`, Seccion 10.
@@ -71,3 +73,7 @@ Cuando el SM detecta cambios que ocurrieron fuera del flujo de Virgil (por ejemp
 - La maquina de estados cuyas fases se reconstruyen esta descrita en [Maquina de estados](maquina-de-estados.md).
 - El flujo de invocacion que registra transiciones en el Ledger se describe en [Flujo de invocacion](flujo-de-invocacion.md).
 - El ArtifactStore del que se leen los deliverables se detalla en [docs de contexto y conocimiento](../context-and-knowledge/).
+
+---
+
+← Anterior: [Flujo de invocacion](./flujo-de-invocacion.md) · [↑ lifecycle](./README.md) · [↑↑ docs](../README.md)

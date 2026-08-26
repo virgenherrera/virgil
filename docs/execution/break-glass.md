@@ -1,5 +1,7 @@
 # Break-glass
 
+[← docs/](../README.md) · [← execution/](./README.md)
+
 Break-glass es el lane de emergencia para incidentes P1 en produccion. Comprime la ceremonia del pipeline sin eliminarla, con certificacion post-hoc obligatoria. No es un atajo: es un protocolo de emergencia con restricciones explicitas y accountability completa.
 
 Fuente: `principia/constitution.md`, Seccion 11e.
@@ -86,3 +88,7 @@ Break-glass existe porque la realidad de produccion a veces requiere velocidad s
 
 - [Aceptar y rechazar](aceptar-rechazar.md) describe el flujo normal de certificacion que break-glass comprime
 - El [pipeline de ejecucion](pipeline.md) describe las fases que se comprimen durante break-glass
+
+---
+
+← Anterior: [Aceptar y rechazar](./aceptar-rechazar.md) · [↑ execution](./README.md) · [↑↑ docs](../README.md)

@@ -1,5 +1,7 @@
 # Principios de gobierno
 
+[← docs/](../README.md) · [← architecture/](./README.md)
+
 Los 6 principios de gobierno definen las reglas del juego: como se toman
 decisiones, como se valida, como se gestiona un proyecto bajo Virgil.
 
@@ -97,3 +99,7 @@ mecanica. Gates ambiguas donde el resultado depende de quien evalua.
 | GP-4 | Constraint > confianza | Mecanico, no promesas |
 | GP-5 | Handoff paralelo | Claiming, no handoffs separados |
 | GP-6 | Gates deterministas | Pasa o no pasa |
+
+---
+
+[↑ architecture](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Invariantes arquitectonicos](./invariantes-arquitectonicos.md) →

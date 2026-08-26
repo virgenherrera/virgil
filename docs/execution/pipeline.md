@@ -1,5 +1,7 @@
 # Pipeline de ejecucion
 
+[← docs/](../README.md) · [← execution/](./README.md)
+
 El pipeline de ejecucion transforma un handoff de planning en una implementacion certificada a traves de cinco fases secuenciales, cada una con criterios de entrada y salida bien definidos. Ninguna fase puede saltarse.
 
 Fuente: `principia/constitution.md`, Secciones 11a, 11b.
@@ -115,3 +117,7 @@ Las convenciones de commits son defaults del Dogma y pueden ser overrideadas por
 - El [agente compuesto](agente-compuesto.md) describe como se ejecutan las fases Red, Green y Refactor dentro de un lane
 - La [estrategia Git](estrategia-git.md) describe como se aislan los lanes paralelos
 - [Aceptar y rechazar](aceptar-rechazar.md) describe que pasa cuando Verify encuentra gaps
+
+---
+
+[↑ execution](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Agente compuesto](./agente-compuesto.md) →

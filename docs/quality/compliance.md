@@ -1,5 +1,7 @@
 # complianceByDesign
 
+[← docs/](../README.md) · [← quality/](./README.md)
+
 Si cada test aserta la forma exacta del DTO (campos presentes, campos ausentes,
 tipos), se obtiene verificacion de compliance sin suites separadas. Compliance no
 es un proyecto adicional: es un efecto secundario del diseno correcto.
@@ -79,3 +81,7 @@ que cada DTO tiene exactamente los campos que debe tener, nada mas y nada menos.
 - [QA Gates](qa-gates.md) -- donde el review humano se vuelve gate blocking
 - [Testing Matrix](matriz-de-testing.md) -- el tier App/Servicio donde viven estas aserciones
 - [droppableCode](droppable-code.md) -- cobertura como detector de codigo no justificado
+
+---
+
+← Anterior: [droppableCode](./droppable-code.md) · [↑ quality](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Supply Chain Integrity](./supply-chain.md) →

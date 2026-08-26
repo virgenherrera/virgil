@@ -1,5 +1,7 @@
 # Flujo de invocacion
 
+[← docs/](../README.md) · [← lifecycle/](./README.md)
+
 Cada operacion en Virgil sigue un flujo canonico: el Actor emite una solicitud, el HostAdapter la resuelve, el Kernel la ejecuta y persiste el resultado. Este flujo garantiza trazabilidad e2e desde la intencion hasta la evidencia registrada.
 
 Fuente: `principia/constitution.md`, Seccion 3b.
@@ -96,3 +98,7 @@ El Ledger implementa idempotencia: registrar una transicion ya registrada es un 
 - La compresion de ceremonia via [FastForward](fastforward.md) afecta que pasos de planning se ejecutan, pero el flujo de invocacion permanece igual.
 - La reconstruccion del estado tras interrupciones se cubre en [Recuperacion](recuperacion.md).
 - El detalle del delegationContract y el PDC completo se cubren en [docs de contexto](../context-and-knowledge/).
+
+---
+
+← Anterior: [FastForward](./fastforward.md) · [↑ lifecycle](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Recuperacion](./recuperacion.md) →

@@ -1,5 +1,7 @@
 # Testing Matrix
 
+[← docs/](../README.md) · [← quality/](./README.md)
+
 El valor de un test depende de donde se ubica la frontera del mock, no de la piramide
 clasica. Virgil reemplaza la piramide de testing con un modelo basado en boundaries:
 la frontera entre lo real y lo simulado determina la utilidad de cada test.
@@ -97,3 +99,7 @@ para que solo se puedan escribir tests con valor real.
 - [Red/Green/Refactor](red-green-refactor.md) -- la fase Red produce tests segun esta matriz
 - [Binding Layer](binding-layer.md) -- como se traza la confianza del enlace test-codigo
 - [droppableCode](droppable-code.md) -- cobertura en appTests como detector de codigo muerto
+
+---
+
+← Anterior: [Red/Green/Refactor](./red-green-refactor.md) · [↑ quality](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Binding Layer](./binding-layer.md) →

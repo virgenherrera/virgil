@@ -1,5 +1,7 @@
 # QA Gates
 
+[← docs/](../README.md) · [← quality/](./README.md)
+
 La certificacion en Virgil combina gates mecanicas deterministas y verificacion
 estructurada de alineacion arquitectonica. Las gates mecanicas son binarias: pasan
 o no pasan. La verificacion mecanica es el mecanismo primario; el review humano
@@ -108,3 +110,7 @@ Cuando una gate falla, el rechazo identifica la fase exacta que debe corregirse:
 - [Binding Layer](binding-layer.md) -- nivel de confianza que alimenta las gates
 - [Red/Green/Refactor](red-green-refactor.md) -- V1 es la gate final del ciclo
 - [complianceByDesign](compliance.md) -- cuando el review humano se vuelve blocking
+
+---
+
+← Anterior: [Binding Layer](./binding-layer.md) · [↑ quality](./README.md) · [↑↑ docs](../README.md) · Siguiente: [droppableCode](./droppable-code.md) →

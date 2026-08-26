@@ -1,5 +1,7 @@
 # Codebase Memory
 
+[← docs/](../README.md) · [← context-and-knowledge/](./README.md)
+
 Grafo estructural determinista del codigo fuente. Complementa al RAG:
 el RAG opera sobre deliverables y documentacion (semantico); el
 codebaseMemory opera sobre estructura del codigo (AST).
@@ -119,3 +121,7 @@ codigo fuente en el prompt y sin quemar tokens.
   codebaseMemory
 - [Flujo de contexto](./flujo-de-contexto.md) -- como se compila y
   entrega el contexto de ambas fuentes
+
+---
+
+← Anterior: [Sistema RAG](./sistema-rag.md) · [↑ context-and-knowledge](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Flujo de contexto](./flujo-de-contexto.md) →

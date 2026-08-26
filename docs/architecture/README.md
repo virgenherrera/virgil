@@ -1,5 +1,7 @@
 # Arquitectura de Virgil
 
+[← docs/](../README.md)
+
 Vista general del diseno de sistema de Virgil: capas, componentes,
 principios e invariantes que gobiernan la construccion.
 
@@ -32,3 +34,7 @@ Modo Desarrollo y Modo Consumo.
   Virgil gestiona conocimiento, persistencia y retrieval
 - [Ciclo de vida](../lifecycle/README.md) -- maquina de estados y
   transiciones de proyecto
+
+---
+
+← Anterior: [Garantia de Calidad](../quality/README.md) · [↑↑ docs](../README.md) · Siguiente: [Contexto y conocimiento](../context-and-knowledge/README.md) →

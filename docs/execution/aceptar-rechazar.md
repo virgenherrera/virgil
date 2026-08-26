@@ -1,5 +1,7 @@
 # Aceptar y rechazar
 
+[← docs/](../README.md) · [← execution/](./README.md)
+
 Cuando Verify evalua una implementacion candidata, el resultado no es un generico "aprobado" o "rechazado": cada rechazo identifica la fase exacta que debe corregirse y enruta la re-delegacion al punto preciso del pipeline.
 
 Fuente: `principia/constitution.md`, Seccion 11e.
@@ -84,3 +86,7 @@ Cuando todas las gates pasan:
 - El [pipeline de ejecucion](pipeline.md) describe las fases a las cuales QA enruta los rechazos
 - La [estrategia Git](estrategia-git.md) describe como PlanningGapDetected afecta a los lanes
 - [Break-glass](break-glass.md) cubre el caso especial de emergencia P1 donde se comprime la ceremonia
+
+---
+
+← Anterior: [Estrategia Git](./estrategia-git.md) · [↑ execution](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Break-glass](./break-glass.md) →

@@ -1,5 +1,7 @@
 # Estrategia Git
 
+[← docs/](../README.md) · [← execution/](./README.md)
+
 Virgil no impone GitFlow, trunk-based ni nombres de branches concretos. Impone cuatro invariantes que cualquier estrategia Git debe satisfacer para garantizar aislamiento entre lanes concurrentes y trazabilidad de cada revision.
 
 Fuente: `principia/constitution.md`, Seccion 11c.
@@ -83,3 +85,7 @@ Un proyecto puede definir sus propios prefijos o convenciones, pero debe garanti
 - El [agente compuesto](agente-compuesto.md) describe como opera un compositeAgent dentro de cada mutation domain
 - El [pipeline de ejecucion](pipeline.md) describe las fases que se ejecutan dentro de cada lane
 - [Aceptar y rechazar](aceptar-rechazar.md) cubre que pasa cuando la revision integrada falla en Verify
+
+---
+
+← Anterior: [Agente compuesto](./agente-compuesto.md) · [↑ execution](./README.md) · [↑↑ docs](../README.md) · Siguiente: [Aceptar y rechazar](./aceptar-rechazar.md) →

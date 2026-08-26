@@ -1,5 +1,7 @@
 # Ejecucion
 
+[← docs/](../README.md)
+
 Esta seccion cubre como se transforma un handoff de planning en codigo certificado: el pipeline de fases, la estrategia de contratos primero, la composicion de agentes, el aislamiento Git y los mecanismos de aceptacion y emergencia.
 
 ## Que encontraras aqui
@@ -22,3 +24,7 @@ Esta seccion cubre como se transforma un handoff de planning en codigo certifica
 | 5 | [Break-glass](break-glass.md) | Lane de emergencia P1 con certificacion post-hoc |
 
 Fuente: `principia/constitution.md`, Secciones 7c, 11a-11e.
+
+---
+
+← Anterior: [Ciclo de vida](../lifecycle/README.md) · [↑↑ docs](../README.md) · Siguiente: [Garantia de Calidad](../quality/README.md) →
