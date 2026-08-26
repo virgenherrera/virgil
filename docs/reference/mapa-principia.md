@@ -58,6 +58,7 @@ declarada en cada archivo.
 | specification/state-model.md | S3a, S8a | lifecycle, knowledge |
 | specification/repo-docs-adapter.md | S8a, S8b | knowledge |
 | specification/skill-contracts.md | S3b, S5, S9c | lifecycle, components, context |
+| specification/schemas.md | S3b, S5, S7d | lifecycle, components, quality |
 | implementation/README.md | S5, S7a, S7b, S7h (indice) | navigation |
 | implementation/go-runtime.md | S5, S7h, S3b | components, quality, execution |
 | implementation/echo-system-go.md | S7a, S7d, S7h | quality |
@@ -83,17 +84,17 @@ dedicado)". La estructura de secciones y capas proviene de
 | S1a | Regla anti-drift interpretativa | getting-started/que-es-virgil.md, reference/que-es-configurable.md | identity |
 | S2 | Estructura de tres capas | getting-started/modelo-tres-capas.md | structure |
 | S3a | Ciclo de vida de un proyecto | lifecycle/maquina-de-estados.md, lifecycle/fastforward.md, specification/state-model.md | lifecycle |
-| S3b | Flujo de una invocacion | lifecycle/flujo-de-invocacion.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md, implementation/conformance.md | lifecycle |
+| S3b | Flujo de una invocacion | lifecycle/flujo-de-invocacion.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md, specification/schemas.md, implementation/conformance.md | lifecycle |
 | S4a | Gobierno | architecture/principios-de-gobierno.md | principles |
 | S4b-S4c | Invariantes arquitectonicos | architecture/invariantes-arquitectonicos.md, implementation/releases.md | principles |
-| S5 | Catalogo de componentes | architecture/componentes.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md | components |
+| S5 | Catalogo de componentes | architecture/componentes.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md, specification/schemas.md | components |
 | S6a | Actores y modos | getting-started/modos-y-roles.md | interaction |
 | S6b-S6c | Separacion de concerns e invariante fundamental | architecture/modelo-de-interaccion.md | interaction |
 | S7a | Echo System | quality/echo-system.md, implementation/README.md, implementation/echo-system-go.md, implementation/artifacts.md, implementation/ci-cd.md | quality |
 | S7b | Deliverables vs Build Artifacts | quality/README.md, implementation/README.md, implementation/artifacts.md | quality |
 | S7c (R/G/R) | Macro Red/Green/Refactor | quality/red-green-refactor.md, implementation/production-safe-green.md | quality |
 | S7c (compositeAgent) | compositeAgent y mutation domains | execution/agente-compuesto.md | quality |
-| S7d (tiers) | Testing Matrix | quality/matriz-de-testing.md, implementation/echo-system-go.md, implementation/conformance.md, implementation/testing-strategy.md, implementation/production-safe-green.md | quality |
+| S7d (tiers) | Testing Matrix | quality/matriz-de-testing.md, implementation/echo-system-go.md, implementation/conformance.md, implementation/testing-strategy.md, implementation/production-safe-green.md, specification/schemas.md | quality |
 | S7d (binding) | Binding Layer y trazabilidad | quality/binding-layer.md | quality |
 | S7e | QA / Acceptance Gates | quality/qa-gates.md | quality |
 | S7f | droppableCode | quality/droppable-code.md, implementation/testing-strategy.md | quality |
@@ -125,9 +126,9 @@ definidas en `principia/manifest.yaml`.
 | navigation | Indice | README.md, READMEs de seccion | Cubierta |
 | identity | Vocabulario, S1, S1a | getting-started/que-es-virgil.md, getting-started/modos-y-roles.md, reference/que-es-configurable.md | Cubierta |
 | structure | S2 | getting-started/modelo-tres-capas.md | Cubierta |
-| lifecycle | S3a, S3b | lifecycle/maquina-de-estados.md, lifecycle/flujo-de-invocacion.md, lifecycle/fastforward.md, specification/operation-protocol.md, specification/state-model.md, specification/skill-contracts.md | Cubierta |
+| lifecycle | S3a, S3b | lifecycle/maquina-de-estados.md, lifecycle/flujo-de-invocacion.md, lifecycle/fastforward.md, specification/operation-protocol.md, specification/state-model.md, specification/skill-contracts.md, specification/schemas.md | Cubierta |
 | principles | S4a, S4b, S4c | architecture/principios-de-gobierno.md, architecture/invariantes-arquitectonicos.md | Cubierta |
-| components | S5 | architecture/componentes.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md | Cubierta |
+| components | S5 | architecture/componentes.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md, specification/schemas.md | Cubierta |
 | interaction | S6a, S6b, S6c | getting-started/modos-y-roles.md, architecture/modelo-de-interaccion.md | Cubierta |
 | quality | S7a-S7h | quality/echo-system.md, quality/red-green-refactor.md, quality/matriz-de-testing.md, quality/binding-layer.md, quality/qa-gates.md, quality/droppable-code.md, quality/compliance.md, quality/supply-chain.md, implementation/echo-system-go.md, implementation/artifacts.md, implementation/ci-cd.md, implementation/releases.md, implementation/testing-strategy.md, implementation/production-safe-green.md | Cubierta |
 | knowledge | S8a-S8f | context-and-knowledge/artifact-store.md, context-and-knowledge/sistema-rag.md, context-and-knowledge/codebase-memory.md, specification/state-model.md, specification/repo-docs-adapter.md | Cubierta |

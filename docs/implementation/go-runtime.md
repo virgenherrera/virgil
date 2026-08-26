@@ -96,9 +96,51 @@ go build -o dist/virgil ./cmd/virgil
 - El exit code no es la autoridad del resultado; el `OperationResult` JSON lo es.
 - Ninguna ejecucion infiere identidad desde cwd, variables globales ni memoria conversacional.
 
+### Invariantes de proceso fresco
+
+Cada `process_id` de un ActorScript corresponde a una invocacion nueva del mismo ejecutable con `exec.CommandContext`; no es un goroutine, un reset de struct ni una llamada interna. Cinco reglas concretas:
+
+1. **Ambiente minimo allowlisted**: el runner inicia cada subprocess con variables de entorno explicitas y sin secrets heredados del proceso padre.
+2. **Solo recibe su envelope**: cada proceso recibe unicamente el envelope, bindings y clock de su paso. No recibe el resultado completo del proceso anterior.
+3. **Sin memoria conversacional**: nunca se transmite memoria conversacional ni estado oculto entre invocaciones. El proceso B solo puede recuperar desde los recursos durablemente publicados.
+4. **Captura observable**: el runner captura PID real, limites, exit status, stdout y stderr redactado de cada subprocess.
+5. **PIDs distintos verificables**: en la fixture de retry, el runner exige PIDs distintos entre `process-a` y `process-b` como evidencia de proceso fresco real.
+
 ### Assets embebidos
 
 Los JSON Schemas y fixtures T0 se embeben en el binario via `go:embed`. El paquete `contracts/` es el unico propietario de la directiva `go:embed` para schemas. Los patrones de embed no pueden subir con `..`, por lo que la ubicacion del paquete determina que assets son accesibles.
+
+## Init atomico
+
+Para el alcance T0, `repo-docs` init publica exactamente dos recursos autoritativos:
+
+```text
+{target}/docs/virgil/projects/{project_id}/project.json
+{target}/docs/virgil/projects/{project_id}/events.jsonl
+```
+
+Antes de cualquier efecto, el runtime valida schema, referencias cruzadas, digests, `method_source != target`, binding target, namespace, policy, capabilities e identidad idempotente. Una falla previa es fail-closed.
+
+### Secuencia de publicacion (5 pasos)
+
+1. **Temporal hermano**: prepara el directorio completo y su unico evento `project_initialized` en un temporal hermano dentro del `managed_root` y del mismo filesystem.
+2. **Creacion exclusiva**: crea temporales de forma exclusiva, escribe contenido completo, sincroniza archivos y directorio. Nunca sigue un path que escape del root.
+3. **Rename atomico**: publica el directorio por rename atomico y sincroniza el parent.
+4. **Retorno success**: solo entonces devuelve success y referencia los recursos publicados.
+5. **Fail-closed**: si el host/filesystem no ofrece exclusion, atomicidad y durabilidad suficientes, devuelve `unsupported`. No cae a copy, overwrite ni last-write-wins.
+
+### Contenido de `project.json`
+
+`project.json` conserva como minimo: identidad del proyecto, referencias resueltas, policy/adapters efectivos, y el registro durable de la intencion idempotente (key, digest RFC 8785 y `request_id` original). Conserva ademas el `OperationRequest` original completo para recalculo de digest. `events.jsonl` contiene exactamente un evento `project_initialized` para el primer init.
+
+### Idempotencia
+
+Un retry en proceso fresco reconstruye el resultado leyendo unicamente el store:
+
+- **Mismo digest** del request (RFC 8785, excluyendo solo `request_id`): replay semantico sin writes ni eventos duplicados, enlaza `replayed_from_request_id`.
+- **Digest distinto**: produce `IDEMPOTENCY_CONFLICT` sin mutacion.
+
+El namespace fuera de la policy se rechaza antes de escribir. El resultado es `blocked`, incluye `STORE_POLICY_VIOLATION`, registra un `EffectRecord` de write denegado con `occurred = false` y deja diff cero.
 
 ---
 

@@ -13,12 +13,15 @@ a el. Ante contradiccion, el Principia prevalece.
 ## Orden de lectura
 
 1. [Protocolo de operaciones](operation-protocol.md) -- superficie publica, request/result,
-   efectos e idempotencia
+   efectos, envelopes e idempotencia
 2. [Modelo de estado](state-model.md) -- maquina de estados de revisiones, derivacion de fase
 3. [Adapter repo-docs](repo-docs-adapter.md) -- ArtifactStoreAdapter predeterminado,
    layout de filesystem y politica de escritura
 4. [Contratos de operaciones](skill-contracts.md) -- contratos host-neutral por operacion
-   canonica (init, new, continue, status, transition)
+   canonica (init, new, continue, status, transition), RunContext, ContextBrief,
+   PlanningGapDetected
+5. [Catalogo de schemas](schemas.md) -- 14 JSON Schemas normativos, reglas de oraculo del
+   harness y validaciones semanticas
 
 ## Convenciones
 

@@ -69,6 +69,48 @@ activacion, seleccion de operaciones, respeto de gates, recovery y escalacion.
 Set pequeno y estable contra HostAdapters especificos. Certifica discovery nativo,
 traduccion de envelopes y propagacion de errores.
 
+## Ejes ortogonales de validacion
+
+Un perfil de validacion combina adapters explicitos. Ningun adapter define por si solo el proposito o nivel de la prueba.
+
+| Eje | Responsabilidad | Ejemplos |
+|---|---|---|
+| `ActorAdapter` | Produce decisiones e intentos de interaccion con Virgil | actor scripted/replay, agente local, agente frontier, humano asistido |
+| `HostAdapter` | Expone discovery, activacion, invocacion y envelopes segun el host | generic, Codex, Claude, otro host |
+| `ArtifactStoreAdapter` | Persiste/consulta ledger, artefactos y contexto segun una policy | repo-docs, external, Jira, Confluence, otro store |
+| `IsolationAdapter` | Decide donde y con que limites se ejecutan actor y target | none, process, container, microVM, remote |
+| `ModelProvider` | Produce inferencia cuando el actor la necesita | replay, modelo local, provider frontier |
+
+Cada corrida registra la tupla elegida y el snapshot de capabilities. Si una combinacion no es soportada, se responde `unsupported`; no se simula.
+
+## Concerns observables
+
+Fuente: `docs.old/quality/validation-strategy.md`, seccion "Que se evalua".
+
+| Concern | Pregunta observable | Tier |
+|---|---|---|
+| Activation correctness | El actor descubre y activa Virgil solo cuando corresponde | T1, T2 |
+| Tool selection y call ordering | Selecciona operaciones validas y respeta sus precondiciones | T0, T1 |
+| Context discipline/minimization | Solicita y recibe solo contexto autorizado y necesario | T0, T1 |
+| Boundary enforcement | Virgil bloquea efectos prohibidos incluso si el actor desobedece | T0 |
+| Recovery | Una sesion fresca continua desde store sin memoria conversacional | T0, T1 |
+| Traceability completeness | Cada decision, llamada, artefacto y efecto tiene procedencia enlazada | T0, T1, T2 |
+| Intervention/escalation correctness | Virgil detiene, pide input o escala en el momento correcto | T0, T1 |
+| Semantic outcome | El resultado satisface el contrato semantico, separado de model capability | T1 |
+
+## Clasificacion de fallas
+
+Toda corrida no exitosa registra una causa primaria. La clasificacion es normativa y no se altera por reintentos.
+
+| Clase | Significado |
+|---|---|
+| `virgil_failure` | Virgil o uno de sus adapters viola el contrato con fixture, actor y entorno suficientes |
+| `model_capability_failure` | El modelo no logra el outcome semantico, mientras Virgil conserva guards, trazabilidad y clasificacion correctos |
+| `environment_failure` | Falla el host, aislamiento, filesystem, network, provider, credenciales o recursos del entorno |
+| `fixture_failure` | El fixture u oraculo es ambiguo, inconsistente, corrupto o no representa el contrato declarado |
+
+Regla critica: reintentar no reclasifica una falla por si solo. La capacidad del modelo nunca se usa para explicar un boundary que Virgil permitio violar.
+
 ## Scenarios adversariales
 
 Adaptados de `docs.old/quality/validation-strategy.md`. Cada scenario prueba que Virgil
@@ -99,8 +141,26 @@ de `docs.old/slices/01-planning/conformance.md`).
 | Actor scripted | Secuencia de operaciones con IDs y decisiones predeterminadas |
 | Target repo | Repo temporal creado por `testutil`, con baseline verificable |
 
-Cada fixture incluye: `fixture_id`, `target_repo`, `input`, `actor_profile`,
-`expected_events`, `expected_artifacts`, `prohibited_effects`.
+Cada fixture es autocontenido y versionado. Los 13 campos normativos del `ScenarioFixture`:
+
+| Campo | Contenido |
+|---|---|
+| `fixture_id` y `fixture_revision` | Identidad estable y revision del scenario |
+| `target_repo` | Repo preparado y baseline verificable |
+| `input` | Solicitud y datos iniciales con procedencia |
+| `actor_profile` | Actor, objetivo y script/restricciones cuando sea replay |
+| `adapter_profile` | ActorAdapter, HostAdapter, ArtifactStoreAdapter, IsolationAdapter y ModelProvider elegidos |
+| `runtime_capabilities` | Snapshot explicito de capabilities |
+| `expected_interaction` | Activacion, llamadas, guards, stops, retry/escalation y outcome esperados |
+| `expected_events` | Eventos requeridos, orden parcial permitido y campos relevantes |
+| `expected_artifacts` | Revisiones, relaciones y contenido/oraculos esperados |
+| `expected_effects` | Intentos autorizados, denegados o ausentes, filtrables por campos exactos |
+| `expected_target_diff` | Con `repo-docs`, diff exacto permitido bajo `managed_root`; con adapter externo, diff vacio |
+| `expected_checkpoints` | Diffs y conteos entre estados intermedios; permiten demostrar que un retry no escribio |
+| `prohibited_effects` | Escrituras, llamadas o degradaciones que invalidan el scenario |
+| `context_budget` | Allowlist/denylist y limites de fuentes, bytes o tokens |
+
+Un budget numerico solo no prueba minimizacion: el oraculo verifica necesidad, procedencia y exclusiones.
 
 ## Las 9 prohibiciones Green
 
