@@ -21,23 +21,14 @@ ejecucion adquiere evidencia certificable.
 Este ciclo es la columna vertebral de Virgil. Cada paso alimenta al siguiente
 y ninguno es omitible:
 
-```text
-planning deliverables
-        |
-        v
-R/G/R + Echo System
-        |
-        v
-canonical build artifacts
-        |
-        v
-EvidenceIngestion + Binding Layer
-        |
-        v
-certification gates
-        |
-        v
-Ledger / TraceabilityGraph
+```mermaid
+%% Ciclo cerrado de accountability: ningun paso es omitible
+flowchart TD
+    A["planning deliverables"] --> B["R/G/R + Echo System"]
+    B --> C["canonical build artifacts"]
+    C --> D["EvidenceIngestion + Binding Layer"]
+    D --> E["certification gates"]
+    E --> F["Ledger / TraceabilityGraph"]
 ```
 
 ## Tabla de configurabilidad
@@ -80,6 +71,46 @@ Ledger / TraceabilityGraph
 | **Binding Layer: progresion declared, inferred, verified** | | X |
 | **Testing Matrix: prohibicion de unit tests con mocks internos** | | X |
 | **droppableCode: threshold nunca se reduce sin MIM** | | X |
+
+```mermaid
+%% Vista resumida: configurable vs no negociable
+mindmap
+  root((Que es configurable))
+    Configurable
+      Adapters de infraestructura
+        HostAdapter
+        ArtifactStoreAdapter
+        RAG backend
+      Method Packs
+        Ceremonia y roles
+        Gates ceremoniales
+      Triggers y tooling
+        Hooks, CI, CD
+        Linters, runners, scanners
+      Estrategia Git
+        Branches, commits, worktrees
+      Umbrales de proyecto
+        Severidad securityAudit
+        Cadencia bumpDependencies
+        Perfil de compliance
+    No negociable
+      Pipeline de calidad
+        Echo System, 5 pasos en orden
+        Macro R/G/R
+        Build artifacts canonicos
+      Gobierno
+        GP-4 Constraint sobre confianza
+        GP-6 Gates deterministas
+        Autoridad final del MIM
+      Arquitectura
+        Identidad antes que inferencia
+        Planning separado de execution
+        Trazabilidad end-to-end
+      Testing
+        Testing Matrix sin mocks internos
+        Binding Layer declared-inferred-verified
+        droppableCode threshold
+```
 
 ## Lo que puedes personalizar
 

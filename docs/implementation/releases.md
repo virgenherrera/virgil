@@ -85,6 +85,40 @@ Adaptado de `docs.old/roadmap/vertical-slices.md`. Cada slice entrega un flujo v
 | 6 | **Method Packs** | Waterfall, Kanban, Shape Up sobre Kernel estable | Pendiente |
 | 7 | **GraphRAG + paralelismo** | proyecciones reconstruibles, leases, lanes paralelos | Pendiente |
 
+El diagrama siguiente ilustra el orden secuencial de los slices y no representa fechas comprometidas; el estado real de cada slice es el de la tabla anterior.
+
+```mermaid
+%% Orden secuencial de slices (ilustrativo, sin fechas comprometidas)
+gantt
+    title Roadmap de Virgil por vertical slices (orden ilustrativo)
+    dateFormat YYYY-MM-DD
+    axisFormat %b %Y
+
+    section Slice 1 - Planning
+    idea, spec, design, tasks, handoff, recovery, conformance :active, s1, 2026-06-01, 90d
+
+    section Slice 2 - Execution
+    handoff a code/tests, R/G/R, PlanningGapDetected :s2, after s1, 60d
+
+    section Slice 3 - Verify
+    verificacion contra ACs, evidencia reproducible, gates :s3, after s2, 45d
+
+    section Slice 4 - Ship/Operation
+    build identificable, deploy, rollback, ops-runbook :s4, after s3, 45d
+
+    section Slice 5 - Segundo host
+    HostAdapter, ArtifactStoreAdapter externo, conformance :s5, after s4, 30d
+
+    section Slice 6 - Method Packs
+    Waterfall, Kanban, Shape Up sobre Kernel estable :s6, after s5, 45d
+
+    section Slice 7 - GraphRAG + paralelismo
+    proyecciones reconstruibles, leases, lanes paralelos :s7, after s6, 60d
+
+    section Hitos
+    v1.0.0 (Slice 1 + 2 completos) :milestone, m1, after s2, 0d
+```
+
 ### Regla de avance
 
 Un slice avanza cuando su flujo vertical funciona con identidades explicitas, estado recuperable y evidencia trazable. Una promesa documental sin adapter ni flujo demostrable permanece como objetivo del slice siguiente.

@@ -55,6 +55,38 @@ El Dogma actual provee worktrees + branches como implementacion de referencia:
 
 **Nota**: esta es la implementacion de referencia, no un mandato. Otro proyecto puede usar otro mecanismo de aislamiento siempre que satisfaga los cuatro invariantes.
 
+El diagrama siguiente usa guiones en vez de barras en los nombres de branch por
+compatibilidad de sintaxis con `gitGraph`; la convencion real de nombres es la de la
+tabla anterior (`exec/iter-N/lane-{nombre}`).
+
+```mermaid
+%% Modelo de branching: worktrees + branches, integracion con --no-ff
+gitGraph
+    commit id: "main-init"
+    branch develop
+    checkout develop
+    commit id: "develop-init"
+    branch exec-iter1
+    checkout exec-iter1
+    commit id: "iter-setup"
+    branch exec-iter1-lane-a
+    checkout exec-iter1-lane-a
+    commit id: "lane-a-red"
+    commit id: "lane-a-green"
+    checkout exec-iter1
+    branch exec-iter1-lane-b
+    checkout exec-iter1-lane-b
+    commit id: "lane-b-red"
+    commit id: "lane-b-green"
+    checkout exec-iter1
+    merge exec-iter1-lane-a id: "merge-lane-a (no-ff)"
+    merge exec-iter1-lane-b id: "merge-lane-b (no-ff)"
+    checkout develop
+    merge exec-iter1 id: "merge-iter1 (no-ff)"
+    checkout main
+    merge develop id: "release"
+```
+
 ## PlanningGapDetected y su efecto en lanes
 
 Si una lane detecta violacion de contrato mid-flight, el SM emite `PlanningGapDetected` con efectos diferenciados segun la dependencia:

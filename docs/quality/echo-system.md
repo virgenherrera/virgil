@@ -21,6 +21,15 @@ Fuente: `principia/constitution.md`, Seccion 7a.
 El orden es constitucional: Setup siempre precede a Build, Build siempre precede
 a Static, y asi sucesivamente. Un proyecto no puede reordenar los pasos.
 
+```mermaid
+%% Pipeline Echo System: 5 pasos, orden constitucional
+flowchart LR
+    S1(["1. Setup<br/>dependencias + security audit"]) --> S2(["2. Build<br/>compila a ejecutables"])
+    S2 --> S3(["3. Static<br/>lint, formato, analisis estatico"])
+    S3 --> S4(["4. Dynamic<br/>tests de aplicacion, coverage"])
+    S4 --> S5(["5. E2E<br/>solucion completa, cero mocks"])
+```
+
 ## Scope por ambiente
 
 Los cinco pasos se ejecutan en todos los ambientes. Lo que cambia es la amplitud

@@ -66,6 +66,48 @@ internal/
 
 La regla critica: `t0/` opera el binario como subprocess, nunca importa el kernel (principia S7d: boundary testing). `test/app/` tampoco importa paquetes internos.
 
+```mermaid
+%% DAG de paquetes por tier: las flechas indican "puede importar de"
+flowchart TD
+    subgraph Tier0["Tier 0"]
+        protocol["protocol/"]
+        contracts["contracts/"]
+        evidence["evidence/"]
+    end
+
+    subgraph Tier1["Tier 1"]
+        kernel["kernel/"]
+        adapters["adapters/*"]
+    end
+
+    subgraph Tier2["Tier 2"]
+        packs["packs/scrum"]
+    end
+
+    subgraph Tier3["Tier 3"]
+        runtime["runtime/"]
+    end
+
+    subgraph Tier4["Tier 4"]
+        cmd["cmd/virgil"]
+    end
+
+    t0["t0/<br/>(subprocess harness, no importa kernel)"]
+    testapp["test/app/<br/>(solo binario publico)"]
+
+    Tier0 --> kernel
+    Tier0 --> adapters
+    kernel --> packs
+    Tier0 --> packs
+    kernel --> runtime
+    adapters --> runtime
+    packs --> runtime
+    Tier0 --> runtime
+    runtime --> cmd
+    Tier0 --> t0
+    evidence --> t0
+```
+
 ## Build
 
 **Decision**: `go build` produce un unico binario estatico autocontenido (principia S5).
@@ -96,6 +138,29 @@ go build -o dist/virgil ./cmd/virgil
 - El exit code no es la autoridad del resultado; el `OperationResult` JSON lo es.
 - Ninguna ejecucion infiere identidad desde cwd, variables globales ni memoria conversacional.
 
+```mermaid
+%% Fresh process per invocation: sin memoria compartida entre invocaciones
+sequenceDiagram
+    autonumber
+    actor Actor
+    participant OS as Sistema operativo
+    participant PA as Proceso A (fresh)
+    participant PB as Proceso B (fresh, retry)
+
+    Actor->>OS: invoca virgil
+    OS->>PA: exec.CommandContext (PID nuevo)
+    PA->>PA: procesa envelope, bindings, clock
+    PA-->>OS: OperationResult (stdout)
+    OS-->>Actor: respuesta JSON
+
+    Actor->>OS: invoca virgil (retry)
+    OS->>PB: exec.CommandContext (PID distinto)
+    Note over PB: sin memoria conversacional,<br/>solo recursos durablemente publicados
+    PB->>PB: procesa envelope, bindings, clock
+    PB-->>OS: OperationResult (stdout)
+    OS-->>Actor: respuesta JSON
+```
+
 ### Invariantes de proceso fresco
 
 Cada `process_id` de un ActorScript corresponde a una invocacion nueva del mismo ejecutable con `exec.CommandContext`; no es un goroutine, un reset de struct ni una llamada interna. Cinco reglas concretas:
@@ -114,24 +179,36 @@ Los JSON Schemas y fixtures T0 se embeben en el binario via `go:embed`. El paque
 
 Para el alcance T0, `repo-docs` init publica exactamente dos recursos autoritativos:
 
-```text
-{target}/docs/virgil/projects/{project_id}/project.json
-{target}/docs/virgil/projects/{project_id}/events.jsonl
+```mermaid
+%% Recursos publicados por init atomico
+flowchart TD
+    T["{target}/"] --> P["virgil.json"]
+    T --> E["events.jsonl"]
 ```
 
 Antes de cualquier efecto, el runtime valida schema, referencias cruzadas, digests, `method_source != target`, binding target, namespace, policy, capabilities e identidad idempotente. Una falla previa es fail-closed.
 
 ### Secuencia de publicacion (5 pasos)
 
-1. **Temporal hermano**: prepara el directorio completo y su unico evento `project_initialized` en un temporal hermano dentro del `managed_root` y del mismo filesystem.
+1. **Temporal hermano**: prepara el directorio completo y su unico evento `project_initialized` en un temporal hermano dentro del `target` y del mismo filesystem.
 2. **Creacion exclusiva**: crea temporales de forma exclusiva, escribe contenido completo, sincroniza archivos y directorio. Nunca sigue un path que escape del root.
 3. **Rename atomico**: publica el directorio por rename atomico y sincroniza el parent.
 4. **Retorno success**: solo entonces devuelve success y referencia los recursos publicados.
 5. **Fail-closed**: si el host/filesystem no ofrece exclusion, atomicidad y durabilidad suficientes, devuelve `unsupported`. No cae a copy, overwrite ni last-write-wins.
 
-### Contenido de `project.json`
+```mermaid
+%% Secuencia de publicacion atomica del init
+flowchart TD
+    A["1. Temporal hermano<br/>prepara directorio + evento en target"] --> B["2. Creacion exclusiva<br/>temporales exclusivos, contenido completo, fsync"]
+    B --> C{"Host ofrece<br/>exclusion/atomicidad/durabilidad?"}
+    C -->|si| D["3. Rename atomico<br/>publica directorio, sincroniza parent"]
+    D --> E["4. Retorno success<br/>referencia recursos publicados"]
+    C -->|no| F["5. Fail-closed<br/>unsupported (nunca last-write-wins)"]
+```
 
-`project.json` conserva como minimo: identidad del proyecto, referencias resueltas, policy/adapters efectivos, y el registro durable de la intencion idempotente (key, digest RFC 8785 y `request_id` original). Conserva ademas el `OperationRequest` original completo para recalculo de digest. `events.jsonl` contiene exactamente un evento `project_initialized` para el primer init.
+### Contenido de `virgil.json`
+
+`virgil.json` conserva como minimo: identidad del proyecto, referencias resueltas, policy/adapters efectivos, y el registro durable de la intencion idempotente (key, digest RFC 8785 y `request_id` original). Conserva ademas el `OperationRequest` original completo para recalculo de digest. `events.jsonl`, publicado junto a `virgil.json` en la raiz del target, contiene exactamente un evento `project_initialized` para el primer init.
 
 ### Idempotencia
 

@@ -15,6 +15,34 @@ Fuente: `principia/constitution.md`, Seccion 5.
 | Adapters | Traduccion entre Kernel y entorno externo | Si |
 | Method Packs | Ceremonia, roles, gates adicionales | Si (enchufable) |
 
+```mermaid
+%% Relacion entre Kernel, Adapters y Method Packs
+flowchart TD
+    subgraph Kernel["Kernel (no intercambiable)"]
+        Ledger[("Ledger")]
+        TG["TraceabilityGraph"]
+        AR["ArtifactRepository"]
+        EI["EvidenceIngestion"]
+        CC["ContextCompiler"]
+        RP["RetrievalProjection"]
+    end
+
+    subgraph Adapters["Adapters (intercambiables)"]
+        HA["HostAdapter"]
+        ASA["ArtifactStoreAdapter"]
+    end
+
+    subgraph Packs["Method Packs (enchufables)"]
+        Scrum["Scrum (implementado)"]
+        Otros["Waterfall / Kanban / Shape Up (TBD)"]
+    end
+
+    HA -->|traduce discovery/invocacion| Kernel
+    AR -->|persiste via| ASA
+    Kernel -->|expone deliverables a| ASA
+    Packs -.->|hereda gates de calidad, nunca las reduce| Kernel
+```
+
 ## Kernel (ceremony-agnostic, calidad universal)
 
 El Kernel impone invariantes de calidad universales independientemente

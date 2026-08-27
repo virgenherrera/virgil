@@ -2,7 +2,15 @@
 
 [← docs/](../README.md) · [← lifecycle/](./README.md)
 
-Virgil gestiona cada proyecto como una maquina de estados finita. Un feature no avanza a la siguiente fase hasta que su deliverable esta consolidado. No es una linea recta: es un loop que converge hacia un handoff bien acotado.
+Virgil gestiona cada proyecto como una maquina de estados finita. Un feature no avanza a la
+siguiente fase hasta que su deliverable esta consolidado. No es una linea recta: es un loop
+que converge hacia un handoff bien acotado.
+
+> **Nota**: este diagrama representa la vista logica derivada del progreso del proyecto, NO
+> una segunda maquina de estados persistida. La unica lifecycle persistida es la de una
+> revision de artefacto (ver [state-model.md](../specification/state-model.md)). La "fase"
+> actual se calcula como `derived_step`: el primer tipo de artefacto sin revision aprobada
+> efectiva.
 
 Fuente: `principia/constitution.md`, Seccion 3a.
 
@@ -35,6 +43,46 @@ Cada transicion requiere que el deliverable de la fase actual este consolidado. 
 | Execution | Verify | Implementacion candidata lista |
 | Verify | Deliver | Implementacion certificada |
 | Deliver | Operation | Solo si aplica (superficie operacional activa) |
+
+```mermaid
+%% Maquina de estados del ciclo de vida del proyecto
+stateDiagram-v2
+    [*] --> Idea
+
+    Idea --> Idea: Cuestionar, refinar
+    Idea --> Requirements: Idea consolidada
+
+    Requirements --> Requirements: Iterar con el MIM
+    Requirements --> Idea: Gap detectado en la idea
+    Requirements --> Design: Requisitos completos
+
+    Design --> Requirements: Gap detectado en requisitos
+    Design --> Tasks: Diseno aprobado
+
+    Tasks --> Design: Gap detectado en diseno
+    Tasks --> Handoff: Tareas refinadas
+
+    Handoff --> Execution: Handoff aprobado
+    Execution --> Verify: Implementacion candidata lista
+    Verify --> Deliver: Implementacion certificada
+
+    Deliver --> Operation: Solo si aplica
+    Deliver --> [*]
+    Operation --> [*]
+
+    note right of Idea
+        Zona Planning: Virgil impone
+        convergencia mecanica
+    end note
+    note right of Execution
+        Zona Execution: Virgil observa,
+        emite PlanningGapDetected
+    end note
+    note right of Deliver
+        Zona Post-entrega: Virgil
+        asiste de forma reactiva
+    end note
+```
 
 ## Planning vs Execution
 

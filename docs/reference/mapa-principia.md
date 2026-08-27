@@ -68,6 +68,12 @@ declarada en cada archivo.
 | implementation/conformance.md | S3b, S7d, S8a, S10 | lifecycle, quality, knowledge, recovery |
 | implementation/testing-strategy.md | S7d, S7f | quality |
 | implementation/production-safe-green.md | S7c, S7d | quality |
+| planning/README.md | S4b, S7d, S7h (indice) | navigation |
+| planning/epics.md | S4b, S7d, S7h | planning |
+| planning/slice-1-historias.md | S3b, S5, S7d, S8a | planning |
+| planning/slice-1-tareas.md | S5, S7d, S7h | planning |
+| planning/slice-1-handoff.md | S3b, S5, S7c, S7d, S7h, S8a | planning |
+| planning/release-plan.md | S4b, S7h | planning |
 
 ## Tabla inversa: seccion del Principia a documentos docs/
 
@@ -84,23 +90,23 @@ dedicado)". La estructura de secciones y capas proviene de
 | S1a | Regla anti-drift interpretativa | getting-started/que-es-virgil.md, reference/que-es-configurable.md | identity |
 | S2 | Estructura de tres capas | getting-started/modelo-tres-capas.md | structure |
 | S3a | Ciclo de vida de un proyecto | lifecycle/maquina-de-estados.md, lifecycle/fastforward.md, specification/state-model.md | lifecycle |
-| S3b | Flujo de una invocacion | lifecycle/flujo-de-invocacion.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md, specification/schemas.md, implementation/conformance.md | lifecycle |
+| S3b | Flujo de una invocacion | lifecycle/flujo-de-invocacion.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md, specification/schemas.md, implementation/conformance.md, planning/slice-1-historias.md | lifecycle |
 | S4a | Gobierno | architecture/principios-de-gobierno.md | principles |
-| S4b-S4c | Invariantes arquitectonicos | architecture/invariantes-arquitectonicos.md, implementation/releases.md | principles |
-| S5 | Catalogo de componentes | architecture/componentes.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md, specification/schemas.md | components |
+| S4b-S4c | Invariantes arquitectonicos | architecture/invariantes-arquitectonicos.md, implementation/releases.md, planning/epics.md, planning/release-plan.md | principles |
+| S5 | Catalogo de componentes | architecture/componentes.md, implementation/go-runtime.md, specification/operation-protocol.md, specification/skill-contracts.md, specification/schemas.md, planning/slice-1-historias.md, planning/slice-1-tareas.md | components |
 | S6a | Actores y modos | getting-started/modos-y-roles.md | interaction |
 | S6b-S6c | Separacion de concerns e invariante fundamental | architecture/modelo-de-interaccion.md | interaction |
 | S7a | Echo System | quality/echo-system.md, implementation/README.md, implementation/echo-system-go.md, implementation/artifacts.md, implementation/ci-cd.md | quality |
 | S7b | Deliverables vs Build Artifacts | quality/README.md, implementation/README.md, implementation/artifacts.md | quality |
 | S7c (R/G/R) | Macro Red/Green/Refactor | quality/red-green-refactor.md, implementation/production-safe-green.md | quality |
 | S7c (compositeAgent) | compositeAgent y mutation domains | execution/agente-compuesto.md | quality |
-| S7d (tiers) | Testing Matrix | quality/matriz-de-testing.md, implementation/echo-system-go.md, implementation/conformance.md, implementation/testing-strategy.md, implementation/production-safe-green.md, specification/schemas.md | quality |
+| S7d (tiers) | Testing Matrix | quality/matriz-de-testing.md, implementation/echo-system-go.md, implementation/conformance.md, implementation/testing-strategy.md, implementation/production-safe-green.md, specification/schemas.md, planning/epics.md, planning/slice-1-historias.md, planning/slice-1-tareas.md | quality |
 | S7d (binding) | Binding Layer y trazabilidad | quality/binding-layer.md | quality |
 | S7e | QA / Acceptance Gates | quality/qa-gates.md | quality |
 | S7f | droppableCode | quality/droppable-code.md, implementation/testing-strategy.md | quality |
 | S7g | complianceByDesign | quality/compliance.md | quality |
-| S7h | Supply Chain Integrity | quality/supply-chain.md, implementation/README.md, implementation/go-runtime.md, implementation/echo-system-go.md, implementation/ci-cd.md, implementation/releases.md | quality |
-| S8a-S8b | ArtifactStore y namespaces | context-and-knowledge/artifact-store.md, specification/state-model.md, specification/repo-docs-adapter.md, implementation/conformance.md | knowledge |
+| S7h | Supply Chain Integrity | quality/supply-chain.md, implementation/README.md, implementation/go-runtime.md, implementation/echo-system-go.md, implementation/ci-cd.md, implementation/releases.md, planning/release-plan.md, planning/slice-1-tareas.md | quality |
+| S8a-S8b | ArtifactStore y namespaces | context-and-knowledge/artifact-store.md, specification/state-model.md, specification/repo-docs-adapter.md, implementation/conformance.md, planning/slice-1-historias.md | knowledge |
 | S8c | RAG dual, watermark, re-sync | context-and-knowledge/sistema-rag.md | knowledge |
 | S8d-S8e | Visibilidad y memoizacion | context-and-knowledge/sistema-rag.md | knowledge |
 | S8f | codebaseMemory | context-and-knowledge/codebase-memory.md | knowledge |
@@ -135,6 +141,7 @@ definidas en `principia/manifest.yaml`.
 | context | S9 | context-and-knowledge/flujo-de-contexto.md, specification/skill-contracts.md | Cubierta |
 | recovery | S10 | lifecycle/recuperacion.md | Cubierta |
 | execution | S11a-S11f | execution/pipeline.md, execution/estrategia-git.md, quality/qa-gates.md, execution/aceptar-rechazar.md, execution/break-glass.md, implementation/artifacts.md, implementation/ci-cd.md | Cubierta |
+| planning | S4b, S7d, S7h, S3b, S5, S8a | planning/epics.md, planning/slice-1-historias.md, planning/slice-1-tareas.md, planning/release-plan.md | Cubierta |
 | operation | S12 | (sin documentos dedicados) | Pendiente |
 | authority | Autoridad, auto-referencia | (sin documentos dedicados) | Pendiente |
 | reference | Glosario | reference/glosario.md, reference/que-es-configurable.md, reference/mapa-principia.md | Cubierta |

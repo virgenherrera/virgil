@@ -47,12 +47,11 @@ El binario Go que ejecuta las operaciones de Virgil. Implementa los contratos de
 
 ## La regla de gobierno
 
-```text
-Principia (inmutable)
-    |
-    |-- gobierna -->  Dogma (versionado)
-                        |
-                        |-- define contratos para -->  Runtime (mutable)
+```mermaid
+%% La regla de gobierno: la direccion siempre fluye de adentro hacia afuera
+flowchart TD
+    A["Principia<br/>(inmutable)"] -->|gobierna| B["Dogma<br/>(versionado)"]
+    B -->|define contratos para| C["Runtime<br/>(mutable)"]
 ```
 
 La direccion de gobierno siempre fluye de adentro hacia afuera:

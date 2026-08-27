@@ -7,16 +7,17 @@ Cada decision referencia la seccion constitucional que la gobierna.
 
 ## Estructura de directorios
 
-```text
-test/
-  app/             <- PRIMARIO: boundary tests, stack real
-    kernel/        <- Kernel APIs con adapters reales
-    adapters/      <- adapters contra filesystem/git reales
-    cli/           <- CLI black-box via testscript
-  e2e/             <- integracion: scenarios completos
-    scenarios/     <- flujos multi-operacion
-    fixtures/      <- repos preparados, scripts de actor
-  testutil/        <- helpers compartidos (NO mocks)
+```mermaid
+%% Estructura de directorios de test
+flowchart TD
+    T["test/"] --> A["app/<br/>(PRIMARIO: boundary tests, stack real)"]
+    A --> AK["kernel/<br/>(Kernel APIs con adapters reales)"]
+    A --> AA["adapters/<br/>(contra filesystem/git reales)"]
+    A --> AC["cli/<br/>(CLI black-box via testscript)"]
+    T --> E["e2e/<br/>(integracion: scenarios completos)"]
+    E --> ES["scenarios/<br/>(flujos multi-operacion)"]
+    E --> EF["fixtures/<br/>(repos preparados, scripts de actor)"]
+    T --> U["testutil/<br/>(helpers compartidos, NO mocks)"]
 ```
 
 Fuente: `principia/constitution.md`, Seccion 7d. No existen archivos `*_test.go`
@@ -46,6 +47,22 @@ Adaptados de `docs.old/quality/validation-strategy.md`, mapeados a la estructura
 | **T0** | Protocol/app replay: superficie publica completa con actor scripted | `test/app/` | Fixtures deterministas, IDs controlados |
 | **T1** | Agent-in-the-loop: agente real descubre y usa Virgil | `test/e2e/scenarios/` | Agente local o frontier |
 | **T2** | Host-adapter conformance: HostAdapter especifico (Codex, Claude) | `test/e2e/scenarios/` | Smoke set contra host concreto |
+
+```mermaid
+%% Tiers de validacion como boundaries progresivos
+flowchart TD
+    subgraph T0["T0 - Protocol/app replay"]
+        T0D["test/app/<br/>Fixtures deterministas, IDs controlados"]
+    end
+    subgraph T1["T1 - Agent-in-the-loop"]
+        T1D["test/e2e/scenarios/<br/>Agente local o frontier"]
+    end
+    subgraph T2["T2 - Host-adapter conformance"]
+        T2D["test/e2e/scenarios/<br/>Smoke set contra host concreto"]
+    end
+
+    T0 --> T1 --> T2
+```
 
 ### T0: autovalidacion (Virgil gestiona su propio planning)
 

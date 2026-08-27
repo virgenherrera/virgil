@@ -62,6 +62,36 @@ El SM busca, cura e inyecta el contexto en el prompt del sub-agente.
 Ambos patrones operan sobre el RAG dual: devRag en Modo Desarrollo,
 consumerRag en Modo Consumo.
 
+```mermaid
+%% Flujo de contexto: compilacion, entrega al sub-agente y PDC
+sequenceDiagram
+    autonumber
+    participant SM as SM (orquestador)
+    participant CC as ContextCompiler
+    participant RAG as RAG (dev/consumer)
+    participant Sub as Sub-agente
+    participant TPM
+
+    SM->>CC: Solicita ContextBrief acotado al objetivo
+    CC->>RAG: Selecciona deliverables, hechos, limites
+    RAG-->>CC: Resultado trazable (incluido/excluido)
+    CC-->>SM: ContextBrief
+
+    alt PatternB (default, target conocido)
+        SM->>Sub: delegationContract + topic_key
+        Sub->>RAG: Lee directamente del RAG
+    else PatternA (busqueda fuzzy, fan-out alto)
+        SM->>Sub: delegationContract + contexto inyectado
+    end
+
+    Sub-->>SM: Output + Status Report
+
+    SM->>SM: PDC - ECHO (coherencia)
+    SM->>SM: PDC - VERIFY (completitud)
+    SM->>TPM: PDC - MARK (persistir)
+    SM->>SM: PDC - DECIDE (avanzar o escalar)
+```
+
 ## delegationContract
 
 Cada delegacion del SM a un sub-agente lleva un contrato de 6 campos

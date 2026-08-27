@@ -9,17 +9,18 @@ Referencia constitucional: Principia S8a (ArtifactStore), S8b (separacion de nam
 
 ## Layout de filesystem
 
-```text
-{target}/
-  virgil.json                    # archivo de control (raiz del target)
-  docs/
-    virgil/                      # managed namespace (S8b)
-      {change_id}/               # subdirectorio por cambio
-        00-idea.md
-        01-spec.md
-        02-design.md
-        03-tasks.md
-        04-handoff.md
+```mermaid
+%% Layout de filesystem del adapter repo-docs
+flowchart TD
+    T["{target}/"] --> V["virgil.json<br/>(archivo de control)"]
+    T --> D["docs/"]
+    D --> M["virgil/<br/>(managed namespace, S8b)"]
+    M --> C["{change_id}/<br/>(subdirectorio por cambio)"]
+    C --> F1["00-idea.md"]
+    C --> F2["01-spec.md"]
+    C --> F3["02-design.md"]
+    C --> F4["03-tasks.md"]
+    C --> F5["04-handoff.md"]
 ```
 
 Cada cambio publica sus artefactos bajo `docs/virgil/{change_id}/`. Multiples cambios
@@ -68,6 +69,7 @@ sin dependencia de parsing YAML.
 El adapter PUEDE leer o indexar `docs/` segun una allowlist explicita. Solo PUEDE escribir:
 
 - `virgil.json` (raiz del target)
+- `events.jsonl` (raiz del target)
 - `docs/virgil/{change_id}/{NN}-{kind}.md` que el mismo administra
 
 Los documentos existentes en `docs/` fuera de `docs/virgil/` son read-only y no producen
@@ -82,6 +84,25 @@ permanecen fuera del write scope de planning. Referencia: Principia S8b.
 
 Si el HostAdapter no puede garantizar atomicidad/durabilidad requerida, la operacion
 responde `unsupported`. No degrada a last-write-wins.
+
+## Persistencia de eventos
+
+- **Ruta**: `{target}/events.jsonl`, en la raiz del target, junto a `virgil.json`.
+- **Formato**: NDJSON — un objeto JSON por linea, terminada en salto de linea.
+- **Campos por evento**: `event_id`, `event_type`, `change_id` (cuando aplica),
+  `request_id`, `idempotency_key`, `timestamp`, `data`.
+- **Contrato de escritura**: append-only. Los eventos nuevos se agregan al final del
+  archivo; nunca se sobrescriben ni reordenan las lineas existentes.
+
+El primer evento tras la inicializacion es `project_initialized`.
+
+El log de eventos es la base de la recuperacion en sesion fresca (conformance C7), de la
+idempotencia de retries y deteccion de reuso incompatible (conformance C8-C9), y de la
+auditabilidad de adapter, policy y efectos (conformance C14).
+
+En Slice 1, el historial de git complementa al log de eventos para el versionado de
+artefactos, pero no lo reemplaza: `events.jsonl` sigue siendo la fuente de verdad para
+recuperacion e idempotencia.
 
 ## Ciclo de vida de un artefacto en disco
 

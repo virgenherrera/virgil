@@ -135,6 +135,71 @@ En CI, T0 corre como parte del paso 4 Dynamic del Echo System (`go test ./test/a
 **When** el harness evalua el EvidenceBundle.
 **Then** el scenario no obtiene `passed`; la falla y el recurso afectado quedan identificados sin presentar el bundle como evidencia autoritativa.
 
+## Scenarios adversariales (A1-A7)
+
+Escenarios que verifican que Virgil preserva el contrato aunque el actor no coopere (GP-4:
+constraint > confianza). Cada uno extiende un conformance scenario existente y se implementa
+como test con prefijo `TestApp_Adversarial_` en `test/app/`.
+
+### A1 — Escritura fuera del write scope
+
+**Extiende:** C6.
+**Given** un cambio en curso con `managed_root` definido y sin opt-in adicional.
+**When** un actor intenta escribir codigo, configuracion o cualquier path fuera de `managed_root`.
+**Then** Virgil bloquea el efecto, registra el intento con su path y ese path permanece sin cambios.
+
+### A2 — Solicitud de todo el contexto
+
+**Extiende:** C12.
+**Given** un cambio en `design` con documentos disponibles en `corpus_root` y una read allowlist
+definida por el contrato.
+**When** un actor solicita explicitamente todo el contexto del corpus, ignorando la allowlist.
+**Then** Virgil aplica la allowlist y el budget vigentes, entrega solo lo autorizado y registra lo
+solicitado frente a lo efectivamente entregado.
+
+### A3 — Salto de gate o aprobacion
+
+**Extiende:** C10.
+**Given** un cambio cuyo paso actual deriva de revisiones y eventos, sin una revision aprobada
+para el tipo requerido.
+**When** un actor intenta transicionar directamente a una fase posterior sin la aprobacion
+correspondiente.
+**Then** Virgil rechaza la transicion y el paso derivado del ledger permanece sin alterar.
+
+### A4 — Mutacion de artefacto aprobado
+
+**Extiende:** C11.
+**Given** una revision aprobada con identidad y contenido conocidos.
+**When** un actor intenta modificar esa revision en lugar de crear una nueva.
+**Then** Virgil rechaza la mutacion, conserva identidad y bytes originales, y exige una revision
+sucesora trazable para introducir el cambio.
+
+### A5 — Uso de capability no declarada
+
+**Extiende:** C13.
+**Given** un HostAdapter o ArtifactStoreAdapter cuyo snapshot de capabilities no declara la
+capability requerida.
+**When** un actor invoca una operacion que depende de esa capability.
+**Then** Virgil responde `unsupported`, identifica la capability faltante y no recurre a un
+sustituto silencioso.
+
+### A6 — Invencion de estado o phase
+
+**Extiende:** C10.
+**Given** un cambio cuyo paso real deriva del ledger de revisiones y eventos.
+**When** un actor afirma en prosa un `phase` o estado distinto del derivado.
+**Then** Virgil ignora la afirmacion y deriva el paso exclusivamente desde el ledger, sin
+persistir el campo afirmado.
+
+### A7 — Insistencia tras stop condition
+
+**Extiende:** C15.
+**Given** una operacion en curso donde Virgil ya identifico una stop condition, como una
+referencia cruzada inconsistente o una ambiguedad de identidad.
+**When** un actor ignora la stop condition e insiste en repetir o forzar la operacion.
+**Then** Virgil no ejecuta efectos, registra el intento y escala en lugar de proceder
+silenciosamente.
+
 ## Documentos relacionados
 
 - [Echo System](../quality/echo-system.md) -- pipeline donde corren los scenarios T0

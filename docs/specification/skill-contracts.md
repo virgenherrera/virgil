@@ -30,7 +30,7 @@ Campos minimos:
 | `project_ref` | ProjectRef | si | Identidad estable del proyecto y target |
 | `intention` | string | si | Intencion declarada del cambio |
 | `scope` | object | si | Scope permitido y exclusiones |
-| `derived_phase` | string | cond | Fase u outcome activo, derivado desde los artefactos |
+| `derived_step` | string | cond | Primer artefacto requerido no aprobado, o `complete` |
 | `target_baseline` | string | si | Baseline del target al inicio del run |
 | `method_pack` | MethodPackRef | si | Method Pack fijado para el run (no cambia mid-run) |
 | `host` | HostSnapshot | si | HostAdapter y snapshot de capacidades |

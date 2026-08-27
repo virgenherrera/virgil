@@ -24,6 +24,15 @@ El pipeline mapea 1:1 a los 5 pasos del Echo System. El orden es constitucional 
 | 4. Dynamic | `dynamic` | `go test ./test/app/... -coverprofile=dist/coverage.out -count=1` | Coverage sin regresion |
 | 5. E2E | `e2e` | `go test ./test/e2e/... -tags=e2e -count=1` | Conformance scenarios pasan |
 
+```mermaid
+%% Stages del pipeline de CI, mapeados 1:1 al Echo System
+flowchart TD
+    Setup["setup<br/>checkout, govulncheck"] --> Build["build<br/>go build"]
+    Build --> Static["static<br/>vet + lint + fmt"]
+    Static --> Dynamic["dynamic<br/>test app boundary"]
+    Dynamic --> E2E["e2e<br/>conformance scenarios"]
+```
+
 ### Caching
 
 Dos caches aceleran el pipeline sin comprometer reproducibilidad:
@@ -89,11 +98,12 @@ Adaptado de `docs.old/validation/challenge-a-expectations.md`. Antes de cada rel
 
 ### Smoke test automatizado
 
-```text
-1. Descargar binario del release candidate
-2. virgil init --project-id=smoke-test   (crear proyecto)
-3. virgil status                          (verificar estado derivado)
-4. Confirmar: virgil.json + AGENTS.md existen con schema correcto
+```mermaid
+%% Smoke test automatizado pre-release
+flowchart TD
+    A["1. Descargar binario del release candidate"] --> B["2. virgil init --project-id=smoke-test<br/>(crear proyecto)"]
+    B --> C["3. virgil status<br/>(verificar estado derivado)"]
+    C --> D["4. Confirmar virgil.json + AGENTS.md<br/>existen con schema correcto"]
 ```
 
 ### Challenge-A: validacion en proyecto TypeScript

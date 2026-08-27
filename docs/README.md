@@ -15,6 +15,7 @@ El Principia (`principia/constitution.md`) es la fuente de verdad constitucional
 7. [Referencia](reference/README.md) -- glosario, configurabilidad, mapa de trazabilidad
 8. [Especificacion](specification/README.md) -- contratos wire-level, protocolos, modelo de estado
 9. [Implementacion](implementation/README.md) -- decisiones tecnicas concretas, Go runtime, CI/CD
+10. [Planning](planning/README.md) -- epics, historias de usuario, tareas y plan de releases
 
 ## Indice de secciones
 
@@ -29,14 +30,15 @@ El Principia (`principia/constitution.md`) es la fuente de verdad constitucional
 | `reference/` | Glosario, mapa de trazabilidad al Principia y referencia de configurabilidad |
 | `specification/` | Contratos wire-level: protocolo de operaciones, modelo de estado, adapter repo-docs, contratos de skills |
 | `implementation/` | Decisiones tecnicas concretas: Go runtime, Echo System instanciado, artefactos de build |
+| `planning/` | Epics por vertical slice, historias de usuario del Slice 1, tareas con DAG de dependencias, plan de releases |
 
 ## Relacion con el Principia
 
-```text
-principia/constitution.md   (inmutable, constitucional)
-        |
-        v
-    docs/                    (normativo, versionado, derivado)
+```mermaid
+%% Modelo de tres capas: gobierno de adentro hacia afuera
+flowchart TD
+    A["principia/constitution.md<br/>(inmutable, constitucional)"] --> B["docs/<br/>(normativo, versionado, derivado)"]
+    B --> C["runtime (codigo Go)<br/>(mutable, operativo)"]
 ```
 
 Cada documento en `docs/` incluye una referencia a la seccion del Principia de la cual se deriva. Ante cualquier ambiguedad, consulta la fuente original.

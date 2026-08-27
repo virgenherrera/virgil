@@ -34,6 +34,22 @@ Cada transicion entre fases corresponde a un checkpoint nombrado que actua como 
 | **F1** | Refactor seguro | Metricas dentro de umbral, tests siguen pasando |
 | **V1** | Verify independiente | Certificacion mecanica aprobada |
 
+```mermaid
+%% Pipeline de ejecucion: cinco fases con checkpoints de gate
+flowchart TD
+    Handoff(["Handoff de planning"]) --> R0{"R0: Handoff completo?"}
+    R0 -->|si| PP["prePhase<br/>Contratos: APIs, schemas, interfaces"]
+    PP --> RED["Red<br/>Suite completa de tests, todos fallan"]
+    RED --> R1{"R1: Red valida?"}
+    R1 -->|si| GREEN["Green<br/>Implementacion, todos los tests pasan"]
+    GREEN --> G1{"G1: Green production-safe?"}
+    G1 -->|si| REFACTOR["Refactor<br/>Mutation, CRAP, complejidad"]
+    REFACTOR --> F1{"F1: Refactor seguro?"}
+    F1 -->|si| VERIFY["Verify<br/>Certificacion final"]
+    VERIFY --> V1{"V1: Verify independiente?"}
+    V1 -->|si| DONE(["Implementacion certificada"])
+```
+
 ### prePhase: contratos antes de codigo
 
 La prePhase es la fase clave que diferencia este pipeline de un ciclo TDD clasico. Antes de escribir un solo test, se definen los contratos que regiran la implementacion:

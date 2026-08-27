@@ -13,8 +13,10 @@ Referencia constitucional: Principia S3a (ciclo de vida), S8a (ArtifactStore).
 Cada cambio usa los tipos requeridos por su Method Pack. Para el Pack Scrum (predeterminado)
 el orden es:
 
-```text
-idea -> spec -> design -> tasks -> handoff
+```mermaid
+%% Orden de tipos de artefacto requeridos por el Pack Scrum
+flowchart LR
+    A(["idea"]) --> B(["spec"]) --> C(["design"]) --> D(["tasks"]) --> E(["handoff"])
 ```
 
 ## Estados de revision
@@ -31,12 +33,17 @@ Los estados `withdrawn` y `superseded` son terminales (sin transiciones de salid
 
 ## Transiciones permitidas
 
-```text
-draft             -> awaiting_approval
-draft             -> withdrawn
-awaiting_approval -> approved
-awaiting_approval -> withdrawn
-approved          -> superseded
+```mermaid
+%% Maquina de estados de una revision de artefacto
+stateDiagram-v2
+    [*] --> draft
+    draft --> awaiting_approval
+    draft --> withdrawn
+    awaiting_approval --> approved
+    awaiting_approval --> withdrawn
+    approved --> superseded
+    withdrawn --> [*]
+    superseded --> [*]
 ```
 
 Toda transicion se persiste como evento. El contenido de una revision es inmutable desde

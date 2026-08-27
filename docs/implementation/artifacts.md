@@ -17,23 +17,23 @@ Los build artifacts NO son deliverables (principia S7b). Los deliverables (idea.
 
 ## Estructura de dist
 
-```text
-dist/
-  virgil                          -- binario local (dev)
-  virgil-linux-amd64              -- cross-compiled
-  virgil-linux-arm64              -- cross-compiled
-  virgil-darwin-amd64             -- cross-compiled
-  virgil-darwin-arm64             -- cross-compiled
-  coverage.out                    -- Go cover profile (paso 3: Dynamic)
-  coverage.html                   -- Reporte visual (generado con go tool cover)
-  lint-report.json                -- Salida de golangci-lint (paso 2: Static)
-  evidence/                       -- EvidenceBundles por corrida
-    {run-id}/
-      manifest.json               -- Identidad del bundle
-      trace.json                  -- AgentInteractionTrace
-      snapshots/                  -- Filesystem snapshots pre/post
-      diffs/                      -- Filesystem diffs observados
-      runner-report.json          -- Observaciones del runner
+```mermaid
+%% Estructura de dist/: build artifacts efimeros y regenerables
+flowchart TD
+    D["dist/"] --> B1["virgil<br/>(binario local, dev)"]
+    D --> B2["virgil-linux-amd64"]
+    D --> B3["virgil-linux-arm64"]
+    D --> B4["virgil-darwin-amd64"]
+    D --> B5["virgil-darwin-arm64"]
+    D --> C1["coverage.out / coverage.html<br/>(paso 3: Dynamic)"]
+    D --> L["lint-report.json<br/>(paso 2: Static)"]
+    D --> EV["evidence/<br/>(EvidenceBundles por corrida)"]
+    EV --> R["{run-id}/"]
+    R --> M["manifest.json"]
+    R --> TR["trace.json<br/>(AgentInteractionTrace)"]
+    R --> SN["snapshots/"]
+    R --> DF["diffs/"]
+    R --> RR["runner-report.json"]
 ```
 
 El directorio `dist/` esta en `.gitignore`. Los artefactos son regenerables desde cualquier `sourceRevision`.
@@ -91,17 +91,12 @@ El EvidenceBundle es el puente entre los build artifacts del Echo y el sistema d
 
 Cada `buildArtifactSet` DEBE quedar ligado inequivocamente al `EchoRun` y a la `sourceRevision` que lo produjo (principia S7b). QA nunca certifica "el ultimo reporte" de forma implicita; certifica un conjunto de artefactos atribuible a una revision concreta.
 
-```text
-sourceRevision (commit SHA)
-    |
-    v
-EchoRun (ejecucion de los 5 pasos)
-    |
-    v
-buildArtifactSet (binario + coverage + lint + test results)
-    |
-    v
-EvidenceIngestion (Kernel registra en Ledger)
+```mermaid
+%% Invariante de procedencia: cada artefacto trazable a su revision de origen
+flowchart TD
+    SR["sourceRevision<br/>(commit SHA)"] --> ER["EchoRun<br/>(ejecucion de los 5 pasos)"]
+    ER --> BAS["buildArtifactSet<br/>(binario + coverage + lint + test results)"]
+    BAS --> EI["EvidenceIngestion<br/>(Kernel registra en Ledger)"]
 ```
 
 ### Publicacion del bundle

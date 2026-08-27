@@ -68,16 +68,23 @@ La delegacion reduce friccion sin eliminar trazabilidad: cada decision sigue que
 
 ## Relacion entre actores
 
-```text
-MIM (humano, autoridad final)
- |
- |-- dirige --> SM (agente orquestador)
- |                |-- delega --> Sub-agentes (via delegationContract)
- |                |-- ejecuta --> PDC (checkpoint post-delegacion)
- |                |-- registra en --> TPM (tracking)
- |
- |-- es el --> Desarrollador (Modo Desarrollo)
- |-- dirige al --> Implementador (Modo Consumo)
+```mermaid
+%% Relacion entre actores: el MIM dirige, nunca se salta el PDC
+flowchart LR
+    MIM(["MIM<br/>(humano, autoridad final)"])
+    SM["SM<br/>(agente orquestador)"]
+    SUB["Sub-agentes<br/>(via delegationContract)"]
+    PDC["PDC<br/>(checkpoint post-delegacion)"]
+    TPM[("TPM<br/>(tracking)")]
+    DEV["Desarrollador<br/>(Modo Desarrollo)"]
+    IMPL["Implementador<br/>(Modo Consumo)"]
+
+    MIM -->|dirige| SM
+    SM -->|delega| SUB
+    SM -->|ejecuta| PDC
+    SM -->|registra en| TPM
+    MIM -->|es el| DEV
+    MIM -->|dirige al| IMPL
 ```
 
 El SM nunca actua sin direccion del MIM. Los sub-agentes nunca actuan sin un delegationContract del SM. El PDC se ejecuta despues de cada delegacion, sin excepcion.

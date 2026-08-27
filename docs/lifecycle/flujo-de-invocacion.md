@@ -30,6 +30,29 @@ El camino que recorre cada invocacion tiene cuatro participantes:
 9. El Kernel devuelve resultado y estado al HostAdapter.
 10. El HostAdapter devuelve la respuesta al Actor.
 
+```mermaid
+%% Flujo canonico de invocacion: Actor -> HostAdapter -> Kernel -> ArtifactStore
+sequenceDiagram
+    autonumber
+    actor Actor
+    participant Host as HostAdapter
+    participant Kernel as Virgil Kernel
+    participant Store as ArtifactStore
+
+    Actor->>Host: Envia solicitud
+    Host->>Host: Resuelve DogmaRef, ProjectRef, RunContext
+    Host->>Kernel: Reenvia solicitud resuelta
+    Kernel->>Kernel: Valida source != target
+    Kernel->>Kernel: Compila ContextBrief
+    Kernel->>Kernel: Ejecuta operacion canonica
+    Kernel->>Store: Persiste deliverable
+    Store-->>Kernel: Confirmacion
+    Kernel->>Kernel: Ingiere evidencia
+    Kernel->>Kernel: Registra transicion en Ledger
+    Kernel-->>Host: Resultado y estado
+    Host-->>Actor: Respuesta
+```
+
 ## Las tres identidades de invocacion
 
 Al inicio de cada invocacion, el HostAdapter resuelve tres identidades que acompanan toda la operacion.

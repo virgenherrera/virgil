@@ -18,6 +18,15 @@ Fuente: `principia/constitution.md`, Secciones 7a, 7d, 7h.
 
 El orden es constitucional y no se reordena (principia S7a). Si un paso falla, los posteriores no se ejecutan.
 
+```mermaid
+%% Pipeline Echo System: 5 pasos secuenciales, orden fijo
+flowchart LR
+    S1(["1. Setup<br/>verify + govulncheck"]) --> S2(["2. Build<br/>go build"])
+    S2 --> S3(["3. Static<br/>vet + lint + fmt"])
+    S3 --> S4(["4. Dynamic<br/>tests boundary"])
+    S4 --> S5(["5. E2E<br/>integracion completa"])
+```
+
 ## Paso 1: Setup
 
 ```bash
@@ -76,13 +85,14 @@ Tests de solucion completa: multi-proceso, filesystem real, cero mocks. Validan 
 
 ## Estructura de directorios de test
 
-```text
-test/
-  app/                   -- boundary tests (PRIMARIO, principia S7d)
-    t0_init_test.go      -- TestApp_T0InitRepoDocsHappy, etc.
-  e2e/                   -- integracion completa
-    init_flow_test.go    -- TestE2E_InitFlow, etc.
-  testutil/              -- helpers compartidos (tempdir, assertions, binary runner)
+```mermaid
+%% Estructura de directorios de test
+flowchart TD
+    T["test/"] --> A["app/<br/>(boundary tests, PRIMARIO, S7d)"]
+    A --> A1["t0_init_test.go<br/>TestApp_T0InitRepoDocsHappy, etc."]
+    T --> E["e2e/<br/>(integracion completa)"]
+    E --> E1["init_flow_test.go<br/>TestE2E_InitFlow, etc."]
+    T --> U["testutil/<br/>(tempdir, assertions, binary runner)"]
 ```
 
 ### Regla critica: NO tests dentro de internal
