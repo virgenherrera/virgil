@@ -8,6 +8,7 @@ invariantes observables. Transporte: JSON-RPC 2.0 (compatible con MCP).
 
 Referencia constitucional: Principia S3b (flujo de invocacion), S5 (componentes).
 
+<!-- SPEC-PROTO-REQUEST -->
 ## OperationRequest
 
 Toda invocacion recibe un request estructurado. El request NO PUEDE usar cwd, memoria
@@ -39,6 +40,7 @@ Las referencias DEBEN ser coherentes entre si:
 
 JSON Schema valida la forma; Virgil verifica las igualdades semanticas antes de efectos.
 
+<!-- SPEC-PROTO-PIPELINE -->
 ## Resolucion previa a efectos
 
 Antes de ejecutar cualquier escritura, Virgil ejecuta este pipeline de 7 pasos. Una falla
@@ -63,6 +65,7 @@ en cualquier paso es fail-closed. No existe una inicializacion parcial "best eff
 Este pipeline es el contrato de implementacion para el runtime. Los pasos son secuenciales
 y cada paso depende del exito del anterior.
 
+<!-- SPEC-PROTO-RESULT -->
 ## OperationResult
 
 | Campo | Tipo | Req | Descripcion |
@@ -82,6 +85,7 @@ y cada paso depende del exito del anterior.
 | `next` | NextAction | si | Proxima accion permitida o condicion terminal |
 | `diagnostics` | array | si | Codigos tipados, capabilities faltantes y preguntas |
 
+<!-- SPEC-PROTO-STATUS -->
 ## Semantica de status
 
 | Status | Significado |
@@ -92,6 +96,7 @@ y cada paso depende del exito del anterior.
 | `unsupported` | Falta una capability requerida sin degradacion declarada |
 | `error` | Fallo inesperado; no se presenta estado parcial como autoritativo |
 
+<!-- SPEC-PROTO-EFFECT -->
 ## EffectRecord
 
 Toda operacion que lee, escribe o invoca un recurso produce un registro estructurado.
@@ -110,6 +115,7 @@ Toda operacion que lee, escribe o invoca un recurso produce un registro estructu
 Un EffectRecord describe un efecto logico sobre un recurso del adapter, no cada syscall
 usada para publicarlo. Temporales, `fsync` y rename son mecanismos internos.
 
+<!-- SPEC-PROTO-IDEMPOTENCY -->
 ## Idempotencia
 
 La combinacion de proyecto, operacion e `idempotency_key` identifica una intencion:
@@ -125,6 +131,7 @@ RFC 8785 (JCS), excluyendo unicamente `request_id`. El `idempotency_key` SI part
 en el digest. Dos requests que solo difieren en `request_id` son el mismo contenido para
 replay; cualquier otra diferencia produce otro digest y, con la misma key, un conflicto.
 
+<!-- SPEC-PROTO-REPLAY -->
 ### Contrato de replay
 
 Un replay enumera en su `OperationResult.effects` solo los efectos nuevos del intento
@@ -136,6 +143,7 @@ La equivalencia semantica ignora `request_id`, timestamps, `replayed_from_reques
 lista de efectos frescos del replay; **no ignora** eventos, revisiones, briefs, status ni
 next.
 
+<!-- SPEC-PROTO-DIAGNOSTICS -->
 ## Codigos de diagnostico reservados
 
 | Codigo | Semantica |
@@ -165,6 +173,7 @@ Todos llevan `runtime_protocol = "virgil.dev/runtime/v1alpha1"` y un discriminad
 El decoder DEBE rechazar campos duplicados, trailing data, tipos desconocidos y payloads
 que excedan los limites configurados.
 
+<!-- SPEC-PROTO-INVOKE -->
 ### `invoke`
 
 `kind = "invoke"` ejecuta una operacion publica.
@@ -194,6 +203,7 @@ necesarias para que el host construya la traza. El worker no puede presentarse c
 observador independiente de su propio exito: el runner vuelve a medir filesystem y procesos
 desde afuera.
 
+<!-- SPEC-PROTO-RUN-T0 -->
 ### `run_t0`
 
 `kind = "run_t0"` ejecuta el harness black-box incluido en el mismo binario.
@@ -218,6 +228,7 @@ Un scenario que esperaba un `OperationResult.status = "blocked"` puede tener out
 `passed`. El runner NO declara `passed` solo porque un JSON valida: debe ejecutar la
 interaccion y verificar sus efectos externos.
 
+<!-- SPEC-PROTO-ERRORS -->
 ## Errores tipados
 
 | Tipo | Semantica | Accion del cliente |

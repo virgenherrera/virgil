@@ -122,7 +122,7 @@ Reiniciar el agente despues del install.
 
 **Step 1: init** — el agente llama `virgil_status`, luego `virgil_init`. Efectos: `virgil.json` + `AGENTS.md` creados. Sin directorio `docs/` todavia. Sin `active_change` en `virgil.json`.
 
-**Step 2: pipeline** — el agente lee `CHALLENGE.md` y conduce idea, spec, design, tasks, handoff. Cada stage: `virgil_propose` (crea seed + artifact) seguido de aprobacion humana y `virgil_approve` (status transitions, `derived_step` avanza). Al completar: 5 artefactos aprobados, `derived_step` = `complete`, `active_change` = null.
+**Step 2: pipeline** — el agente lee `CHALLENGE.md` y conduce idea, spec, design, tasks, handoff. Cada stage: `virgil_write` (crea o actualiza el documento del artefacto) seguido de aprobacion humana y `virgil_transition` (avanza status/lifecycle, `derived_step` avanza). Al completar: 5 artefactos aprobados, `derived_step` = `complete`, `active_change` = null.
 
 **Step 3: implementation** — fuera del pipeline de Virgil. El agente implementa desde el handoff aprobado. `npm test` debe pasar todos los test cases.
 
@@ -134,8 +134,8 @@ Reiniciar el agente despues del install.
 | 2 | System prompt | Agente llama `virgil_status` en primera interaccion |
 | 3 | `virgil_init` | `virgil.json` + `AGENTS.md` creados con schema correcto |
 | 4 | `virgil_new` | `active_change` set, `derived_step` = idea |
-| 5 | `virgil_propose` | Seed + artifact files creados con naming correcto |
-| 6 | `virgil_approve` | Status transitions, `derived_step` avanza |
+| 5 | `virgil_write` | Documento del artefacto creado con naming correcto |
+| 6 | `virgil_transition` | Status transitions, `derived_step` avanza |
 | 7 | Pipeline completion | 5 artefactos aprobados, complete alcanzado, `active_change` cleared |
 | 8 | Handoff quality | Agente implementa codigo funcional desde el handoff aprobado |
 | 9 | End-to-end | `npm test` pasa, CLI funcional |
@@ -149,7 +149,7 @@ Reiniciar el agente despues del install.
 | Agente salta stages | Agente no lee respuesta de `virgil_status` sobre `derived_step` |
 | Artefactos en path incorrecto | `managed_root` mal configurado en `virgil.json` |
 | Tests fallan en caso DP | Agente uso greedy en vez de DP: el handoff debe especificar el algoritmo |
-| Agente nunca llama `virgil_approve` | Agente no completa el loop de aprobacion |
+| Agente nunca llama `virgil_transition` | Agente no completa el loop de aprobacion |
 
 Este challenge se ejecuta manualmente antes de promocionar un RC a release estable.
 

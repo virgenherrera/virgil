@@ -16,6 +16,7 @@ Toda operacion devuelve un envelope estructurado cuya forma normativa se define 
 efectos, siguiente accion y diagnosticos. Un HostAdapter PUEDE variar la representacion
 pero no PUEDE omitir campos ni invariantes del protocolo.
 
+<!-- SPEC-OPS-RUNCONTEXT -->
 ## RunContext
 
 Identifica el cambio activo y los limites dentro de los cuales puede actuar un runtime.
@@ -40,6 +41,7 @@ Campos minimos:
 El `RunContext` se crea en `virgil-new` y se recupera en `virgil-continue`. El Method Pack
 queda fijado al crear el run; no se cambia mid-run.
 
+<!-- SPEC-OPS-CONTEXTBRIEF -->
 ## ContextBrief
 
 Paquete minimo suficiente que recibe un actor para una operacion. El brief no necesita
@@ -61,6 +63,7 @@ Campos minimos:
 | `block_conditions` | array | si | Condiciones de bloqueo y escalacion |
 | `budget` | object | cond | Budget de contexto cuando aplique |
 
+<!-- SPEC-OPS-GAP -->
 ## PlanningGapDetected
 
 Mensaje mediante el cual execution devuelve una insuficiencia a planning.
@@ -75,6 +78,7 @@ aprobados.
 | `evidence` | array | si | Evidencia que demuestra el gap |
 | `can_continue_outside_scope` | bool | si | Si el trabajo puede continuar fuera de ese scope |
 
+<!-- SPEC-OPS-INIT -->
 ## virgil-init
 
 ### Inputs
@@ -104,6 +108,7 @@ aprobados.
 - Falta persistencia durable o atomicidad requerida.
 - El Method Pack no puede resolverse.
 
+<!-- SPEC-OPS-NEW -->
 ## virgil-new
 
 ### Inputs
@@ -132,6 +137,7 @@ aprobados.
 - Referencia inexistente o identidad inconsistente.
 - Capability requerida no soportada.
 
+<!-- SPEC-OPS-CONTINUE -->
 ## virgil-continue
 
 ### Inputs
@@ -166,6 +172,7 @@ artefacto y revision.
 - Falta una capability requerida.
 - Continuar excederia el write scope o intentaria modificar codigo, producto o configuracion.
 
+<!-- SPEC-OPS-STATUS -->
 ## virgil-status
 
 ### Inputs
@@ -182,6 +189,7 @@ artefacto y revision.
 
 Esta operacion es read-only: no produce EffectRecords de tipo `write`.
 
+<!-- SPEC-OPS-TRANSITION -->
 ## virgil-transition
 
 ### Inputs

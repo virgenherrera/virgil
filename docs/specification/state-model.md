@@ -8,6 +8,7 @@ derivada.
 
 Referencia constitucional: Principia S3a (ciclo de vida), S8a (ArtifactStore).
 
+<!-- SPEC-STATE-TYPES -->
 ## Tipos de artefacto
 
 Cada cambio usa los tipos requeridos por su Method Pack. Para el Pack Scrum (predeterminado)
@@ -31,6 +32,7 @@ flowchart LR
 
 Los estados `withdrawn` y `superseded` son terminales (sin transiciones de salida).
 
+<!-- SPEC-STATE-TRANSITIONS -->
 ## Transiciones permitidas
 
 ```mermaid
@@ -50,12 +52,14 @@ Toda transicion se persiste como evento. El contenido de una revision es inmutab
 que se publica. Una correccion retira la revision presentada (`withdrawn`) y crea una
 sucesora en `draft`; no devuelve ni edita la misma revision.
 
+<!-- SPEC-STATE-INVARIANT -->
 ## Invariante de revision unica
 
 Solo PUEDE existir una revision abierta (`draft` o `awaiting_approval`) por tipo de
 artefacto y cambio. Esta invariante evita dos candidatos simultaneos dentro del baseline
 single-writer.
 
+<!-- SPEC-STATE-EFFECTIVE -->
 ## Revision aprobada efectiva
 
 Una revision `approved` es **efectiva** cuando:
@@ -69,6 +73,7 @@ Una revision `approved` es **efectiva** cuando:
 Cuando una revision nueva alcanza `approved`, Virgil registra `approved -> superseded`
 para la revision aprobada anterior del mismo artefacto.
 
+<!-- SPEC-STATE-DERIVED -->
 ## Derivacion de fase
 
 Virgil recorre el orden requerido por el Method Pack y selecciona el primer tipo sin
@@ -82,6 +87,7 @@ Si todos tienen una revision aprobada efectiva, `derived_step` es `complete`. El
 de esta consulta no se persiste como otra maquina de estados. Referencia: Principia S10
 (recuperacion por derivacion).
 
+<!-- SPEC-STATE-PIVOT -->
 ## Pivot
 
 Un pivot registra un evento con su razon y el primer tipo de artefacto afectado. Luego

@@ -7,6 +7,7 @@ del proyecto consumidor dentro de un namespace administrado de su propio reposit
 
 Referencia constitucional: Principia S8a (ArtifactStore), S8b (separacion de namespaces).
 
+<!-- SPEC-REPO-LAYOUT -->
 ## Layout de filesystem
 
 ```mermaid
@@ -39,10 +40,13 @@ Archivo de control del adapter. Unica autoridad de identidad del proyecto.
 
 Slice 1 soporta un unico cambio activo por proyecto. `active_change` no es una lista.
 
+<!-- SPEC-REPO-FRONTMATTER -->
 ## Frontmatter: JSON en Markdown
 
-Cada archivo de artefacto es Markdown con frontmatter delimitado por `---`, pero el
-contenido del frontmatter es **JSON** (no YAML). Esto permite reutilizar `encoding/json`
+Cada archivo de artefacto es Markdown con frontmatter delimitado por `---json` (apertura)
+y `---` (cierre), pero el contenido del frontmatter es **JSON** (no YAML). El tag `json`
+en el delimitador de apertura distingue este frontmatter del YAML convencional y sigue
+la convencion de frontmatter etiquetado de Hugo. Esto permite reutilizar `encoding/json`
 sin dependencia de parsing YAML.
 
 ```text
@@ -64,6 +68,7 @@ sin dependencia de parsing YAML.
 # Contenido en Markdown
 ```
 
+<!-- SPEC-REPO-WRITE-SCOPE -->
 ## Politica de escritura
 
 El adapter PUEDE leer o indexar `docs/` segun una allowlist explicita. Solo PUEDE escribir:
@@ -76,6 +81,7 @@ Los documentos existentes en `docs/` fuera de `docs/virgil/` son read-only y no 
 `CORRUPT_LEDGER`: conviven con el corpus del consumidor. Codigo, producto y configuracion
 permanecen fuera del write scope de planning. Referencia: Principia S8b.
 
+<!-- SPEC-REPO-ATOMICITY -->
 ## Politica de escritura: create-exclusive
 
 - **Inicializacion**: `virgil.json` se escribe con create-exclusive-y-rename.
@@ -104,6 +110,7 @@ En Slice 1, el historial de git complementa al log de eventos para el versionado
 artefactos, pero no lo reemplaza: `events.jsonl` sigue siendo la fuente de verdad para
 recuperacion e idempotencia.
 
+<!-- SPEC-REPO-LIFECYCLE -->
 ## Ciclo de vida de un artefacto en disco
 
 - **Crear**: create-exclusive-y-rename produce `{NN}-{kind}.md` con `status: draft`.
@@ -116,6 +123,7 @@ En Slice 1, el historial de git actua como backend de registro para las revision
 Las propiedades completas del Ledger constitucional (idempotencia de transiciones,
 inmutabilidad) se implementaran progresivamente en slices posteriores.
 
+<!-- SPEC-REPO-DERIVATION -->
 ## Derivacion de estado
 
 `repo-docs` no persiste `derived_step`. Lo recalcula en cada operacion escaneando
@@ -135,11 +143,13 @@ Dos arboles `docs/` que no deben confundirse (Principia S8b):
 Copiar artefactos del consumidor a `Virgil/docs/`, o dogma mutable al corpus del
 consumidor, viola `method_source != target`.
 
+<!-- SPEC-REPO-SELFHOST -->
 ## Self-hosting
 
 Requiere autorizacion explicita. El `managed_root` no puede colisionar con el dogma
 canonico. Se RECOMIENDA un adapter externo o temporal para validar/desarrollar Virgil.
 
+<!-- SPEC-REPO-CONCURRENCY -->
 ## Concurrencia
 
 Slice 1 admite un solo writer por cambio. Si no puede garantizarse esa exclusion,

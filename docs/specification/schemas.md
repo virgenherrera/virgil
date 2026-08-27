@@ -9,6 +9,7 @@ resolver referencias desde esa copia versionada; validarlos no requiere acceso d
 
 Referencia normativa: [Protocolo de operaciones](./operation-protocol.md).
 
+<!-- SPEC-SCHEMA-CATALOG -->
 ## Schemas disponibles
 
 | Schema | `$id` | Proposito | Componente que valida |
@@ -30,6 +31,7 @@ Referencia normativa: [Protocolo de operaciones](./operation-protocol.md).
 
 Todos los `$id` usan el prefijo `https://schemas.virgil.dev/planning-slice1/v1alpha1/`.
 
+<!-- SPEC-SCHEMA-AUTHORITY -->
 ## Autoridad
 
 Los schemas son normativos para la **estructura serializada**. El
@@ -39,6 +41,7 @@ invariantes que JSON Schema no puede expresar por si solo.
 Si schema y protocolo parecen contradecirse, la implementacion y el harness DEBEN detenerse
 con un error de contrato. No eligen silenciosamente una fuente.
 
+<!-- SPEC-SCHEMA-EVOLUTION -->
 ## Evolucion
 
 - Una correccion compatible puede agregar aclaraciones semanticas o constraints que no
@@ -53,11 +56,13 @@ Las igualdades entre IDs, el orden causal, la unicidad de secuencias, la minimiz
 semantica del contexto y la correspondencia entre manifest y bytes son oraculos del
 harness: JSON Schema no puede demostrarlos por si solo.
 
+<!-- SPEC-SCHEMA-ORACLE-IDENTITY -->
 ### Coherencia de identidades y baselines
 
 El harness verifica que fixture, request, target y adapter profile usan los mismos IDs y
 baselines. Toda discrepancia falla cerrado.
 
+<!-- SPEC-SCHEMA-ORACLE-ACTORSCRIPT -->
 ### ActorScript
 
 - Usa el actor del fixture, tiene secuencias unicas y crecientes, y cada accion declara
@@ -68,6 +73,7 @@ baselines. Toda discrepancia falla cerrado.
 - Cada `OrderConstraint` referencia steps existentes y no forma ciclos.
 - `min_count <= max_count` en todas las expectativas.
 
+<!-- SPEC-SCHEMA-ORACLE-TRACE -->
 ### AgentInteractionTrace
 
 - Tiene secuencias unicas y crecientes.
@@ -76,6 +82,7 @@ baselines. Toda discrepancia falla cerrado.
   allowlist/denylist y no exceden el budget.
 - El outcome del trace coincide con el scenario y con los checks del bundle.
 
+<!-- SPEC-SCHEMA-ORACLE-BUNDLE -->
 ### EvidenceBundle
 
 - Cada contenido, diff y trace del manifest coincide con sus bytes y digest.
@@ -106,6 +113,7 @@ baselines. Toda discrepancia falla cerrado.
 - Para `repo-docs`, cada path del store diff tambien aparece en el target diff del mismo
   intervalo.
 
+<!-- SPEC-SCHEMA-ORACLE-PROHIBITED -->
 ### ProhibitedEffect
 
 - `ProhibitedEffect.scope` evita inventar una sintaxis de complemento para globs:
@@ -117,12 +125,14 @@ baselines. Toda discrepancia falla cerrado.
   `expected_effects` con `policy_decision = denied`, `occurred = false` y
   `observed = null`; no constituye por si mismo el efecto prohibido que el guard evito.
 
+<!-- SPEC-SCHEMA-ORACLE-OUTCOME -->
 ### ExpectedOutcome
 
 - `ExpectedOutcome` describe la certificacion del scenario y solo puede ser `passed` o
   `failed`. `blocked` y `unsupported` pertenecen a OperationResult: un scenario que
   esperaba y observo correctamente uno de esos stops puede pasar.
 
+<!-- SPEC-SCHEMA-ORACLE-INTEGRITY -->
 ### Integridad y digests
 
 - Los digests de AgentInteractionTrace y EvidenceBundle se calculan sobre su serializacion
@@ -132,6 +142,7 @@ baselines. Toda discrepancia falla cerrado.
   compara cada pointer contra el objeto observado antes de aplicar los limites
   `min_count`/`max_count`; una key ausente nunca equivale a `null`.
 
+<!-- SPEC-SCHEMA-ORACLE-PROJECTSTATE -->
 ### project_state
 
 - `project_state`, cuando presente, se valida contra `virgil-config.schema.json` como un
