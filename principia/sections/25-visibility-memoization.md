@@ -1,44 +1,44 @@
 <!-- Virgil Principia
 section_id: "8d-8e"
-title: "Visibilidad escalonada y memoizacion"
+title: "Tiered visibility and memoization"
 source: "principia/constitution.md"
 source_lines: [1136, 1186]
 layer: knowledge
 constitutional: true
-actors: [orquestador]
+actors: [orchestrator]
 glossary_terms: [delegationContract, RAG, Ledger, ArtifactRepository, TraceabilityGraph]
 depends_on: ["8"]
 referenced_by: ["9", "10"]
 keywords:
-  - visibilidad escalonada
-  - scope acotado
+  - tiered visibility
+  - bounded scope
   - delegationContract
-  - memoizacion
+  - memoization
   - cache
   - Ledger
   - TraceabilityGraph
-  - proyecciones derivadas
+  - derived projections
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** El RAG (devRag | consumerRag, seccion 8c) es la proyeccion documental de Virgil. Estas subsecciones describen como se controla el acceso a esa proyeccion segun el rol del agente (visibilidad escalonada) y como se optimiza el rendimiento de las consultas (memoizacion), ademas de aclarar la relacion de autoridad entre el RAG y las fuentes autoritativas del sistema.
+> **Context:** RAG (devRag | consumerRag, section 8c) is Virgil's documentary projection. These subsections describe how access to that projection is controlled based on the agent's role (tiered visibility) and how query performance is optimized (memoization), as well as clarifying the authority relationship between the RAG and the system's authoritative sources.
 
-### 8d. Visibilidad escalonada
+### 8d. Tiered visibility
 
-El agente principal (orquestador) tiene visibilidad completa del RAG
-si asi lo estima necesario. Los sub-agentes reciben un scope reducido:
-solo lo necesario para su tarea.
+The main agent (orchestrator) has full RAG visibility
+if it deems it necessary. Sub-agents receive a reduced scope:
+only what is needed for their task.
 
 ```mermaid
 flowchart TD
     RAG["RAG\n(devRag | consumerRag)"]
 
-    RAG -->|"100% visibilidad\n(si lo estima necesario)"| ORCH["Orquestador\n(agente principal)\nve TODO el inventario"]
+    RAG -->|"100% visibility\n(if deemed necessary)"| ORCH["Orchestrator\n(main agent)\nsees the ENTIRE inventory"]
 
-    RAG -->|"scope acotado"| SUB1["Sub-agente A\nve solo deliverables\nde su tarea"]
-    RAG -->|"scope acotado"| SUB2["Sub-agente B\nve solo deliverables\nde su tarea"]
+    RAG -->|"bounded scope"| SUB1["Sub-agent A\nsees only deliverables\nfor its task"]
+    RAG -->|"bounded scope"| SUB2["Sub-agent B\nsees only deliverables\nfor its task"]
 
-    ORCH -->|"define scope via\ndelegationContract"| SUB1 & SUB2
+    ORCH -->|"defines scope via\ndelegationContract"| SUB1 & SUB2
 
     style ORCH fill:#4a4,stroke:#333,color:#fff
     style SUB1 fill:#47a,stroke:#333,color:#fff
@@ -46,30 +46,30 @@ flowchart TD
     style RAG fill:#a74,stroke:#333,color:#fff
 ```
 
-El scope del sub-agente se define en el `delegationContract` (seccion
-9c). El orquestador decide que topic_keys o queries son visibles para
-cada delegacion.
+The sub-agent's scope is defined in the `delegationContract` (section
+9c). The orchestrator decides which topic_keys or queries are visible for
+each delegation.
 
-### 8e. Memoizacion
+### 8e. Memoization
 
-El RAG mantiene una capa de cache en memoria para acelerar queries
-repetidas. Fallback a almacenamiento persistente cuando la cache se
-invalida o la sesion se reinicia.
+The RAG maintains an in-memory cache layer to speed up repeated
+queries. It falls back to persistent storage when the cache is
+invalidated or the session restarts.
 
 ```mermaid
 flowchart LR
-    QUERY["Query"] --> CACHE{{"Cache\nen memoria?"}}
-    CACHE -->|"hit"| RESULT["Resultado\n(inmediato)"]
-    CACHE -->|"miss"| FALLBACK["Fallback\nalmacenamiento local\nestructurado\n(tech TBD)"]
+    QUERY["Query"] --> CACHE{{"In-memory\ncache?"}}
+    CACHE -->|"hit"| RESULT["Result\n(immediate)"]
+    CACHE -->|"miss"| FALLBACK["Fallback\nstructured local\nstorage\n(tech TBD)"]
     FALLBACK --> RESULT
-    FALLBACK -->|"popular cache"| CACHE
+    FALLBACK -->|"populate cache"| CACHE
 
     style CACHE fill:#4a4,stroke:#333,color:#fff
     style FALLBACK fill:#777,stroke:#333,color:#fff
 ```
 
-El RAG no es la autoridad del proceso — el Ledger, el
-ArtifactRepository y la evidencia son la fuente de verdad. El RAG y
-el TraceabilityGraph son proyecciones derivadas, reconstruibles desde
-el Ledger y los deliverables. Ninguna proyeccion es fuente de verdad;
-si se desincroniza, se reconstruye desde las fuentes autoritativas.
+The RAG is not the process's authority — the Ledger, the
+ArtifactRepository and the evidence are the source of truth. The RAG and
+the TraceabilityGraph are derived projections, reconstructible from
+the Ledger and the deliverables. No projection is a source of truth;
+if it desyncs, it is rebuilt from the authoritative sources.

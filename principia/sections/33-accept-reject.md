@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "11e-routing"
-title: "Accept/Reject — certificacion por gates"
+title: "Accept/Reject — certification by gates"
 source: "principia/constitution.md"
 source_lines: [1557, 1587]
 layer: execution
@@ -13,29 +13,29 @@ keywords:
   - QA gate
   - virgil health
   - git tag qa/approved
-  - gap de implementacion
-  - gap de testing
-  - gap de contratos
-  - gap de planning
+  - implementation gap
+  - testing gap
+  - contract gap
+  - planning gap
   - PlanningGapDetected
-  - re-delegacion
+  - re-delegation
   - PDC
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Esta seccion cierra el pipeline de ejecucion (seccion 11a) describiendo como la fase Verify certifica o rechaza una revision, y a que fase especifica se re-delega cuando se detecta un gap.
+> **Context:** This section closes the execution pipeline (section 11a) by describing how the Verify phase certifies or rejects a revision, and to which specific phase it re-delegates when a gap is detected.
 
-### 11e. Accept/Reject — certificacion por gates
+### 11e. Accept/Reject — certification by gates
 
 ```mermaid
 flowchart TD
     QA{{"QA: virgil health"}}
 
-    QA -->|"pasa"| CERT["CERTIFICADO\ngit tag: qa/approved"]
-    QA -->|"gap de implementacion"| GREEN["→ Green"]
-    QA -->|"gap de testing"| RED["→ Red"]
-    QA -->|"gap de contratos"| PRE["→ prePhase"]
-    QA -->|"gap de planning"| PLANNING["→ Planning\n(PlanningGapDetected)"]
+    QA -->|"passes"| CERT["CERTIFIED\ngit tag: qa/approved"]
+    QA -->|"implementation gap"| GREEN["→ Green"]
+    QA -->|"testing gap"| RED["→ Red"]
+    QA -->|"contract gap"| PRE["→ prePhase"]
+    QA -->|"planning gap"| PLANNING["→ Planning\n(PlanningGapDetected)"]
 
     style CERT fill:#4a4,stroke:#333,color:#fff
     style GREEN fill:#c44,stroke:#333,color:#fff
@@ -44,14 +44,14 @@ flowchart TD
     style PLANNING fill:#c44,stroke:#333,color:#fff
 ```
 
-| Tipo de gap | Rechazo | Re-delegar a |
+| Gap type | Rejection | Re-delegate to |
 |-------------|---------|--------------|
-| Codigo no satisface test | Implementacion incompleta | Green |
-| Suite de tests incompleta | Tests faltantes | Red |
-| Contrato violado | Interfaz rota | prePhase |
-| Diseno no reflejado en codigo | Arquitectura divergente | Refactor |
-| Feature faltante en planning | Deliverable insuficiente | Planning |
+| Code does not satisfy test | Incomplete implementation | Green |
+| Incomplete test suite | Missing tests | Red |
+| Contract violated | Broken interface | prePhase |
+| Design not reflected in code | Divergent architecture | Refactor |
+| Missing feature in planning | Insufficient deliverable | Planning |
 
-El rechazo es ESPECIFICO — identifica la fase exacta que debe
-corregirse, no un generico "arreglar". Cada re-delegacion pasa por
-el PDC completo (seccion 9c).
+Rejection is SPECIFIC — it identifies the exact phase that must
+be corrected, not a generic "fix it." Every re-delegation goes through
+the complete PDC (section 9c).

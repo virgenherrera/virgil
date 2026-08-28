@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "2"
-title: "Como es (estructura)"
+title: "How it is (structure)"
 source: "principia/constitution.md"
 source_lines: [194, 234]
 layer: structure
@@ -10,54 +10,54 @@ glossary_terms: [Principia, Dogma, Runtime, Kernel, Method Pack, Ledger, Tracer]
 depends_on: ["vocabulary", "1"]
 referenced_by: ["5", "6"]
 keywords:
-  - estructura
-  - tres capas concentricas
+  - structure
+  - three concentric layers
   - Principia
   - Dogma
   - Runtime
-  - arquitectura
+  - architecture
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Esta seccion describe la arquitectura de tres capas concentricas de Virgil — Principia, Dogma y Runtime — donde cada capa interna gobierna a las externas.
+> **Context:** This section describes Virgil's three-concentric-layer architecture — Principia, Dogma and Runtime — where each inner layer governs the outer ones.
 
-## 2. Como es (estructura)
+## 2. How it is (structure)
 
-[↑ Volver al indice](../README.md)
+[↑ Back to index](../README.md)
 
-Tres capas concentricas. Cada capa interna gobierna a las externas.
+Three concentric layers. Each inner layer governs the outer ones.
 
 ```mermaid
 flowchart TD
-    subgraph PRINCIPIA["Principia (inmutable)"]
+    subgraph PRINCIPIA["Principia (immutable)"]
         direction LR
-        GOB["Gobierno\n6 principios"]
-        ACT["Actores y Modos\n3 actores, 2 modos"]
-        DEL["Delegacion + PDC\nContratos, checkpoints"]
-        EXEC["Ejecucion + Calidad\nEcho, R/G/R, Fitness"]
+        GOB["Governance\n6 principles"]
+        ACT["Actors and Modes\n3 actors, 2 modes"]
+        DEL["Delegation + PDC\nContracts, checkpoints"]
+        EXEC["Execution + Quality\nEcho, R/G/R, Fitness"]
     end
 
-    subgraph DOGMA["Dogma (docs/ — normativo, versionado)"]
+    subgraph DOGMA["Dogma (docs/ — normative, versioned)"]
         direction LR
-        ARCH["Arquitectura\n9 invariantes"]
-        PROTO["Protocolo\nContratos, boundaries"]
-        QUAL["Quality\nValidacion, gates"]
-        SLICES["Slices\nEntrega incremental"]
+        ARCH["Architecture\n9 invariants"]
+        PROTO["Protocol\nContracts, boundaries"]
+        QUAL["Quality\nValidation, gates"]
+        SLICES["Slices\nIncremental delivery"]
     end
 
-    subgraph RUNTIME["Runtime (binario Go)"]
+    subgraph RUNTIME["Runtime (Go binary)"]
         direction LR
         KERNEL["Kernel\nLedger, Tracer, Context"]
         ADAPTERS["Adapters\nHost, Store"]
-        PACKS["Method Packs\nCeremonia, roles, gates"]
+        PACKS["Method Packs\nCeremony, roles, gates"]
     end
 
-    PRINCIPIA -->|"gobierna"| DOGMA
-    DOGMA -->|"define contratos para"| RUNTIME
+    PRINCIPIA -->|"governs"| DOGMA
+    DOGMA -->|"defines contracts for"| RUNTIME
 
     style PRINCIPIA fill:#2b5,stroke:#333,color:#fff
     style DOGMA fill:#47a,stroke:#333,color:#fff
     style RUNTIME fill:#a74,stroke:#333,color:#fff
 ```
 
-Con esta estructura inmutable como cimiento, Virgil se manifiesta a través de ciclos de vida predecibles: una máquina de estados que rige proyectos y un flujo de invocación que garantiza trazabilidad en cada transición.
+With this immutable structure as foundation, Virgil manifests through predictable lifecycles: a state machine that governs projects and an invocation flow that guarantees traceability at every transition.

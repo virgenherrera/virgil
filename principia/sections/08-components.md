@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "5"
-title: "Que partes lo componen"
+title: "What parts compose it"
 source: "principia/constitution.md"
 source_lines: [419, 459]
 layer: components
@@ -10,7 +10,7 @@ glossary_terms: [Kernel, Ledger, TraceabilityGraph, ArtifactRepository, Evidence
 depends_on: ["4", "1", "2"]
 referenced_by: ["6", "8", "10"]
 keywords:
-  - componentes
+  - components
   - Kernel
   - Adapters
   - Method Packs
@@ -23,41 +23,41 @@ keywords:
   - HostAdapter
   - ArtifactStoreAdapter
   - Scrum
-  - ceremonia-agnostico
-  - calidad universal
+  - ceremony-agnostic
+  - universal quality
 editorial_additions: [context_paragraph, synonym_note]
 -->
 
-> **Context:** La distincion entre "calidad universal" (Kernel) y "ceremonia" (Method Pack) proviene de las dos capas de principios descritas en la seccion 4: gobierno (reglas del juego) y arquitectura (reglas de construccion). Este catalogo de componentes es donde ambas capas se materializan en piezas concretas.
+> **Context:** The distinction between "universal quality" (Kernel) and "ceremony" (Method Pack) stems from the two layers of principles described in section 4: governance (the rules of the game) and architecture (the rules of construction). This component catalog is where both layers materialize into concrete pieces.
 
-## 5. Que partes lo componen
+## 5. What parts compose it
 
-[↑ Volver al indice](../README.md)
+[↑ Back to index](../README.md)
 
 ```mermaid
 flowchart TD
-    subgraph KERNEL["Kernel (ceremonia-agnostico, calidad universal)"]
-        LEDGER["Ledger\nEventos, transiciones,\nhistorial inmutable"]
-        TRACER["TraceabilityGraph\nIntencion → decision →\ntrabajo → evidencia\n(proyeccion derivada,\nreconstruible desde Ledger)"]
-        REPO["ArtifactRepository\nDeliverables, revisiones,\nprocedencia"]
-        EVIDENCE["EvidenceIngestion\nTests, commits, builds,\ndecisiones humanas"]
-        CONTEXT["ContextCompiler\nSelecciona deliverables →\nContextBrief"]
-        RAG["RetrievalProjection\nBusqueda lexico/vectorial\n(no es autoridad)"]
+    subgraph KERNEL["Kernel (ceremony-agnostic, universal quality)"]
+        LEDGER["Ledger\nEvents, transitions,\nimmutable history"]
+        TRACER["TraceabilityGraph\nIntent → decision →\nwork → evidence\n(derived projection,\nreconstructible from Ledger)"]
+        REPO["ArtifactRepository\nDeliverables, revisions,\nprovenance"]
+        EVIDENCE["EvidenceIngestion\nTests, commits, builds,\nhuman decisions"]
+        CONTEXT["ContextCompiler\nSelects deliverables →\nContextBrief"]
+        RAG["RetrievalProjection\nLexical/vector search\n(not an authority)"]
     end
 
-    subgraph ADAPTERS["Adapters (intercambiables)"]
-        HA["HostAdapter\nDiscovery, invocacion,\ncapabilities del host"]
-        ASA["ArtifactStoreAdapter\nPersistencia, retrieval\n(repo-docs | Jira | etc.)"]
+    subgraph ADAPTERS["Adapters (interchangeable)"]
+        HA["HostAdapter\nDiscovery, invocation,\nhost capabilities"]
+        ASA["ArtifactStoreAdapter\nPersistence, retrieval\n(repo-docs | Jira | etc.)"]
     end
 
-    subgraph PACKS["Method Packs (enchufables)"]
-        SCRUM["Scrum\n(predeterminado)\nIMPLEMENTADO"]
-        TBD["Waterfall | Kanban | Shape Up\nTBD — no implementados"]
-        CUSTOM["Custom Pack\nel consumidor podria definir\nsu propia metodologia"]
+    subgraph PACKS["Method Packs (pluggable)"]
+        SCRUM["Scrum\n(default)\nIMPLEMENTED"]
+        TBD["Waterfall | Kanban | Shape Up\nTBD — not implemented"]
+        CUSTOM["Custom Pack\nthe consumer could define\ntheir own methodology"]
     end
 
     KERNEL --> HA & ASA
-    PACKS -->|"ceremonia, roles, gates"| KERNEL
+    PACKS -->|"ceremony, roles, gates"| KERNEL
 
     style KERNEL fill:#47a,stroke:#333,color:#fff
     style ADAPTERS fill:#a74,stroke:#333,color:#fff
@@ -67,8 +67,18 @@ flowchart TD
     style CUSTOM fill:#777,stroke:#333,color:#fff
 ```
 
-> **Sinonimo**: `RetrievalProjection` es el nombre formal del componente del Kernel; `RAG` es el termino operativo usado en el resto de este documento. Ambos designan la misma proyeccion de lectura reconstruible.
+> **Synonym**: `RetrievalProjection` is the formal name of the Kernel component; `RAG` is the operational term used in the rest of this document. Both designate the same reconstructible read projection.
 
-Cada componente tiene una responsabilidad clara. El Kernel impone invariantes de calidad universales (Echo, testing, binding layer) independientemente de la metodologia. El Method Pack define la ceremonia: cuantos roles participan, que gates ceremoniales se comprimen, como se itera. La calidad es del Kernel; la ceremonia es del Pack.
+Each component has a clear responsibility. The Kernel imposes universal
+quality invariants (Echo, testing, binding layer) regardless of
+methodology. The Method Pack defines the ceremony: how many roles participate,
+which ceremonial gates get compressed, how it iterates. Quality belongs to the
+Kernel; ceremony belongs to the Pack.
 
-Los Method Packs heredan los gates de calidad (Red/Green/Refactor, mutation testing, fitness functions) como invariantes universales no negociables. Un Pack puede definir mecanismos de calidad ADICIONALES pero no puede reducir el minimo del Kernel. "Ceremonia-agnostico" significa que el Pack elige la ceremonia (sprints, kanban boards, ciclos de Shape Up); "calidad universal" significa que el pipeline de verificacion R/G/R + fitness functions aplica sin excepcion, independientemente de la ceremonia elegida.
+Method Packs inherit quality gates (Red/Green/Refactor, mutation testing,
+fitness functions) as non-negotiable universal invariants. A Pack can define
+ADDITIONAL quality mechanisms but cannot reduce the Kernel's minimum.
+"Ceremony-agnostic" means the Pack chooses the ceremony (sprints, kanban
+boards, Shape Up cycles); "universal quality" means the R/G/R verification
+pipeline + fitness functions apply without exception, regardless of the
+ceremony chosen.

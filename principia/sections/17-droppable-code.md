@@ -1,51 +1,51 @@
 <!-- Virgil Principia
 section_id: "7f"
-title: "droppableCode — cobertura como herramienta"
+title: "droppableCode — coverage as a tool"
 source: "principia/constitution.md"
 source_lines: [815, 842]
 layer: quality
 constitutional: true
 actors: [MIM]
-glossary_terms: [droppableCode, safeToAutoDelete, cobertura selectiva]
+glossary_terms: [droppableCode, safeToAutoDelete, selective coverage]
 depends_on: [7d-tiers]
 referenced_by: [7g]
 keywords:
   - droppableCode
   - safeToAutoDelete
-  - codigo muerto
+  - dead code
   - coverage threshold
-  - excepciones documentadas
-  - mutation testing excepciones
-  - eliminacion mecanica automatica
+  - documented exceptions
+  - mutation testing exceptions
+  - automatic mechanical removal
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Pertenece al capitulo 7 ("Como garantiza calidad"). Usa la cobertura de tests del tier App/Servicio (definido en la seccion 7d, Testing Matrix) no como metrica de vanidad sino como detector de codigo muerto.
+> **Context:** Belongs to chapter 7 ("How it guarantees quality"). It uses test coverage from the App/Service tier (defined in section 7d, Testing Matrix) not as a vanity metric but as a dead-code detector.
 
-### 7f. droppableCode — cobertura como herramienta
+### 7f. droppableCode — coverage as a tool
 
-Codigo con 0% de cobertura en appTests no tiene justificacion para
-existir. La cobertura no es metrica de vanidad — es detector de
-codigo muerto.
+Code with 0% coverage in appTests has no justification to
+exist. Coverage is not a vanity metric — it is a dead-code
+detector.
 
 ```mermaid
 flowchart LR
-    CODE["Codigo"] --> Q{{"Cubierto por\nappTests?"}}
-    Q -->|"Si"| LIVE["Codigo vivo\nprotegido por tests"]
-    Q -->|"No"| DROP["droppableCode\ncandidato a eliminar"]
+    CODE["Code"] --> Q{{"Covered by\nappTests?"}}
+    Q -->|"Yes"| LIVE["Live code\nprotected by tests"]
+    Q -->|"No"| DROP["droppableCode\ncandidate for removal"]
 
     style LIVE fill:#4a4,stroke:#333,color:#fff
     style DROP fill:#c44,stroke:#333,color:#fff
 ```
 
-Codigo detectado como droppableCode debe eliminarse o justificar su existencia con una excepcion explicita, documentada y revisable. El concepto **safeToAutoDelete** identifica el subconjunto de droppableCode que cumple criterios mecanicos de eliminacion segura: **sin dependientes vivos, sin ejecucion observada durante N ciclos y sin cobertura transitiva**. safeToAutoDelete habilita eliminacion mecanica automatica; droppableCode sin esos criterios requiere decision humana (eliminar o justificar excepcion).
+Code detected as droppableCode must be removed or justify its existence with an explicit, documented and reviewable exception. The concept **safeToAutoDelete** identifies the subset of droppableCode that meets mechanical safe-removal criteria: **no live dependents, no observed execution over N cycles, and no transitive coverage**. safeToAutoDelete enables automatic mechanical removal; droppableCode without those criteria requires a human decision (remove or justify exception).
 
-El threshold de cobertura es obligatorio y **nunca se reduce** sin
-autorizacion explicita del MIM. Se mide solo sobre archivos con
-logica real (cobertura selectiva). Excepciones documentadas: codigo
-defensivo para failure modes raros, paths de feature flags no activos,
-boilerplate de adapters para interfaces externas aun no ejercitadas,
-y codigo legado en proceso de migracion. Cada excepcion requiere un
-tag explicito en el archivo y revision periodica.
+The coverage threshold is mandatory and **never reduced**
+without explicit MIM authorization. It is measured only on files with
+real logic (selective coverage). Documented exceptions: defensive
+code for rare failure modes, feature-flag paths not currently active,
+adapter boilerplate for external interfaces not yet exercised,
+and legacy code in the process of migration. Every exception requires an
+explicit tag in the file and periodic review.
 
-El mismo mecanismo de excepcion aplica a mutation testing: el MIM puede autorizar excepciones documentadas para codigo donde mutation testing es computacionalmente prohibitivo (test suites de integracion pesada, codigo generado, adapters de terceros). Cada excepcion requiere tag explicito, justificacion y revision periodica. Los umbrales de mutation score siguen siendo no-relajables para el codigo no exceptuado.
+The same exception mechanism applies to mutation testing: the MIM may authorize documented exceptions for code where mutation testing is computationally prohibitive (heavy integration test suites, generated code, third-party adapters). Every exception requires an explicit tag, justification and periodic review. Mutation-score thresholds remain non-relaxable for non-exempted code.

@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "8"
-title: "Donde vive el conocimiento"
+title: "Where knowledge lives"
 source: "principia/constitution.md"
 source_lines: [951, 1024]
 layer: knowledge
@@ -16,52 +16,52 @@ keywords:
   - watermark
   - re-sync
   - namespaces
-  - persistencia
-  - DBMS del contexto
-  - grafo estructural
+  - persistence
+  - context DBMS
+  - structural graph
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Introduce los tres concerns de gestion de conocimiento en Virgil — persistencia (ArtifactStore), consulta documental (RAG) y comprension estructural del codigo (codebaseMemory) — que se desarrollan en detalle en las subsecciones siguientes (8c-8f).
+> **Context:** Introduces the three knowledge-management concerns in Virgil — persistence (ArtifactStore), documentary query (RAG) and structural understanding of code (codebaseMemory) — which are developed in detail in the following subsections (8c-8f).
 
-## 8. Donde vive el conocimiento
+## 8. Where knowledge lives
 
-Tres concerns separados: donde se PERSISTEN los deliverables
-(ArtifactStore), como se CONSULTAN deliverables y documentacion (RAG),
-y como se COMPRENDE la estructura del codigo (codebaseMemory). El RAG
-actua como DBMS del contexto documental; el codebaseMemory actua como
-grafo estructural del codigo. Ambas proyecciones son **versionadas**:
-declaran un watermark (la revision contra la cual estan sincronizadas)
-y pueden detectar drift respecto al estado actual del repositorio.
+Three separate concerns: where deliverables are PERSISTED
+(ArtifactStore), how deliverables and documentation are QUERIED (RAG),
+and how the code's structure is UNDERSTOOD (codebaseMemory). RAG
+acts as the documentary context's DBMS; codebaseMemory acts as the
+code's structural graph. Both projections are **versioned**:
+they declare a watermark (the revision against which they are synchronized)
+and can detect drift relative to the repository's current state.
 
-El camino canonico de contextualizacion es consultar la herramienta
-apropiada con queries acotadas, no cargar archivos completos en el
-prompt. La lectura directa de archivos no esta prohibida pero tiene
-un costo: consume tokens innecesariamente y opera fuera de la
-trazabilidad de Virgil. Toda modificacion que genere nuevos commits
-fuera del flujo de Virgil desplaza HEAD mas alla del watermark y
-requiere un **re-sync** que actualice la proyeccion. Ninguna
-certificacion es valida si la proyeccion RAG no esta sincronizada
-con la revision que se certifica.
+The canonical contextualization path is to query the appropriate
+tool with bounded queries, not to load complete files into the
+prompt. Reading files directly is not prohibited but has
+a cost: it consumes tokens unnecessarily and operates outside
+Virgil's traceability. Any modification that generates new commits
+outside Virgil's flow moves HEAD beyond the watermark and
+requires a **re-sync** that updates the projection. No
+certification is valid if the RAG projection is not synchronized
+with the revision being certified.
 
-### 8a. ArtifactStore — persistencia
+### 8a. ArtifactStore — persistence
 
 ```mermaid
 flowchart TD
     VIRGIL["Virgil Kernel"]
-    VIRGIL -->|"persiste via"| ASA["ArtifactStoreAdapter\n(contrato)"]
+    VIRGIL -->|"persists via"| ASA["ArtifactStoreAdapter\n(contract)"]
 
-    ASA --> DEFAULT["repo-docs (default)\n{target}/docs/virgil/\nlocal, RAG-friendly,\nsin dependencias externas"]
+    ASA --> DEFAULT["repo-docs (default)\n{target}/docs/virgil/\nlocal, RAG-friendly,\nno external dependencies"]
 
-    ASA --> EXT["Adapters externos (TBD)"]
+    ASA --> EXT["External adapters (TBD)"]
 
-    subgraph EXTERNOS["Opciones via contrato"]
+    subgraph EXTERNOS["Options via contract"]
         JIRA["Jira"]
         CONF["Confluence"]
         AZURE["Azure DevOps"]
         ASANA["Asana"]
         GH["GitHub Projects/Issues"]
-        OTROS["Otros\n(via contrato de adapter)"]
+        OTROS["Others\n(via adapter contract)"]
     end
 
     EXT --> EXTERNOS
@@ -71,27 +71,27 @@ flowchart TD
     style EXTERNOS fill:#777,stroke:#333,color:#fff
 ```
 
-### 8b. Separacion de namespaces
+### 8b. Namespace separation
 
 ```mermaid
 flowchart LR
     subgraph VIRGIL_DOCS["Virgil/docs/"]
-        DOGMA["Dogma de Virgil\nread-only para consumidores\nnormativo y versionado"]
+        DOGMA["Virgil Dogma\nread-only for consumers\nnormative and versioned"]
     end
 
     subgraph TARGET_DOCS["{target}/docs/"]
-        MANAGED["{target}/docs/virgil/\nManaged namespace\nVIRGIL escribe aqui"]
-        CORPUS["{target}/docs/**\nCorpus del proyecto\nread-only para Virgil\n(opt-in para RAG)"]
+        MANAGED["{target}/docs/virgil/\nManaged namespace\nVIRGIL writes here"]
+        CORPUS["{target}/docs/**\nProject corpus\nread-only for Virgil\n(opt-in for RAG)"]
     end
 
-    DOGMA -.-|"NO son lo mismo"| TARGET_DOCS
-    MANAGED -.-|"write scope\ndelimitado"| CORPUS
+    DOGMA -.-|"are NOT the same"| TARGET_DOCS
+    MANAGED -.-|"bounded\nwrite scope"| CORPUS
 
     style DOGMA fill:#47a,stroke:#333,color:#fff
     style MANAGED fill:#4a4,stroke:#333,color:#fff
     style CORPUS fill:#777,stroke:#333,color:#fff
 ```
 
-> **Invariante**: `Virgil/docs/` (dogma) y `{target}/docs/` (proyecto)
-> comparten el nombre `docs` pero NO comparten identidad, ownership ni
+> **Invariant**: `Virgil/docs/` (dogma) and `{target}/docs/` (project)
+> share the name `docs` but do NOT share identity, ownership or
 > write policy.

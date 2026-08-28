@@ -1,99 +1,99 @@
-# Virgil — Principio Fundador
+# Virgil — Founding Principle
 
-Documento ancla. Todo lo que Virgil es, hace y por que lo hace.
-Si algo contradice la [constitution](constitution.md), la constitution gana.
+Anchor document. Everything Virgil is, does, and why it does it.
+If anything contradicts the [constitution](constitution.md), the constitution wins.
 
-> Este README es un indice de navegacion sobre los chunks RAG-friendly
-> bajo `sections/`. La fuente de verdad constitucional es
+> This README is a navigation index over the RAG-friendly chunks
+> under `sections/`. The constitutional source of truth is
 > [`constitution.md`](constitution.md) (sealed, immutable).
 
-## Indice
+## Index
 
-### Vocabulario y actores
-- [Vocabulario de actores](sections/01-vocabulary.md) — MIM, SM, TPM, PDC, compositeAgent
+### Vocabulary and actors
+- [Actor vocabulary](sections/01-vocabulary.md) — MIM, SM, TPM, PDC, compositeAgent
 
-### 1. Que es Virgil
-- [Que es Virgil](sections/02-identity.md) — knowledge/control plane, identidad
-- [Regla anti-drift interpretativa](sections/03-anti-drift.md) — prevencion de desviacion semantica
+### 1. What Virgil is
+- [What Virgil is](sections/02-identity.md) — knowledge/control plane, identity
+- [Interpretive anti-drift rule](sections/03-anti-drift.md) — prevention of semantic drift
 
-### 2. Como es (estructura)
-- [Estructura de tres capas](sections/04-structure.md) — Principia, Kernel, Method Pack
+### 2. How it is (structure)
+- [Three-layer structure](sections/04-structure.md) — Principia, Kernel, Method Pack
 
-### 3. Como actua
-- [Ciclo de vida de un proyecto](sections/05-lifecycle.md) — maquina de estados, FastForward, PlanningGapDetected
-- [Flujo de una invocacion](sections/06-invocation-flow.md) — pipeline determinista, PDC
+### 3. How it acts
+- [Lifecycle of a project](sections/05-lifecycle.md) — state machine, FastForward, PlanningGapDetected
+- [Flow of an invocation](sections/06-invocation-flow.md) — deterministic pipeline, PDC
 
-### 4. Por que actua asi
-- [Gobierno y arquitectura](sections/07-governance-architecture.md) — GP-1..GP-6 + A1..A9
+### 4. Why it acts this way
+- [Governance and architecture](sections/07-governance-architecture.md) — GP-1..GP-6 + A1..A9
 
-### 5. Que partes lo componen
-- [Catalogo de componentes](sections/08-components.md) — Kernel, Method Pack, Ledger, RAG
+### 5. What parts compose it
+- [Component catalog](sections/08-components.md) — Kernel, Method Pack, Ledger, RAG
 
-### 6. Como interactuan las partes
-- [Modelo de interaccion](sections/09-interaction-model.md) — actores, modos, separacion de concerns, invariante
+### 6. How the parts interact
+- [Interaction model](sections/09-interaction-model.md) — actors, modes, separation of concerns, invariant
 
-### 7. Como garantiza calidad
-- [Echo System](sections/10-echo-system.md) — pipeline de 5 pasos
+### 7. How it guarantees quality
+- [Echo System](sections/10-echo-system.md) — 5-step pipeline
 - [Deliverables vs Build Artifacts](sections/11-deliverables-vs-artifacts.md) — EchoRun, buildArtifactSet, sourceRevision
-- [Macro Red/Green/Refactor](sections/12-red-green-refactor.md) — TDD por lotes
-- [compositeAgent y mutation domains](sections/13-composite-agent.md) — aislamiento de ejecucion
-- [Testing Matrix](sections/14-testing-matrix.md) — modelo de boundaries por tier
-- [Binding Layer y trazabilidad](sections/15-binding-layer.md) — declared, inferred, verified
-- [QA / Acceptance Gates](sections/16-qa-gates.md) — certificacion, CRAP score
-- [droppableCode](sections/17-droppable-code.md) — cobertura como herramienta
-- [complianceByDesign](sections/18-compliance-by-design.md) — compliance como efecto secundario
-- [versionPinning y securityAudit](sections/19-supply-chain-pinning.md) — Supply Chain Integrity
-- [bumpDependencies](sections/20-supply-chain-bump.md) — ciclo de actualizacion controlada
+- [Macro Red/Green/Refactor](sections/12-red-green-refactor.md) — batch TDD
+- [compositeAgent and mutation domains](sections/13-composite-agent.md) — execution isolation
+- [Testing Matrix](sections/14-testing-matrix.md) — boundary model by tier
+- [Binding Layer and traceability](sections/15-binding-layer.md) — declared, inferred, verified
+- [QA / Acceptance Gates](sections/16-qa-gates.md) — certification, CRAP score
+- [droppableCode](sections/17-droppable-code.md) — coverage as a tool
+- [complianceByDesign](sections/18-compliance-by-design.md) — compliance as a side effect
+- [versionPinning and securityAudit](sections/19-supply-chain-pinning.md) — Supply Chain Integrity
+- [bumpDependencies](sections/20-supply-chain-bump.md) — controlled update cycle
 
-### 8. Donde vive el conocimiento
-- [Donde vive el conocimiento](sections/21-knowledge-storage.md) — ArtifactStore, namespaces
-- [RAG como DBMS](sections/22-rag-dbms.md) — proyeccion queryable
-- [Watermark y re-sync](sections/23-rag-watermark.md) — integridad de proyecciones
-- [devRag vs consumerRag](sections/24-rag-dual.md) — RAG dual
-- [Visibilidad y memoizacion](sections/25-visibility-memoization.md) — visibilidad escalonada
-- [codebaseMemory concepto](sections/26-codebase-memory-concept.md) — grafo estructural AST
-- [codebaseMemory construccion](sections/27-codebase-memory-construction.md) — build y mantenimiento
+### 8. Where knowledge lives
+- [Where knowledge lives](sections/21-knowledge-storage.md) — ArtifactStore, namespaces
+- [RAG as DBMS](sections/22-rag-dbms.md) — queryable projection
+- [Watermark and re-sync](sections/23-rag-watermark.md) — projection integrity
+- [devRag vs consumerRag](sections/24-rag-dual.md) — dual RAG
+- [Visibility and memoization](sections/25-visibility-memoization.md) — tiered visibility
+- [codebaseMemory concept](sections/26-codebase-memory-concept.md) — structural AST graph
+- [codebaseMemory construction](sections/27-codebase-memory-construction.md) — build and maintenance
 
-### 9. Como fluye el contexto
-- [Flujo de contexto](sections/28-context-flow.md) — ContextBrief, delegationContract, PDC
+### 9. How context flows
+- [Context flow](sections/28-context-flow.md) — ContextBrief, delegationContract, PDC
 
-### 10. Como se recupera
-- [Recuperacion](sections/29-recovery.md) — estado persistido, reconstruccion
+### 10. How it recovers
+- [Recovery](sections/29-recovery.md) — persisted state, reconstruction
 
-### 11. Como se ejecuta
-- [Pipeline de ejecucion](sections/30-execution-pipeline.md) — contratos primero, paralelismo
-- [Git strategy](sections/31-git-strategy.md) — aislamiento, trazabilidad
-- [Verificacion mecanica](sections/32-mechanical-verification.md) — review humano condicional
-- [Accept/Reject routing](sections/33-accept-reject.md) — certificacion por gates
-- [Break-glass](sections/34-break-glass.md) — lane de emergencia
-- [Evidencia queryable](sections/35-evidence-queryable.md) — evidencia como dato
+### 11. How it executes
+- [Execution pipeline](sections/30-execution-pipeline.md) — contracts first, parallelism
+- [Git strategy](sections/31-git-strategy.md) — isolation, traceability
+- [Mechanical verification](sections/32-mechanical-verification.md) — conditional human review
+- [Accept/Reject routing](sections/33-accept-reject.md) — certification by gates
+- [Break-glass](sections/34-break-glass.md) — emergency lane
+- [Queryable evidence](sections/35-evidence-queryable.md) — evidence as data
 
-### 12. Como opera (opcional)
-- [Fase de operacion](sections/36-operation.md) — activacion, adapters, escalacion
+### 12. How it operates (optional)
+- [Operation phase](sections/36-operation.md) — activation, adapters, escalation
 
-### Autoridad
-- [Autoridad y auto-referencia](sections/37-authority.md) — regla constitucional
+### Authority
+- [Authority and self-reference](sections/37-authority.md) — constitutional rule
 
-### Glosario
-- [Glosario](sections/38-glossary.md) — 46 terminos canonicos
+### Glossary
+- [Glossary](sections/38-glossary.md) — 46 canonical terms
 
-## Validacion de integridad
+## Integrity validation
 
 ```bash
 ./principia/validate-chunks.sh
 ```
 
-Verifica watermark, existencia de archivos, integridad del grafo de
-dependencias y consistencia del glosario.
+Verifies watermark, file existence, dependency graph
+integrity and glossary consistency.
 
-## Taxonomia de layers
+## Layer taxonomy
 
-El [manifest](manifest.yaml) clasifica cada chunk en uno de 15 layers:
+The [manifest](manifest.yaml) classifies each chunk into one of 15 layers:
 navigation, identity, structure, lifecycle, principles, components,
 interaction, quality, knowledge, context, recovery, execution,
-operation, authority, reference. Usar para filtrado y routing en CLI.
+operation, authority, reference. Use for filtering and routing in the CLI.
 
 ---
 
-**Navegacion**: [Indice del overview original](sections/00-navigation.md) ·
+**Navigation**: [Index of the original overview](sections/00-navigation.md) ·
 [Manifest (CLI discovery)](manifest.yaml)

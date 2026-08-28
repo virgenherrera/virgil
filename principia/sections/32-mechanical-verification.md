@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "11d"
-title: "Verificacion mecanica — review humano condicional"
+title: "Mechanical verification — conditional human review"
 source: "principia/constitution.md"
 source_lines: [1521, 1556]
 layer: execution
@@ -10,47 +10,47 @@ glossary_terms: [PDC, CRAP score]
 depends_on: ["7e", "7g", "11a-11b", "3b", "4", "11c"]
 referenced_by: ["11e-routing"]
 keywords:
-  - verificacion mecanica
+  - mechanical verification
   - mutation testing
   - CRAP score
-  - complejidad ciclomatica
-  - tamano de modulo
-  - estructura de dependencias
-  - seguridad CVEs
-  - review AUTH DDD
-  - compliance regulatoria
+  - cyclomatic complexity
+  - module size
+  - dependency structure
+  - CVE security
+  - AUTH DDD review
+  - regulatory compliance
   - Method Pack
   - PDC
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Esta seccion describe la fase Refactor del pipeline de ejecucion (seccion 11a). Se apoya en las gates mecanicas y la verificacion estructurada definidas en la seccion 7e, y en el mecanismo de review por perfil de compliance de la seccion 7g.
+> **Context:** This section describes the Refactor phase of the execution pipeline (section 11a). It relies on the mechanical gates and structured verification defined in section 7e, and on the compliance-profile review mechanism from section 7g.
 
-### 11d. Verificacion mecanica — review humano condicional
+### 11d. Mechanical verification — conditional human review
 
-La fase Refactor utiliza verificacion mecanica basada en metricas como mecanismo primario de certificacion. Las gates mecanicas (seccion 7e) son el canal principal de calidad. Para proyectos con perfil de compliance regulatoria, el Method Pack activa adicionalmente review humano blocking sobre logica de autorizacion y modelado de dominio (ver seccion 7g). En ambos casos, la certificacion final requiere que TODAS las gates aplicables pasen — tanto las mecanicas como las de review humano cuando estan activas.
+The Refactor phase uses metrics-based mechanical verification as the primary certification mechanism. Mechanical gates (section 7e) are the main quality channel. For projects with a regulatory compliance profile, the Method Pack additionally activates blocking human review over authorization logic and domain modeling (see section 7g). In both cases, final certification requires that ALL applicable gates pass — both the mechanical ones and the human-review ones when active.
 
-Las gates de certificacion combinan verificacion mecanica determinista (test pass/fail, mutation score, coverage, CRAP, CVE scan) y verificacion estructurada (alineacion arquitectonica — ver seccion 7e). El review humano, cuando esta activo por perfil de compliance, tambien forma parte de las gates aplicables. El PDC opera durante la ejecucion como safeguard de coherencia (seccion 3b), pero no forma parte del pipeline de certificacion — puede detener una delegacion incoherente, no certifica ni aprueba codigo.
+Certification gates combine deterministic mechanical verification (test pass/fail, mutation score, coverage, CRAP, CVE scan) and structured verification (architectural alignment — see section 7e). Human review, when active due to a compliance profile, is also part of the applicable gates. The PDC operates during execution as a coherence safeguard (section 3b), but is not part of the certification pipeline — it can stop an incoherent delegation, it does not certify or approve code.
 
 ```mermaid
 flowchart TD
-    subgraph MECANICO["Verificacion mecanica (obligatoria)"]
-        MUT["Mutation testing\nfuerza real de tests"]
-        CRAP["CRAP score\nriesgo de cambio"]
-        CYCL["Complejidad ciclomatica\nfunciones simples"]
-        SIZE["Tamano de modulo\nLOC acotado"]
-        DEPS["Estructura de dependencias\ncero ciclos"]
-        SEC["Seguridad\ncero CVEs criticos"]
+    subgraph MECANICO["Mechanical verification (mandatory)"]
+        MUT["Mutation testing\nreal test strength"]
+        CRAP["CRAP score\nchange risk"]
+        CYCL["Cyclomatic complexity\nsimple functions"]
+        SIZE["Module size\nbounded LOC"]
+        DEPS["Dependency structure\nzero cycles"]
+        SEC["Security\nzero critical CVEs"]
     end
 
-    subgraph RESIDUAL["Review AUTH/DDD (opcional por defecto; blocking con perfil de compliance — ver 7g)"]
-        AUTH["Logica de autorizacion"]
-        DDD["Modelado de dominio"]
+    subgraph RESIDUAL["AUTH/DDD review (optional by default; blocking with compliance profile — see 7g)"]
+        AUTH["Authorization logic"]
+        DDD["Domain modeling"]
     end
 
-    MECANICO -->|"gate"| PASS{{"Pasa?"}}
-    PASS -->|"Si"| VERIFY["Verify"]
-    PASS -->|"No"| BACK["Re-delegar a\nfase correspondiente"]
+    MECANICO -->|"gate"| PASS{{"Passes?"}}
+    PASS -->|"Yes"| VERIFY["Verify"]
+    PASS -->|"No"| BACK["Re-delegate to\ncorresponding phase"]
 
     style MECANICO fill:#47a,stroke:#333,color:#fff
     style RESIDUAL fill:#777,stroke:#333,color:#fff
@@ -58,6 +58,6 @@ flowchart TD
     style BACK fill:#c44,stroke:#333,color:#fff
 ```
 
-Los umbrales especificos (mutation score, CRAP maximo, complejidad)
-los define el dogma por tier (strict, standard, relaxed). El
-Principia define el principio: **mecanico, no subjetivo**.
+The specific thresholds (mutation score, maximum CRAP, complexity)
+are defined by the dogma per tier (strict, standard, relaxed). The
+Principia defines the principle: **mechanical, not subjective**.

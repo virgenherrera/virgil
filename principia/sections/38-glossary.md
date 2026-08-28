@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "glossary"
-title: "Glosario"
+title: "Glossary"
 source: "principia/constitution.md"
 source_lines: [1763, 1814]
 layer: reference
@@ -59,55 +59,55 @@ keywords:
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Este glosario recopila las definiciones canonicas de los terminos utilizados a lo largo de todo el Principia. Cada entrada referencia la seccion donde el termino se define en profundidad.
+> **Context:** This glossary collects the canonical definitions of the terms used throughout the Principia. Each entry references the section where the term is defined in depth.
 
-## Glosario
+## Glossary
 
-| Termino | Definicion |
+| Term | Definition |
 |---------|-----------|
-| AGENTS.md | Archivo de discoverability publicado por Virgil en el proyecto consumidor siguiendo el Open Agentic Standard. Contiene reglas operativas inyectadas para el agente (seccion 1) |
-| ARCH | Gate de alineacion arquitectonica dentro del pipeline de certificacion. Valida conformidad con los principios de arquitectura (seccion 7e, 11d) |
-| ArtifactRepository | Componente del Kernel que gestiona deliverables, revisiones y procedencia. No confundir con ArtifactStoreAdapter (adapter externo) ni con el termino informal "ArtifactStore" (seccion 5) |
-| ArtifactStoreAdapter | Adapter que traduce persistencia y retrieval entre el Kernel y el sistema externo de almacenamiento (repo-docs, Jira, etc.). No confundir con ArtifactRepository (componente interno del Kernel) (seccion 5, 3b) |
-| Binding Layer | Tres niveles de confianza para contratos: declared (definido), inferred (derivado de evidencia), verified (confirmado por ejecucion) (seccion 7d) |
-| Break-glass | Lane de emergencia para incidentes P1 que comprime ceremonia con autoridad MIM y certificacion post-hoc obligatoria (seccion 11e) |
-| buildArtifactSet | Conjunto de build artifacts producidos por un EchoRun, ligados inequivocamente a una sourceRevision (seccion 7b) |
-| bumpDependencies | Ciclo de mantenimiento de tres pasos (security fix → update check → security fix) para actualizar dependencias exactas sin introducir vulnerabilidades (seccion 7h) |
-| circuitBreaker | Mecanismo que detiene delegaciones tras 3 fallos consecutivos y escala al MIM (seccion 9c) |
-| codebaseMemory | Grafo estructural del codigo derivado de AST. Complementa al RAG con consultas de relaciones entre entidades de codigo (seccion 8f) |
-| compositeAgent | Secuencia de invocaciones independientes (testEngineer → Implementor → fitnessFunction) orquestadas bajo una etiqueta comun dentro de un mutation domain aislado; worktree es una implementacion posible (seccion 7c) |
-| complianceByDesign | Aserciones de forma de datos integradas en el desarrollo. Cubre exclusivamente controles tecnicos de datos (seccion 7g) |
-| consumerRag | Proyeccion RAG del proyecto consumidor en Modo Consumo. Complementa devRag. Ver RAG dual (seccion 8c) |
-| ContextBrief | Paquete de contexto compilado por el ContextCompiler para alimentar una delegacion. Incluye deliverables seleccionados con trazabilidad de origen (seccion 9a) |
-| ContextCompiler | Componente del Kernel que selecciona y compila deliverables relevantes en un ContextBrief. Paso de juicio con superficie de alucinacion documentada (seccion 9a) |
-| CRAP score | Change Risk Anti-Patterns — metrica que combina complejidad y cobertura para evaluar riesgo de cambio |
-| delegationContract | Contrato de 6 campos obligatorios que acompana cada delegacion del SM: identidad (rol, tier, constraints), scope, objetivo verificable, input resuelto, output schema, reglas inyectadas como texto (seccion 9c) |
-| devRag | Proyeccion RAG de Virgil en Modo Desarrollo. Complementa consumerRag. Ver RAG dual (seccion 8c) |
-| DogmaRef | Referencia de identidad al dogma operativo (docs/). Resuelta por el HostAdapter al inicio de cada invocacion. Contrato de campos definido en el layer de protocolo, fuera del alcance de este Principia (seccion 3b) |
-| droppableCode | Codigo con 0% de cobertura en appTests. Debe eliminarse o justificar su existencia con excepcion documentada. Ver safeToAutoDelete para eliminacion mecanica segura (seccion 7f) |
-| Echo System | Pipeline de 5 pasos para la ejecucion de cada fase: Setup → Build → Static → Dynamic → E2E (seccion 7a) |
-| EchoRun | Instancia concreta de ejecucion del Echo System que produce un buildArtifactSet ligado a una sourceRevision (seccion 7b) |
-| EvidenceIngestion | Componente del Kernel que ingiere evidencia producida por ejecuciones y la registra en el Ledger con trazabilidad de origen (seccion 5) |
-| FastForward | Gradiente de certeza (FF-1 a FF-4) que permite comprimir ceremonia de planning cuando la evidencia observable lo soporta (seccion 3a) |
-| HostAdapter | Adapter que traduce discovery, invocacion y envelopes entre el host (Claude, GPT, etc.) y el Virgil Kernel. Declara capabilities y degradaciones (seccion 3b, 5) |
-| Kernel | Nucleo ceremonia-agnostico de Virgil. Contiene Ledger, TraceabilityGraph, ArtifactRepository, EvidenceIngestion, ContextCompiler, RAG (seccion 5) |
-| Ledger | Registro inmutable de eventos, transiciones e historial del proyecto |
-| MIM | Mind in the Machine: humano con autoridad final sobre el proyecto. Aprueba, rechaza, desempata. Su veto es no negociable (vocabulario) |
-| Method Pack | Capa de ceremonia que se monta sobre el Kernel. Define roles, flujos y gates adicionales. Pack Scrum es el unico implementado (seccion 5) |
-| mutation domain | Dominio de aislamiento donde un lane de ejecucion opera sin interferir con otros lanes concurrentes. Debe proveer filesystem aislado, deteccion de conflictos al integrar, e identidad de revision por lane. Worktrees son la implementacion de referencia (seccion 7c, 11c) |
-| PDC | Post-Delegation Checkpoint: safeguard de coherencia de orquestacion (ECHO → VERIFY → MARK → DECIDE). No es gate de certificacion (seccion 3b) |
-| PlanningGapDetected | Senal de escalacion cuando la ejecucion detecta un defecto de planning. Dispara re-planificacion |
-| ProjectRef | Referencia de identidad al proyecto objetivo (target). Resuelta por el HostAdapter al inicio de cada invocacion. Contrato de campos definido en el layer de protocolo, fuera del alcance de este Principia (seccion 3b) |
-| RAG | Proyeccion de lectura optimizada sobre deliverables y documentacion. No es fuente de verdad — es reconstruible (seccion 8e) |
-| re-sync | Proceso que actualiza una proyeccion (RAG o codebaseMemory) al HEAD actual y avanza su watermark. Puede dispararse de forma explicita, via PR con deltas, o via hook post-merge (seccion 8c) |
-| RetrievalProjection | Nombre formal del componente del Kernel que implementa las proyecciones de lectura. Sinonimo tecnico de RAG en el contexto del catalogo de componentes (seccion 5) |
-| RunContext | Contexto de ejecucion del run/change activo. Resuelto por el HostAdapter al inicio de cada invocacion. Contrato de campos definido en el layer de protocolo, fuera del alcance de este Principia (seccion 3b) |
-| securityAudit | Gate blocking del Echo paso 1 (Setup): escaneo de vulnerabilidades sobre el arbol de dependencias. El Kernel impone la ejecucion; el Method Pack define el umbral de severidad (seccion 7h) |
-| SM | Session Manager: agente orquestador que coordina la sesion. Compila contexto, delega trabajo, ejecuta PDC. No es Scrum Master (vocabulario) |
-| safeToAutoDelete | Subconjunto de droppableCode que cumple criterios mecanicos de eliminacion segura: sin dependientes vivos, sin ejecucion observada en N ciclos, sin cobertura transitiva. Habilita eliminacion mecanica automatica (seccion 7f) |
-| sourceRevision | Commit SHA que identifica la revision del codigo que produjo un buildArtifactSet. Debe ser alcanzable desde el watermark para que la certificacion sea valida (seccion 7b, 8c) |
-| Supply Chain Integrity | Tres invariantes sobre dependencias: version pinning exacto, security audit como gate, y bumpDependencies como ciclo de actualizacion controlada (seccion 7h) |
-| TPM | Task Progress Monitor: agente ligero que escanea estados y reporta al SM sin mutar deliverables (vocabulario) |
-| TraceabilityGraph | Proyeccion derivada que conecta intencion → decision → trabajo → evidencia. Reconstruible desde el Ledger (seccion 5, 8e) |
-| versionPinning | Invariante que requiere versiones exactas (sin rangos) para todas las dependencias y el gestor de dependencias. Garantiza reproducibilidad absoluta (seccion 7h) |
-| watermark | Revision (commit SHA) contra la cual una proyeccion (RAG o codebaseMemory) fue construida o sincronizada por ultima vez. Propiedad exclusiva del Kernel. Gate de certificacion: sourceRevision debe ser alcanzable desde watermark en el grafo de commits (seccion 8c) |
+| AGENTS.md | Discoverability file published by Virgil in the consuming project following the Open Agentic Standard. Contains operational rules injected for the agent (section 1) |
+| ARCH | Architectural-alignment gate within the certification pipeline. Validates conformance with architecture principles (section 7e, 11d) |
+| ArtifactRepository | Kernel component that manages deliverables, revisions and provenance. Not to be confused with ArtifactStoreAdapter (external adapter) nor with the informal term "ArtifactStore" (section 5) |
+| ArtifactStoreAdapter | Adapter that translates persistence and retrieval between the Kernel and the external storage system (repo-docs, Jira, etc.). Not to be confused with ArtifactRepository (internal Kernel component) (section 5, 3b) |
+| Binding Layer | Three trust levels for contracts: declared (defined), inferred (derived from evidence), verified (confirmed by execution) (section 7d) |
+| Break-glass | Emergency lane for P1 incidents that compresses ceremony with MIM authority and mandatory post-hoc certification (section 11e) |
+| buildArtifactSet | Set of build artifacts produced by an EchoRun, unambiguously linked to a sourceRevision (section 7b) |
+| bumpDependencies | Three-step maintenance cycle (security fix → update check → security fix) to update exact dependencies without introducing vulnerabilities (section 7h) |
+| circuitBreaker | Mechanism that stops delegations after 3 consecutive failures and escalates to the MIM (section 9c) |
+| codebaseMemory | Structural code graph derived from AST. Complements the RAG with queries about relationships between code entities (section 8f) |
+| compositeAgent | Sequence of independent invocations (testEngineer → Implementor → fitnessFunction) orchestrated under a common label within an isolated mutation domain; worktree is one possible implementation (section 7c) |
+| complianceByDesign | Data-shape assertions integrated into development. Covers exclusively technical data controls (section 7g) |
+| consumerRag | RAG projection of the consuming project in Consumption Mode. Complements devRag. See dual RAG (section 8c) |
+| ContextBrief | Context package compiled by the ContextCompiler to feed a delegation. Includes selected deliverables with origin traceability (section 9a) |
+| ContextCompiler | Kernel component that selects and compiles relevant deliverables into a ContextBrief. Judgment step with documented hallucination surface (section 9a) |
+| CRAP score | Change Risk Anti-Patterns — metric that combines complexity and coverage to assess change risk |
+| delegationContract | Contract of 6 required fields accompanying every SM delegation: identity (role, tier, constraints), scope, verifiable objective, resolved input, output schema, rules injected as text (section 9c) |
+| devRag | Virgil's RAG projection in Development Mode. Complements consumerRag. See dual RAG (section 8c) |
+| DogmaRef | Identity reference to the operational dogma (docs/). Resolved by the HostAdapter at the start of every invocation. Field contract defined in the protocol layer, out of scope for this Principia (section 3b) |
+| droppableCode | Code with 0% coverage in appTests. Must be removed or justify its existence with a documented exception. See safeToAutoDelete for safe mechanical removal (section 7f) |
+| Echo System | 5-step pipeline for the execution of each phase: Setup → Build → Static → Dynamic → E2E (section 7a) |
+| EchoRun | Concrete instance of Echo System execution that produces a buildArtifactSet linked to a sourceRevision (section 7b) |
+| EvidenceIngestion | Kernel component that ingests evidence produced by executions and records it in the Ledger with origin traceability (section 5) |
+| FastForward | Certainty gradient (FF-1 to FF-4) that allows compressing planning ceremony when observable evidence supports it (section 3a) |
+| HostAdapter | Adapter that translates discovery, invocation and envelopes between the host (Claude, GPT, etc.) and the Virgil Kernel. Declares capabilities and degradations (section 3b, 5) |
+| Kernel | Virgil's ceremony-agnostic core. Contains Ledger, TraceabilityGraph, ArtifactRepository, EvidenceIngestion, ContextCompiler, RAG (section 5) |
+| Ledger | Immutable record of the project's events, transitions and history |
+| MIM | Mind in the Machine: human with final authority over the project. Approves, rejects, breaks ties. Its veto is non-negotiable (vocabulary) |
+| Method Pack | Ceremony layer mounted on top of the Kernel. Defines roles, flows and additional gates. Scrum Pack is the only one implemented (section 5) |
+| mutation domain | Isolation domain where an execution lane operates without interfering with other concurrent lanes. Must provide isolated filesystem, conflict detection at integration, and per-lane revision identity. Worktrees are the reference implementation (section 7c, 11c) |
+| PDC | Post-Delegation Checkpoint: orchestration-coherence safeguard (ECHO → VERIFY → MARK → DECIDE). It is not a certification gate (section 3b) |
+| PlanningGapDetected | Escalation signal when execution detects a planning defect. Triggers re-planning |
+| ProjectRef | Identity reference to the target project. Resolved by the HostAdapter at the start of every invocation. Field contract defined in the protocol layer, out of scope for this Principia (section 3b) |
+| RAG | Read-optimized projection over deliverables and documentation. Not a source of truth — it is reconstructible (section 8e) |
+| re-sync | Process that updates a projection (RAG or codebaseMemory) to the current HEAD and advances its watermark. Can be triggered explicitly, via PR with deltas, or via post-merge hook (section 8c) |
+| RetrievalProjection | Formal name of the Kernel component that implements the read projections. Technical synonym for RAG in the context of the component catalog (section 5) |
+| RunContext | Execution context of the active run/change. Resolved by the HostAdapter at the start of every invocation. Field contract defined in the protocol layer, out of scope for this Principia (section 3b) |
+| securityAudit | Blocking gate of Echo step 1 (Setup): vulnerability scan over the dependency tree. The Kernel enforces execution; the Method Pack defines the severity threshold (section 7h) |
+| SM | Session Manager: orchestrating agent that coordinates the session. Compiles context, delegates work, runs the PDC. It is not a Scrum Master (vocabulary) |
+| safeToAutoDelete | Subset of droppableCode that meets mechanical safe-removal criteria: no live dependents, no observed execution in N cycles, no transitive coverage. Enables automatic mechanical removal (section 7f) |
+| sourceRevision | Commit SHA that identifies the code revision that produced a buildArtifactSet. Must be reachable from the watermark for certification to be valid (section 7b, 8c) |
+| Supply Chain Integrity | Three dependency invariants: exact version pinning, security audit as a gate, and bumpDependencies as a controlled update cycle (section 7h) |
+| TPM | Task Progress Monitor: lightweight agent that scans states and reports to the SM without mutating deliverables (vocabulary) |
+| TraceabilityGraph | Derived projection connecting intent → decision → work → evidence. Reconstructible from the Ledger (section 5, 8e) |
+| versionPinning | Invariant requiring exact versions (no ranges) for all dependencies and the dependency manager. Guarantees absolute reproducibility (section 7h) |
+| watermark | Revision (commit SHA) against which a projection (RAG or codebaseMemory) was last built or synchronized. Exclusive Kernel property. Certification gate: sourceRevision must be reachable from watermark in the commit graph (section 8c) |

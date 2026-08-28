@@ -1,11 +1,11 @@
 <!-- Virgil Principia
 section_id: "9"
-title: "Como fluye el contexto"
+title: "How context flows"
 source: "principia/constitution.md"
 source_lines: [1301, 1382]
 layer: context
 constitutional: true
-actors: [SM, sub-agente, TPM, ContextCompiler]
+actors: [SM, sub-agent, TPM, ContextCompiler]
 glossary_terms: [ContextBrief, ContextCompiler, PDC, delegationContract, circuitBreaker]
 depends_on: ["8c-dual", "8d-8e", "8f-concept"]
 referenced_by: ["3b", "10", "11e-routing"]
@@ -14,7 +14,7 @@ keywords:
   - topic_key
   - PatternA
   - PatternB
-  - delegacion
+  - delegation
   - PDC
   - ECHO VERIFY MARK DECIDE
   - Status Report
@@ -23,89 +23,89 @@ keywords:
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Con el conocimiento organizado como DBMS documental (RAG), grafo estructural (codebaseMemory) y visibilidad escalonada por rol (seccion 8), el paso siguiente es entender como ese contexto fluye entre agentes durante la ejecucion.
+> **Context:** With knowledge organized as a document DBMS (RAG), a structural graph (codebaseMemory) and tiered visibility by role (section 8), the next step is to understand how that context flows between agents during execution.
 
-**En este chunk:**
+**In this chunk:**
 - [9a. ContextBrief](#9a-contextbrief)
-- [9b. Dos patrones de entrega](#9b-dos-patrones-de-entrega)
-- [9c. Delegacion: SM → sub-agente → PDC](#9c-delegacion-sm--sub-agente--pdc)
+- [9b. Two delivery patterns](#9b-two-delivery-patterns)
+- [9c. Delegation: SM → sub-agent → PDC](#9c-delegation-sm--sub-agent--pdc)
 
-## 9. Como fluye el contexto
+## 9. How context flows
 
-Regla fundamental: **nunca se pasa contexto crudo a un sub-agente**.
-El contexto se entrega compilado (ContextBrief) o como referencia
-(topic_key) para que el sub-agente lea del RAG.
+Fundamental rule: **raw context is never passed to a sub-agent**.
+Context is delivered compiled (ContextBrief) or as a reference
+(topic_key) for the sub-agent to read from the RAG.
 
 ### 9a. ContextBrief
 
-El ContextCompiler selecciona deliverables, hechos y limites para
-producir un ContextBrief acotado al objetivo del actor. La seleccion
-queda trazable: que se incluyo, de donde salio, que se excluyo.
+The ContextCompiler selects deliverables, facts and boundaries to
+produce a ContextBrief bounded to the actor's objective. The
+selection remains traceable: what was included, where it came from, what was excluded.
 
-La compilacion del ContextBrief es un paso de juicio (seccion 3b) con superficie de alucinacion inherente: la seleccion/resumen puede omitir o distorsionar informacion. La trazabilidad (que se incluyo, de donde salio, que se excluyo) permite auditoria post-hoc, pero NO previene la omision en tiempo de compilacion. Este riesgo se mitiga con el PDC (coherence check post-delegacion) y con la reconstruccion del ContextBrief ante PlanningGapDetected.
+Compiling the ContextBrief is a judgment step (section 3b) with an inherent hallucination surface: selection/summarization can omit or distort information. Traceability (what was included, where it came from, what was excluded) enables post-hoc audit, but does NOT prevent omission at compile time. This risk is mitigated by the PDC (post-delegation coherence check) and by reconstructing the ContextBrief upon PlanningGapDetected.
 
-### 9b. Dos patrones de entrega
+### 9b. Two delivery patterns
 
 ```mermaid
 flowchart TD
-    NEED["Sub-agente necesita contexto"]
-    NEED --> Q{{"Target conocido\ny deterministico?"}}
+    NEED["Sub-agent needs context"]
+    NEED --> Q{{"Target known\nand deterministic?"}}
 
-    Q -->|"Si"| PB["PatternB\nSM pasa topic_key\nsub-agente lee directo del RAG\nsignificativamente mas economico"]
-    Q -->|"No"| PA["PatternA\nSM busca, cura, inyecta\ncalidad sobre costo"]
+    Q -->|"Yes"| PB["PatternB\nSM passes topic_key\nsub-agent reads directly from RAG\nsignificantly more economical"]
+    Q -->|"No"| PA["PatternA\nSM searches, curates, injects\nquality over cost"]
 
     style PB fill:#4a4,stroke:#333,color:#fff
     style PA fill:#47a,stroke:#333,color:#fff
 ```
 
-| Patron | Cuando | Costo | Calidad |
+| Pattern | When | Cost | Quality |
 |--------|--------|-------|---------|
-| PatternB (default) | Target conocido, deterministico | Bajo (pasa `topic_key`; evita materializar contexto) | Buena |
-| PatternA | Busqueda fuzzy, fan-out alto (8+) | Alto | Optima |
+| PatternB (default) | Known, deterministic target | Low (passes `topic_key`; avoids materializing context) | Good |
+| PatternA | Fuzzy search, high fan-out (8+) | High | Optimal |
 
-Ambos patrones operan sobre el RAG dual (seccion 8c): devRag en Modo
-Desarrollo, consumerRag en Modo Consumo.
+Both patterns operate over the dual RAG (section 8c): devRag in
+Development Mode, consumerRag in Consumption Mode.
 
-### 9c. Delegacion: SM → sub-agente → PDC
+### 9c. Delegation: SM → sub-agent → PDC
 
 ```mermaid
 sequenceDiagram
     participant SM as SM
-    participant SUB as Sub-agente
+    participant SUB as Sub-agent
     participant TPM as TPM
 
-    SM->>SUB: delegationContract<br/>(6 campos obligatorios)
+    SM->>SUB: delegationContract<br/>(6 required fields)
     activate SUB
     SUB-->>SM: Output + Status Report
     deactivate SUB
 
-    Note over SM: PDC obligatorio
-    SM->>SM: ECHO - coherente?
-    SM->>SM: VERIFY - completo?
-    SM->>TPM: MARK - persistir
-    SM->>SM: DECIDE - avanzar?
+    Note over SM: PDC mandatory
+    SM->>SM: ECHO - coherent?
+    SM->>SM: VERIFY - complete?
+    SM->>TPM: MARK - persist
+    SM->>SM: DECIDE - advance?
 ```
 
-Los 6 campos obligatorios del delegationContract:
+The 6 required fields of the delegationContract:
 
-| Campo | Que define |
+| Field | What it defines |
 |-------|------------|
-| Identidad | Nombre de rol, tier de razonamiento (busqueda / implementacion / arquitectura), constraints de comportamiento |
-| Scope | Limite explicito del alcance — que archivos, que acciones, que esta fuera |
-| Objetivo verificable | Criterio binario que el SM evalua contra el output |
-| Input | Datos resueltos que el sub-agente necesita — sin referencias que deba perseguir |
-| Output schema | Estructura exacta del resultado esperado |
-| Reglas inyectadas | Reglas del proyecto y constraints como texto literal en el briefing — el sub-agente NO busca su propio contexto |
+| Identity | Role name, reasoning tier (search / implementation / architecture), behavioral constraints |
+| Scope | Explicit boundary of scope — which files, which actions, what is out of bounds |
+| Verifiable objective | Binary criterion the SM evaluates against the output |
+| Input | Resolved data the sub-agent needs — no references it must chase down |
+| Output schema | Exact structure of the expected result |
+| Injected rules | Project rules and constraints as literal text in the briefing — the sub-agent does NOT search for its own context |
 
-La **identidad** no es decorativa — define como razona y opera el
-sub-agente. El tier de razonamiento se asigna por complejidad de la
-tarea, no por preferencia: una busqueda no requiere capacidad
-arquitectonica; una decision de diseno no se delega a capacidad de
-busqueda. Las reglas llegan pre-digeridas porque un sub-agente sin
-estado (GP-4: constraint > confianza) no tiene acceso al registro de
-origen ni responsabilidad de buscarlo.
+**Identity** is not decorative — it defines how the
+sub-agent reasons and operates. The reasoning tier is assigned by
+task complexity, not by preference: a search does not require
+architectural capability; a design decision is not delegated to search
+capability. Rules arrive pre-digested because a stateless sub-agent
+(GP-4: constraint > trust) has neither access to the source
+registry nor responsibility for finding it.
 
-Sin Status Report en el output, el SM lo trata como FAILED.
-Tres fallos consecutivos al mismo rol activan el circuitBreaker.
+Without a Status Report in the output, the SM treats it as FAILED.
+Three consecutive failures for the same role activate the circuitBreaker.
 
-> **No confundir**: el paso `ECHO` del PDC valida coherencia del output delegado. El **Echo System** ejecuta Setup → Build → Static → Dynamic → E2E y produce build artifacts. El primero es un checkpoint de orquestacion; el segundo es el pipeline canonico de evidencia.
+> **Do not confuse**: the PDC's `ECHO` step validates the coherence of the delegated output. The **Echo System** runs Setup → Build → Static → Dynamic → E2E and produces build artifacts. The former is an orchestration checkpoint; the latter is the canonical evidence pipeline.

@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "3a"
-title: "Ciclo de vida de un proyecto"
+title: "Lifecycle of a project"
 source: "principia/constitution.md"
 source_lines: [237, 290]
 layer: lifecycle
@@ -10,9 +10,9 @@ glossary_terms: [FastForward, PlanningGapDetected]
 depends_on: []
 referenced_by: [7c-rgr, 11a-11b, 3b]
 keywords:
-  - ciclo de vida
+  - lifecycle
   - state machine
-  - maquina de estados
+  - state machine
   - PlanningGapDetected
   - FastForward
   - planning
@@ -21,58 +21,58 @@ keywords:
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** MIM (humano que dirige decisiones de producto) y SM (agente orquestador que delega el trabajo) son los actores que operan esta maquina de estados. El ciclo de vida es configurable por Method Pack — el Kernel impone la convergencia mecanica, pero la ceremonia especifica de cada fase puede variar segun el Pack activo.
+> **Context:** MIM (the human who directs product decisions) and SM (the orchestrating agent that delegates the work) are the actors that operate this state machine. The lifecycle is configurable by Method Pack — the Kernel imposes mechanical convergence, but the specific ceremony of each phase can vary depending on the active Pack.
 
-## 3. Como actua
+## 3. How it acts
 
-[↑ Volver al indice](../README.md)
+[↑ Back to index](../README.md)
 
-### 3a. Ciclo de vida de un proyecto
+### 3a. Lifecycle of a project
 
-Cada fase itera hasta consolidar su deliverable. No es una linea recta —
-es un loop que converge hacia un handoff bien acotado.
+Each phase iterates until its deliverable is consolidated. It is not a
+straight line — it is a loop that converges toward a well-bounded handoff.
 
 ```mermaid
 stateDiagram-v2
     [*] --> Idea
 
     state PLANNING {
-        Idea --> Requirements : consolidada
-        Requirements --> Design : completos
-        Design --> Tasks : aprobado
-        Tasks --> Handoff : refinadas
+        Idea --> Requirements : consolidated
+        Requirements --> Design : complete
+        Design --> Tasks : approved
+        Tasks --> Handoff : refined
 
-        Idea --> Idea : cuestionar, refinar
-        Requirements --> Requirements : iterar con MIM
-        Requirements --> Idea : gap detectado
-        Design --> Requirements : gap detectado
-        Tasks --> Design : gap detectado
+        Idea --> Idea : question, refine
+        Requirements --> Requirements : iterate with MIM
+        Requirements --> Idea : gap detected
+        Design --> Requirements : gap detected
+        Tasks --> Design : gap detected
     }
 
-    Handoff --> Execution : handoff aprobado
+    Handoff --> Execution : handoff approved
 
     state EXECUTION {
-        Execution --> Verify : implementacion candidata
+        Execution --> Verify : candidate implementation
     }
 
-    Verify --> Deliver : certificado
-    Deliver --> Operation : si aplica
+    Verify --> Deliver : certified
+    Deliver --> Operation : if applicable
 
-    note right of PLANNING : Virgil IMPONE convergencia<br/>mecanica via maquina de estados.<br/>SM ORQUESTA delegaciones.<br/>MIM DIRIGE decisiones de producto.
-    note right of Execution : Virgil OBSERVA<br/>emite PlanningGapDetected<br/>si hay vacios
-    note right of Operation : Virgil ASISTE<br/>reactivo, opcional
+    note right of PLANNING : Virgil IMPOSES mechanical<br/>convergence via state machine.<br/>SM ORCHESTRATES delegations.<br/>MIM DIRECTS product decisions.
+    note right of Execution : Virgil OBSERVES<br/>emits PlanningGapDetected<br/>if there are gaps
+    note right of Operation : Virgil ASSISTS<br/>reactive, optional
 ```
 
-La maquina de estados del proyecto (via virgil_status) indica en que
-fase esta cada feature y el proyecto en general. Un feature no avanza
-hasta que su deliverable esta consolidado.
+The project's state machine (via virgil_status) indicates what
+phase each feature and the overall project is in. A feature does not advance
+until its deliverable is consolidated.
 
-**PlanningGapDetected**: si execution descubre que un deliverable aprobado
-es ambiguo, contradictorio o insuficiente, emite esta senal, bloquea
-solo el scope afectado y devuelve el control a planning. Execution
-nunca reescribe un deliverable aprobado.
+**PlanningGapDetected**: if execution discovers that an approved
+deliverable is ambiguous, contradictory or insufficient, it emits this signal,
+blocks only the affected scope and returns control to planning. Execution
+never rewrites an approved deliverable.
 
-**FastForward**: el SM no siempre ejecuta todas las fases con la misma
-ceremonia. Evalua un gradiente de certeza (FF-1 a FF-4) sobre el contexto
-existente y comprime las fases proporcionalmente — desde ceremonia
-completa (score 0-2) hasta ejecucion directa (score 6-8). El SM computa el score sobre estado observable y verificable. La formula de scoring y los inputs + resultado se registran en el Ledger, haciendolo auditable. FastForward comprime CEREMONIA de planning (fases de deliberacion), no gates de calidad del Kernel — los gates de certificacion (R/G/R, mutation testing, fitness functions) se ejecutan integros en TODOS los niveles de FastForward, desde FF-1 hasta FF-4.
+**FastForward**: the SM does not always run all phases with the same
+ceremony. It evaluates a certainty gradient (FF-1 to FF-4) over the
+existing context and compresses the phases proportionally — from
+full ceremony (score 0-2) to direct execution (score 6-8). The SM computes the score based on observable, verifiable state. The scoring formula and its inputs plus result are recorded in the Ledger, making it auditable. FastForward compresses planning CEREMONY (deliberation phases), not Kernel quality gates — certification gates (R/G/R, mutation testing, fitness functions) run in full at ALL FastForward levels, from FF-1 to FF-4.

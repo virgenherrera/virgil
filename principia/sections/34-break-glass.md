@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "11e-breakglass"
-title: "Lane de emergencia (break-glass)"
+title: "Emergency lane (break-glass)"
 source: "principia/constitution.md"
 source_lines: [1588, 1617]
 layer: execution
@@ -11,44 +11,44 @@ depends_on: ["11e-routing"]
 referenced_by: []
 keywords:
   - break-glass
-  - incidente P1
-  - autorizacion MIM
+  - P1 incident
+  - MIM authorization
   - standing policy
-  - certificacion post-hoc
-  - 72 horas
+  - post-hoc certification
+  - 72 hours
   - Ledger
-  - deuda tecnica critica
+  - critical technical debt
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** El break-glass es un camino excepcional dentro de la fase de ejecucion (seccion 11e), reservado para incidentes P1 en produccion. No reemplaza la ceremonia de certificacion — la comprime y la difiere, nunca la elimina.
+> **Context:** Break-glass is an exceptional path within the execution phase (section 11e), reserved for P1 incidents in production. It does not replace certification ceremony — it compresses and defers it, never eliminates it.
 
-#### Lane de emergencia (break-glass)
+#### Emergency lane (break-glass)
 
-Para incidentes P1 en produccion, existe un camino expedito que
-comprime la ceremonia sin eliminarla:
+For P1 incidents in production, there is an expedited path that
+compresses ceremony without eliminating it:
 
 ```mermaid
 flowchart LR
-    P1["Incidente P1\ndetectado"]
-    P1 -->|"MIM autoriza\nbreak-glass"| FIX["Fix directo\n(Red + Green\ncomprimidos)"]
-    FIX -->|"deploy\ninmediato"| PROD["Produccion\nestabilizada"]
-    PROD -->|"dentro de 72h\n(configurable:\nmin 24h, max 168h)"| CERT["Certificacion\ncompleta\npost-hoc"]
+    P1["P1 Incident\ndetected"]
+    P1 -->|"MIM authorizes\nbreak-glass"| FIX["Direct fix\n(Red + Green\ncompressed)"]
+    FIX -->|"immediate\ndeploy"| PROD["Production\nstabilized"]
+    PROD -->|"within 72h\n(configurable:\nmin 24h, max 168h)"| CERT["Complete\ncertification\npost-hoc"]
 
     style P1 fill:#c44,stroke:#333,color:#fff
     style FIX fill:#a74,stroke:#333,color:#fff
     style CERT fill:#4a4,stroke:#333,color:#fff
 ```
 
-| Restriccion | Regla |
+| Restriction | Rule |
 |-------------|-------|
-| Autorizacion | Solo el MIM puede activar break-glass. En equipos con MIM no siempre disponible, una standing policy emitida por el MIM puede pre-autorizar activaciones bajo condiciones mecanicamente verificables: tipos de incidente cubiertos, fecha de expiracion de la policy, y notificacion obligatoria al MIM dentro de un plazo definido |
-| Scope | Exclusivamente el fix del incidente — cero features |
-| Certificacion | Certificacion completa post-hoc dentro de 72 horas (configurable por el Method Pack, minimo 24h, maximo 168h) |
-| Registro | El Ledger registra la activacion como evento auditable |
+| Authorization | Only the MIM can activate break-glass. In teams where the MIM is not always available, a standing policy issued by the MIM may pre-authorize activations under mechanically verifiable conditions: covered incident types, policy expiration date, and mandatory MIM notification within a defined window |
+| Scope | Exclusively the incident fix — zero features |
+| Certification | Complete post-hoc certification within 72 hours (configurable by the Method Pack, minimum 24h, maximum 168h) |
+| Recording | The Ledger records the activation as an auditable event |
 
-Una standing policy no transfiere autoridad ni amplia scope: declara condiciones cerradas bajo las cuales break-glass puede activarse sin presencia del MIM. Cada activacion debe demostrar que cumplio las condiciones pre-autorizadas, quedar atribuida a la politica MIM vigente, y notificar al MIM dentro del plazo declarado en la policy.
+A standing policy does not transfer authority or expand scope: it declares closed conditions under which break-glass can be activated without the MIM's presence. Every activation must demonstrate it met the pre-authorized conditions, remain attributed to the active MIM policy, and notify the MIM within the window declared in the policy.
 
-El break-glass NO es un atajo — es un camino documentado con
-restricciones explicitas. Un fix sin certificacion post-hoc dentro
-de las 72 horas (o el plazo configurado) se trata como deuda tecnica critica.
+Break-glass is NOT a shortcut — it is a documented path with
+explicit restrictions. A fix without post-hoc certification within
+72 hours (or the configured window) is treated as critical technical debt.

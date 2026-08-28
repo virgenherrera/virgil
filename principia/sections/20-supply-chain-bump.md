@@ -1,12 +1,12 @@
 <!-- Virgil Principia
 section_id: "7h-bump"
-title: "bumpDependencies y el ciclo cerrado de calidad"
+title: "bumpDependencies and the closed quality cycle"
 source: "principia/constitution.md"
 source_lines: [909, 948]
 layer: quality
 constitutional: true
 actors: [MIM]
-glossary_terms: [bumpDependencies, ciclo cerrado]
+glossary_terms: [bumpDependencies, closed cycle]
 depends_on: [7h-pinning]
 referenced_by: []
 keywords:
@@ -15,28 +15,28 @@ keywords:
   - update check
   - security fix
   - rollback
-  - mantenimiento de dependencias
-  - ciclo cerrado
-  - QA certifica resultado
+  - dependency maintenance
+  - closed cycle
+  - QA certifies result
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Cierra la seccion 7h del capitulo 7 ("Como garantiza calidad"), sobre integridad de la cadena de suministro. Complementa el versionPinning y securityAudit descritos en la parte anterior de 7h: mientras esos invariantes fijan versiones exactas, bumpDependencies es el proceso controlado que las actualiza sin reintroducir riesgo. La ultima subseccion ("Ciclo cerrado") resume como se articulan todos los mecanismos del capitulo 7.
+> **Context:** Closes section 7h of chapter 7 ("How it guarantees quality"), on supply chain integrity. Complements the versionPinning and securityAudit described in the earlier part of 7h: while those invariants fix exact versions, bumpDependencies is the controlled process that updates them without reintroducing risk. The last subsection ("Closed cycle") summarizes how all the mechanisms of chapter 7 fit together.
 
-#### bumpDependencies — mitigacion controlada de tech debt
+#### bumpDependencies — controlled tech-debt mitigation
 
-Las versiones exactas previenen drift pero acumulan tech debt si no se actualizan. El ciclo bumpDependencies resuelve esta tension con un proceso de tres pasos:
+Exact versions prevent drift but accumulate tech debt if not updated. The bumpDependencies cycle resolves this tension with a three-step process:
 
 ```mermaid
 flowchart LR
-    S1["1. Security Fix\nResolver\nvulnerabilidades\nconocidas"]
-    S2["2. Update Check\nIdentificar y aplicar\nactualizaciones\ndisponibles"]
-    S3["3. Security Fix\nRe-verificar\npost-actualizacion"]
+    S1["1. Security Fix\nResolve\nknown\nvulnerabilities"]
+    S2["2. Update Check\nIdentify and apply\navailable\nupdates"]
+    S3["3. Security Fix\nRe-verify\npost-update"]
 
     S1 --> S2 --> S3
 
-    S3 -->|"clean"| ECHO["Echo completo\n(5 pasos)"]
-    S3 -->|"vulnerabilidades"| ROLLBACK["Rollback +\ninvestigar"]
+    S3 -->|"clean"| ECHO["Complete Echo\n(5 steps)"]
+    S3 -->|"vulnerabilities"| ROLLBACK["Rollback +\ninvestigate"]
 
     style S1 fill:#47a,stroke:#333,color:#fff
     style S2 fill:#47a,stroke:#333,color:#fff
@@ -45,20 +45,20 @@ flowchart LR
     style ROLLBACK fill:#c44,stroke:#333,color:#fff
 ```
 
-1. **Security Fix**: resolver vulnerabilidades conocidas en las versiones actuales
-2. **Update Check**: ejecutar un verificador de actualizaciones que identifique versiones nuevas de todas las dependencias, aplicando las actualizaciones con version exacta (sin introducir rangos)
-3. **Security Fix**: re-ejecutar el escaneo de seguridad contra las versiones actualizadas — una actualizacion puede INTRODUCIR vulnerabilidades nuevas
+1. **Security Fix**: resolve known vulnerabilities in current versions
+2. **Update Check**: run an update checker that identifies new versions of all dependencies, applying updates with an exact version (without introducing ranges)
+3. **Security Fix**: re-run the security scan against the updated versions — an update can INTRODUCE new vulnerabilities
 
-Despues del ciclo completo, el Echo System se ejecuta integro (5 pasos). Si alguna gate falla, se revierte la actualizacion y se investiga la causa.
+After the complete cycle, the full Echo System runs (5 steps). If any gate fails, the update is reverted and the cause is investigated.
 
-bumpDependencies no es un paso del Echo — es un proceso de mantenimiento que PRECEDE al Echo. Se ejecuta de forma explicita (no automatica), tipicamente en una cadencia definida por el equipo (semanal, por sprint, o pre-release). El MIM puede delegar la cadencia al Method Pack.
+bumpDependencies is not an Echo step — it is a maintenance process that PRECEDES Echo. It runs explicitly (not automatically), typically on a cadence defined by the team (weekly, per sprint, or pre-release). The MIM may delegate the cadence to the Method Pack.
 
-### Ciclo cerrado
+### Closed cycle
 
-Estos mecanismos forman un ciclo cerrado: el Echo ejecuta, los build
-artifacts capturan outputs, Red/Green/Refactor estructura la ejecucion
-(paralelizable via compositeAgent), la Testing Matrix define que vale
-como prueba, droppableCode detecta codigo muerto, complianceByDesign
-verifica cumplimiento, Supply Chain Integrity asegura dependencias
-seguras y actualizadas, y QA certifica el resultado. Si QA rechaza, se
-escala a la fase que corresponda.
+These mechanisms form a closed cycle: Echo executes, build
+artifacts capture outputs, Red/Green/Refactor structures the execution
+(parallelizable via compositeAgent), the Testing Matrix defines what counts
+as proof, droppableCode detects dead code, complianceByDesign
+verifies compliance, Supply Chain Integrity ensures secure and
+up-to-date dependencies, and QA certifies the result. If QA rejects, it
+escalates to the corresponding phase.

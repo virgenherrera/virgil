@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "7c-rgr"
-title: "Macro Red/Green/Refactor — TDD por lotes"
+title: "Macro Red/Green/Refactor — batch TDD"
 source: "principia/constitution.md"
 source_lines: [618, 661]
 layer: quality
@@ -21,48 +21,48 @@ keywords:
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Esta seccion pertenece al capitulo 7 ("Como garantiza calidad"), inmediatamente despues de la distincion deliverables vs build artifacts (7b). Describe el ciclo TDD macro que estructura la ejecucion de un batch completo, antes de introducir el compositeAgent que lo paraleliza (seccion 7c-composite).
+> **Context:** This section belongs to chapter 7 ("How it guarantees quality"), immediately after the deliverables vs build artifacts distinction (7b). It describes the macro TDD cycle that structures the execution of a complete batch, before introducing the compositeAgent that parallelizes it (section 7c-composite).
 
-### 7c. Macro Red/Green/Refactor — TDD por lotes
+### 7c. Macro Red/Green/Refactor — batch TDD
 
-TDD a nivel de batch, no funcion por funcion. Primero TODA la suite de
-tests, luego TODA la implementacion, luego TODO el refactoring.
+TDD at the batch level, not function by function. First the ENTIRE
+test suite, then ALL the implementation, then ALL the refactoring.
 
 ```mermaid
 stateDiagram-v2
     [*] --> Red
 
     state Red {
-        [*] --> testPlan : escribir plan
-        testPlan --> testContract : definir contratos
-        testContract --> testImpl : implementar tests
-        testImpl --> [*] : todos fallan
+        [*] --> testPlan : write plan
+        testPlan --> testContract : define contracts
+        testContract --> testImpl : implement tests
+        testImpl --> [*] : all fail
     }
 
-    Red --> Green : suite completa, todos fallan
+    Red --> Green : full suite, all fail
 
     state Green {
-        [*] --> Implement : codigo para pasar tests
-        Implement --> [*] : todos pasan
+        [*] --> Implement : code to pass tests
+        Implement --> [*] : all pass
     }
 
-    Green --> Refactor : todos pasan
+    Green --> Refactor : all pass
 
     state Refactor {
         [*] --> Metrics : mutation, CRAP, complexity
-        Metrics --> Cleanup : metricas OK
-        Cleanup --> [*] : tests siguen pasando
+        Metrics --> Cleanup : metrics OK
+        Cleanup --> [*] : tests still pass
     }
 
-    Refactor --> Verify : metricas dentro de umbral
-    Verify --> [*] : certificado
+    Refactor --> Verify : metrics within threshold
+    Verify --> [*] : certified
 
-    Red --> Red : gap detectado
-    Green --> Red : test faltante
-    Refactor --> Red : regresion
+    Red --> Red : gap detected
+    Green --> Red : missing test
+    Refactor --> Red : regression
 ```
 
-El dogma actual define 5 gates dentro de este ciclo:
-**R0** (handoff completo) → **R1** (red valida) → **G1** (green
-production-safe) → **F1** (refactor seguro) → **V1** (verify
-independiente).
+The current dogma defines 5 gates within this cycle:
+**R0** (complete handoff) → **R1** (valid red) → **G1** (production-safe
+green) → **F1** (safe refactor) → **V1** (independent
+verify).

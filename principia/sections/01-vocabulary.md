@@ -1,62 +1,62 @@
 <!-- Virgil Principia
 section_id: "vocabulary"
-title: "Vocabulario de actores"
+title: "Actor vocabulary"
 source: "principia/constitution.md"
 source_lines: [63, 99]
 layer: identity
 constitutional: true
-actors: [MIM, Desarrollador, Implementador, Virgil, SM, TPM, PDC]
+actors: [MIM, Developer, Implementer, Virgil, SM, TPM, PDC]
 glossary_terms: [MIM, SM, TPM, PDC, compositeAgent]
 depends_on: []
 referenced_by: [1, 2, 6]
 keywords:
   - actors
   - roles
-  - modos
-  - Desarrollo
-  - Consumo
-  - vocabulario
+  - modes
+  - Development
+  - Consumption
+  - vocabulary
   - MIM
   - SM
   - TPM
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Esta tabla y diagrama definen los actores canonicos de Virgil (MIM, Desarrollador, Implementador, Virgil, SM, TPM, PDC) referenciados a lo largo del Principia, incluyendo la seccion "1. Que es Virgil" y "6a. Actores y modos".
+> **Context:** This table and diagram define Virgil's canonical actors (MIM, Developer, Implementer, Virgil, SM, TPM, PDC) referenced throughout the Principia, including section "1. What Virgil is" and "6a. Actors and modes".
 
-### Vocabulario de actores
+### Actor vocabulary
 
-| Actor | Que es | Cuando actua |
+| Actor | What it is | When it acts |
 |-------|--------|-------------|
-| MIM | Humano con autoridad final de decision | Siempre — aprueba, rechaza, desempata |
-| Desarrollador | Humano + agente trabajando SOBRE Virgil | Modo Desarrollo |
-| Implementador | Agente externo trabajando CON Virgil | Modo Consumo |
-| Virgil | El binario — knowledge/control plane | Ambos modos |
-| SM | SM (Session Manager) — Agente orquestador. El Method Pack inyecta este rol: en el Pack Scrum cumple funciones de Scrum Master; en otros Packs cumple el rol de orquestacion equivalente definido por ese Pack. Virgil (el binario) no ES el SM — el SM es un rol que opera DENTRO de Virgil. | Ejecucion — delega, verifica, decide |
-| TPM | Funcion de tracking de deliverables | Ejecucion — persiste estado, reporta |
-| PDC | Post-Delegation Checkpoint (ECHO → VERIFY → MARK → DECIDE) | Despues de cada delegacion del SM |
+| MIM | Human with final decision authority | Always — approves, rejects, breaks ties |
+| Developer | Human + agent working ON Virgil | Development Mode |
+| Implementer | External agent working WITH Virgil | Consumption Mode |
+| Virgil | The binary — knowledge/control plane | Both modes |
+| SM | SM (Session Manager) — orchestrating agent. The Method Pack injects this role: in the Scrum Pack it fulfills Scrum Master functions; in other Packs it fulfills the equivalent orchestration role defined by that Pack. Virgil (the binary) is NOT the SM — the SM is a role that operates WITHIN Virgil. | Execution — delegates, verifies, decides |
+| TPM | Deliverable-tracking function | Execution — persists state, reports |
+| PDC | Post-Delegation Checkpoint (ECHO → VERIFY → MARK → DECIDE) | After every SM delegation |
 
 ```mermaid
 flowchart TD
-    MIM["MIM\n(humano)\nautoridad final"]
-    MIM -->|"dirige"| SM["SM\n(agente orquestador)"]
-    SM -->|"delega via\ndelegationContract"| SUB["Sub-agentes"]
-    SM -->|"ejecuta"| PDC["PDC\n(checkpoint\npost-delegacion)"]
-    SM -->|"registra en"| TPM["TPM\n(tracking)"]
+    MIM["MIM\n(human)\nfinal authority"]
+    MIM -->|"directs"| SM["SM\n(orchestrating agent)"]
+    SM -->|"delegates via\ndelegationContract"| SUB["Sub-agents"]
+    SM -->|"executes"| PDC["PDC\n(post-delegation\ncheckpoint)"]
+    SM -->|"records to"| TPM["TPM\n(tracking)"]
 
-    subgraph MODOS["Modos operativos"]
-        DEV["Desarrollador\ntrabaja SOBRE Virgil"]
-        IMPL["Implementador\ntrabaja CON Virgil"]
+    subgraph MODOS["Operational modes"]
+        DEV["Developer\nworks ON Virgil"]
+        IMPL["Implementer\nworks WITH Virgil"]
     end
 
-    MIM ---|"es el"| DEV
-    MIM ---|"dirige al"| IMPL
+    MIM ---|"is the"| DEV
+    MIM ---|"directs the"| IMPL
 
     style MIM fill:#4a4,stroke:#333,color:#fff
     style SM fill:#47a,stroke:#333,color:#fff
     style PDC fill:#a74,stroke:#333,color:#fff
 ```
 
-Detalle de delegacion y PDC en la seccion 9c de este documento.
+Delegation and PDC details in section 9c of this document.
 
-> **Delegacion de aprobaciones MIM.** En equipos donde el MIM es tambien el unico desarrollador, los puntos de aprobacion MIM (excepciones de cobertura, declaracion de perfil de compliance del proyecto, break-glass) pueden consolidarse mediante autorizacion permanente documentada: el MIM emite una politica de proyecto que pre-autoriza categorias especificas, reduciendo la friccion sin eliminar la trazabilidad. Nota: lo delegable es la DECLARACION del perfil regulatorio del proyecto, no la activacion del gate de review humano — esa activacion es automatica e incondicional una vez declarado el perfil (ver seccion 7g).
+> **Delegation of MIM approvals.** In teams where the MIM is also the sole developer, MIM approval points (coverage exceptions, project compliance profile declaration, break-glass) can be consolidated through a documented standing authorization: the MIM issues a project policy that pre-authorizes specific categories, reducing friction without eliminating traceability. Note: what can be delegated is the DECLARATION of the project's regulatory profile, not the activation of the human review gate — that activation is automatic and unconditional once the profile is declared (see section 7g).

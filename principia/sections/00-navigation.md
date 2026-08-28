@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "index"
-title: "Indice"
+title: "Index"
 source: "principia/constitution.md"
 source_lines: [1, 60]
 layer: navigation
@@ -10,72 +10,71 @@ glossary_terms: []
 depends_on: []
 referenced_by: []
 keywords:
-  - indice
-  - tabla de contenidos
-  - documentos del Principia
-  - navegacion
+  - index
+  - table of contents
+  - Principia documents
+  - navigation
 editorial_additions: [context_paragraph, navigation_note]
 -->
 
-> **Nota de navegacion:** Este indice reproduce la tabla de contenidos original de constitution.md. Los anchors internos apuntan a secciones de constitution.md, no a este archivo. Para navegacion entre chunks RAG, usar el [README](../README.md).
+> **Navigation Note:** This index reproduces the original table of contents from constitution.md. Internal anchors point to sections of constitution.md, not to this file. For navigation between RAG chunks, use the [README](../README.md).
 
-# Virgil — Principio Fundador
+# Virgil — Founding Principle
 
-Documento ancla. Todo lo que Virgil es, hace y por que lo hace.
-Si algo contradice este documento, este documento gana.
+Anchor document. Everything Virgil is, does, and why it does it.
+If anything contradicts this document, this document wins.
 
-## Indice
+## Index
 
-### En este documento
-- [1. Que es Virgil](#1-que-es-virgil)
-  - [1a. Regla anti-drift interpretativa](#1a-regla-anti-drift-interpretativa)
-- [2. Como es (estructura)](#2-como-es-estructura)
-- [3. Como actua](#3-como-actua)
-  - [3a. Ciclo de vida de un proyecto](#3a-ciclo-de-vida-de-un-proyecto)
-  - [3b. Flujo de una invocacion](#3b-flujo-de-una-invocacion)
-- [4. Por que actua asi](#4-por-que-actua-asi)
-  - [4a. Gobierno — COMO se gobierna](#4a-gobierno--como-se-gobierna)
-  - [4b. Arquitectura — COMO se construye](#4b-arquitectura--como-se-construye)
-  - [4c. Como se relacionan las dos capas](#4c-como-se-relacionan-las-dos-capas)
-- [5. Que partes lo componen](#5-que-partes-lo-componen)
-- [6. Como interactuan las partes](#6-como-interactuan-las-partes)
-  - [6a. Actores y modos](#6a-actores-y-modos)
-  - [6b. Separacion de concerns](#6b-separacion-de-concerns)
-  - [6c. Invariante fundamental](#6c-invariante-fundamental)
-- [7. Como garantiza calidad](#7-como-garantiza-calidad)
-  - [7a. Echo System — pipeline determinista](#7a-echo-system--pipeline-determinista)
+### In this document
+- [1. What Virgil is](#1-what-virgil-is)
+  - [1a. Interpretive anti-drift rule](#1a-interpretive-anti-drift-rule)
+- [2. How it is (structure)](#2-how-it-is-structure)
+- [3. How it acts](#3-how-it-acts)
+  - [3a. Lifecycle of a project](#3a-lifecycle-of-a-project)
+  - [3b. Flow of an invocation](#3b-flow-of-an-invocation)
+- [4. Why it acts this way](#4-why-it-acts-this-way)
+  - [4a. Governance — HOW it is governed](#4a-governance--how-it-is-governed)
+  - [4b. Architecture — HOW it is built](#4b-architecture--how-it-is-built)
+  - [4c. How the two layers relate](#4c-how-the-two-layers-relate)
+- [5. What parts compose it](#5-what-parts-compose-it)
+- [6. How the parts interact](#6-how-the-parts-interact)
+  - [6a. Actors and modes](#6a-actors-and-modes)
+  - [6b. Separation of concerns](#6b-separation-of-concerns)
+  - [6c. Fundamental invariant](#6c-fundamental-invariant)
+- [7. How it guarantees quality](#7-how-it-guarantees-quality)
+  - [7a. Echo System — deterministic pipeline](#7a-echo-system--deterministic-pipeline)
   - [7b. Deliverables vs Build Artifacts](#7b-deliverables-vs-build-artifacts)
-  - [7c. Macro Red/Green/Refactor — TDD por lotes](#7c-macro-redgreenrefactor--tdd-por-lotes)
-  - [7d. Testing Matrix — modelo de boundaries](#7d-testing-matrix--modelo-de-boundaries)
-  - [7e. QA / Acceptance Gates — certificacion](#7e-qa--acceptance-gates--certificacion)
-  - [7f. droppableCode — cobertura como herramienta](#7f-droppablecode--cobertura-como-herramienta)
-  - [7g. complianceByDesign — compliance como efecto secundario](#7g-compliancebydesign--compliance-como-efecto-secundario)
-  - [7h. Supply Chain Integrity — dependencias seguras](#7h-supply-chain-integrity--dependencias-seguras)
-  - [Ciclo cerrado](#ciclo-cerrado)
-- [8. Donde vive el conocimiento](#8-donde-vive-el-conocimiento)
-  - [8a. ArtifactStore — persistencia](#8a-artifactstore--persistencia)
-  - [8b. Separacion de namespaces](#8b-separacion-de-namespaces)
-  - [8c. RAG dual — DBMS de contexto](#8c-rag-dual--dbms-de-contexto)
-  - [8d. Visibilidad escalonada](#8d-visibilidad-escalonada)
-  - [8e. Memoizacion](#8e-memoizacion)
-  - [8f. codebaseMemory — grafo estructural del codigo](#8f-codebasememory--grafo-estructural-del-codigo)
-- [9. Como fluye el contexto](#9-como-fluye-el-contexto)
+  - [7c. Macro Red/Green/Refactor — batch TDD](#7c-macro-redgreenrefactor--batch-tdd)
+  - [7d. Testing Matrix — boundary model](#7d-testing-matrix--boundary-model)
+  - [7e. QA / Acceptance Gates — certification](#7e-qa--acceptance-gates--certification)
+  - [7f. droppableCode — coverage as a tool](#7f-droppablecode--coverage-as-a-tool)
+  - [7g. complianceByDesign — compliance as a side effect](#7g-compliancebydesign--compliance-as-a-side-effect)
+  - [7h. Supply Chain Integrity — secure dependencies](#7h-supply-chain-integrity--secure-dependencies)
+  - [Closed cycle](#closed-cycle)
+- [8. Where knowledge lives](#8-where-knowledge-lives)
+  - [8a. ArtifactStore — persistence](#8a-artifactstore--persistence)
+  - [8b. Namespace separation](#8b-namespace-separation)
+  - [8c. Dual RAG — context DBMS](#8c-dual-rag--context-dbms)
+  - [8d. Tiered visibility](#8d-tiered-visibility)
+  - [8e. Memoization](#8e-memoization)
+  - [8f. codebaseMemory — structural code graph](#8f-codebasememory--structural-code-graph)
+- [9. How context flows](#9-how-context-flows)
   - [9a. ContextBrief](#9a-contextbrief)
-  - [9b. Dos patrones de entrega](#9b-dos-patrones-de-entrega)
-  - [9c. Delegacion: SM → sub-agente → PDC](#9c-delegacion-sm--sub-agente--pdc)
-- [10. Como se recupera](#10-como-se-recupera)
-- [11. Como se ejecuta](#11-como-se-ejecuta)
-  - [11a. Pipeline de ejecucion](#11a-pipeline-de-ejecucion)
-  - [11b. Contratos primero — habilitador de paralelismo](#11b-contratos-primero--habilitador-de-paralelismo)
-  - [11c. Git strategy — aislamiento y trazabilidad](#11c-git-strategy--aislamiento-y-trazabilidad)
-  - [11d. Verificacion mecanica — review humano condicional](#11d-verificacion-mecanica--review-humano-condicional)
-  - [11e. Accept/Reject — certificacion por gates](#11e-acceptreject--certificacion-por-gates)
-  - [11f. Evidencia como dato queryable](#11f-evidencia-como-dato-queryable)
-- [12. Como opera (opcional)](#12-como-opera-opcional)
-  - [12a. Activacion y rol](#12a-activacion-y-rol)
-  - [12b. Adapters de operacion](#12b-adapters-de-operacion)
-  - [12c. Escalacion](#12c-escalacion)
-- [Regla de auto-referencia](#regla-de-auto-referencia)
-- [Glosario](#glosario)
-- [Nota de autoridad](#nota-de-autoridad)
-
+  - [9b. Two delivery patterns](#9b-two-delivery-patterns)
+  - [9c. Delegation: SM → sub-agent → PDC](#9c-delegation-sm--sub-agent--pdc)
+- [10. How it recovers](#10-how-it-recovers)
+- [11. How it executes](#11-how-it-executes)
+  - [11a. Execution pipeline](#11a-execution-pipeline)
+  - [11b. Contracts first — parallelism enabler](#11b-contracts-first--parallelism-enabler)
+  - [11c. Git strategy — isolation and traceability](#11c-git-strategy--isolation-and-traceability)
+  - [11d. Mechanical verification — conditional human review](#11d-mechanical-verification--conditional-human-review)
+  - [11e. Accept/Reject — certification by gates](#11e-acceptreject--certification-by-gates)
+  - [11f. Evidence as queryable data](#11f-evidence-as-queryable-data)
+- [12. How it operates (optional)](#12-how-it-operates-optional)
+  - [12a. Activation and role](#12a-activation-and-role)
+  - [12b. Operation adapters](#12b-operation-adapters)
+  - [12c. Escalation](#12c-escalation)
+- [Self-reference rule](#self-reference-rule)
+- [Glossary](#glossary)
+- [Authority note](#authority-note)

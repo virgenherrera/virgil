@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "7c-composite"
-title: "compositeAgent — ejecucion paralela de R/G/R"
+title: "compositeAgent — parallel execution of R/G/R"
 source: "principia/constitution.md"
 source_lines: [662, 711]
 layer: quality
@@ -13,66 +13,66 @@ keywords:
   - compositeAgent
   - mutation domain
   - worktree
-  - aislamiento de filesystem
-  - invocacion stateless
-  - invariante de independencia
-  - GP-4 constraint sobre confianza
-  - lanes paralelos
+  - filesystem isolation
+  - stateless invocation
+  - independence invariant
+  - GP-4 constraint over trust
+  - parallel lanes
 editorial_additions: [context_paragraph, synonym_note]
 -->
 
-> **Context:** Continua directamente la seccion 7c (Macro Red/Green/Refactor). Cuando la ejecucion de un batch se paraleliza en multiples lanes, cada lane usa un compositeAgent para atravesar Red/Green/Refactor dentro de un dominio aislado. Los mutation domains tambien se mencionan en las secciones 8f (grafo estructural del codigo) y 11c (git strategy).
+> **Context:** Continues directly from section 7c (Macro Red/Green/Refactor). When the execution of a batch is parallelized across multiple lanes, each lane uses a compositeAgent to traverse Red/Green/Refactor within an isolated domain. Mutation domains are also mentioned in sections 8f (structural code graph) and 11c (git strategy).
 
-#### compositeAgent — ejecucion paralela de R/G/R
+#### compositeAgent — parallel execution of R/G/R
 
-Cuando la ejecucion se paraleliza en multiples lanes, cada lane opera
-dentro de un **mutation domain aislado** y recibe un compositeAgent: un
-sub-agente que asume multiples personalidades secuencialmente dentro de
-ese mismo dominio, evitando conflictos de filesystem. Worktrees son la
-implementacion de referencia del Dogma actual. El invariante del
-Principia es el aislamiento, no el mecanismo: un mutation domain valido
-debe proveer (a) filesystem aislado que no interfiera con otros lanes,
-(b) deteccion de conflictos al integrar, y (c) identidad de revision
-por lane.
+When execution is parallelized across multiple lanes, each lane operates
+within an **isolated mutation domain** and receives a compositeAgent: a
+sub-agent that sequentially assumes multiple personalities within
+that same domain, avoiding filesystem conflicts. Worktrees are the
+current Dogma's reference implementation. The Principia's invariant
+is isolation, not the mechanism: a valid mutation domain
+must provide (a) isolated filesystem that does not interfere with other lanes,
+(b) conflict detection at integration, and (c) per-lane revision
+identity.
 
 ```mermaid
 sequenceDiagram
-    participant ORCH as Orquestador
+    participant ORCH as Orchestrator
     participant TE as testEngineer
     participant IMPL as Implementor
     participant FF as fitnessFunction
     participant WT as Isolation Domain
 
-    ORCH->>WT: crear mutation domain (lane)
+    ORCH->>WT: create mutation domain (lane)
 
-    Note over TE: Invocacion 1 (stateless)
-    ORCH->>TE: spec + contratos
-    TE->>WT: escribir tests
-    TE-->>ORCH: deliverables Red
+    Note over TE: Invocation 1 (stateless)
+    ORCH->>TE: spec + contracts
+    TE->>WT: write tests
+    TE-->>ORCH: Red deliverables
 
-    Note over IMPL: Invocacion 2 (stateless)
-    ORCH->>IMPL: deliverables Red
-    IMPL->>WT: escribir codigo
-    IMPL-->>ORCH: deliverables Green
+    Note over IMPL: Invocation 2 (stateless)
+    ORCH->>IMPL: Red deliverables
+    IMPL->>WT: write code
+    IMPL-->>ORCH: Green deliverables
 
-    Note over FF: Invocacion 3 (stateless)
-    ORCH->>FF: deliverables Green
-    FF->>WT: verificacion mecanica + residualReview
-    FF-->>ORCH: resultado del lane
+    Note over FF: Invocation 3 (stateless)
+    ORCH->>FF: Green deliverables
+    FF->>WT: mechanical verification + residualReview
+    FF-->>ORCH: lane result
 ```
 
-> **Sinonimo**: `Isolation Domain` es el nombre descriptivo usado en el diagrama de secuencia; `mutation domain` es el termino canonico del glosario. Ambos designan el dominio de aislamiento donde opera un lane de ejecucion.
+> **Synonym**: `Isolation Domain` is the descriptive name used in the sequence diagram; `mutation domain` is the canonical glossary term. Both designate the isolation domain in which an execution lane operates.
 
-| Fase | Invocacion | Responsabilidad |
+| Phase | Invocation | Responsibility |
 |------|-----------|-----------------|
-| Red | testEngineer (sesion independiente) | Escribir tests segun spec |
-| Green | Implementor (sesion independiente) | Codigo que pase los tests |
-| Refactor | fitnessFunction (sesion independiente) | Mutation, CRAP, complejidad + residualReview |
+| Red | testEngineer (independent session) | Write tests per spec |
+| Green | Implementor (independent session) | Code that passes the tests |
+| Refactor | fitnessFunction (independent session) | Mutation, CRAP, complexity + residualReview |
 
-Un compositeAgent NO es un agente monolitico — es una SECUENCIA de
-invocaciones independientes orquestadas bajo una etiqueta comun.
-Cada fase tiene su propio contrato y criterio de salida.
+A compositeAgent is NOT a monolithic agent — it is a SEQUENCE of
+independent invocations orchestrated under a common label.
+Each phase has its own contract and exit criteria.
 
-**Invariante de independencia**: cada fase del compositeAgent (testEngineer, Implementor, fitnessFunction) se ejecuta como invocacion independiente del agente — nueva sesion, sin historial conversacional. El Kernel implementa este reset como constraint tecnico (invocacion stateless por fase), no como instruccion al agente. Cada fase recibe unicamente los deliverables y build artifacts producidos por la fase anterior, no la historia de razonamiento. Este mecanismo satisface el Principio GP-4 (constraint > confianza): la independencia es estructural, no una promesa de comportamiento.
+**Independence invariant**: each compositeAgent phase (testEngineer, Implementor, fitnessFunction) runs as an independent agent invocation — new session, no conversational history. The Kernel implements this reset as a technical constraint (stateless invocation per phase), not as an instruction to the agent. Each phase receives only the deliverables and build artifacts produced by the previous phase, not the reasoning history. This mechanism satisfies Principle GP-4 (constraint > trust): independence is structural, not a promise of behavior.
 
-> **Desambiguacion**: "fitness functions" (plural, generico) designa una CATEGORIA de gate de calidad (junto con mutation testing y R/G/R) aplicable a todo el pipeline. `fitnessFunction` (singular, camelCase) designa un ROL ESPECIFICO de invocacion dentro de la secuencia compositeAgent (testEngineer → Implementor → fitnessFunction). No confundir: la categoria es universal; el rol es una instancia de invocacion dentro de un mutation domain.
+> **Disambiguation**: "fitness functions" (plural, generic) designates a CATEGORY of quality gate (alongside mutation testing and R/G/R) applicable to the entire pipeline. `fitnessFunction` (singular, camelCase) designates a SPECIFIC invocation ROLE within the compositeAgent sequence (testEngineer → Implementor → fitnessFunction). Do not confuse them: the category is universal; the role is an invocation instance within a mutation domain.

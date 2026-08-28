@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "8c-watermark"
-title: "Watermark y re-sync"
+title: "Watermark and re-sync"
 source: "principia/constitution.md"
 source_lines: [1034, 1080]
 layer: knowledge
@@ -13,7 +13,7 @@ keywords:
   - watermark
   - re-sync
   - drift
-  - certificacion
+  - certification
   - sourceRevision
   - HEAD
   - merge-base
@@ -21,50 +21,50 @@ keywords:
 editorial_additions: [context_paragraph, cross_reference_note]
 -->
 
-> **Context:** El RAG (DBMS de contexto documental) y el codebaseMemory (grafo estructural del codigo, seccion 8f) son proyecciones versionadas del repositorio (seccion 8). El **watermark** es el commit SHA contra el cual una de esas proyecciones fue construida o sincronizada por ultima vez. Este mecanismo conecta con la cadena de certificacion descrita en las secciones 7b (deliverables vs build artifacts) y 11f (evidencia como dato queryable).
+> **Context:** RAG (documentary context DBMS) and codebaseMemory (structural code graph, section 8f) are versioned projections of the repository (section 8). The **watermark** is the commit SHA against which one of those projections was last built or synchronized. This mechanism connects with the certification chain described in sections 7b (deliverables vs build artifacts) and 11f (evidence as queryable data).
 
-> **Continuacion de:** [RAG como DBMS](22-rag-dbms.md) introduce el concepto de watermark. Esta seccion define el mecanismo completo.
+> **Continuation of:** [RAG as DBMS](22-rag-dbms.md) introduces the watermark concept. This section defines the complete mechanism.
 
-#### Watermark y re-sync
+#### Watermark and re-sync
 
-El RAG y el codebaseMemory mantienen un **watermark**: la revision
-(commit SHA) contra la cual la proyeccion fue construida o
-sincronizada por ultima vez. Este watermark es la base de tres
-mecanismos:
+RAG and codebaseMemory maintain a **watermark**: the revision
+(commit SHA) against which the projection was last built or
+synchronized. This watermark is the basis of three
+mechanisms:
 
-1. **Deteccion de drift**: al recibir una query, la proyeccion compara
-   su watermark contra el HEAD actual. Si hay divergencia, reporta:
-   "ultimo sync: `{sha}`, `{N}` commits atras" y sugiere re-sync.
-2. **Bloqueo de certificacion**: Virgil NO certifica codigo cuya
-   `sourceRevision` no sea alcanzable desde el watermark del RAG. El
-   invariante es mecanico: sourceRevision debe ser alcanzable desde
-   watermark en el grafo de commits (equivalente a
-   `git merge-base --is-ancestor sourceRevision watermark`). El
-   watermark es propiedad exclusiva del Kernel y solo se actualiza
-   como efecto de un re-sync que reconstruye o actualiza la
-   proyeccion — un agente no puede modificar el watermark sin
-   ejecutar el proceso de sincronizacion.
-3. **Re-sync explicito**: el MIM o el agente puede disparar un re-sync
-   que actualiza la proyeccion al HEAD actual. El trigger puede ser:
-   - Explicito: el MIM instruye al agente ("sincroniza Virgil").
-   - Via PR: el PR incluye deltas del RAG y firma de sync (la
-     especificacion de la firma la define el Dogma); al merge, la
-     proyeccion queda up-to-date sin intervencion manual.
-   - Via hook (opt-in): un post-merge hook dispara re-sync
-     automaticamente. Es decision del consumidor, no obligacion del
-     Principia.
+1. **Drift detection**: upon receiving a query, the projection compares
+   its watermark against the current HEAD. If there is divergence, it reports:
+   "last sync: `{sha}`, `{N}` commits behind" and suggests re-sync.
+2. **Certification block**: Virgil does NOT certify code whose
+   `sourceRevision` is not reachable from the RAG's watermark. The
+   invariant is mechanical: sourceRevision must be reachable from
+   the watermark in the commit graph (equivalent to
+   `git merge-base --is-ancestor sourceRevision watermark`). The
+   watermark is the Kernel's exclusive property and only updates
+   as an effect of a re-sync that rebuilds or updates the
+   projection — an agent cannot modify the watermark without
+   running the sync process.
+3. **Explicit re-sync**: the MIM or the agent can trigger a re-sync
+   that updates the projection to the current HEAD. The trigger can be:
+   - Explicit: the MIM instructs the agent ("sync Virgil").
+   - Via PR: the PR includes RAG deltas and a sync signature (the
+     signature specification is defined by the Dogma); on merge, the
+     projection stays up-to-date without manual intervention.
+   - Via hook (opt-in): a post-merge hook triggers re-sync
+     automatically. This is the consumer's decision, not an
+     obligation of the Principia.
 
 ```mermaid
 flowchart TD
-    QUERY["Query al RAG"]
-    QUERY --> CHECK{{"HEAD alcanzable\ndesde watermark?"}}
-    CHECK -->|"Si"| RESULT["Resultado\ncon certeza"]
-    CHECK -->|"No"| WARN["Aviso: RAG\ndesactualizado\nsugerir re-sync"]
+    QUERY["Query to RAG"]
+    QUERY --> CHECK{{"HEAD reachable\nfrom watermark?"}}
+    CHECK -->|"Yes"| RESULT["Result\nwith certainty"]
+    CHECK -->|"No"| WARN["Warning: RAG\noutdated\nsuggest re-sync"]
 
-    CERT["Certificacion"]
-    CERT --> GATE{{"sourceRevision\nalcanzable desde\nwatermark?"}}
-    GATE -->|"Si"| PASS["Gate pasa"]
-    GATE -->|"No"| BLOCK["BLOQUEADO\nre-sync requerido"]
+    CERT["Certification"]
+    CERT --> GATE{{"sourceRevision\nreachable from\nwatermark?"}}
+    GATE -->|"Yes"| PASS["Gate passes"]
+    GATE -->|"No"| BLOCK["BLOCKED\nre-sync required"]
 
     style RESULT fill:#4a4,stroke:#333,color:#fff
     style WARN fill:#a74,stroke:#333,color:#fff

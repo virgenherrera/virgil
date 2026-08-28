@@ -1,129 +1,129 @@
-# Agentes
+# Agents
 
-Instrucciones para agentes de IA que trabajan en este repositorio.
+Instructions for AI agents working in this repository.
 
-## Identidad del Proyecto
+## Project Identity
 
-Virgil es un servidor MCP (Model Context Protocol) independiente: un binario Go
-que actua como puente entre planificacion (PM) y codigo, con trazabilidad
-historia-a-codigo verificable.
+Virgil is an independent MCP (Model Context Protocol) server: a Go binary
+that acts as a bridge between planning (PM) and code, with verifiable
+story-to-code traceability.
 
-- **Valor central**: puente PM→codigo. Conecta la intencion declarada en un
-  backlog (idea, requerimiento, tarea) con la evidencia de que el codigo la
-  satisface.
-- **Arquitectura**: patron adapter. `docs/` es el `ArtifactStoreAdapter` por
-  defecto (repo-docs, sin dependencias externas); adapters adicionales
-  conectan Jira, Azure DevOps, GitLab, GitHub, Basecamp u otro backend de PM
-  mediante el mismo contrato.
-- **Protocolo**: MCP / JSON-RPC, bajo el Open Agentic Standard. Publica
-  `AGENTS.md` en el proyecto consumidor como convencion de discoverability.
-- **Consumidores**: cualquier agente compatible con MCP — Claude, GPT,
-  Gemini, OpenCode, Cursor, Windsurf, Kiro, y los que sigan. Virgil no acopla
-  a un proveedor especifico.
-- **Que Virgil NO es**: un framework de ejecucion, un implementador de
-  codigo, ni una ceremonia obligatoria (no es Scrum Master). Virgil observa,
-  informa y certifica evidencia; no dirige la ejecucion.
+- **Core value**: PM→code bridge. Connects the intent declared in a
+  backlog (idea, requirement, task) with evidence that the code
+  satisfies it.
+- **Architecture**: adapter pattern. `docs/` is the default
+  `ArtifactStoreAdapter` (repo-docs, no external dependencies); additional
+  adapters connect Jira, Azure DevOps, GitLab, GitHub, Basecamp, or another PM
+  backend through the same contract.
+- **Protocol**: MCP / JSON-RPC, under the Open Agentic Standard. Publishes
+  `AGENTS.md` in the consuming project as a discoverability convention.
+- **Consumers**: any MCP-compatible agent — Claude, GPT,
+  Gemini, OpenCode, Cursor, Windsurf, Kiro, and whatever follows. Virgil does
+  not couple to a specific provider.
+- **What Virgil is NOT**: an execution framework, a code implementer,
+  or a mandatory ceremony (it is not a Scrum Master). Virgil observes,
+  reports, and certifies evidence; it does not direct execution.
 
-La autoridad normativa de este repositorio es el Principia
-(`principia/constitution.md`). Este `AGENTS.md` traduce esa autoridad a
-reglas operativas concretas para agentes que trabajan SOBRE Virgil (Modo
-Desarrollo) o CON Virgil (Modo Consumo, en un proyecto externo).
+The normative authority of this repository is the Principia
+(`principia/constitution.md`). This `AGENTS.md` translates that authority into
+concrete operational rules for agents working ON Virgil (Development
+Mode) or WITH Virgil (Consumption Mode, in an external project).
 
-## Mapa de Arquitectura
+## Architecture Map
 
-Dos capas, no tres. La capa Dogma (`docs/` como normativa intermedia) fue
-retirada: el Principia es ahora la unica fuente de verdad normativa para el
-propio Virgil. `docs/` sigue existiendo, pero como el `ArtifactStoreAdapter`
-por defecto de PROYECTOS CONSUMIDORES — un concern de persistencia de
-deliverables, no de gobierno de Virgil (ver seccion
-[Adapter Pattern](#adapter-pattern)).
+Two layers, not three. The Dogma layer (`docs/` as intermediate normative
+authority) was retired: the Principia is now the sole normative source of
+truth for Virgil itself. `docs/` still exists, but as the default
+`ArtifactStoreAdapter` for CONSUMER PROJECTS — a deliverable-persistence
+concern, not a Virgil governance concern (see the
+[Adapter Pattern](#adapter-pattern) section).
 
-| Capa | Ubicacion | Autoridad | Estado en este branch |
+| Layer | Location | Authority | State in this branch |
 |------|-----------|-----------|------------------------|
-| Principia | `principia/constitution.md` (+ `principia/sections/`) | Constitucional. Sealed. No overrideable. | Presente |
-| Runtime | `cmd/`, `internal/` (binario Go) | Implementacion. Se ajusta directamente al Principia, sin capa intermedia. | Retirado en `chore: clean slate — principia only` (`c64c70d`). Recuperable desde `main` |
+| Principia | `principia/constitution.md` (+ `principia/sections/`) | Constitutional. Sealed. Not overrideable. | Present |
+| Runtime | `cmd/`, `internal/` (Go binary) | Implementation. Conforms directly to the Principia, with no intermediate layer. | Retired in `chore: clean slate — principia only` (`c64c70d`). Recoverable from `main` |
 
-**Precedencia**: Principia > Runtime. Si el codigo contradice el Principia,
-el codigo esta mal. No existe capa intermedia que el codigo deba satisfacer
-ademas del Principia: cualquier documento de diseno derivado (arquitectura,
-protocolo, slices) es Runtime-adyacente y se deriva DEL Principia, no lo
-sustituye ni se interpone entre Principia y Runtime.
+**Precedence**: Principia > Runtime. If the code contradicts the Principia,
+the code is wrong. There is no intermediate layer the code must satisfy
+besides the Principia: any derived design document (architecture,
+protocol, slices) is Runtime-adjacent and is derived FROM the Principia, it
+does not replace it nor sit between Principia and Runtime.
 
 ```mermaid
 flowchart TD
-    PRINCIPIA["Principia\nconstitution.md\nsealed, inmutable"]
-    RUNTIME["Runtime\ncmd/, internal/\nbinario Go MCP"]
+    PRINCIPIA["Principia\nconstitution.md\nsealed, immutable"]
+    RUNTIME["Runtime\ncmd/, internal/\nGo MCP binary"]
 
-    PRINCIPIA -->|"gobierna directamente\nsin capa intermedia"| RUNTIME
+    PRINCIPIA -->|"governs directly\nno intermediate layer"| RUNTIME
 
     style PRINCIPIA fill:#2b5,stroke:#333,color:#fff
     style RUNTIME fill:#a74,stroke:#333,color:#fff
 ```
 
-## Ecosistema
+## Ecosystem
 
-Virgil es uno de tres pilares complementarios. Ninguno sustituye a los otros
-dos.
+Virgil is one of three complementary pillars. None replaces the other
+two.
 
-| Pilar | Responde | Rol |
-|-------|----------|-----|
-| gentle-ai | COMO trabajan los agentes | Patrones de orquestacion, delegacion, ceremonia de sub-agentes |
-| engram | Que recuerdan los agentes | Memoria persistente entre sesiones y compactaciones |
-| Virgil | QUE existe y DONDE vive | Puente PM→codigo, trazabilidad, estado del proyecto |
+| Pillar | Answers | Role |
+|-------|----------|------|
+| gentle-ai | HOW agents work | Orchestration patterns, delegation, sub-agent ceremony |
+| engram | What agents remember | Persistent memory across sessions and compactions |
+| Virgil | WHAT exists and WHERE it lives | PM→code bridge, traceability, project state |
 
 ```mermaid
 flowchart LR
-    AGENTE["Agente\n(Claude, GPT, etc.)"]
+    AGENT["Agent\n(Claude, GPT, etc.)"]
 
-    AGENTE -->|"consulta COMO operar"| GENTLE["gentle-ai\nHOW"]
-    AGENTE -->|"consulta que recuerda"| ENGRAM["engram\nMEMORY"]
-    AGENTE -->|"consulta que existe / donde vive"| VIRGIL["Virgil\nWHAT / WHERE"]
+    AGENT -->|"queries HOW to operate"| GENTLE["gentle-ai\nHOW"]
+    AGENT -->|"queries what it remembers"| ENGRAM["engram\nMEMORY"]
+    AGENT -->|"queries what exists / where it lives"| VIRGIL["Virgil\nWHAT / WHERE"]
 
     style GENTLE fill:#47a,stroke:#333,color:#fff
     style ENGRAM fill:#7a4,stroke:#333,color:#fff
     style VIRGIL fill:#a74,stroke:#333,color:#fff
 ```
 
-Virgil no reemplaza memoria (engram) ni orquestacion (gentle-ai). Un agente
-bien equipado consulta los tres: gentle-ai para saber COMO delegar, engram
-para saber QUE se decidio antes, Virgil para saber QUE deliverable existe y
-en que estado.
+Virgil does not replace memory (engram) or orchestration (gentle-ai). A
+well-equipped agent consults all three: gentle-ai to know HOW to delegate,
+engram to know WHAT was decided before, Virgil to know WHAT deliverable
+exists and in what state.
 
 ## Adapter Pattern
 
-`docs/` NO es la unica opcion de persistencia — es el `ArtifactStoreAdapter`
-por defecto. El contrato de adapter permite conectar cualquier backend de PM
-sin modificar el Kernel.
+`docs/` is NOT the only persistence option — it is the default
+`ArtifactStoreAdapter`. The adapter contract allows connecting any PM
+backend without modifying the Kernel.
 
-### docs/ como default
+### docs/ as default
 
-El adapter `repo-docs` persiste deliverables (idea, requerimiento, design,
-tasks) en `{target}/docs/virgil/` del proyecto consumidor: local, sin
-dependencias externas, RAG-friendly por defecto. Es el unico adapter
-implementado hoy (`internal/repodocs` en `main`, pendiente de re-derivar en
-este branch).
+The `repo-docs` adapter persists deliverables (idea, requirement, design,
+tasks) in `{target}/docs/virgil/` of the consuming project: local, with no
+external dependencies, RAG-friendly by default. It is the only adapter
+implemented today (`internal/repodocs` on `main`, pending re-derivation
+in this branch).
 
-### Superficie de plugin
+### Plugin Surface
 
-| Adapter | Estado |
+| Adapter | Status |
 |---------|--------|
-| repo-docs (`docs/`) | Implementado — default |
-| Jira | Contrato definido, plugin TBD |
-| Azure DevOps | Contrato definido, plugin TBD |
-| GitLab | Contrato definido, plugin TBD |
-| GitHub (Issues/Projects) | Contrato definido, plugin TBD |
-| Basecamp | Contrato definido, plugin TBD |
-| Custom | El consumidor puede implementar su propio adapter contra el contrato |
+| repo-docs (`docs/`) | Implemented — default |
+| Jira | Contract defined, plugin TBD |
+| Azure DevOps | Contract defined, plugin TBD |
+| GitLab | Contract defined, plugin TBD |
+| GitHub (Issues/Projects) | Contract defined, plugin TBD |
+| Basecamp | Contract defined, plugin TBD |
+| Custom | The consumer can implement its own adapter against the contract |
 
 ```mermaid
 flowchart TD
     KERNEL["Virgil Kernel"]
-    KERNEL -->|"persiste via"| CONTRACT["ArtifactStoreAdapter\n(contrato)"]
+    KERNEL -->|"persists via"| CONTRACT["ArtifactStoreAdapter\n(contract)"]
 
     CONTRACT --> DEFAULT["repo-docs (default)\n{target}/docs/virgil/"]
-    CONTRACT --> PLUGINS["Plugins PM (TBD)"]
+    CONTRACT --> PLUGINS["PM Plugins (TBD)"]
 
-    subgraph PLUGINS_LIST["Backends via contrato"]
+    subgraph PLUGINS_LIST["Backends via contract"]
         JIRA["Jira"]
         AZURE["Azure DevOps"]
         GITLAB["GitLab"]
@@ -137,32 +137,32 @@ flowchart TD
     style PLUGINS fill:#777,stroke:#333,color:#fff
 ```
 
-### Precedente de interfaz
+### Interface Precedent
 
-`internal/agents/adapter.go` (en `main`) ya define el patron de interfaz que
-un `ArtifactStoreAdapter` debe seguir: un `Adapter interface` con identidad,
-deteccion, capabilities y operaciones — Open/Closed Principle, cada backend
-nuevo es una implementacion adicional, nunca una rama condicional en el
-codigo existente. Hoy `internal/repodocs` expone funciones de paquete
-(`Init`, `Write`, `Transition`) directamente contra
-`protocol.OperationRequest`; parte del trabajo de este pivote es extraer
-esas funciones detras de una interfaz `ArtifactStoreAdapter` formal,
-replicando el patron de `agents.Adapter`, antes de anadir el primer plugin
-externo.
+`internal/agents/adapter.go` (on `main`) already defines the interface
+pattern an `ArtifactStoreAdapter` must follow: an `Adapter interface` with
+identity, detection, capabilities, and operations — Open/Closed Principle,
+each new backend is an additional implementation, never a conditional
+branch in existing code. Today `internal/repodocs` exposes package
+functions (`Init`, `Write`, `Transition`) directly against
+`protocol.OperationRequest`; part of the work of this pivot is to extract
+those functions behind a formal `ArtifactStoreAdapter` interface,
+replicating the `agents.Adapter` pattern, before adding the first external
+plugin.
 
-Contrato minimo que cualquier `ArtifactStoreAdapter` debe satisfacer:
+Minimum contract any `ArtifactStoreAdapter` must satisfy:
 
-- Persistir un deliverable con su revision y procedencia.
-- Recuperar el estado actual de un deliverable o conjunto de deliverables.
-- Ejecutar una transicion de lifecycle validando el gate correspondiente.
-- Reportar existencia e inventario sin requerir lectura completa de
-  contenido (soporta visibilidad escalonada, Principia seccion 8d).
+- Persist a deliverable with its revision and provenance.
+- Retrieve the current state of a deliverable or set of deliverables.
+- Execute a lifecycle transition validating the corresponding gate.
+- Report existence and inventory without requiring full content
+  reading (supports tiered visibility, Principia section 8d).
 
-## Convencion de Commits
+## Commit Convention
 
-Cada mensaje de commit sigue [Conventional Commits](https://www.conventionalcommits.org/).
+Every commit message follows [Conventional Commits](https://www.conventionalcommits.org/).
 
-### Formato
+### Format
 
 ```text
 <type>: Title
@@ -173,9 +173,9 @@ Brief description.
 - Action item n.
 ```
 
-### Tipos
+### Types
 
-| Tipo | Cuando usar |
+| Type | When to use |
 |------|-------------|
 | `feat` | New features or capabilities |
 | `fix` | Bug fixes |
@@ -185,371 +185,372 @@ Brief description.
 | `spike` | Research or exploration |
 | `merge` | Integration merges between branches |
 
-### Reglas
+### Rules
 
-- Linea de asunto: modo imperativo, minusculas, sin punto final, maximo 72
-  caracteres.
-- Cuerpo: descripcion breve seguida de vinetas listando cada cambio
-  concreto.
-- Sin lineas de `Co-Authored-By` ni atribucion a IA.
+- Subject line: imperative mood, lowercase, no trailing period, maximum 72
+  characters.
+- Body: brief description followed by bullet points listing each concrete
+  change.
+- No `Co-Authored-By` lines or AI attribution.
 
-## Prohibiciones para Agentes
+## Prohibitions for Agents
 
 **PROHIB-TOOLS:**
 
-- PROHIBIDO: `cat`, `grep`, `find`, `sed`, `ls` — usar `bat`, `rg`, `fd`,
+- FORBIDDEN: `cat`, `grep`, `find`, `sed`, `ls` — use `bat`, `rg`, `fd`,
   `sd`, `eza`.
-- PROHIBIDO: `brew install`, `apt install` — no instalaciones a nivel de
-  sistema.
-- PROHIBIDO: Co-Authored-By o atribucion a IA en commits.
+- FORBIDDEN: `brew install`, `apt install` — no system-level
+  installations.
+- FORBIDDEN: Co-Authored-By or AI attribution in commits.
 
 **PROHIB-PATTERNS:**
 
-- PROHIBIDO: unit tests con mocks internos (File/Unit tier). El tier
-  primario es App/Servicio con stack real.
-- PROHIBIDO: asumir que build artifacts existen de una ejecucion anterior.
-  Build fresco antes de E2E.
+- FORBIDDEN: unit tests with internal mocks (File/Unit tier). The
+  primary tier is App/Service with a real stack.
+- FORBIDDEN: assuming build artifacts exist from a previous run.
+  Fresh build before E2E.
 
 **ECHO-GUARD:**
 
-- OBLIGATORIO: pipeline canonico es
-  `Setup(0) → Build(1) → Static(2) → Dynamic(3) → E2E(4)`. Nunca reordenar.
-- OBLIGATORIO: un contexto puede SKIP pasos pero NUNCA cambiar el orden
-  relativo.
-- PROHIBIDO: ejecutar E2E sin Build previo en la misma sesion. Sin
-  excepcion.
+- MANDATORY: the canonical pipeline is
+  `Setup(0) → Build(1) → Static(2) → Dynamic(3) → E2E(4)`. Never reorder.
+- MANDATORY: a context may SKIP steps but NEVER change the relative
+  order.
+- FORBIDDEN: running E2E without a prior Build in the same session. No
+  exceptions.
 
-Violacion → kill inmediato. No se otorga segundo intento sobre la misma
-violacion.
+Violation → immediate kill. No second attempt is granted on the same
+violation.
 
 ## Echo System
 
-Pipeline determinista de 5 pasos. Se ejecuta en TODO ambiente (dev, CI, CD).
-Los pasos son siempre los mismos y en el mismo orden. Lo que varia es el
+Deterministic 5-step pipeline. Runs in EVERY environment (dev, CI, CD).
+The steps are always the same and in the same order. What varies is the
 scope.
 
-### Pipeline Canonico
+### Canonical Pipeline
 
 ```text
 0. Setup    → go mod download, go mod verify
 1. Build    → go build ./...
 2. Static   → go vet, golangci-lint, gofmt -l
-3. Dynamic  → go test ./... (tier App/Servicio)
-4. E2E      → tests de solucion completa (requiere artifacts de paso 1)
+3. Dynamic  → go test ./... (App/Service tier)
+4. E2E      → full-solution tests (requires artifacts from step 1)
 ```
 
-### Invariantes
+### Invariants
 
-1. **Nunca reordenar** — un contexto puede SKIP pasos pero nunca cambiar el
-   orden relativo.
-2. **Prerequisitos** — paso 4 (E2E) REQUIERE paso 1 (Build). Sin excepcion.
-3. **Sin pasos fantasma** — cada paso del pipeline corresponde a un comando
-   concreto.
-4. **Build fresco** — nunca asumir que binarios o artifacts existen de una
-   ejecucion anterior.
+1. **Never reorder** — a context may SKIP steps but never change the
+   relative order.
+2. **Prerequisites** — step 4 (E2E) REQUIRES step 1 (Build). No exceptions.
+3. **No phantom steps** — each pipeline step corresponds to a concrete
+   command.
+4. **Fresh build** — never assume binaries or artifacts exist from a
+   previous run.
 
-### Contextos de Ejecucion
+### Execution Contexts
 
-| # | Contexto | Steps | Notas |
+| # | Context | Steps | Notes |
 |---|----------|-------|-------|
-| A | Dev Setup | 0 | Solo install |
-| B | pre-commit | 2(parcial)+3 | Lint + tests rapidos. Sin build (velocidad) |
-| C | pre-push | 1+2+3+4 | Pipeline completo |
-| D | CI | 0+1+2+3+4 | Pipeline completo, canon estricto |
+| A | Dev Setup | 0 | Install only |
+| B | pre-commit | 2(partial)+3 | Lint + fast tests. No build (speed) |
+| C | pre-push | 1+2+3+4 | Full pipeline |
+| D | CI | 0+1+2+3+4 | Full pipeline, strict canon |
 
-### Mapping de Comandos
+### Command Mapping
 
-| Paso canon | Comando |
+| Canon step | Command |
 |------------|---------|
 | 0. Setup | `go mod download && go mod verify` |
 | 1. Build | `go build ./...` |
 | 2. Static | `go vet ./... && golangci-lint run` |
 | 3. Dynamic | `go test ./...` |
-| 4. E2E | `make test-e2e` (si existe) |
+| 4. E2E | `make test-e2e` (if it exists) |
 
-## Protocolo Anti-Racionalizacion
+## Anti-Rationalization Protocol
 
-Las reglas en este documento son MECANICAS, no CONSULTIVAS. Un agente no
-tiene autoridad para:
+The rules in this document are MECHANICAL, not CONSULTATIVE. An agent
+does not have the authority to:
 
-- Juzgar si una regla "aplica" basandose en tamano, complejidad o urgencia
-  de la tarea.
-- Inventar excepciones no escritas explicitamente ("demasiado pequeno para
-  una rama", "solo es un cambio de config", "fix directa").
-- Reinterpretar la intencion de una regla para justificar omitirla ("el
-  espiritu de la regla no requiere esto aqui").
-- Diferir el cumplimiento ("creo el handoff despues de este arreglo
-  rapido").
+- Judge whether a rule "applies" based on the size, complexity, or
+  urgency of the task.
+- Invent exceptions not explicitly written ("too small for a branch",
+  "it's just a config change", "quick fix").
+- Reinterpret the intent of a rule to justify skipping it ("the
+  spirit of the rule doesn't require this here").
+- Defer compliance ("I'll create the handoff after this quick fix").
 
-### La Prueba de Racionalizacion
+### The Rationalization Test
 
-Antes de omitir, reducir o "escalar hacia abajo" CUALQUIER protocolo en este
-documento:
+Before skipping, reducing, or "scaling down" ANY protocol in this
+document:
 
-1. **Citar el texto exacto** que autoriza la omision. No una parafrasis — la
-   oracion exacta.
-2. Si ninguna oracion exacta lo autoriza → la omision no esta autorizada.
-   Punto final.
-3. Si el agente se encuentra escribiendo frases como "esto no amerita",
-   "esto es solo", "dada la simplicidad", "una excepcion para" o "en este
-   caso podemos omitir" → senal de racionalizacion. Detenerse y cumplir tal
-   como esta escrito.
+1. **Cite the exact text** that authorizes the omission. Not a
+   paraphrase — the exact sentence.
+2. If no exact sentence authorizes it → the omission is not authorized.
+   Full stop.
+3. If the agent finds itself writing phrases like "this doesn't
+   warrant", "this is just", "given the simplicity", "an exception for"
+   or "in this case we can skip" → a sign of rationalization. Stop and
+   comply exactly as written.
 
-### Reglas de Interpretacion
+### Interpretation Rules
 
-- La ambiguedad se resuelve a favor de MAS cumplimiento, no menos.
-- "Escalar al trabajo" significa reducir volumen de contenido, nunca omitir
-  requisitos estructurales.
-- El silencio sobre un tema significa que aplica el protocolo por defecto,
-  no que el agente tiene discrecion.
-- El agente no puede otorgarse excepciones a si mismo. Solo una directiva
-  explicita del usuario anula una regla, y el agente DEBE repetir la
-  anulacion al usuario para confirmacion antes de actuar.
+- Ambiguity resolves in favor of MORE compliance, not less.
+- "Scaling to the work" means reducing content volume, never skipping
+  structural requirements.
+- Silence on a topic means the default protocol applies, not that the
+  agent has discretion.
+- The agent cannot grant itself exceptions. Only an explicit user
+  directive overrides a rule, and the agent MUST repeat the
+  override back to the user for confirmation before acting.
 
-### Carga de la Prueba
+### Burden of Proof
 
-La carga de la prueba por incumplimiento recae en el agente, no en el
-documento. "El documento no dice explicitamente que debo" no es
-justificacion valida para omitir. Si una lectura razonable implica la
-obligacion, la obligacion existe.
+The burden of proof for non-compliance falls on the agent, not on the
+document. "The document doesn't explicitly say I must" is not
+valid justification for skipping. If a reasonable reading implies the
+obligation, the obligation exists.
 
-## Politica de Asignacion de Modelos
+## Model Assignment Policy
 
-Antes de lanzar un sub-agente, preguntar: ¿necesita RAZONAR, IMPLEMENTAR o
-BUSCAR?
+Before launching a sub-agent, ask: does it need to REASON, IMPLEMENT, or
+SEARCH?
 
-| Nivel | Modelo | Usar cuando |
+| Level | Model | Use when |
 |-------|--------|-------------|
-| Busqueda | haiku | Grep, leer docs, lint checks, formato, lecturas exploratorias |
-| Implementar | sonnet | Escribir codigo, tests, revisiones, verificar quality gates |
-| Arquitecto | opus | Decisiones de diseno, resolucion de conflictos, sintesis multifuente |
+| Search | haiku | Grep, reading docs, lint checks, formatting, exploratory reads |
+| Implement | sonnet | Writing code, tests, reviews, verifying quality gates |
+| Architect | opus | Design decisions, conflict resolution, multi-source synthesis |
 
-Con 6+ agentes, la disciplina de niveles multiplica los ahorros. Nunca
-quemar opus en un grep.
+With 6+ agents, tier discipline multiplies the savings. Never
+burn opus on a grep.
 
-## Patron Orquestador-Minion
+## Orchestrator-Minion Pattern
 
-Patron de coordinacion donde un unico orquestador descompone el trabajo en
-unidades discretas, delega cada una a trabajadores sin estado (minions),
-recopila y valida resultados, y gestiona el estado del flujo de trabajo. El
-orquestador mantiene el plan de ejecucion y el contexto global; los
-trabajadores no conocen nada mas alla de su asignacion actual. Catalogado
-formalmente como "Master-Slave" en POSA Vol. 1 (Buschmann et al., 1996);
-instanciado en MapReduce, Sagas, Process Manager y Temporal.io.
+Coordination pattern in which a single orchestrator decomposes work into
+discrete units, delegates each one to stateless workers (minions),
+collects and validates results, and manages workflow state. The
+orchestrator holds the execution plan and the global context; the
+workers know nothing beyond their current assignment. Formally
+cataloged as "Master-Slave" in POSA Vol. 1 (Buschmann et al., 1996);
+instantiated in MapReduce, Sagas, Process Manager, and Temporal.io.
 
-### Principios
+### Principles
 
-1. **Control centralizado, ejecucion distribuida** — el orquestador es
-   dueno del DAG; los trabajadores son duenos solo de su unidad asignada.
-2. **Trabajadores sin estado** — los trabajadores no retienen memoria entre
-   invocaciones; todo contexto llega en el briefing.
-3. **Briefings autocontenidos** — cada delegacion lleva todo lo que el
-   trabajador necesita; el trabajador nunca busca su propio contexto.
-4. **Ejecucion idempotente** — los trabajadores producen la misma salida
-   para la misma entrada.
-5. **Orquestador como fuente unica de verdad** — el estado global vive
-   exclusivamente en el orquestador o en su almacen durable.
-6. **Quality gates explicitos** — el orquestador valida cada resultado
-   contra un contrato antes de incorporarlo; "se ve bien" no es
-   verificacion.
-7. **El orquestador nunca ejecuta** — descompone, asigna y agrega; ejecutar
-   trabajo sustantivo infla el contexto y crea un cuello de botella.
-8. **Inyectar reglas como texto, no como rutas** — los trabajadores reciben
-   reglas pre-digeridas en su briefing; nunca leen archivos de
-   configuracion ni registros.
+1. **Centralized control, distributed execution** — the orchestrator
+   owns the DAG; workers own only their assigned unit.
+2. **Stateless workers** — workers retain no memory between
+   invocations; all context arrives in the briefing.
+3. **Self-contained briefings** — every delegation carries everything the
+   worker needs; the worker never searches for its own context.
+4. **Idempotent execution** — workers produce the same output
+   for the same input.
+5. **Orchestrator as single source of truth** — global state lives
+   exclusively in the orchestrator or its durable store.
+6. **Explicit quality gates** — the orchestrator validates every result
+   against a contract before incorporating it; "looks good" is not
+   verification.
+7. **The orchestrator never executes** — it decomposes, assigns, and
+   aggregates; executing substantive work inflates the context and
+   creates a bottleneck.
+8. **Inject rules as text, not as paths** — workers receive
+   pre-digested rules in their briefing; they never read configuration
+   files or registries.
 
-### Contrato de Briefing
+### Briefing Contract
 
-Cada delegacion del orquestador al trabajador DEBE incluir estos elementos:
+Every delegation from the orchestrator to the worker MUST include these
+elements:
 
-| Elemento | Descripcion |
+| Element | Description |
 |----------|-------------|
-| Task ID | Identificador unico para deduplicacion y seguimiento de reintentos |
-| Input payload | Todos los datos requeridos, completamente resueltos |
-| Output schema | Estructura exacta del resultado esperado |
-| Scope boundaries | Que esta dentro del alcance Y que no lo esta |
-| Done criteria | Condicion de parada explicita |
-| Constraints | Timeout, limites de recursos, politica de reintentos |
-| Context | Subconjunto minimo relevante del estado global |
+| Task ID | Unique identifier for deduplication and retry tracking |
+| Input payload | All required data, fully resolved |
+| Output schema | Exact structure of the expected result |
+| Scope boundaries | What is in scope AND what is not |
+| Done criteria | Explicit stopping condition |
+| Constraints | Timeout, resource limits, retry policy |
+| Context | Minimum relevant subset of global state |
 
-### Contrato de Resultado
+### Result Contract
 
-Cada respuesta del trabajador al orquestador DEBE conformarse a esta
-estructura:
+Every response from the worker to the orchestrator MUST conform to this
+structure:
 
-| Elemento | Descripcion |
+| Element | Description |
 |----------|-------------|
-| Task ID | Devuelto para correlacion con el briefing original |
+| Task ID | Returned for correlation with the original briefing |
 | Status | success / failure / partial |
-| Payload | Salida estructurada conforme al schema solicitado |
-| Errors | Tipificados (transitorio vs permanente) con mensaje descriptivo |
-| Metadata | Duracion, consumo de recursos, senales de confianza |
-| Artifacts | Salidas concretas e inspeccionables (no resumenes vagos) |
+| Payload | Structured output conforming to the requested schema |
+| Errors | Typed (transient vs. permanent) with a descriptive message |
+| Metadata | Duration, resource consumption, confidence signals |
+| Artifacts | Concrete, inspectable outputs (not vague summaries) |
 
-### Anti-Patrones de Orquestacion
+### Orchestration Anti-Patterns
 
-1. **Orquestador verboso** — pasar contexto parcial, forzando al trabajador
-   a solicitar mas informacion.
-2. **Trabajadores con estado** — cachear datos entre invocaciones crea
-   acoplamiento oculto.
-3. **Orquestador como ejecutor** — realizar trabajo sustantivo infla el
-   contexto del orquestador.
-4. **Resultados sin validar** — aceptar la salida sin verificacion contra el
-   contrato.
-5. **Orden implicito** — depender del timing de ejecucion en lugar de
-   dependencias explicitas del DAG.
-6. **Briefings inflados** — enviar el estado global completo en lugar del
-   subconjunto minimo relevante.
-7. **Descomposicion telefono-descompuesto** — dividir por tipo de problema
-   en lugar de por fronteras de contexto.
+1. **Verbose orchestrator** — passing partial context, forcing the
+   worker to request more information.
+2. **Stateful workers** — caching data between invocations creates
+   hidden coupling.
+3. **Orchestrator as executor** — performing substantive work inflates
+   the orchestrator's context.
+4. **Unvalidated results** — accepting output without verification against
+   the contract.
+5. **Implicit ordering** — relying on execution timing instead of
+   explicit DAG dependencies.
+6. **Bloated briefings** — sending the full global state instead of the
+   minimum relevant subset.
+7. **Broken-telephone decomposition** — splitting by problem type
+   instead of by context boundaries.
 
-### Referencias
+### References
 
-| Fuente | Contribucion |
+| Source | Contribution |
 |--------|-------------|
-| Buschmann et al., _POSA Vol. 1_ (1996) | Primera entrada formal en catalogo de patrones (Master-Slave) |
-| Garcia-Molina & Salem, SIGMOD '87 | Sagas — transacciones compensatorias orquestadas |
-| Dean & Ghemawat, OSDI '04 | MapReduce — master-worker canonico a gran escala |
-| Hohpe & Woolf, _EIP_ (2003) | Patron Process Manager en mensajeria |
-| Temporal.io docs | Ejecucion durable: orquestador determinista + trabajadores sin estado |
-| Anthropic, "Building Multi-Agent Systems" (2025) | Orquestador-trabajador como patron central multi-agente |
+| Buschmann et al., _POSA Vol. 1_ (1996) | First formal pattern-catalog entry (Master-Slave) |
+| Garcia-Molina & Salem, SIGMOD '87 | Sagas — orchestrated compensating transactions |
+| Dean & Ghemawat, OSDI '04 | MapReduce — canonical master-worker at scale |
+| Hohpe & Woolf, _EIP_ (2003) | Process Manager pattern in messaging |
+| Temporal.io docs | Durable execution: deterministic orchestrator + stateless workers |
+| Anthropic, "Building Multi-Agent Systems" (2025) | Orchestrator-worker as the central multi-agent pattern |
 
-## Protocolo de Orquestacion
+## Orchestration Protocol
 
-Este protocolo implementa el patron definido en
-[Patron Orquestador-Minion](#patron-orquestador-minion).
+This protocol implements the pattern defined in
+[Orchestrator-Minion Pattern](#orchestrator-minion-pattern).
 
-### Principio de Orquestador Puro
+### Pure Orchestrator Principle
 
-El agente principal opera exclusivamente como coordinador. No ejecuta
-tareas directamente.
+The main agent operates exclusively as a coordinator. It does not
+execute tasks directly.
 
-| Accion | Inline (orquestador) | Delegar (sub-agente) |
+| Action | Inline (orchestrator) | Delegate (sub-agent) |
 |--------|----------------------|----------------------|
-| Leer para decidir/verificar (1-3 archivos) | SI | — |
-| Leer para explorar/entender (4+ archivos) | — | SI |
-| Leer como preparacion para escribir | — | SI junto con la escritura |
-| Escribir (cualquier archivo) | — | SI |
-| Bash de solo lectura (git status, eza) | SI | — |
-| Bash de ejecucion (go test, go build, make) | — | SI |
-| Decisiones arquitectonicas (sin producir artefactos) | SI | — |
-| Presentar resultados al usuario (MIM) | SI | — |
+| Read to decide/verify (1-3 files) | YES | — |
+| Read to explore/understand (4+ files) | — | YES |
+| Read as preparation for writing | — | YES together with the writing |
+| Write (any file) | — | YES |
+| Read-only Bash (git status, eza) | YES | — |
+| Execution Bash (go test, go build, make) | — | YES |
+| Architectural decisions (producing no artifacts) | YES | — |
+| Presenting results to the user (MIM) | YES | — |
 
-**Auto-deteccion**: si el orquestador se encuentra editando archivos,
-escribiendo codigo o ejecutando builds, esta en violacion. Debe detenerse,
-delegar la tarea a un sub-agente, y continuar como coordinador.
+**Self-detection**: if the orchestrator finds itself editing files,
+writing code, or running builds, it is in violation. It must stop,
+delegate the task to a sub-agent, and continue as coordinator.
 
-### Circuit Breaker de Supervision
+### Supervision Circuit Breaker
 
-La supervision de sub-agentes es reactiva, no proactiva.
+Sub-agent supervision is reactive, not proactive.
 
-**Pre-lanzamiento** — el orquestador incluye en cada prompt de delegacion:
+**Pre-launch** — the orchestrator includes in every delegation prompt:
 
-- **Scope hint**: una linea que delimita el alcance.
-- **Objetivo verificable**: una oracion evaluable binariamente contra el
-  resultado.
+- **Scope hint**: one line that bounds the scope.
+- **Verifiable objective**: one sentence that can be evaluated as a
+  binary against the result.
 
-**Post-resultado** — el orquestador evalua un solo invariante:
+**Post-result** — the orchestrator evaluates a single invariant:
 
-> ¿El resultado del sub-agente es coherente con el objetivo declarado y el
+> Is the sub-agent's result consistent with the stated objective and the
 > scope hint?
 
-| Estado | Condicion | Overhead |
+| State | Condition | Overhead |
 |--------|-----------|----------|
-| Cerrado (normal) | Resultados coherentes | Cero — delegar y esperar |
-| Abierto (anomalia) | Invariante fallo | Alto — verificacion exhaustiva justificada |
-| Semi-abierto (recuperacion) | Siguiente sub-agente con mismo scope recibe prompt reforzado | Medio — si pasa, volver a cerrado |
+| Closed (normal) | Consistent results | Zero — delegate and wait |
+| Open (anomaly) | Invariant failed | High — exhaustive verification warranted |
+| Half-open (recovery) | Next sub-agent with the same scope receives a reinforced prompt | Medium — if it passes, return to closed |
 
-### Checkpoint Post-Delegacion (PDC)
+### Post-Delegation Checkpoint (PDC)
 
-Despues de recibir CADA resultado de un sub-agente, el orquestador ejecuta
-estos 4 pasos EN ORDEN antes de cualquier otra accion:
+After receiving EACH result from a sub-agent, the orchestrator executes
+these 4 steps IN ORDER before any other action:
 
-1. **ECHO** — Imprimir los gates de aceptacion de esta tarea. Formato:
+1. **ECHO** — Print this task's acceptance gates. Format:
    `GATES: [gate1] | [gate2] | [gate3]`.
-2. **VERIFY** — Para cada gate, declarar PASS o FAIL con UNA linea de
-   evidencia. "Se ve correcto" NO es evidencia.
-3. **MARK** — Persistir el estado del progreso AHORA.
-4. **DECIDE** — Si algun gate es FAIL → no avanzar, re-delegar o corregir.
-   Si todos los gates son PASS → `CHECKPOINT CLEAR`.
+2. **VERIFY** — For each gate, state PASS or FAIL with ONE line of
+   evidence. "Looks correct" is NOT evidence.
+3. **MARK** — Persist the progress state NOW.
+4. **DECIDE** — If any gate is FAIL → do not proceed, re-delegate or
+   correct. If all gates are PASS → `CHECKPOINT CLEAR`.
 
-**Regla de cierre**: si el paso 3 no se completo, el orquestador NO tiene
-permiso de lanzar otro sub-agente.
+**Closure rule**: if step 3 was not completed, the orchestrator does NOT
+have permission to launch another sub-agent.
 
-### Escalamiento por Rechazo
+### Rejection Escalation
 
-1. Gate falla → feedback especifico con evidencia → el agente corrige.
-2. El mismo gate falla otra vez → kill + relanzar limpio con contexto del
-   error.
-3. Tercer fallo → el orquestador diagnostica la causa raiz y relanza con
-   alcance reducido o escala al usuario.
+1. Gate fails → specific feedback with evidence → the agent corrects.
+2. The same gate fails again → kill + relaunch clean with the error's
+   context.
+3. Third failure → the orchestrator diagnoses the root cause and relaunches
+   with reduced scope or escalates to the user.
 
-## Reglas Compactas para Inyeccion en Sub-Agentes
+## Compact Rules for Sub-Agent Injection
 
-Los orquestadores DEBEN inyectar estas reglas de forma literal en cada
-prompt de sub-agente que escriba o revise codigo. No resumir, no
-parafrasear.
+Orchestrators MUST inject these rules literally into every sub-agent
+prompt that writes or reviews code. Do not summarize, do not
+paraphrase.
 
 ### FORMO-CODE
 
 ```text
-- Lenguaje: Go. Seguir convenciones idiomaticas de Go (gofmt, go vet).
-- Herramientas CLI: bat, rg, fd, sd, eza. PROHIBIDO: cat, grep, find, sed, ls.
-- Commits: conventional commits. Sin Co-Authored-By, sin atribucion IA.
-- Imports: stdlib primero, luego terceros, luego internos. Separados por linea en blanco.
-- Errores: retornar error, no panic. Wrap con fmt.Errorf("contexto: %w", err).
-- Nombres: CamelCase para exportados, camelCase para internos. Sin prefijos de paquete en nombres.
-- Documentacion publica: godoc idiomatico en toda funcion/tipo exportado.
+- Language: Go. Follow idiomatic Go conventions (gofmt, go vet).
+- CLI tools: bat, rg, fd, sd, eza. FORBIDDEN: cat, grep, find, sed, ls.
+- Commits: conventional commits. No Co-Authored-By, no AI attribution.
+- Imports: stdlib first, then third-party, then internal. Separated by a blank line.
+- Errors: return an error, do not panic. Wrap with fmt.Errorf("context: %w", err).
+- Names: CamelCase for exported, camelCase for internal. No package prefixes in names.
+- Public documentation: idiomatic godoc on every exported function/type.
 ```
 
 ### FORMO-TEST
 
 ```text
-- Tier PRIMARIO: App/Servicio — stack real, sin mocks de dependencias internas.
-- PROHIBIDO: unit tests con mocks internos (File/Unit tier). Valor = 0.
-- Derivados (Module/Integration, Regression/Smoke): se filtran desde appTests, no se desarrollan aparte.
-- E2E: solucion completa, cero mocks, multi-servicio.
-- Condicional (Performance/Load): solo si design.md declara SLAs.
-- Patron de trazabilidad: matriz de nombres estaticos importada por el codigo del test.
+- PRIMARY tier: App/Service — real stack, no internal dependency mocks.
+- FORBIDDEN: unit tests with internal mocks (File/Unit tier). Value = 0.
+- Derived (Module/Integration, Regression/Smoke): filtered from appTests, not developed separately.
+- E2E: full solution, zero mocks, multi-service.
+- Conditional (Performance/Load): only if design.md declares SLAs.
+- Traceability pattern: static-name matrix imported by the test code.
 ```
 
 **Testing Matrix:**
 
-| Tier | Tipo | Estado |
+| Tier | Type | Status |
 |------|------|--------|
-| File/Unit | Mocks internos | PROHIBIDO |
-| Module/Integration | Filtrado desde appTests | DERIVADO |
-| App/Servicio | Stack real, sin mocks | PRIMARIO |
-| Solution/E2E | Multi-servicio, cero mocks | EXPLICITO |
-| Performance/Load | Solo si SLAs declarados | CONDICIONAL |
+| File/Unit | Internal mocks | FORBIDDEN |
+| Module/Integration | Filtered from appTests | DERIVED |
+| App/Service | Real stack, no mocks | PRIMARY |
+| Solution/E2E | Multi-service, zero mocks | EXPLICIT |
+| Performance/Load | Only if SLAs declared | CONDITIONAL |
 
 ### FORMO-ANTI-DRIFT
 
 ```text
-- Las reglas son MECANICAS, no CONSULTIVAS.
-- Antes de omitir cualquier protocolo: citar el texto exacto que lo autoriza. Sin texto → sin omision.
-- Frases como "esto no amerita", "dada la simplicidad", "en este caso podemos omitir" = senal de racionalizacion. STOP.
-- Ambiguedad se resuelve a favor de MAS cumplimiento, no menos.
-- El agente no puede otorgarse excepciones a si mismo.
-- GP-4 (Principia): constraint > confianza. Gates enforceables, no promesas del agente.
+- Rules are MECHANICAL, not CONSULTATIVE.
+- Before skipping any protocol: cite the exact text that authorizes it. No text → no omission.
+- Phrases like "this doesn't warrant", "given the simplicity", "in this case we can skip" = a sign of rationalization. STOP.
+- Ambiguity resolves in favor of MORE compliance, not less.
+- The agent cannot grant itself exceptions.
+- GP-4 (Principia): constraint > confidence. Enforceable gates, not agent promises.
 ```
 
-## Protocolo de Recuperacion
+## Recovery Protocol
 
-Con el commit `chore: clean slate — principia only` (`c64c70d`), el Runtime
-completo (`cmd/`, `internal/`, `docs/` de Virgil, CI, Docker, Makefile) fue
-retirado del branch de trabajo, conservando unicamente `principia/` como
-fuente de re-derivacion. El codigo previo no se perdio: vive integro en
-`main`.
+With the commit `chore: clean slate — principia only` (`c64c70d`), the
+entire Runtime (`cmd/`, `internal/`, Virgil's `docs/`, CI, Docker, Makefile)
+was retired from the working branch, keeping only `principia/` as
+the re-derivation source. The previous code was not lost: it lives intact
+on `main`.
 
-### Comando canonico
+### Canonical Command
 
 ```bash
 git checkout main -- <path>
 ```
 
-Recupera un archivo o directorio especifico desde `main` hacia el working
-tree actual, sin traer el resto del historial de `main`. Ejemplos:
+Recovers a specific file or directory from `main` into the current
+working tree, without bringing in the rest of `main`'s history. Examples:
 
 ```bash
 git checkout main -- internal/mcp/
@@ -557,25 +558,25 @@ git checkout main -- internal/repodocs/repodocs.go
 git checkout main -- cmd/virgil/main.go
 ```
 
-### Cuando usarlo
+### When to Use It
 
-- Al re-derivar Runtime desde el Principia y encontrar que una pieza
-  (protocolo MCP, repodocs, adapters de host) ya tiene una implementacion
-  valida en `main` que solo necesita alinearse al nuevo mapa de
-  arquitectura, no reescribirse desde cero.
-- Al verificar como se resolvia un problema similar antes del pivote, sin
-  adoptar el codigo tal cual: leer, no copiar ciegamente. El codigo
-  recuperado debe re-validarse contra el Principia vigente, no asumirse
-  correcto por haber existido antes.
+- When re-deriving the Runtime from the Principia and finding that a
+  piece (MCP protocol, repodocs, host adapters) already has a valid
+  implementation on `main` that only needs to be aligned to the new
+  architecture map, not rewritten from scratch.
+- When checking how a similar problem was solved before the pivot, without
+  adopting the code as-is: read, do not blindly copy. Recovered code
+  must be re-validated against the current Principia, not assumed
+  correct simply because it existed before.
 
-### Cuando NO usarlo
+### When NOT to Use It
 
-- Para recuperar `docs/` de Virgil como si fuera Dogma normativo — ese rol
-  fue retirado (ver [Mapa de Arquitectura](#mapa-de-arquitectura)). Si se
-  recupera contenido de `docs/architecture/` o `docs/protocol/` desde
-  `main`, debe reinterpretarse como material de referencia para re-derivar
-  diseno, no reinstalarse como autoridad.
-- Sin pasar por Echo (build, static, dynamic) despues de la recuperacion.
-  Codigo recuperado de `main` es codigo nuevo para este branch: build
-  fresco y verificacion completa antes de integrarlo, igual que cualquier
-  otro cambio.
+- To recover Virgil's `docs/` as if it were normative Dogma — that role
+  was retired (see [Architecture Map](#architecture-map)). If
+  content from `docs/architecture/` or `docs/protocol/` is recovered from
+  `main`, it must be reinterpreted as reference material for re-deriving
+  design, not reinstated as authority.
+- Without going through Echo (build, static, dynamic) after the recovery.
+  Code recovered from `main` is new code for this branch: a fresh build
+  and full verification before integrating it, just like any
+  other change.

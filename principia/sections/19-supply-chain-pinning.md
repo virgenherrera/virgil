@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "7h-pinning"
-title: "Supply Chain Integrity — versionPinning y securityAudit"
+title: "Supply Chain Integrity — versionPinning and securityAudit"
 source: "principia/constitution.md"
 source_lines: [869, 908]
 layer: quality
@@ -12,51 +12,51 @@ referenced_by: [7h-bump]
 keywords:
   - supply chain integrity
   - versionPinning
-  - version exacta
+  - exact version
   - lock file
   - securityAudit
-  - escaneo de vulnerabilidades
-  - gate blocking Setup
+  - vulnerability scan
+  - Setup blocking gate
   - pnpm audit go vuln cargo audit pip-audit
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Abre la seccion 7h del capitulo 7 ("Como garantiza calidad"), sobre integridad de la cadena de suministro. El securityAudit descrito aqui es una gate blocking del paso 1 (Setup) del Echo System definido en la seccion 7a.
+> **Context:** Opens section 7h of chapter 7 ("How it guarantees quality"), on supply chain integrity. The securityAudit described here is a blocking gate of step 1 (Setup) of the Echo System defined in section 7a.
 
-### 7h. Supply Chain Integrity — dependencias seguras
+### 7h. Supply Chain Integrity — secure dependencies
 
-Las dependencias externas son superficie de ataque y fuente de tech debt. Virgil impone tres invariantes sobre la cadena de suministro, agnosticos de lenguaje y plataforma.
+External dependencies are attack surface and a source of tech debt. Virgil imposes three invariants on the supply chain, agnostic of language and platform.
 
-#### versionPinning — reproducibilidad absoluta
+#### versionPinning — absolute reproducibility
 
-Todas las dependencias se declaran con version EXACTA (sin rangos, sin prefijos de compatibilidad). El gestor de dependencias y su version tambien se declaran de forma explicita en el proyecto.
+All dependencies are declared with an EXACT version (no ranges, no compatibility prefixes). The dependency manager and its version are also declared explicitly in the project.
 
-| Invariante | Que significa | Por que |
-|------------|--------------|---------|
-| Version exacta | `1.2.3`, nunca `^1.2.3` ni `~1.2.3` | Elimina version drift entre ambientes. Lo que pasa en CI es lo que corre en produccion |
-| Gestor de dependencias versionado | Version del gestor pinneada al proyecto | Garantiza paridad de resolucion de dependencias en todos los ambientes |
-| Lock file como artefacto | El lock file se versiona y se respeta como fuente de verdad | Captura el arbol completo de dependencias transitivas |
+| Invariant | What it means | Why |
+|------------|--------------|-----|
+| Exact version | `1.2.3`, never `^1.2.3` or `~1.2.3` | Eliminates version drift between environments. What runs in CI is what runs in production |
+| Versioned dependency manager | Manager version pinned to the project | Guarantees dependency-resolution parity across all environments |
+| Lock file as artifact | The lock file is versioned and honored as source of truth | Captures the complete tree of transitive dependencies |
 
-El invariante aplica independientemente del ecosistema (npm/pnpm/yarn, Go modules, Cargo, pip/uv, Maven/Gradle, etc.). La implementacion concreta varia; el principio es universal: **cero ambiguedad en versiones**.
+The invariant applies regardless of ecosystem (npm/pnpm/yarn, Go modules, Cargo, pip/uv, Maven/Gradle, etc.). The concrete implementation varies; the principle is universal: **zero version ambiguity**.
 
-#### securityAudit — gate de dependencias
+#### securityAudit — dependency gate
 
-Antes de construir, se ejecuta un escaneo de vulnerabilidades sobre el arbol de dependencias. Esta verificacion es una gate BLOCKING del paso 1 (Setup) del Echo System (seccion 7a).
+Before building, a vulnerability scan runs over the dependency tree. This check is a BLOCKING gate of step 1 (Setup) of the Echo System (section 7a).
 
 ```mermaid
 flowchart LR
-    DEPS["Arbol de\ndependencias"] --> AUDIT["securityAudit\n(escaneo de\nvulnerabilidades)"]
-    AUDIT -->|"0 vulnerabilidades\naltas/criticas"| BUILD["→ Build\n(Echo paso 2)"]
-    AUDIT -->|"vulnerabilidades\ndetectadas"| BLOCK["BLOQUEADO\nResolver antes\nde continuar"]
+    DEPS["Dependency\ntree"] --> AUDIT["securityAudit\n(vulnerability\nscan)"]
+    AUDIT -->|"0 high/critical\nvulnerabilities"| BUILD["→ Build\n(Echo step 2)"]
+    AUDIT -->|"vulnerabilities\ndetected"| BLOCK["BLOCKED\nResolve before\ncontinuing"]
 
     style BUILD fill:#4a4,stroke:#333,color:#fff
     style BLOCK fill:#c44,stroke:#333,color:#fff
 ```
 
-| Ambiente | Comportamiento |
+| Environment | Behavior |
 |----------|---------------|
-| Dev | Pre-push hook — alerta, no bloquea |
-| CI | Pipeline stage — gate blocking |
-| CD | Deployment gate — bloqueo absoluto |
+| Dev | Pre-push hook — warns, does not block |
+| CI | Pipeline stage — blocking gate |
+| CD | Deployment gate — absolute block |
 
-El umbral de severidad (high, critical, o ambos) lo define el Method Pack. El Kernel impone que el escaneo se ejecute; el Pack decide el umbral. La herramienta de escaneo es agnostica: cada ecosistema tiene su equivalente (`pnpm audit`, `go vuln check`, `cargo audit`, `pip-audit`, `mvn dependency-check`, etc.).
+The severity threshold (high, critical, or both) is defined by the Method Pack. The Kernel enforces that the scan runs; the Pack decides the threshold. The scanning tool is agnostic: each ecosystem has its equivalent (`pnpm audit`, `go vuln check`, `cargo audit`, `pip-audit`, `mvn dependency-check`, etc.).

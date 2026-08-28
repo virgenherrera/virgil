@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "3b"
-title: "Flujo de una invocacion"
+title: "Flow of an invocation"
 source: "principia/constitution.md"
 source_lines: [291, 329]
 layer: lifecycle
@@ -10,21 +10,21 @@ glossary_terms: [ContextBrief, Ledger, PDC, ARCH, DogmaRef, ProjectRef, RunConte
 depends_on: [3a, 9]
 referenced_by: [7e, 7g, 11d, 4]
 keywords:
-  - flujo de invocacion
+  - invocation flow
   - HostAdapter
   - Virgil Kernel
   - ArtifactStore
   - ContextBrief
   - Ledger
   - PDC
-  - gates deterministas
-  - certificacion
+  - deterministic gates
+  - certification
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Este flujo canonico ocurre dentro de cada transicion del ciclo de vida descrito en la seccion 3a. El PDC (Coherencia de Delegacion Orquestal) es un safeguard de orquestacion — importante distinguirlo de las gates de certificacion del pipeline de QA (Echo System, detallado en seccion 7), que son las unicas que determinan si el codigo esta certificado.
+> **Context:** This canonical flow occurs within each lifecycle transition described in section 3a. The PDC (Orchestration Delegation Coherence) is an orchestration safeguard — important to distinguish it from the QA pipeline's certification gates (Echo System, detailed in section 7), which are the only ones that determine whether code is certified.
 
-### 3b. Flujo de una invocacion
+### 3b. Flow of an invocation
 
 ```mermaid
 sequenceDiagram
@@ -33,34 +33,35 @@ sequenceDiagram
     participant VK as Virgil Kernel
     participant SA as ArtifactStore
 
-    ACT->>HA: solicitud
-    HA->>VK: resolver DogmaRef + ProjectRef + RunContext
+    ACT->>HA: request
+    HA->>VK: resolve DogmaRef + ProjectRef + RunContext
 
     activate VK
-    VK->>VK: validar source != target
-    VK->>VK: compilar ContextBrief
-    VK->>VK: ejecutar operacion canonica
-    VK->>SA: persistir deliverable
-    SA-->>VK: confirmacion
-    VK->>VK: ingerir evidencia
-    VK->>VK: registrar transicion en Ledger
+    VK->>VK: validate source != target
+    VK->>VK: compile ContextBrief
+    VK->>VK: execute canonical operation
+    VK->>SA: persist deliverable
+    SA-->>VK: confirmation
+    VK->>VK: ingest evidence
+    VK->>VK: record transition in Ledger
     deactivate VK
 
-    VK-->>HA: resultado + estado
-    HA-->>ACT: respuesta
+    VK-->>HA: result + status
+    HA-->>ACT: response
 ```
 
-Este flujo canonico tiene pasos deterministas y pasos mediados por juicio. Las gates de certificacion (test pass/fail, mutation score, CRAP, coverage, CVE scan) son deterministas — binarias, sin subjetividad. Los pasos de planning, escalacion, compilacion de ContextBrief, alineacion arquitectonica y verificacion de coherencia (PDC) involucran juicio del agente orquestador, no son deterministas y deben dejar evidencia trazable. El Principia distingue ambos tipos explicitamente.
+This canonical flow has deterministic steps and judgment-mediated steps. Certification gates (test pass/fail, mutation score, CRAP, coverage, CVE scan) are deterministic — binary, without subjectivity. Planning, escalation, ContextBrief compilation, architectural alignment and coherence-verification (PDC) steps involve judgment from the orchestrating agent, are not deterministic, and must leave traceable evidence. The Principia distinguishes both types explicitly.
 
-El PDC es un safeguard de coherencia de orquestacion que opera durante la ejecucion, pero NO es un gate de certificacion. La certificacion la determinan exclusivamente las gates del pipeline de QA definidas por el Kernel: gates mecanicas deterministas (seccion 7e, 11d) y verificacion estructurada de alineacion arquitectonica (seccion 7e, gate ARCH). Cuando el proyecto declara un perfil de compliance regulatoria, el review humano se agrega como gate blocking adicional (seccion 7g). El PDC puede detener una delegacion incoherente, pero no certifica ni aprueba codigo.
+The PDC is an orchestration-coherence safeguard that operates during
+execution, but it is NOT a certification gate. Certification is determined exclusively by the Kernel-defined QA pipeline gates: deterministic mechanical gates (section 7e, 11d) and structured verification of architectural alignment (section 7e, ARCH gate). When the project declares a regulatory compliance profile, human review is added as an additional blocking gate (section 7g). The PDC can stop an incoherent delegation, but it does not certify or approve code.
 
-> **Identidades de invocacion**: `DogmaRef`, `ProjectRef` y `RunContext` son las tres identidades que el HostAdapter resuelve al inicio de cada invocacion. Este Principia las nombra como participantes del flujo canonico pero no especifica sus campos — ese contrato pertenece al layer de protocolo (docs/protocol/).
+> **Invocation identities**: `DogmaRef`, `ProjectRef` and `RunContext` are the three identities the HostAdapter resolves at the start of every invocation. This Principia names them as participants in the canonical flow but does not specify their fields — that contract belongs to the protocol layer (docs/protocol/).
 
-> **Atomicidad**: el flujo muestra pasos secuenciales (persistir →
-> ingerir evidencia → registrar transicion). Si el proceso falla entre
-> pasos, el mecanismo de recovery (seccion 10) reconcilia el estado
-> derivando la fase actual desde los deliverables existentes, no desde
-> un puntero almacenado. El Ledger implementa idempotencia: registrar
-> una transicion ya registrada es un no-op.
+> **Atomicity**: the flow shows sequential steps (persist →
+> ingest evidence → record transition). If the process fails between
+> steps, the recovery mechanism (section 10) reconciles state by
+> deriving the current phase from existing deliverables, not from
+> a stored pointer. The Ledger implements idempotency: recording
+> an already-recorded transition is a no-op.
 
-Detras de cada paso hay un principio deliberado que descubrimos a continuación.
+Behind every step is a deliberate principle we uncover next.

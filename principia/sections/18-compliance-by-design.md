@@ -1,51 +1,51 @@
 <!-- Virgil Principia
 section_id: "7g"
-title: "complianceByDesign — compliance como efecto secundario"
+title: "complianceByDesign — compliance as a side effect"
 source: "principia/constitution.md"
 source_lines: [843, 868]
 layer: quality
 constitutional: false
 actors: [MIM]
-glossary_terms: [complianceByDesign, abuseCases, perfil de compliance]
+glossary_terms: [complianceByDesign, abuseCases, compliance profile]
 depends_on: [7f, 3b]
 referenced_by: [11d]
 keywords:
   - complianceByDesign
-  - aserciones estrictas de DTO
+  - strict DTO assertions
   - abuseCases
-  - validacion estructural
+  - structural validation
   - HIPAA
   - PCI DSS
   - GDPR
-  - review humano obligatorio
-  - gate blocking regulatoria
+  - mandatory human review
+  - regulatory blocking gate
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Pertenece al capitulo 7 ("Como garantiza calidad"). Es condicional: la capacidad tecnica descrita aqui es universal, pero la activacion del gate de review humano depende de si el proyecto declara un perfil de compliance regulatoria — de ahi que este chunk no sea constitucional en el mismo sentido que los mecanismos mecanicos de calidad.
+> **Context:** Belongs to chapter 7 ("How it guarantees quality"). It is conditional: the technical capability described here is universal, but activation of the human-review gate depends on whether the project declares a regulatory compliance profile — which is why this chunk is not constitutional in the same sense as the mechanical quality mechanisms.
 
-### 7g. complianceByDesign — compliance como efecto secundario
+### 7g. complianceByDesign — compliance as a side effect
 
-Si cada test aserta la forma EXACTA del DTO (campos presentes, campos
-ausentes, tipos), se obtiene verificacion de compliance sin suites
-separadas.
+If every test asserts the EXACT shape of the DTO (fields present,
+fields absent, types), compliance verification is obtained without
+separate suites.
 
 ```mermaid
 flowchart TD
-    STRICT["Aserciones estrictas\nforma completa del DTO"]
-    ABUSE["abuseCases\ntesting adversarial"]
-    STRUCT["Validacion estructural\nschemas, hashing,\nencryption, A11y"]
+    STRICT["Strict assertions\ncomplete DTO shape"]
+    ABUSE["abuseCases\nadversarial testing"]
+    STRUCT["Structural validation\nschemas, hashing,\nencryption, A11y"]
 
-    STRICT & ABUSE & STRUCT --> COMPLIANCE["Compliance\ncomo efecto secundario"]
+    STRICT & ABUSE & STRUCT --> COMPLIANCE["Compliance\nas a side effect"]
 
-    COMPLIANCE --> HIPAA["HIPAA\n(capa de datos)"]
-    COMPLIANCE --> PCI["PCI DSS\n(capa de datos)"]
-    COMPLIANCE --> GDPR["GDPR\n(capa de datos)"]
+    COMPLIANCE --> HIPAA["HIPAA\n(data layer)"]
+    COMPLIANCE --> PCI["PCI DSS\n(data layer)"]
+    COMPLIANCE --> GDPR["GDPR\n(data layer)"]
 
     style COMPLIANCE fill:#4a4,stroke:#333,color:#fff
 ```
 
-Alcance: cubre EXCLUSIVAMENTE la capa de controles tecnicos de datos
-(minimizacion, control de acceso por campo, validacion de forma). NO
-cubre controles organizacionales, fisicos, legales, procedimentales
-ni segregacion de responsabilidades. Cuando el proyecto declara un perfil de compliance regulatoria (HIPAA, PCI DSS, GDPR), el Method Pack DEBE activar review humano obligatorio sobre logica de autorizacion y modelado de dominio como gate blocking. Esta activacion es automatica para perfiles regulados, no opt-in. Para proyectos sin perfil regulatorio, el review humano permanece opcional y no-blocking. El Principia define la capacidad tecnica; el perfil de compliance del proyecto determina si el review humano es requerido.
+Scope: covers EXCLUSIVELY the technical data-controls layer
+(minimization, field-level access control, shape validation). It does NOT
+cover organizational, physical, legal, procedural controls
+or segregation of duties. When the project declares a regulatory compliance profile (HIPAA, PCI DSS, GDPR), the Method Pack MUST activate mandatory human review over authorization logic and domain modeling as a blocking gate. This activation is automatic for regulated profiles, not opt-in. For projects without a regulatory profile, human review remains optional and non-blocking. The Principia defines the technical capability; the project's compliance profile determines whether human review is required.

@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "11c"
-title: "Git strategy — aislamiento y trazabilidad"
+title: "Git strategy — isolation and traceability"
 source: "principia/constitution.md"
 source_lines: [1476, 1520]
 layer: execution
@@ -14,34 +14,34 @@ keywords:
   - --no-ff
   - worktrees
   - branches
-  - lanes concurrentes
+  - concurrent lanes
   - buildArtifactSet
   - sourceRevision
-  - convenciones de commits
-  - invariantes
+  - commit conventions
+  - invariants
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Esta seccion detalla la estrategia de control de versiones que sostiene el pipeline de ejecucion (seccion 11a). Se apoya en el concepto de mutation domain (seccion 7c) y en la trazabilidad estructural del codigo (seccion 8f).
+> **Context:** This section details the version-control strategy that underpins the execution pipeline (section 11a). It relies on the mutation domain concept (section 7c) and on the structural traceability of code (section 8f).
 
-### 11c. Git strategy — aislamiento y trazabilidad
+### 11c. Git strategy — isolation and traceability
 
-El Principia NO impone GitFlow, trunk-based ni nombres de branches concretos. Impone cuatro invariantes:
+The Principia does NOT impose GitFlow, trunk-based, or concrete branch names. It imposes four invariants:
 
-1. Lanes concurrentes deben tener **mutation domains aislados** mientras divergen (filesystem aislado, deteccion de conflictos al integrar, identidad de revision por lane).
-2. Cada `buildArtifactSet` producido por Echo debe estar ligado inequívocamente a la `sourceRevision` que lo genero.
-3. La integracion de lanes debe volver a ejecutar el Echo requerido sobre la revision integrada antes de que esa revision pueda certificarse.
-4. La identidad y procedencia de cada lane debe **sobrevivir la integracion** y ser mecanicamente verificable en el historial. El enforcement canonico es `--no-ff` (no fast-forward merge); una estrategia alternativa solo es admisible si preserva evidencia equivalente de identidad y procedencia de lane.
+1. Concurrent lanes must have **isolated mutation domains** while they diverge (isolated filesystem, conflict detection at integration, per-lane revision identity).
+2. Every `buildArtifactSet` produced by Echo must be unambiguously linked to the `sourceRevision` that generated it.
+3. Lane integration must re-run the required Echo on the integrated revision before that revision can be certified.
+4. The identity and provenance of each lane must **survive integration** and be mechanically verifiable in the history. The canonical enforcement is `--no-ff` (no fast-forward merge); an alternative strategy is admissible only if it preserves equivalent evidence of lane identity and provenance.
 
-La estrategia Git concreta es configurable por proyecto dentro de estos invariantes. El Dogma actual provee worktrees + branches como implementacion de referencia:
+The concrete Git strategy is configurable per project within these invariants. The current Dogma provides worktrees + branches as the reference implementation:
 
 ```mermaid
 flowchart TD
-    MAIN["main\n(estable, produccion)"]
-    DEV["develop\n(integracion)"]
-    ITER["exec/iter-N\n(iteracion)"]
+    MAIN["main\n(stable, production)"]
+    DEV["develop\n(integration)"]
+    ITER["exec/iter-N\n(iteration)"]
 
-    subgraph LANES["Referencia: lanes paralelos con worktrees"]
+    subgraph LANES["Reference: parallel lanes with worktrees"]
         L1["exec/iter-N/lane-auth"]
         L2["exec/iter-N/lane-api"]
         L3["exec/iter-N/lane-ui"]
@@ -49,22 +49,22 @@ flowchart TD
 
     L1 & L2 & L3 -->|"--no-ff"| ITER
     ITER -->|"--no-ff"| DEV
-    DEV -->|"merge o squash\n(MIM decide)"| MAIN
+    DEV -->|"merge or squash\n(MIM decides)"| MAIN
 
     style MAIN fill:#4a4,stroke:#333,color:#fff
     style ITER fill:#47a,stroke:#333,color:#fff
     style LANES fill:#a74,stroke:#333,color:#fff
 ```
 
-Con esa implementacion, cada lane se ejecuta en un worktree aislado y un compositeAgent (seccion 7c) opera dentro de ese mutation domain. Otro proyecto puede usar otro mecanismo de aislamiento siempre que satisfaga las propiedades del mutation domain y los cuatro invariantes de esta seccion.
+With that implementation, each lane runs in an isolated worktree and a compositeAgent (section 7c) operates within that mutation domain. Another project may use a different isolation mechanism as long as it satisfies the mutation domain properties and the four invariants of this section.
 
-Si una lane detecta violacion de contrato mid-flight, el SM emite PlanningGapDetected y detiene ESA lane. Las demas lanes en ejecucion que dependen del mismo contrato reciben notificacion de contrato invalidado y entran en estado de pausa pendiente de reconciliacion. Las lanes independientes (sin dependencia del contrato violado) continuan sin interrupcion.
+If a lane detects a contract violation mid-flight, the SM emits PlanningGapDetected and stops THAT lane. Other running lanes that depend on the same contract receive an invalidated-contract notification and enter a paused state pending reconciliation. Independent lanes (with no dependency on the violated contract) continue without interruption.
 
-Las convenciones de commits son defaults del Dogma y pueden ser overrideadas por proyecto siempre que Virgil pueda reconstruir fase, revision y evidencia **por parseo determinista** (no por inferencia de un LLM):
+Commit conventions are Dogma defaults and may be overridden per project as long as Virgil can reconstruct phase, revision and evidence **by deterministic parsing** (not by LLM inference):
 
-| Fase | Prefijo default | Frecuencia default |
+| Phase | Default prefix | Default frequency |
 |------|-----------------|--------------------|
-| prePhase | `contract:` | 1 por tipo |
-| Red | `test:` | 1 por test o grupo |
-| Green | `feat:` | 1 por test que pasa |
-| Refactor | `refactor:` | 1 por refactor atomico |
+| prePhase | `contract:` | 1 per type |
+| Red | `test:` | 1 per test or group |
+| Green | `feat:` | 1 per passing test |
+| Refactor | `refactor:` | 1 per atomic refactor |

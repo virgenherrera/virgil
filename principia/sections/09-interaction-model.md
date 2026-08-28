@@ -1,83 +1,83 @@
 <!-- Virgil Principia
 section_id: "6"
-title: "Como interactuan las partes"
+title: "How the parts interact"
 source: "principia/constitution.md"
 source_lines: [462, 534]
 layer: interaction
 constitutional: true
-actors: [Desarrollador, Implementador]
-glossary_terms: [Modo Desarrollo, Modo Consumo, Principia, Method Pack, HostAdapter, ArtifactStoreAdapter, global ownership, global context injection]
+actors: [Developer, Implementer]
+glossary_terms: [Development Mode, Consumption Mode, Principia, Method Pack, HostAdapter, ArtifactStoreAdapter, global ownership, global context injection]
 depends_on: ["5", "vocabulary", "1", "2"]
 referenced_by: ["authority"]
 keywords:
-  - actores y modos
-  - Modo Desarrollo
-  - Modo Consumo
-  - separacion de concerns
+  - actors and modes
+  - Development Mode
+  - Consumption Mode
+  - separation of concerns
   - Method Pack
   - HostAdapter
   - ArtifactStoreAdapter
   - global ownership
   - global context injection
-  - invariante fundamental
+  - fundamental invariant
   - MCP JSON-RPC
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Method Pack, HostAdapter y ArtifactStoreAdapter son los componentes descritos en la seccion 5 (catalogo de partes); aqui se muestra como esos componentes y los dos modos operativos de Virgil interactuan entre si sin mezclar responsabilidades.
+> **Context:** Method Pack, HostAdapter and ArtifactStoreAdapter are the components described in section 5 (parts catalog); here we show how those components and Virgil's two operational modes interact with each other without mixing responsibilities.
 
-**En este chunk:**
-- [6a. Actores y modos](#6a-actores-y-modos)
-- [6b. Separacion de concerns](#6b-separacion-de-concerns)
-- [6c. Invariante fundamental](#6c-invariante-fundamental)
+**In this chunk:**
+- [6a. Actors and modes](#6a-actors-and-modes)
+- [6b. Separation of concerns](#6b-separation-of-concerns)
+- [6c. Fundamental invariant](#6c-fundamental-invariant)
 
-## 6. Como interactuan las partes
+## 6. How the parts interact
 
-[↑ Volver al indice](../README.md)
+[↑ Back to index](../README.md)
 
-### 6a. Actores y modos
+### 6a. Actors and modes
 
 ```mermaid
 flowchart TD
-    subgraph DESARROLLO["Modo Desarrollo"]
-        DEV["Desarrollador\n(Humano + Agente)"]
-        DEV -->|"modifica codigo,\ntests, dogma"| V_OBJ["Virgil\n(OBJETO)"]
+    subgraph DESARROLLO["Development Mode"]
+        DEV["Developer\n(Human + Agent)"]
+        DEV -->|"modifies code,\ntests, dogma"| V_OBJ["Virgil\n(OBJECT)"]
     end
 
-    subgraph CONSUMO["Modo Consumo"]
-        IMPL["Implementador\n(Agente externo)"]
-        IMPL -->|"usa via MCP\nJSON-RPC"| V_TOOL["Virgil\n(HERRAMIENTA)"]
+    subgraph CONSUMO["Consumption Mode"]
+        IMPL["Implementer\n(External agent)"]
+        IMPL -->|"uses via MCP\nJSON-RPC"| V_TOOL["Virgil\n(TOOL)"]
     end
 
-    V_OBJ -.-|"mismo binario\nmismos contratos\nmismas gates"| V_TOOL
+    V_OBJ -.-|"same binary\nsame contracts\nsame gates"| V_TOOL
 
-    PRINCIPIA["Principia\n(inmutable)"]
-    PRINCIPIA -->|"gobierna"| DESARROLLO
-    PRINCIPIA -->|"gobierna"| CONSUMO
+    PRINCIPIA["Principia\n(immutable)"]
+    PRINCIPIA -->|"governs"| DESARROLLO
+    PRINCIPIA -->|"governs"| CONSUMO
 
     style PRINCIPIA fill:#2b5,stroke:#333,color:#fff
     style DESARROLLO fill:#47a,stroke:#333,color:#fff
     style CONSUMO fill:#a74,stroke:#333,color:#fff
 ```
 
-### 6b. Separacion de concerns
+### 6b. Separation of concerns
 
-Cada pieza tiene un ownership claro. No se mezclan.
+Each piece has clear ownership. They are not mixed.
 
 ```mermaid
 flowchart TD
-    PACK["Method Pack\nCeremonia | Roles | Routing | Gates"]
-    PACK -->|"inyecta politica"| VIRGIL
+    PACK["Method Pack\nCeremony | Roles | Routing | Gates"]
+    PACK -->|"injects policy"| VIRGIL
 
-    VIRGIL["Virgil Kernel\nIdentidad | Trazabilidad | Contexto | Transiciones"]
-    VIRGIL -->|"invoca via"| HOST
-    VIRGIL -->|"persiste via"| STORE
+    VIRGIL["Virgil Kernel\nIdentity | Traceability | Context | Transitions"]
+    VIRGIL -->|"invokes via"| HOST
+    VIRGIL -->|"persists via"| STORE
 
-    HOST["HostAdapter\nDiscovery | Invocacion | Capabilities"]
-    STORE["ArtifactStoreAdapter\nPersistencia | Retrieval | Write Policy"]
+    HOST["HostAdapter\nDiscovery | Invocation | Capabilities"]
+    STORE["ArtifactStoreAdapter\nPersistence | Retrieval | Write Policy"]
 
     HOST ~~~ STORE
-    NOTE["Host y Store son concerns INDEPENDIENTES\nun mismo host puede usar stores distintos\nun mismo store puede servir hosts diferentes"]
+    NOTE["Host and Store are INDEPENDENT concerns\na single host can use different stores\na single store can serve different hosts"]
 
     style PACK fill:#7a4,stroke:#333,color:#fff
     style VIRGIL fill:#47a,stroke:#333,color:#fff
@@ -86,20 +86,20 @@ flowchart TD
     style NOTE fill:none,stroke:none
 ```
 
-### 6c. Invariante fundamental
+### 6c. Fundamental invariant
 
 ```mermaid
 flowchart TD
-    OWNERSHIP["global ownership\n(Virgil conoce TODO\nel inventario)"]
-    INJECTION["global context injection\n(Virgil entrega TODO\na cada actor)"]
+    OWNERSHIP["global ownership\n(Virgil knows the ENTIRE\ninventory)"]
+    INJECTION["global context injection\n(Virgil delivers EVERYTHING\nto each actor)"]
 
     OWNERSHIP -->|"!="| INJECTION
 
-    OWNERSHIP --> CORRECTO["CORRECTO:\nconocer que existe,\nquien lo posee,\nen que estado esta"]
-    INJECTION --> INCORRECTO["INCORRECTO:\ncargar todo el contenido\nen cada prompt"]
+    OWNERSHIP --> CORRECTO["CORRECT:\nknowing what exists,\nwho owns it,\nwhat state it is in"]
+    INJECTION --> INCORRECTO["INCORRECT:\nloading all content\ninto every prompt"]
 
     style CORRECTO fill:#4a4,stroke:#333,color:#fff
     style INCORRECTO fill:#c44,stroke:#333,color:#fff
 ```
 
-Estas invariantes fundamentales — que Virgil conoce sin inflar contextos — se aplican de forma idéntica en ambos modos operativos, generando una propiedad notable: Virgil es tanto herramienta como objeto bajo las mismas reglas.
+These fundamental invariants — what Virgil knows without inflating contexts — apply identically in both operational modes, producing a notable property: Virgil is both tool and object under the same rules.

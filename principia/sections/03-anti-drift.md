@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "1a"
-title: "Regla anti-drift interpretativa"
+title: "Interpretive anti-drift rule"
 source: "principia/constitution.md"
 source_lines: [147, 191]
 layer: identity
@@ -11,21 +11,21 @@ depends_on: [7a, 7b, 7e, 1]
 referenced_by: []
 keywords:
   - anti-drift
-  - ciclo cerrado de accountability
+  - closed accountability cycle
   - Echo System
   - certification gates
-  - frontera canonica
-  - fuerza normativa
+  - canonical boundary
+  - normative force
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Esta seccion establece la regla de interpretacion que protege los mecanismos constitucionales del Principia (definidos en detalle en 7a Echo System, 7b Deliverables vs Build Artifacts, y 7e QA/Acceptance Gates) frente a abstracciones que los diluirian.
+> **Context:** This section establishes the interpretation rule that protects the Principia's constitutional mechanisms (defined in detail in 7a Echo System, 7b Deliverables vs Build Artifacts, and 7e QA/Acceptance Gates) against abstractions that would dilute them.
 
-### 1a. Regla anti-drift interpretativa
+### 1a. Interpretive anti-drift rule
 
-Este documento debe interpretarse preservando el **ciclo cerrado de accountability** de Virgil. Un revisor — humano o agente — NO debe abstraerlo hacia un framework generico de policies, observers o tooling intercambiable si esa abstraccion elimina o vuelve opcionales los mecanismos que el Principia declara constitucionales.
+This document must be interpreted while preserving Virgil's **closed accountability cycle**. A reviewer — human or agent — must NOT abstract it into a generic framework of policies, observers, or interchangeable tooling if that abstraction eliminates or makes optional the mechanisms the Principia declares constitutional.
 
-La frontera canonica es:
+The canonical boundary is:
 
 ```text
 planning deliverables
@@ -41,27 +41,27 @@ certification gates
 Ledger / TraceabilityGraph
 ```
 
-**No son detalles de implementacion y NO son overrideables por proyecto:**
+**These are NOT implementation details and are NOT overridable per project:**
 
-- El Echo System de cinco pasos: Setup → Build → Static → Dynamic → E2E
-- El orden de Echo; puede variar el scope, no la secuencia
-- Macro Red/Green/Refactor y su independencia por fase
-- La existencia de build artifacts regenerables como salida canonica de Echo
-- La asociacion inequívoca `EchoRun + sourceRevision + buildArtifactSet`
-- EvidenceIngestion, Binding Layer y las gates minimas de calidad del Kernel
-- La regla de que certificacion se decide sobre evidencia producida por el camino canonico, no sobre afirmaciones del agente
+- The five-step Echo System: Setup → Build → Static → Dynamic → E2E
+- The order of Echo; scope can vary, the sequence cannot
+- Macro Red/Green/Refactor and its independence per phase
+- The existence of regenerable build artifacts as the canonical output of Echo
+- The unambiguous association `EchoRun + sourceRevision + buildArtifactSet`
+- EvidenceIngestion, Binding Layer and the Kernel's minimum quality gates
+- The rule that certification is decided on evidence produced by the canonical path, not on the agent's claims
 
-**Si son sustituibles/configurables mientras preserven esos contratos:**
+**These ARE substitutable/configurable as long as they preserve those contracts:**
 
-- Herramientas concretas usadas dentro de cada etapa de Echo
-- Comandos, runners, scanners y proveedores CI/CD
-- Triggers que disparan Echo (hooks, CI, CD u otros adapters)
-- Estrategia Git, nombres de branches, worktrees y convenciones de commits
-- Ubicacion fisica de build artifacts, siempre que conserven identidad, procedencia y reproducibilidad
-- Backends de HostAdapter, ArtifactStoreAdapter, RAG y otras extensiones expresamente definidas por contrato
+- Concrete tools used within each Echo stage
+- Commands, runners, scanners and CI/CD providers
+- Triggers that fire Echo (hooks, CI, CD or other adapters)
+- Git strategy, branch names, worktrees and commit conventions
+- Physical location of build artifacts, as long as identity, provenance and reproducibility are preserved
+- HostAdapter, ArtifactStoreAdapter, RAG backends and other extensions expressly defined by contract
 
-**Prueba anti-drift:** si una reinterpretacion permite que Virgil simplemente "observe lo que haya ocurrido" y certifique evidencia arbitraria sin pasar por Echo/build artifacts, esa reinterpretacion contradice este Principia. Virgil no es un auditor pasivo: define el protocolo mediante el cual la ejecucion adquiere evidencia certificable.
+**Anti-drift test:** if a reinterpretation allows Virgil to simply "observe whatever happened" and certify arbitrary evidence without going through Echo/build artifacts, that reinterpretation contradicts this Principia. Virgil is not a passive auditor: it defines the protocol by which execution acquires certifiable evidence.
 
-**Fuerza normativa deliberada.** Las declaraciones absolutas del Principia representan obligaciones de conformidad y direccion arquitectonica, no descripciones del estado actual de implementacion. Una IA o implementador NO debe: debilitarlas porque hoy una herramienta no pueda enforcearlas completamente; reemplazarlas por una abstraccion mas generica; reinterpretar mecanismos fundacionales como detalles accidentales; ni introducir salvedades operativas dentro del Principia cuando pertenecen al Dogma o adapters. La incapacidad actual de enforcement crea trabajo pendiente de implementacion, no una excepcion al principio.
+**Deliberate normative force.** The Principia's absolute statements represent obligations of conformance and architectural direction, not descriptions of the current state of implementation. An AI or implementer must NOT: weaken them because a tool cannot fully enforce them today; replace them with a more generic abstraction; reinterpret foundational mechanisms as accidental details; or introduce operational caveats within the Principia when they belong to the Dogma or adapters. The current inability to enforce creates pending implementation work, not an exception to the principle.
 
-> **Nota de nombres:** `ECHO` dentro del PDC (ECHO → VERIFY → MARK → DECIDE) es el paso de coherence check del checkpoint. No es el **Echo System** (Setup → Build → Static → Dynamic → E2E). Son conceptos distintos aunque compartan nombre.
+> **Note on names:** `ECHO` within the PDC (ECHO → VERIFY → MARK → DECIDE) is the coherence-check step of the checkpoint. It is not the **Echo System** (Setup → Build → Static → Dynamic → E2E). They are distinct concepts even though they share a name.

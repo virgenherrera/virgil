@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "11f"
-title: "Evidencia como dato queryable"
+title: "Evidence as queryable data"
 source: "principia/constitution.md"
 source_lines: [1618, 1649]
 layer: execution
@@ -10,9 +10,9 @@ glossary_terms: [EchoRun, buildArtifactSet, Ledger, Binding Layer]
 depends_on: ["7b", "8c-watermark", "11a-11b", "7a", "7d-binding", "11e-routing"]
 referenced_by: ["12"]
 keywords:
-  - evidencia queryable
+  - queryable evidence
   - EvidenceIngestion
-  - Ledger inmutable
+  - immutable Ledger
   - Binding Layer
   - declared inferred verified
   - EchoRun
@@ -23,36 +23,36 @@ keywords:
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Esta seccion cierra el pipeline de ejecucion (seccion 11a) explicando como toda la evidencia generada se ingiere de forma estructurada, ligada al EchoRun canonico (seccion 7b), y como alimenta la progresion del Binding Layer.
+> **Context:** This section closes the execution pipeline (section 11a) by explaining how all generated evidence is ingested in a structured way, linked to the canonical EchoRun (section 7b), and how it feeds the progression of the Binding Layer.
 
-### 11f. Evidencia como dato queryable
+### 11f. Evidence as queryable data
 
-Todo lo que ocurre durante ejecucion se ingiere como evidencia
-queryable, no como documentacion narrativa. Para **certificacion de
-codigo**, los resultados de tests, coverage, metricas, scanners y builds
-solo son elegibles cuando estan ligados a un `EchoRun` y su
-`buildArtifactSet`. Evidencia de planning, decisiones humanas o eventos
-de operacion puede provenir de otras fuentes, pero no sustituye el camino
-Echo para certificar codigo.
+Everything that happens during execution is ingested as queryable
+evidence, not as narrative documentation. For **code certification**,
+test results, coverage, metrics, scanners and build results
+are only eligible when linked to an `EchoRun` and its
+`buildArtifactSet`. Evidence from planning, human decisions or operation
+events can come from other sources, but does not replace the Echo
+path for certifying code.
 
 ```mermaid
 flowchart TD
-    subgraph FUENTES["Fuentes de evidencia"]
+    subgraph FUENTES["Evidence sources"]
         TESTS["Test results\npass/fail + AC ref"]
-        COV["Coverage reports\n% por archivo"]
-        METRICS["Metricas\nmutation, CRAP,\ncomplejidad"]
-        COMMITS["Commits\nSHA + fase + test ref"]
+        COV["Coverage reports\n% per file"]
+        METRICS["Metrics\nmutation, CRAP,\ncomplexity"]
+        COMMITS["Commits\nSHA + phase + test ref"]
         PIPELINE["Echo pipeline\nlogs, reports"]
     end
 
     FUENTES --> INGESTION["EvidenceIngestion\n(kernel)"]
-    INGESTION --> LEDGER["Ledger\n(inmutable)"]
+    INGESTION --> LEDGER["Ledger\n(immutable)"]
     INGESTION --> BINDING["Binding Layer\ndeclared → inferred → verified"]
 
     style INGESTION fill:#47a,stroke:#333,color:#fff
     style LEDGER fill:#4a4,stroke:#333,color:#fff
 ```
 
-La evidencia alimenta el Binding Layer: cada commit con referencia
-a un test mueve el enlace de `declared` a `inferred`. La verificacion
-mecanica (mutation testing) lo mueve a `verified`.
+Evidence feeds the Binding Layer: every commit referencing
+a test moves the link from `declared` to `inferred`. Mechanical
+verification (mutation testing) moves it to `verified`.

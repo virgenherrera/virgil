@@ -1,9 +1,9 @@
 <!-- Virgil Principia
 section_id: "authority"
-title: "Autoridad y auto-referencia"
+title: "Authority and self-reference"
 source: "principia/constitution.md"
 source_lines: [[1720, 1738], [1782, 1788]]
-source_lines_note: "Non-contiguous. Lines 1742-1779 (Glosario) belong entirely to chunk glossary (38); this chunk wraps around it, covering only 'Regla de auto-referencia' (1720-1738) and 'Nota de autoridad' (1782-1788)."
+source_lines_note: "Non-contiguous. Lines 1742-1779 (Glossary) belong entirely to chunk glossary (38); this chunk wraps around it, covering only 'Self-reference rule' (1720-1738) and 'Authority note' (1782-1788)."
 layer: authority
 constitutional: true
 actors: []
@@ -11,33 +11,33 @@ glossary_terms: []
 depends_on: ["6"]
 referenced_by: []
 keywords:
-  - regla de auto-referencia
-  - Modo Desarrollo
-  - Modo Consumo
-  - mismos principios
-  - mismos contratos
-  - mismas gates
-  - direccion de agencia
-  - inmutable
-  - fuente de verdad
-  - nota de autoridad
+  - self-reference rule
+  - Development Mode
+  - Consumption Mode
+  - same principles
+  - same contracts
+  - same gates
+  - direction of agency
+  - immutable
+  - source of truth
+  - authority note
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Esta regla establece que el Principia tiene la misma autoridad constitucional sobre ambos modos de uso descritos en el documento: Modo Desarrollo (donde Virgil es el objeto de trabajo) y Modo Consumo (donde Virgil es la herramienta que asiste otro trabajo).
+> **Context:** This rule establishes that the Principia holds the same constitutional authority over both usage modes described in the document: Development Mode (where Virgil is the object of the work) and Consumption Mode (where Virgil is the tool assisting other work).
 
-## Regla de auto-referencia
+## Self-reference rule
 
-Este Principia gobierna AMBOS modos con la misma autoridad:
+This Principia governs BOTH modes with the same authority:
 
 ```mermaid
 flowchart TD
-    P["Principia\n(este documento)"]
+    P["Principia\n(this document)"]
 
-    P --> MD["Modo Desarrollo\nVirgil es el OBJETO\nDesarrollador trabaja\nSOBRE Virgil"]
-    P --> MC["Modo Consumo\nVirgil es la HERRAMIENTA\nImplementador trabaja\nCON Virgil"]
+    P --> MD["Development Mode\nVirgil is the OBJECT\nDeveloper works\nON Virgil"]
+    P --> MC["Consumption Mode\nVirgil is the TOOL\nImplementer works\nWITH Virgil"]
 
-    MD --> MISMOS["Mismos principios\nMismos contratos\nMismas gates\nDiferente direccion\nde agencia"]
+    MD --> MISMOS["Same principles\nSame contracts\nSame gates\nDifferent direction\nof agency"]
     MC --> MISMOS
 
     style P fill:#2b5,stroke:#333,color:#fff
@@ -46,10 +46,10 @@ flowchart TD
 
 ---
 
-## Nota de autoridad
+## Authority note
 
-Este documento es inmutable una vez consolidado.
+This document is immutable once consolidated.
 
-**Fuente de verdad**: `principia/constitution.md`
+**Source of truth**: `principia/constitution.md`
 
-Este Principia gobierna con igual fuerza el **Modo Desarrollo** (donde Virgil es el objeto sobre el cual se trabaja) y el **Modo Consumo** (donde Virgil es la herramienta con la cual se trabaja). Ambos modos heredan los mismos principios de gobierno, arquitectura, contratos y gates.
+This Principia governs with equal force **Development Mode** (where Virgil is the object being worked on) and **Consumption Mode** (where Virgil is the tool being worked with). Both modes inherit the same principles of governance, architecture, contracts and gates.

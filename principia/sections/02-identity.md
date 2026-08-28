@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "1"
-title: "Que es Virgil"
+title: "What Virgil is"
 source: "principia/constitution.md"
 source_lines: [100, 146]
 layer: identity
@@ -10,57 +10,57 @@ glossary_terms: [Virgil, MCP, AGENTS.md, Open Agentic Standard, Kernel, Method P
 depends_on: ["vocabulary"]
 referenced_by: [1a, 2, 5, 6]
 keywords:
-  - que es Virgil
+  - what Virgil is
   - knowledge plane
   - control plane
-  - identidad
+  - identity
   - Open Agentic Standard
   - AGENTS.md
 -->
 
-## 1. Que es Virgil
+## 1. What Virgil is
 
-[↑ Volver al indice](../README.md)
+[↑ Back to index](../README.md)
 
-Virgil es el knowledge/control plane de un proyecto. No es un
-framework, no es un Scrum Master, no ejecuta codigo. Mantiene
-identidad, trazabilidad, contexto y transiciones.
+Virgil is a project's knowledge/control plane. It is not a
+framework, it is not a Scrum Master, it does not execute code. It
+maintains identity, traceability, context and transitions.
 
-Virgil se apega al **Open Agentic Standard**: publica un `AGENTS.md`
-en el proyecto consumidor como convención de discoverability, y se
-comunica via **Model Context Protocol (MCP)** / JSON-RPC. Cualquier
-agente compatible puede consumir Virgil sin acoplamiento a un
-proveedor específico.
+Virgil adheres to the **Open Agentic Standard**: it publishes an
+`AGENTS.md` in the consuming project as a discoverability convention, and
+communicates via **Model Context Protocol (MCP)** / JSON-RPC. Any
+compatible agent can consume Virgil without coupling to a specific
+provider.
 
 ```mermaid
 flowchart TD
-    subgraph ES["Virgil ES"]
-        KP["Knowledge Plane\nSabe que existe, quien lo posee,\nen que estado esta"]
-        CP["Control Plane\nAplica contratos, valida gates,\nregistra transiciones"]
-        GI["Guia Inyectada\nPublica AGENTS.md al proyecto\ncon reglas operativas para el agente"]
+    subgraph ES["Virgil IS"]
+        KP["Knowledge Plane\nKnows what exists, who owns it,\nwhat state it is in"]
+        CP["Control Plane\nEnforces contracts, validates gates,\nrecords transitions"]
+        GI["Injected Guidance\nPublishes AGENTS.md to the project\nwith operational rules for the agent"]
     end
 
-    subgraph NO_ES["Virgil NO ES"]
-        NF["Framework de ejecucion"]
-        NI["Implementador de codigo"]
-        NC["Cache de conversacion"]
+    subgraph NO_ES["Virgil is NOT"]
+        NF["Execution framework"]
+        NI["Code implementer"]
+        NC["Conversation cache"]
     end
 
     KP --- CP --- GI
-    ES -.-|"linea clara"| NO_ES
+    ES -.-|"clear line"| NO_ES
 
     style ES fill:#4a4,stroke:#333,color:#fff
     style NO_ES fill:#c44,stroke:#333,color:#fff
 ```
 
-Virgil no adopta roles ceremoniales (no es Scrum Master). Pero SI inyecta
-guia operativa al agente consumidor via AGENTS.md. Esa guia deberia
-incluir:
+Virgil does not adopt ceremonial roles (it is not a Scrum Master). But it DOES
+inject operational guidance to the consuming agent via AGENTS.md. That guidance
+should include:
 
-- Patron orquestador-minion (como delegar trabajo a sub-agentes)
-- Ownership y housekeeping de tokens (como gestionar contexto)
-- Planning boundary y stop conditions (cuando detenerse)
+- Orchestrator-minion pattern (how to delegate work to sub-agents)
+- Token ownership and housekeeping (how to manage context)
+- Planning boundary and stop conditions (when to stop)
 
-> **Pendiente de definicion**: el AGENTS.md actual documenta wire protocol y operaciones. El patron de orquestacion y la gestion de tokens se especificaran en el Method Pack correspondiente, no en este documento ancla. Este item queda fuera del alcance del Principia.
+> **Pending definition**: the current AGENTS.md documents the wire protocol and operations. The orchestration pattern and token management will be specified in the corresponding Method Pack, not in this anchor document. This item is out of scope for the Principia.
 
-> **Alcance de este documento.** El Principia es el dogma fundacional: filosofia, arquitectura e invariantes. NO es un documento de go-to-market, guia de adopcion ni manual de usuario. El perfil de consumidor objetivo (ICP), la estrategia de MVP, el posicionamiento competitivo y las guias de onboarding son deliverables separados que se derivan DEL Principia pero no forman parte de el. El Kernel + el Method Pack Scrum (el unico implementado) constituyen el slice minimo viable; los demas Method Packs, codebaseMemory y extensiones son provisiones arquitectonicas, no requisitos de v1.
+> **Scope of this document.** The Principia is the foundational dogma: philosophy, architecture and invariants. It is NOT a go-to-market document, an adoption guide, or a user manual. The target consumer profile (ICP), MVP strategy, competitive positioning and onboarding guides are separate deliverables derived FROM the Principia but are not part of it. The Kernel + the Scrum Method Pack (the only one implemented) constitute the minimum viable slice; the other Method Packs, codebaseMemory and extensions are architectural provisions, not v1 requirements.

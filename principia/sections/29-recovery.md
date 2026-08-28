@@ -1,6 +1,6 @@
 <!-- Virgil Principia
 section_id: "10"
-title: "Como se recupera"
+title: "How it recovers"
 source: "principia/constitution.md"
 source_lines: [1385, 1415]
 layer: recovery
@@ -12,22 +12,22 @@ referenced_by: ["11a-11b"]
 keywords:
   - recovery
   - crash
-  - compactacion
-  - nueva sesion
-  - revisiones consolidadas
-  - fase derivada
-  - historial de fallos
+  - compaction
+  - new session
+  - consolidated revisions
+  - derived phase
+  - failure history
   - lastVerifiedAt
-  - cambios externos
+  - external changes
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** El estado de un proyecto Virgil no se pierde ante un crash, compactacion o nueva sesion — se reconstruye a partir del Ledger y de las revisiones consolidadas de deliverables gestionadas por el TPM (seccion 5).
+> **Context:** The state of a Virgil project is not lost after a crash, compaction or new session — it is reconstructed from the Ledger and from the consolidated revisions of deliverables managed by the TPM (section 5).
 
-## 10. Como se recupera
+## 10. How it recovers
 
-Despues de un crash, compactacion o nueva sesion, el estado se
-reconstruye — no se pierde.
+After a crash, compaction or new session, state is
+reconstructed — it is not lost.
 
 ```mermaid
 sequenceDiagram
@@ -35,20 +35,20 @@ sequenceDiagram
     participant TPM as TPM
     participant STORE as ArtifactStore
 
-    SM->>TPM: que deliverables existen?
-    TPM->>STORE: scan estados
-    STORE-->>TPM: lista + revisiones
-    TPM-->>SM: deliverables + estados + historial de fallos
+    SM->>TPM: what deliverables exist?
+    TPM->>STORE: scan states
+    STORE-->>TPM: list + revisions
+    TPM-->>SM: deliverables + states + failure history
 
-    SM->>SM: derivar fase actual
-    SM->>SM: consultar historial<br/>(ajustar estrategia)
-    SM->>SM: continuar desde<br/>fase derivada
+    SM->>SM: derive current phase
+    SM->>SM: consult history<br/>(adjust strategy)
+    SM->>SM: continue from<br/>derived phase
 ```
 
-- El SM deriva la fase por **revisiones consolidadas** de deliverables, no por mera existencia de archivos. Una revision solo participa en la derivacion de estado cuando su persistencia y su gate/evidencia requerida quedaron confirmados; una revision parcial despues de un crash no hace avanzar la fase.
-- El estado de fase no se almacena como puntero autoritativo; se deriva de esas revisiones consolidadas y del Ledger
-- El historial de fallos es per-deliverable y cross-session
-- `lastVerifiedAt` evita re-verificacion innecesaria si el codigo
-  no toco el scope del deliverable
-- Cambios externos se clasifican: aditivos (registrar), contradictorios
-  (decision del MIM), o de otro ciclo (registrar como contexto)
+- The SM derives the phase from **consolidated revisions** of deliverables, not from the mere existence of files. A revision only participates in state derivation once its persistence and its required gate/evidence are confirmed; a partial revision after a crash does not advance the phase.
+- Phase state is not stored as an authoritative pointer; it is derived from those consolidated revisions and from the Ledger
+- Failure history is per-deliverable and cross-session
+- `lastVerifiedAt` avoids unnecessary re-verification if the code
+  did not touch the deliverable's scope
+- External changes are classified: additive (record), contradictory
+  (MIM decision), or from another cycle (record as context)

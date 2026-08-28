@@ -1,49 +1,49 @@
 <!-- Virgil Principia
 section_id: "4"
-title: "Por que actua asi — Gobierno y Arquitectura"
+title: "Why it acts this way — Governance and Architecture"
 source: "principia/constitution.md"
 source_lines: [332, 416]
 layer: principles
 constitutional: true
 actors: []
-glossary_terms: [Gobierno, Arquitectura, Principia, Modo Desarrollo, Modo Consumo, ARCH]
+glossary_terms: [Governance, Architecture, Principia, Development Mode, Consumption Mode, ARCH]
 depends_on: ["3b"]
 referenced_by: ["5", "7e", "11d"]
 keywords:
-  - gobierno
-  - arquitectura
-  - principios de gobierno
-  - invariantes arquitectonicas
-  - constraint sobre confianza
-  - handoff paralelo
-  - gates mecanicas deterministas
-  - identidad antes que inferencia
-  - trazabilidad end-to-end
-  - Modo Desarrollo
-  - Modo Consumo
+  - governance
+  - architecture
+  - governance principles
+  - architectural invariants
+  - constraint over trust
+  - parallel handoff
+  - deterministic mechanical gates
+  - identity before inference
+  - end-to-end traceability
+  - Development Mode
+  - Consumption Mode
 -->
 
-**En este chunk:**
-- [4a. Gobierno — COMO se gobierna](#4a-gobierno--como-se-gobierna)
-- [4b. Arquitectura — COMO se construye](#4b-arquitectura--como-se-construye)
-- [4c. Como se relacionan las dos capas](#4c-como-se-relacionan-las-dos-capas)
+**In this chunk:**
+- [4a. Governance — HOW it is governed](#4a-governance--how-it-is-governed)
+- [4b. Architecture — HOW it is built](#4b-architecture--how-it-is-built)
+- [4c. How the two layers relate](#4c-how-the-two-layers-relate)
 
-## 4. Por que actua asi
+## 4. Why it acts this way
 
-[↑ Volver al indice](../README.md)
+[↑ Back to index](../README.md)
 
-Dos capas de principios complementarias. No se mezclan.
+Two complementary layers of principles. They are not mixed.
 
-### 4a. Gobierno — COMO se gobierna
+### 4a. Governance — HOW it is governed
 
 ```mermaid
 flowchart TD
-    GP1["GP-1. Metodologia e2e"]
-    GP2["GP-2. Trazabilidad + fortaleza"]
-    GP3["GP-3. Gestion nivel superior"]
-    GP4["GP-4. Constraint > confianza"]
-    GP5["GP-5. Handoff paralelo"]
-    GP6["GP-6. Gates mecanicas\ndeterministas"]
+    GP1["GP-1. e2e Methodology"]
+    GP2["GP-2. Traceability + strength"]
+    GP3["GP-3. Higher-level management"]
+    GP4["GP-4. Constraint > trust"]
+    GP5["GP-5. Parallel handoff"]
+    GP6["GP-6. Deterministic\nmechanical gates"]
 
     GP1 --- GP2 --- GP3
     GP4 --- GP5 --- GP6
@@ -56,28 +56,28 @@ flowchart TD
     style GP6 fill:#47a,stroke:#333,color:#fff
 ```
 
-| # | Principio | En una frase |
+| # | Principle | In one sentence |
 |---|-----------|-------------|
-| 1 | Metodologia e2e | Idea → codigo certificado → operacion. Sin saltos. |
-| 2 | Trazabilidad + fortaleza | No basta que el enlace exista; debe ser fuerte. |
-| 3 | Gestion nivel superior | Dashboard de salud, no revision linea a linea. |
-| 4 | Constraint > confianza | Constraints enforceables y gates, no promesas del agente. |
-| 5 | Handoff paralelo | Claiming sobre un handoff, no handoffs separados. |
-| 6 | Gates mecanicas deterministas | Binario en ejecucion: pasa o no pasa. Planning y escalacion involucran juicio; la verificacion estructurada (ARCH) queda acotada y trazable (ver 7e). |
+| 1 | e2e Methodology | Idea → certified code → operation. No jumps. |
+| 2 | Traceability + strength | It is not enough for the link to exist; it must be strong. |
+| 3 | Higher-level management | Health dashboard, not line-by-line review. |
+| 4 | Constraint > trust | Enforceable constraints and gates, not agent promises. |
+| 5 | Parallel handoff | Claiming over a handoff, not separate handoffs. |
+| 6 | Deterministic mechanical gates | Binary at execution: passes or does not pass. Planning and escalation involve judgment; structured verification (ARCH) remains bounded and traceable (see 7e). |
 
-### 4b. Arquitectura — COMO se construye
+### 4b. Architecture — HOW it is built
 
 ```mermaid
 flowchart TD
-    A1["1. Identidad antes\nque inferencia"]
-    A2["2. Autoridad separada\nde retrieval"]
-    A3["3. Contexto compilado\npor contrato"]
-    A4["4. Trazabilidad e2e"]
+    A1["1. Identity before\ninference"]
+    A2["2. Authority separate\nfrom retrieval"]
+    A3["3. Context compiled\nby contract"]
+    A4["4. e2e traceability"]
     A5["5. Planning !=\nexecution"]
-    A6["6. Host y Store son\nadapters distintos"]
-    A7["7. Entrega\nincremental"]
-    A8["8. Control plane separado\nde ceremonia"]
-    A9["9. Dogma separado\nde RAG operativo"]
+    A6["6. Host and Store are\ndistinct adapters"]
+    A7["7. Incremental\ndelivery"]
+    A8["8. Control plane separate\nfrom ceremony"]
+    A9["9. Dogma separate\nfrom operational RAG"]
 
     A1 --- A2 --- A3
     A4 --- A5 --- A6
@@ -94,21 +94,22 @@ flowchart TD
     style A9 fill:#a74,stroke:#333,color:#fff
 ```
 
-### 4c. Como se relacionan las dos capas
+### 4c. How the two layers relate
 
 ```mermaid
 flowchart TD
-    GOB["Gobierno\n6 principios\ndefine las REGLAS DEL JUEGO"]
-    ARQ["Arquitectura\n9 invariantes\ndefine las REGLAS DE CONSTRUCCION"]
+    GOB["Governance\n6 principles\ndefines the RULES OF THE GAME"]
+    ARQ["Architecture\n9 invariants\ndefines the RULES OF CONSTRUCTION"]
 
     GOB --> PRINCIPIA["Principia"]
     ARQ --> PRINCIPIA
-    PRINCIPIA --> MD["Modo Desarrollo"]
-    PRINCIPIA --> MC["Modo Consumo"]
+    PRINCIPIA --> MD["Development Mode"]
+    PRINCIPIA --> MC["Consumption Mode"]
 
     style GOB fill:#47a,stroke:#333,color:#fff
     style ARQ fill:#a74,stroke:#333,color:#fff
     style PRINCIPIA fill:#2b5,stroke:#333,color:#fff
 ```
 
-Ambas capas de principios confluyen en el Principia. Lo que falta es conocer sus componentes: qué piezas implementan estas reglas.
+Both layers of principles converge in the Principia. What remains is to
+know their components: what pieces implement these rules.
