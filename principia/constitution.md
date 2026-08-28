@@ -128,6 +128,10 @@ comunica via **Model Context Protocol (MCP)** / JSON-RPC. Cualquier
 agente compatible puede consumir Virgil sin acoplamiento a un
 proveedor específico.
 
+> **Clarificacion constitucional (CC-1):** Virgil se distribuye como un binario de servidor MCP independiente. Es un proceso autonomo que cualquier host puede descubrir e invocar sin acoplamiento adicional. Esta es la realizacion arquitectonica del compromiso con el Open Agentic Standard descrito en el parrafo anterior.
+
+> **Clarificacion constitucional (CC-4):** El modelo de consumo es agnostico de agente por diseno constitucional. Cualquier agente compatible con MCP — Claude, GPT, Gemini, OpenCode, Cursor, Windsurf, Kiro u otros agentes futuros que cumplan con el protocolo — puede consumir las herramientas de Virgil. El HostAdapter (seccion 5) traduce entre las convenciones de cada host y el Virgil Kernel; agregar un nuevo agente requiere unicamente una nueva implementacion de HostAdapter, no cambios en las capas de Kernel ni de ArtifactStore.
+
 ```mermaid
 flowchart TD
     subgraph ES["Virgil ES"]
@@ -149,6 +153,8 @@ flowchart TD
     style NO_ES fill:#c44,stroke:#333,color:#fff
 ```
 
+> **Clarificacion constitucional (CC-3):** Virgil opera como uno de tres pilares complementarios en el ecosistema de desarrollo asistido por IA: gentle-ai gestiona el COMO trabajan los agentes (review, receipt-driven development), engram gestiona la MEMORIA (contexto persistente entre sesiones), y Virgil gestiona el QUE y el DONDE (el puente entre planning y codebase, con trazabilidad). Los limites de "Virgil NO ES" enunciados arriba mapean directamente a esta separacion: "Framework de ejecucion" e "Implementador de codigo" corresponden al dominio de gentle-ai; "Cache de conversacion" corresponde al dominio de engram.
+
 Virgil no adopta roles ceremoniales (no es Scrum Master). Pero SI inyecta
 guia operativa al agente consumidor via AGENTS.md. Esa guia deberia
 incluir:
@@ -159,7 +165,7 @@ incluir:
 
 > **Pendiente de definicion**: el AGENTS.md actual documenta wire protocol y operaciones. El patron de orquestacion y la gestion de tokens se especificaran en el Method Pack correspondiente, no en este documento ancla. Este item queda fuera del alcance del Principia.
 
-> **Alcance de este documento.** El Principia es el dogma fundacional: filosofia, arquitectura e invariantes. NO es un documento de go-to-market, guia de adopcion ni manual de usuario. El perfil de consumidor objetivo (ICP), la estrategia de MVP, el posicionamiento competitivo y las guias de onboarding son deliverables separados que se derivan DEL Principia pero no forman parte de el. El Kernel + el Method Pack Scrum (el unico implementado) constituyen el slice minimo viable; los demas Method Packs, codebaseMemory y extensiones son provisiones arquitectonicas, no requisitos de v1.
+> **Alcance de este documento.** El Principia es el dogma fundacional: filosofia, arquitectura e invariantes. NO es un documento de go-to-market, guia de adopcion ni manual de usuario. El perfil de consumidor objetivo (ICP), la estrategia de MVP, el posicionamiento competitivo y las guias de onboarding son deliverables separados que se derivan DEL Principia pero no forman parte de el. El Kernel + el Method Pack Scrum (el unico implementado) constituyen el slice minimo viable; los demas Method Packs, codebaseMemory y extensiones de Method Pack son provisiones arquitectonicas, no requisitos de v1 (los plugins de ArtifactStoreAdapter, en cambio, son parte de la arquitectura nuclear — ver CC-2).
 
 ### 1a. Regla anti-drift interpretativa
 
@@ -475,6 +481,8 @@ flowchart TD
 Cada componente tiene una responsabilidad clara. El Kernel impone invariantes de calidad universales (Echo, testing, binding layer) independientemente de la metodologia. El Method Pack define la ceremonia: cuantos roles participan, que gates ceremoniales se comprimen, como se itera. La calidad es del Kernel; la ceremonia es del Pack.
 
 Los Method Packs heredan los gates de calidad (Red/Green/Refactor, mutation testing, fitness functions) como invariantes universales no negociables. Un Pack puede definir mecanismos de calidad ADICIONALES pero no puede reducir el minimo del Kernel. "Ceremonia-agnostico" significa que el Pack elige la ceremonia (sprints, kanban boards, ciclos de Shape Up); "calidad universal" significa que el pipeline de verificacion R/G/R + fitness functions aplica sin excepcion, independientemente de la ceremonia elegida.
+
+> **Clarificacion constitucional (CC-5):** La cadena del TraceabilityGraph (Intencion → decision → trabajo → evidencia) es la realizacion arquitectonica de un puente entre herramientas de gestion de producto (PM) y el codebase. "Intencion" mapea a artefactos de herramientas PM (historias, tickets, epicas en Jira, Azure DevOps, GitLab, etc.); "decision" mapea a documentos de diseno y especificaciones; "trabajo" mapea a cambios de codigo; "evidencia" mapea a resultados de tests y artefactos de verificacion. Este puente — saber QUE trabajar y DONDE en el codebase — constituye la propuesta de valor central de Virgil, reforzada por GP-2: "No basta que el enlace exista; debe ser fuerte."
 
 ---
 
@@ -1017,6 +1025,8 @@ flowchart TD
     style EXT fill:#777,stroke:#333,color:#fff
     style EXTERNOS fill:#777,stroke:#333,color:#fff
 ```
+
+> **Clarificacion constitucional (CC-2):** Los adapters externos del ArtifactStoreAdapter (Jira, Confluence, Azure DevOps, GitLab, GitHub Projects, Basecamp, y otros que cumplan el contrato de adapter) son puntos de extension de primera clase, no funcionalidades provisionales. La marca "TBD" en el diagrama anterior refiere al estado de implementacion, no a la prioridad estrategica. El contrato de adapter es la interfaz universal; repo-docs es el default sin dependencias externas. Lo que se conecte, se conecta, mientras cumpla con el contrato del adapter — sin importar cuantos adapters existan implementados hoy.
 
 ### 8b. Separacion de namespaces
 
