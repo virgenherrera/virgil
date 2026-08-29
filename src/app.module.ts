@@ -6,12 +6,16 @@ import { DogmaLocalConfig } from "./providers/dogma/local/dogma-local.config.js"
 import { DogmaLocalModule } from "./providers/dogma/local/dogma-local.module.js";
 import { GithubWikiConfig } from "./providers/dogma/github-wiki/github-wiki.config.js";
 import { GithubWikiModule } from "./providers/dogma/github-wiki/github-wiki.module.js";
+import { ConfluenceConfig } from "./providers/dogma/confluence/confluence.config.js";
+import { ConfluenceModule } from "./providers/dogma/confluence/confluence.module.js";
 import { JiraConfig } from "./providers/ticket/jira/jira.config.js";
 import { JiraModule } from "./providers/ticket/jira/jira.module.js";
 import { GithubIssuesConfig } from "./providers/ticket/github/github-issues.config.js";
 import { GithubIssuesModule } from "./providers/ticket/github/github-issues.module.js";
 import { OrgLocalConfig } from "./providers/org/local/org-local.config.js";
 import { OrgLocalModule } from "./providers/org/local/org-local.module.js";
+import { GithubOrgConfig } from "./providers/org/github/github-org.config.js";
+import { GithubOrgModule } from "./providers/org/github/github-org.module.js";
 import { SourceCodeLocalConfig } from "./providers/sourcecode/local/sourcecode-local.config.js";
 import { SourceCodeLocalModule } from "./providers/sourcecode/local/sourcecode-local.module.js";
 import { RefResolverModule } from "./domain/ref-resolver.module.js";
@@ -30,6 +34,7 @@ import { HandoffCreateCommand } from "./commands/handoff-create.command.js";
 import { HandoffListCommand } from "./commands/handoff-list.command.js";
 import { HandoffShowCommand } from "./commands/handoff-show.command.js";
 import { HandoffTransitionCommand } from "./commands/handoff-transition.command.js";
+import { HandoffPhaseCommand } from "./commands/handoff-phase.command.js";
 import { AuditCommand } from "./commands/audit.command.js";
 import { LedgerCommand } from "./commands/ledger.command.js";
 import { WatchCommand } from "./commands/watch.command.js";
@@ -43,7 +48,9 @@ import { BriefCommand } from "./commands/brief.command.js";
       GithubWikiConfig,
       JiraConfig,
       GithubIssuesConfig,
+      ConfluenceConfig,
       OrgLocalConfig,
+      GithubOrgConfig,
       SourceCodeLocalConfig,
       SlackConfig,
     ]),
@@ -51,9 +58,11 @@ import { BriefCommand } from "./commands/brief.command.js";
     ProviderRegistryModule,
     DogmaLocalModule.registerIfConfigured(),
     GithubWikiModule.registerIfConfigured(),
+    ConfluenceModule.registerIfConfigured(),
     JiraModule.registerIfConfigured(),
     GithubIssuesModule.registerIfConfigured(),
     OrgLocalModule.registerIfConfigured(),
+    GithubOrgModule.registerIfConfigured(),
     SourceCodeLocalModule.registerIfConfigured(),
     SlackModule.registerIfConfigured(),
     RefResolverModule,
@@ -72,6 +81,7 @@ import { BriefCommand } from "./commands/brief.command.js";
     HandoffListCommand,
     HandoffShowCommand,
     HandoffTransitionCommand,
+    HandoffPhaseCommand,
     AuditCommand,
     LedgerCommand,
     WatchCommand,
