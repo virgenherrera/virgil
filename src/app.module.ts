@@ -20,6 +20,7 @@ import { ReactiveModule } from "./reactive/reactive.module.js";
 import { SlackConfig } from "./providers/chat/slack/slack.config.js";
 import { SlackModule } from "./providers/chat/slack/slack.module.js";
 import { ProactiveModule } from "./proactive/proactive.module.js";
+import { BriefModule } from "./brief/brief.module.js";
 import { StatusCommand } from "./commands/status.command.js";
 import { ContextCommand } from "./commands/context.command.js";
 import { HandoffCommand } from "./commands/handoff.command.js";
@@ -31,6 +32,7 @@ import { AuditCommand } from "./commands/audit.command.js";
 import { LedgerCommand } from "./commands/ledger.command.js";
 import { WatchCommand } from "./commands/watch.command.js";
 import { InsightsCommand } from "./commands/insights.command.js";
+import { BriefCommand } from "./commands/brief.command.js";
 
 @Module({
   imports: [
@@ -56,6 +58,7 @@ import { InsightsCommand } from "./commands/insights.command.js";
     AuditModule,
     ReactiveModule,
     ProactiveModule,
+    BriefModule,
   ],
   providers: [
     StatusCommand,
@@ -69,6 +72,7 @@ import { InsightsCommand } from "./commands/insights.command.js";
     LedgerCommand,
     WatchCommand,
     InsightsCommand,
+    BriefCommand,
   ],
 })
 export class AppModule {}
