@@ -4,6 +4,8 @@ import { CapabilityRegistryModule } from "./capabilities/capability-registry.mod
 import { ProviderRegistryModule } from "./providers/provider-registry.module.js";
 import { DogmaLocalConfig } from "./providers/dogma/local/dogma-local.config.js";
 import { DogmaLocalModule } from "./providers/dogma/local/dogma-local.module.js";
+import { GithubWikiConfig } from "./providers/dogma/github-wiki/github-wiki.config.js";
+import { GithubWikiModule } from "./providers/dogma/github-wiki/github-wiki.module.js";
 import { JiraConfig } from "./providers/ticket/jira/jira.config.js";
 import { JiraModule } from "./providers/ticket/jira/jira.module.js";
 import { GithubIssuesConfig } from "./providers/ticket/github/github-issues.config.js";
@@ -38,6 +40,7 @@ import { BriefCommand } from "./commands/brief.command.js";
   imports: [
     AppConfigModule.forRoot([
       DogmaLocalConfig,
+      GithubWikiConfig,
       JiraConfig,
       GithubIssuesConfig,
       OrgLocalConfig,
@@ -47,6 +50,7 @@ import { BriefCommand } from "./commands/brief.command.js";
     CapabilityRegistryModule,
     ProviderRegistryModule,
     DogmaLocalModule.registerIfConfigured(),
+    GithubWikiModule.registerIfConfigured(),
     JiraModule.registerIfConfigured(),
     GithubIssuesModule.registerIfConfigured(),
     OrgLocalModule.registerIfConfigured(),
