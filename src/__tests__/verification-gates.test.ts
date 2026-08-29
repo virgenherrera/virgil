@@ -75,7 +75,10 @@ describe("verification gates", () => {
         typeof cmd === "string" &&
         (cmd.includes("vitest") ||
           cmd.includes("npm audit") ||
-          cmd.includes("tsc --noEmit"))
+          cmd.includes("npm outdated") ||
+          cmd.includes("tsc --noEmit") ||
+          cmd.includes("eslint") ||
+          cmd.includes("madge"))
       ) {
         return handler(cmd, opts);
       }
@@ -343,6 +346,192 @@ describe("verification gates", () => {
       expect(checkNames).toContain("line-count");
       expect(checkNames).toContain("conflict-markers");
       expect(checkNames).toContain("agent-output");
+    });
+  });
+
+  describe("complexity check", () => {
+    it("passes when no functions exceed threshold", async () => {
+      process.env.VIRGIL_MAX_COMPLEXITY = "15";
+      try {
+        await buildModule();
+
+        const meta = await createHandoffInExecution("VG-CX-1");
+        writeAgentOutput(meta.id);
+
+        stubVerificationCommand((cmd) => {
+          if (cmd.includes("eslint")) {
+            return JSON.stringify([
+              { filePath: "src/foo.ts", errorCount: 0, warningCount: 0, messages: [] },
+            ]);
+          }
+          return "";
+        });
+
+        await stateMachine.transition(meta.id, "verify");
+        const result = await auditService.audit(meta.id);
+
+        const check = result.checks.find((c) => c.name === "complexity");
+        expect(check).toBeDefined();
+        expect(check!.passed).toBe(true);
+        expect(check!.message).toContain("No functions exceed complexity threshold 15");
+      } finally {
+        delete process.env.VIRGIL_MAX_COMPLEXITY;
+      }
+    });
+
+    it("fails when functions exceed threshold", async () => {
+      process.env.VIRGIL_MAX_COMPLEXITY = "10";
+      try {
+        await buildModule();
+
+        const meta = await createHandoffInExecution("VG-CX-2");
+        writeAgentOutput(meta.id);
+
+        stubVerificationCommand((cmd) => {
+          if (cmd.includes("eslint")) {
+            return JSON.stringify([
+              { filePath: "src/foo.ts", errorCount: 2, warningCount: 0, messages: [] },
+              { filePath: "src/bar.ts", errorCount: 1, warningCount: 0, messages: [] },
+            ]);
+          }
+          return "";
+        });
+
+        await stateMachine.transition(meta.id, "verify");
+        const result = await auditService.audit(meta.id);
+
+        const check = result.checks.find((c) => c.name === "complexity");
+        expect(check).toBeDefined();
+        expect(check!.passed).toBe(false);
+        expect(check!.message).toContain("3 function(s) exceed complexity threshold 10");
+        expect(check!.gapType).toBe("contract");
+      } finally {
+        delete process.env.VIRGIL_MAX_COMPLEXITY;
+      }
+    });
+  });
+
+  describe("circular-deps check", () => {
+    it("passes with no circular dependencies", async () => {
+      process.env.VIRGIL_CHECK_CIRCULAR_DEPS = "true";
+      try {
+        await buildModule();
+
+        const meta = await createHandoffInExecution("VG-CD-1");
+        writeAgentOutput(meta.id);
+
+        stubVerificationCommand((cmd) => {
+          if (cmd.includes("madge")) {
+            return JSON.stringify([]);
+          }
+          return "";
+        });
+
+        await stateMachine.transition(meta.id, "verify");
+        const result = await auditService.audit(meta.id);
+
+        const check = result.checks.find((c) => c.name === "circular-deps");
+        expect(check).toBeDefined();
+        expect(check!.passed).toBe(true);
+        expect(check!.message).toContain("No circular dependencies found");
+      } finally {
+        delete process.env.VIRGIL_CHECK_CIRCULAR_DEPS;
+      }
+    });
+
+    it("fails with circular dependencies found", async () => {
+      process.env.VIRGIL_CHECK_CIRCULAR_DEPS = "true";
+      try {
+        await buildModule();
+
+        const meta = await createHandoffInExecution("VG-CD-2");
+        writeAgentOutput(meta.id);
+
+        stubVerificationCommand((cmd) => {
+          if (cmd.includes("madge")) {
+            return JSON.stringify([
+              ["src/a.ts", "src/b.ts", "src/a.ts"],
+              ["src/c.ts", "src/d.ts", "src/c.ts"],
+            ]);
+          }
+          return "";
+        });
+
+        await stateMachine.transition(meta.id, "verify");
+        const result = await auditService.audit(meta.id);
+
+        const check = result.checks.find((c) => c.name === "circular-deps");
+        expect(check).toBeDefined();
+        expect(check!.passed).toBe(false);
+        expect(check!.message).toContain("2 circular dependency chain(s) found");
+        expect(check!.gapType).toBe("contract");
+      } finally {
+        delete process.env.VIRGIL_CHECK_CIRCULAR_DEPS;
+      }
+    });
+  });
+
+  describe("outdated-deps check", () => {
+    it("passes when major-outdated within limit", async () => {
+      process.env.VIRGIL_MAX_MAJOR_OUTDATED = "1";
+      try {
+        await buildModule();
+
+        const meta = await createHandoffInExecution("VG-OD-1");
+        writeAgentOutput(meta.id);
+
+        stubVerificationCommand((cmd) => {
+          if (cmd.includes("npm outdated")) {
+            return JSON.stringify({
+              "some-pkg": { current: "2.1.0", wanted: "2.3.0", latest: "2.5.0" },
+              "minor-pkg": { current: "1.0.0", wanted: "1.2.0", latest: "1.5.0" },
+            });
+          }
+          return "";
+        });
+
+        await stateMachine.transition(meta.id, "verify");
+        const result = await auditService.audit(meta.id);
+
+        const check = result.checks.find((c) => c.name === "outdated-deps");
+        expect(check).toBeDefined();
+        expect(check!.passed).toBe(true);
+        expect(check!.message).toContain("0 major-outdated packages (max: 1)");
+      } finally {
+        delete process.env.VIRGIL_MAX_MAJOR_OUTDATED;
+      }
+    });
+
+    it("fails when major-outdated exceeds limit", async () => {
+      process.env.VIRGIL_MAX_MAJOR_OUTDATED = "0";
+      try {
+        await buildModule();
+
+        const meta = await createHandoffInExecution("VG-OD-2");
+        writeAgentOutput(meta.id);
+
+        stubVerificationCommand((cmd) => {
+          if (cmd.includes("npm outdated")) {
+            return JSON.stringify({
+              "old-pkg": { current: "1.0.0", wanted: "1.2.0", latest: "3.0.0" },
+              "another-old": { current: "2.0.0", wanted: "2.1.0", latest: "4.0.0" },
+              "fine-pkg": { current: "5.0.0", wanted: "5.1.0", latest: "5.2.0" },
+            });
+          }
+          return "";
+        });
+
+        await stateMachine.transition(meta.id, "verify");
+        const result = await auditService.audit(meta.id);
+
+        const check = result.checks.find((c) => c.name === "outdated-deps");
+        expect(check).toBeDefined();
+        expect(check!.passed).toBe(false);
+        expect(check!.message).toContain("2 major-outdated packages exceeds limit of 0");
+        expect(check!.gapType).toBe("compliance");
+      } finally {
+        delete process.env.VIRGIL_MAX_MAJOR_OUTDATED;
+      }
     });
   });
 

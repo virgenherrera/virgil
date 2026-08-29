@@ -29,6 +29,9 @@ const CHECK_GAP_MAP: Record<string, GapType> = {
   coverage: GAP_TYPE.TESTING,
   "npm-audit": GAP_TYPE.COMPLIANCE,
   "type-check": GAP_TYPE.CONTRACT,
+  complexity: GAP_TYPE.CONTRACT,
+  "circular-deps": GAP_TYPE.CONTRACT,
+  "outdated-deps": GAP_TYPE.COMPLIANCE,
 };
 
 @Injectable()
@@ -89,6 +92,22 @@ export class AuditService {
 
       if (this.verificationConfig.typeCheck) {
         checks.push(this.checkTypeCheck(repo.repoPath));
+      }
+
+      if (this.verificationConfig.maxComplexity !== undefined) {
+        checks.push(
+          this.checkComplexity(repo.repoPath, this.verificationConfig.maxComplexity),
+        );
+      }
+
+      if (this.verificationConfig.checkCircularDeps) {
+        checks.push(this.checkCircularDeps(repo.repoPath));
+      }
+
+      if (this.verificationConfig.maxMajorOutdated !== undefined) {
+        checks.push(
+          this.checkOutdatedDeps(repo.repoPath, this.verificationConfig.maxMajorOutdated),
+        );
       }
     }
 
@@ -407,6 +426,112 @@ export class AuditService {
         name: "type-check",
         passed: false,
         message: `${errorCount || "Unknown number of"} type error(s) found`,
+      };
+    }
+  }
+
+  private checkComplexity(repoPath: string, maxComplexity: number): AuditCheck {
+    try {
+      const output = execSync(
+        `npx eslint --rule 'complexity: [error, {max: ${maxComplexity}}]' --format json --no-eslintrc src/ 2>/dev/null || true`,
+        { cwd: repoPath, encoding: "utf-8", timeout: 120000 },
+      );
+      const results = JSON.parse(output);
+      const errorCount = Array.isArray(results)
+        ? results.reduce((sum: number, file: any) => sum + file.errorCount, 0)
+        : 0;
+
+      if (errorCount === 0) {
+        return {
+          name: "complexity",
+          passed: true,
+          message: `No functions exceed complexity threshold ${maxComplexity}`,
+        };
+      }
+      return {
+        name: "complexity",
+        passed: false,
+        message: `${errorCount} function(s) exceed complexity threshold ${maxComplexity}`,
+      };
+    } catch {
+      return {
+        name: "complexity",
+        passed: true,
+        message: "Complexity check skipped: tool unavailable",
+      };
+    }
+  }
+
+  private checkCircularDeps(repoPath: string): AuditCheck {
+    try {
+      const output = execSync("npx madge --circular --json src/", {
+        cwd: repoPath,
+        encoding: "utf-8",
+        timeout: 120000,
+      });
+      const cycles = JSON.parse(output);
+
+      if (!Array.isArray(cycles) || cycles.length === 0) {
+        return {
+          name: "circular-deps",
+          passed: true,
+          message: "No circular dependencies found",
+        };
+      }
+      return {
+        name: "circular-deps",
+        passed: false,
+        message: `${cycles.length} circular dependency chain(s) found`,
+      };
+    } catch {
+      return {
+        name: "circular-deps",
+        passed: true,
+        message: "Circular dependency check skipped: tool unavailable",
+      };
+    }
+  }
+
+  private checkOutdatedDeps(
+    repoPath: string,
+    maxMajorOutdated: number,
+  ): AuditCheck {
+    try {
+      const output = execSync("npm outdated --json 2>/dev/null || true", {
+        cwd: repoPath,
+        encoding: "utf-8",
+        timeout: 60000,
+      });
+      const outdated = JSON.parse(output || "{}");
+      let majorCount = 0;
+
+      for (const [, info] of Object.entries(outdated)) {
+        const pkg = info as { current: string; latest: string };
+        const currentMajor = parseInt(
+          (pkg.current ?? "0").split(".")[0]!,
+          10,
+        );
+        const latestMajor = parseInt((pkg.latest ?? "0").split(".")[0]!, 10);
+        if (latestMajor > currentMajor) majorCount++;
+      }
+
+      if (majorCount <= maxMajorOutdated) {
+        return {
+          name: "outdated-deps",
+          passed: true,
+          message: `${majorCount} major-outdated packages (max: ${maxMajorOutdated})`,
+        };
+      }
+      return {
+        name: "outdated-deps",
+        passed: false,
+        message: `${majorCount} major-outdated packages exceeds limit of ${maxMajorOutdated}`,
+      };
+    } catch {
+      return {
+        name: "outdated-deps",
+        passed: true,
+        message: "Outdated dependency check skipped: tool unavailable",
       };
     }
   }

@@ -1,6 +1,10 @@
 import { Inject } from "@nestjs/common";
-import { Command, CommandRunner } from "nest-commander";
+import { Command, CommandRunner, Option } from "nest-commander";
 import { AuditService } from "../audit/audit.service.js";
+
+interface AuditOptions {
+  readonly verbose?: boolean;
+}
 
 @Command({
   name: "audit",
@@ -15,7 +19,7 @@ export class AuditCommand extends CommandRunner {
     super();
   }
 
-  async run(args: string[]): Promise<void> {
+  async run(args: string[], options?: AuditOptions): Promise<void> {
     const handoffId = args[0];
     if (!handoffId) {
       console.error("Usage: virgil audit <handoff-id>");
@@ -23,7 +27,9 @@ export class AuditCommand extends CommandRunner {
     }
 
     try {
+      const start = Date.now();
       const result = await this.auditService.audit(handoffId);
+      const elapsed = Date.now() - start;
 
       const verdictLabel =
         result.verdict === "PASS"
@@ -36,11 +42,19 @@ export class AuditCommand extends CommandRunner {
       console.log("=".repeat(40));
       console.log(`  Verdict: ${verdictLabel}`);
       console.log(`  Audited: ${result.auditedAt}`);
+
+      if (options?.verbose) {
+        console.log(`  Execution time: ${elapsed}ms`);
+      }
+
       console.log(`\n  Checks:`);
 
       for (const check of result.checks) {
         const icon = check.passed ? "PASS" : "FAIL";
         console.log(`    [${icon}] ${check.name}: ${check.message}`);
+        if (options?.verbose) {
+          console.log(`      Detailed: ${check.passed ? "passed" : "failed"} - ${check.message}`);
+        }
       }
 
       console.log("");
@@ -49,5 +63,10 @@ export class AuditCommand extends CommandRunner {
         `Failed to audit handoff: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
+  }
+
+  @Option({ flags: "--verbose", description: "Show detailed diagnostic output" })
+  parseVerbose(): boolean {
+    return true;
   }
 }

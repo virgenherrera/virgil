@@ -41,7 +41,13 @@ import { WatchCommand } from "./commands/watch.command.js";
 import { InsightsCommand } from "./commands/insights.command.js";
 import { BriefCommand } from "./commands/brief.command.js";
 import { InitCommand } from "./commands/init.command.js";
+import { DoctorCommand } from "./commands/doctor.command.js";
+import { VersionCommand } from "./commands/version.command.js";
 import { VerificationGatesConfig } from "./config/verification-gates.config.js";
+import { TeamsConfig } from "./providers/chat/teams/teams.config.js";
+import { TeamsModule } from "./providers/chat/teams/teams.module.js";
+import { AzdoConfig } from "./providers/ticket/azdo/azdo.config.js";
+import { AzdoModule } from "./providers/ticket/azdo/azdo.module.js";
 
 @Module({
   imports: [
@@ -55,6 +61,8 @@ import { VerificationGatesConfig } from "./config/verification-gates.config.js";
       GithubOrgConfig,
       SourceCodeLocalConfig,
       SlackConfig,
+      TeamsConfig,
+      AzdoConfig,
       VerificationGatesConfig,
     ]),
     CapabilityRegistryModule,
@@ -68,6 +76,8 @@ import { VerificationGatesConfig } from "./config/verification-gates.config.js";
     GithubOrgModule.registerIfConfigured(),
     SourceCodeLocalModule.registerIfConfigured(),
     SlackModule.registerIfConfigured(),
+    TeamsModule.registerIfConfigured(),
+    AzdoModule.registerIfConfigured(),
     RefResolverModule,
     LedgerModule,
     HandoffModule,
@@ -91,6 +101,8 @@ import { VerificationGatesConfig } from "./config/verification-gates.config.js";
     InsightsCommand,
     BriefCommand,
     InitCommand,
+    DoctorCommand,
+    VersionCommand,
   ],
 })
 export class AppModule {}

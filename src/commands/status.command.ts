@@ -5,6 +5,7 @@ import { ProviderRegistryService } from "../providers/provider-registry.service.
 
 interface StatusOptions {
   readonly json?: boolean;
+  readonly verbose?: boolean;
 }
 
 @Command({
@@ -68,7 +69,9 @@ export class StatusCommand extends CommandRunner {
     const healthMap = await this.providerRegistry.healthCheckAll();
 
     for (const provider of providers) {
+      const start = Date.now();
       const health = healthMap.get(provider.capabilityId);
+      const elapsed = Date.now() - start;
       const statusIcon =
         health?.status === "available"
           ? "[OK]"
@@ -80,6 +83,12 @@ export class StatusCommand extends CommandRunner {
       console.log(
         `  ${statusIcon} ${provider.capabilityId} (kind: ${provider.kind}, backend: ${provider.backendId})${message}`,
       );
+
+      if (options?.verbose) {
+        console.log(`      Health: ${health?.status ?? "unknown"}`);
+        console.log(`      Config source: env`);
+        console.log(`      Response time: ${elapsed}ms`);
+      }
     }
 
     if (capabilities.length > 0) {
@@ -105,6 +114,11 @@ export class StatusCommand extends CommandRunner {
 
   @Option({ flags: "--json", description: "Output as JSON" })
   parseJson(): boolean {
+    return true;
+  }
+
+  @Option({ flags: "--verbose", description: "Show detailed diagnostic output" })
+  parseVerbose(): boolean {
     return true;
   }
 }

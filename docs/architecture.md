@@ -149,6 +149,8 @@ entry. This is the graceful degradation pattern.
 | `ConfluenceService` | `dogma` | `confluence` | Snapshot | Confluence REST API (pages, search) |
 | `GithubOrgService` | `org` | `github` | Snapshot | GitHub REST API (org members) |
 | `SlackReaderService` | `chat` | `slack` | Snapshot | Slack API (channels, messages) |
+| `TeamsReaderService` | `chat` | `teams` | Snapshot | MS Graph API (channels, messages) |
+| `AzdoReaderService` | `ticket` | `azdo` | Snapshot | Azure DevOps REST API (work items, WIQL) |
 
 ### ProviderRegistry and CapabilityRegistry
 
@@ -175,6 +177,8 @@ Examples:
 - `org://github/octocat`
 - `sourcecode://local/my-repo`
 - `chat://slack/C04ABC123/1234567890.123456`
+- `chat://teams/{channelId}/{messageId}`
+- `ticket://azdo/{workItemId}`
 
 Five valid kinds: `dogma`, `ticket`, `org`, `sourcecode`, `chat`.
 
@@ -259,7 +263,7 @@ shows the current phase.
 
 ## Audit System
 
-`AuditService` runs 6 guardrail checks plus 3 optional verification gates
+`AuditService` runs 6 guardrail checks plus 6 optional verification gates
 against the constraints defined in `META.json`:
 
 | Check | What It Validates | Gap Type on Failure |
@@ -273,8 +277,11 @@ against the constraints defined in `META.json`:
 | `coverage` | Statement coverage meets `VIRGIL_COVERAGE_THRESHOLD` | `TESTING` |
 | `npm-audit` | Critical+high CVEs within `VIRGIL_MAX_CRITICAL_CVES` | `COMPLIANCE` |
 | `type-check` | `tsc --noEmit` reports zero errors | `CONTRACT` |
+| `complexity` | No functions exceed `VIRGIL_MAX_COMPLEXITY` threshold | `CONTRACT` |
+| `circular-deps` | No circular dependency chains found | `CONTRACT` |
+| `outdated-deps` | Major-outdated packages within `VIRGIL_MAX_MAJOR_OUTDATED` | `COMPLIANCE` |
 
-The last 3 checks are **verification gates** -- they only run when their
+The last 6 checks are **verification gates** -- they only run when their
 respective env var is set. If the external tool is unavailable, the check
 passes with a "skipped" message (graceful degradation).
 
@@ -504,8 +511,14 @@ bootstrap the full NestJS application with real service wiring.
 | `verification-gates.test.ts` | 9 | Coverage, npm-audit, type-check gates; gating logic; recommendation routing |
 | `config-file.test.ts` | 9 | YAML/JSON loading, env precedence, VIRGIL_ filtering, type coercion |
 | `init-command.test.ts` | 2 | Template creation, no-overwrite safety |
+| `teams-provider.test.ts` | 8 | Teams config states, health, snapshots, refs |
+| `azdo-provider.test.ts` | 8 | Azure DevOps config states, health, snapshots, refs |
+| `cli-polish.test.ts` | 15 | Verbose flags, doctor, version, error formatter |
+| `e2e-multi-provider.test.ts` | 4 | Multi-provider registration, isolation, ref dispatch |
+| `e2e-cli-commands.test.ts` | 5 | Status, handoff create, audit, brief CLI commands |
+| `e2e-handoff-lifecycle.test.ts` | 3 | Full lifecycle, re-delegation, break-glass |
 
-139 test scenarios total across 17 test files. Filterable by test name via Vitest.
+188 test scenarios total across 23 test files. Filterable by test name via Vitest.
 
 ## Module Wiring
 
@@ -514,7 +527,7 @@ bootstrap the full NestJS application with real service wiring.
 1. `AppConfigModule.forRoot([...configs])` -- loads all provider configs from env
 2. `CapabilityRegistryModule` (global) -- status tracking
 3. `ProviderRegistryModule` (global) -- runtime provider lookup
-4. Provider modules (`DogmaLocal`, `GithubWiki`, `Confluence`, `Jira`, `GithubIssues`, `OrgLocal`, `GithubOrg`, `SourceCodeLocal`, `Slack`) -- each via `registerIfConfigured()`. `VerificationGatesConfig` also loaded here.
+4. Provider modules (`DogmaLocal`, `GithubWiki`, `Confluence`, `Jira`, `GithubIssues`, `OrgLocal`, `GithubOrg`, `SourceCodeLocal`, `Slack`, `Teams`, `AzDO`) -- each via `registerIfConfigured()`. `VerificationGatesConfig` also loaded here.
 5. `RefResolverModule` -- cross-provider ref resolution
 6. `LedgerModule` -- append-only event log
 7. `HandoffModule` -- handoff creation + state machine
@@ -526,7 +539,9 @@ bootstrap the full NestJS application with real service wiring.
 CLI commands (`StatusCommand`, `ContextCommand`, `HandoffCommand` with
 subcommands `create/list/show/transition/phase`, `AuditCommand`,
 `LedgerCommand`, `WatchCommand`, `InsightsCommand`, `BriefCommand`,
-`InitCommand`) are registered as providers in `AppModule` directly.
+`InitCommand`, `DoctorCommand`, `VersionCommand`) are registered as
+providers in `AppModule` directly. `status`, `context`, and `audit`
+support `--verbose` for diagnostic output.
 
 ## Config File
 

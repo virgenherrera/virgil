@@ -5,18 +5,21 @@ current implementation. Not a normative document.
 
 ## Current State
 
-Virgil is a functional TypeScript CLI with 9 provider integrations
+Virgil is a functional TypeScript CLI with 11 provider integrations
 (dogma-local, dogma-github-wiki, dogma-confluence, ticket-jira,
-ticket-github, org-local, org-github, sourcecode-local, chat-slack),
+ticket-github, ticket-azdo, org-local, org-github, sourcecode-local,
+chat-slack, chat-teams),
 a brief generation pipeline (RAG phases 1+2), execution sub-phases,
-a complete handoff lifecycle, mechanical verification gates,
-config file support, and 139 app-level tests. The implementation lives
-on `integration/virgil-cli`.
+a complete handoff lifecycle, mechanical verification gates (6 optional
+checks), config file support, E2E test infrastructure, CLI polish
+(doctor, version, --verbose, error formatter), and 188 app-level tests.
+The implementation lives on `integration/virgil-cli`.
 
 ### Commit History (integration branch)
 
 ```
-(pending) feat: verification gates + config file + init command
+(pending) feat: Teams + AzDO providers, adv. gates, E2E tests, CLI polish
+1d5c0dc feat: verification gates + config file + init command
 5755a24 docs: update for Confluence, GitHub Org, execution sub-phases
 f6167a3 feat: wire Confluence + GitHub Org providers + phase command
 e713d24 feat: GitHub Org provider (members via REST API)
@@ -184,31 +187,66 @@ d247b6f docs: add AGENTS.md and AGENTS-DEV.md
 - `virgil init` generates template with all known vars commented out
 - Config files added to `.gitignore` (may contain secrets)
 
+### Microsoft Teams Provider
+
+- `TeamsReaderService`: SnapshotProviderPort<ChatSnapshot> via MS Graph API
+- `TeamsHttpClientService`: native fetch, Bearer auth, rate-limit retry
+- Config: VIRGIL_TEAMS_TOKEN, VIRGIL_TEAMS_TEAM_ID, VIRGIL_TEAMS_CHANNEL_IDS
+- Semantic refs: `chat://teams/{channelId}/{messageId}`
+- Reuses ChatSnapshot/ChatChannel/ChatMessage types from Slack
+
+### Azure DevOps Provider
+
+- `AzdoReaderService`: SnapshotProviderPort<AzdoWorkItemSnapshot> via Azure DevOps REST API
+- `AzdoHttpClientService`: native fetch, Basic auth (PAT), api-version=7.1, rate-limit retry
+- Config: VIRGIL_AZDO_ORG_URL, VIRGIL_AZDO_PROJECT, VIRGIL_AZDO_PAT
+- WIQL POST query for work item discovery, batch GET for details
+- Semantic refs: `ticket://azdo/{workItemId}`
+
+### Advanced Verification Gates
+
+- 3 additional optional audit checks: `complexity` (cyclomatic via eslint), `circular-deps` (via madge), `outdated-deps` (major-version via npm outdated)
+- Gated by env vars: VIRGIL_MAX_COMPLEXITY, VIRGIL_CHECK_CIRCULAR_DEPS, VIRGIL_MAX_MAJOR_OUTDATED
+- Total: 6 verification gates + 6 guardrail checks = 12 audit checks
+
+### E2E Test Infrastructure
+
+- Shared `stubFetch`/`stubFetchSequence` helpers (e2e-helpers.ts)
+- Multi-provider integration tests (registration, isolation, ref dispatch)
+- CLI command E2E tests (status, handoff create, audit, brief)
+- Full handoff lifecycle tests (create → delivered, re-delegation, break-glass)
+
+### CLI Polish
+
+- `virgil doctor`: system health check (Node.js, config, providers, verification tools)
+- `virgil version`: package version output
+- `--verbose` flag on status, context, audit for diagnostic output
+- `formatError()`: actionable error messages with hints for ConfigurationError and ProviderError
+
 ### App-Level Test Suite
 
-- 17 test files, 139 scenarios
+- 23 test files, 188 scenarios
 - Zero mocks -- full NestJS application bootstrap
-- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights, GitHub Issues, brief generation, GitHub Wiki, brief query + drift, JSON output, Confluence, execution sub-phases, GitHub Org, verification gates, config file, init command
+- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights, GitHub Issues, brief generation, GitHub Wiki, brief query + drift, JSON output, Confluence, execution sub-phases, GitHub Org, verification gates, config file, init command, Teams, AzDO, CLI polish, E2E multi-provider, E2E CLI commands, E2E handoff lifecycle
 - Filterable by test name via Vitest
 
 ## Next Steps (Priority Order)
 
 1. **Additional providers** -- extend the provider plugin pattern to more
    backends:
-   - Microsoft Teams (chat kind)
-   - Azure DevOps (ticket kind)
+   - Linear (ticket kind)
+   - Notion (dogma kind)
 
 2. **Advanced verification gates** -- extend audit checks with:
-   - Mutation score
-   - CRAP index
-   - Cyclomatic complexity
+   - Mutation score (Stryker)
+   - CRAP index (complexity × coverage)
 
-3. **E2E tests** -- multi-service integration scenarios per the principia
-   testing matrix. Currently all tests are app-level; E2E would exercise
-   real provider backends (Jira, Slack, Confluence) in a controlled environment.
+3. **Real-backend E2E tests** -- exercise real provider backends
+   (Jira, Slack, Confluence, GitHub) with test credentials in a
+   controlled environment (Docker Compose or test accounts).
 
-4. **CLI polish** -- shell completions, better error messages, `--verbose`
-   flag for diagnostic output.
+4. **Shell completions** -- generate bash/zsh completions for all
+   commands and options.
 
 ## Non-Goals for V1
 
