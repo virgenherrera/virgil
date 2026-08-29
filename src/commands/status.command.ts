@@ -1,7 +1,11 @@
 import { Inject } from "@nestjs/common";
-import { Command, CommandRunner } from "nest-commander";
+import { Command, CommandRunner, Option } from "nest-commander";
 import { CapabilityRegistryService } from "../capabilities/capability-registry.service.js";
 import { ProviderRegistryService } from "../providers/provider-registry.service.js";
+
+interface StatusOptions {
+  readonly json?: boolean;
+}
 
 @Command({
   name: "status",
@@ -17,9 +21,36 @@ export class StatusCommand extends CommandRunner {
     super();
   }
 
-  async run(): Promise<void> {
+  async run(_args: string[], options?: StatusOptions): Promise<void> {
     const capabilities = this.capabilityRegistry.list();
     const providers = this.providerRegistry.getAll();
+
+    if (options?.json) {
+      const healthMap = await this.providerRegistry.healthCheckAll();
+
+      const data = {
+        version: "0.1.0",
+        providers: providers.map((p) => {
+          const health = healthMap.get(p.capabilityId);
+          return {
+            capabilityId: p.capabilityId,
+            kind: p.kind,
+            backendId: p.backendId,
+            status: health?.status ?? "unavailable",
+            ...(health?.message ? { message: health.message } : {}),
+          };
+        }),
+        capabilities: capabilities.map((c) => ({
+          id: c.id,
+          description: c.description,
+          status: c.status,
+          refs: c.refs ? [...c.refs] : [],
+        })),
+      };
+
+      console.log(JSON.stringify(data, null, 2));
+      return;
+    }
 
     console.log("Virgil CLI v0.1.0");
     console.log("=================\n");
@@ -70,5 +101,10 @@ export class StatusCommand extends CommandRunner {
         }
       }
     }
+  }
+
+  @Option({ flags: "--json", description: "Output as JSON" })
+  parseJson(): boolean {
+    return true;
   }
 }

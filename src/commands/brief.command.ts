@@ -7,6 +7,7 @@ interface BriefOptions {
   readonly kind?: BriefKind[];
   readonly search?: string;
   readonly checkDrift?: boolean;
+  readonly json?: boolean;
 }
 
 @Command({ name: "brief", description: "Generate or query dogma brief" })
@@ -27,12 +28,17 @@ export class BriefCommand extends CommandRunner {
     if (isQueryMode) {
       await this.runQuery(options!);
     } else {
-      await this.runGenerate();
+      await this.runGenerate(options?.json);
     }
   }
 
-  private async runGenerate(): Promise<void> {
+  private async runGenerate(json?: boolean): Promise<void> {
     const brief = await this.briefGenerator.generate(process.cwd());
+
+    if (json) {
+      console.log(JSON.stringify(brief, null, 2));
+      return;
+    }
 
     console.log(
       `Brief generated: ${brief.stats.totalItems} items from ${brief.stats.totalDocuments} documents`,
@@ -50,7 +56,7 @@ export class BriefCommand extends CommandRunner {
   private async runQuery(options: BriefOptions): Promise<void> {
     const cwd = process.cwd();
 
-    if (options.checkDrift) {
+    if (options.checkDrift && !options.json) {
       const drift = await this.briefQuery.checkDrift(cwd);
       if (drift.drifted) {
         console.log(
@@ -71,6 +77,11 @@ export class BriefCommand extends CommandRunner {
 
       const result = await this.briefQuery.query(cwd, queryOptions);
 
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+        return;
+      }
+
       console.log(
         `\nMatched ${result.stats.matched} of ${result.stats.total} items`,
       );
@@ -89,6 +100,11 @@ export class BriefCommand extends CommandRunner {
           console.log(`    ${item.summary}`);
         }
       }
+    }
+
+    if (options.json && options.checkDrift) {
+      const drift = await this.briefQuery.checkDrift(cwd);
+      console.log(JSON.stringify(drift, null, 2));
     }
   }
 
@@ -114,6 +130,11 @@ export class BriefCommand extends CommandRunner {
     description: "Show drift warning if brief is stale",
   })
   parseCheckDrift(): boolean {
+    return true;
+  }
+
+  @Option({ flags: "--json", description: "Output as JSON" })
+  parseJson(): boolean {
     return true;
   }
 }
