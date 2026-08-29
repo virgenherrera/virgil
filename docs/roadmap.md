@@ -5,15 +5,26 @@ current implementation. Not a normative document.
 
 ## Current State
 
-Virgil is a functional TypeScript CLI with 7 provider integrations
-(dogma-local, dogma-github-wiki, ticket-jira, ticket-github, org-local,
-sourcecode-local, chat-slack), a brief generation pipeline (RAG phase
-1), a complete handoff lifecycle, and 77 app-level tests. The
+Virgil is a functional TypeScript CLI with 9 provider integrations
+(dogma-local, dogma-github-wiki, dogma-confluence, ticket-jira,
+ticket-github, org-local, org-github, sourcecode-local, chat-slack),
+a brief generation pipeline (RAG phases 1+2), execution sub-phases,
+a complete handoff lifecycle, and 119 app-level tests. The
 implementation lives on `integration/virgil-cli`.
 
 ### Commit History (integration branch)
 
 ```
+f6167a3 feat: wire Confluence + GitHub Org providers + phase command
+e713d24 feat: GitHub Org provider (members via REST API)
+2aff924 feat: execution sub-phases (pre-phase → red → green → refactor → verify)
+2b1dab8 feat: Confluence dogma provider (REST API, Basic auth)
+e763d67 docs: update for context-brief, JSON output, and final test counts
+c7e2186 feat: --json output flag for status and brief commands
+79c9fea feat: context command uses classified brief items
+5f57b7c feat: wire brief into handoff context assembly
+4c2fd10 feat: brief query service + drift detection (RAG phase 2)
+c33a404 feat: GitHub Wiki dogma provider (git clone strategy)
 5435882 feat: brief generation pipeline (RAG layer phase 1)
 146ac9e feat: GitHub Issues provider (ticket kind)
 d247b6f docs: add AGENTS.md and AGENTS-DEV.md
@@ -127,39 +138,59 @@ d247b6f docs: add AGENTS.md and AGENTS-DEV.md
 - `virgil brief --json` -- Brief object (generate mode) or BriefQueryResult (query mode)
 - Enables scriptability by other tools and agents
 
+### Confluence Dogma Provider
+
+- `ConfluenceService`: SnapshotProviderPort<DogmaDocument[]> via Confluence REST API
+- `ConfluenceHttpClientService`: native fetch, Basic auth (email:apiToken), rate-limit retry
+- Config: VIRGIL_CONFLUENCE_SITE_URL, VIRGIL_CONFLUENCE_EMAIL, VIRGIL_CONFLUENCE_API_TOKEN, VIRGIL_CONFLUENCE_SPACE_KEY (optional)
+- Semantic refs: `dogma://confluence/{page-id}` → resolves to Confluence web URL
+- HTML-to-text content extraction from Confluence storage format
+- Health check via `/rest/api/user/current`
+
+### GitHub Org Provider
+
+- `GithubOrgService`: SnapshotProviderPort<OrgSnapshot> via GitHub REST API
+- `GithubOrgHttpClientService`: native fetch, Bearer auth, rate-limit + retry
+- Config: VIRGIL_GITHUB_ORG_TOKEN (falls back to VIRGIL_GITHUB_TOKEN), VIRGIL_GITHUB_ORG_NAME, VIRGIL_GITHUB_ORG_API_URL (optional)
+- Semantic refs: `org://github/{login}` → resolves to GitHub profile URL
+- Maps org members to OrgMember (ref, name, role, team)
+
+### Execution Sub-Phases
+
+- `ExecutionTrackerService`: phase tracking within `execution` state
+- Phases: `pre-phase` → `red` → `green` → `refactor` → `verify` (cycles back to `red`)
+- Persisted in META.json as `executionPhase` field
+- Ledger entries for each phase transition
+- CLI: `virgil handoff phase <id> [target]`
+- Does not change the top-level 5-state machine
+
 ### App-Level Test Suite
 
-- 11 test files, 94 scenarios
+- 14 test files, 119 scenarios
 - Zero mocks -- full NestJS application bootstrap
-- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights, GitHub Issues, brief generation, GitHub Wiki, brief query + drift, JSON output
+- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights, GitHub Issues, brief generation, GitHub Wiki, brief query + drift, JSON output, Confluence, execution sub-phases, GitHub Org
 - Filterable by test name via Vitest
 
 ## Next Steps (Priority Order)
 
 1. **Additional providers** -- extend the provider plugin pattern to more
    backends:
-   - Confluence (dogma kind)
    - Microsoft Teams (chat kind)
    - Azure DevOps (ticket kind)
 
-3. **Execution tracking** -- sub-phases within the `execution` state:
-   prePhase -> Red -> Green -> Refactor -> Verify. Finer-grained progress
-   tracking without changing the top-level state machine.
-
-4. **Mechanical verification gates** -- extend audit checks with:
+2. **Mechanical verification gates** -- extend audit checks with:
    - Mutation score
    - CRAP index
    - Cyclomatic complexity
    - CVE scan
    - Coverage thresholds
 
-5. **E2E tests** -- multi-service integration scenarios per the principia
+3. **E2E tests** -- multi-service integration scenarios per the principia
    testing matrix. Currently all tests are app-level; E2E would exercise
-   real provider backends (Jira, Slack) in a controlled environment.
+   real provider backends (Jira, Slack, Confluence) in a controlled environment.
 
-6. **CLI polish** -- better error messages, `--json` output format for
-   scripting, config file support (`.virgilrc` or similar), shell
-   completions.
+4. **CLI polish** -- config file support (`.virgilrc` or similar), shell
+   completions, better error messages.
 
 ## Non-Goals for V1
 

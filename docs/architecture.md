@@ -43,9 +43,12 @@ flowchart TD
 
     subgraph PROVIDERS["Providers (plugin pattern)"]
         DL["DogmaLocal\n(local files)"]
+        GW["GithubWiki\n(git clone)"]
+        CF["Confluence\n(REST API)"]
         JR["JiraReader\n(Jira API)"]
         GH["GithubIssues\n(GitHub API)"]
         OL["OrgLocal\n(JSON/YAML)"]
+        GO["GithubOrg\n(GitHub API)"]
         SC["SourceCodeLocal\n(local git)"]
         SL["SlackReader\n(Slack API)"]
     end
@@ -143,6 +146,8 @@ entry. This is the graceful degradation pattern.
 | `SourceCodeLocalService` | `sourcecode` | `local` | Snapshot + Observable | Local git repos (branch, commits, status) |
 | `GithubIssuesReaderService` | `ticket` | `github` | Snapshot | GitHub REST API (issues, labels, milestones) |
 | `GithubWikiService` | `dogma` | `github-wiki` | Snapshot | GitHub Wiki (git clone of `.wiki.git`) |
+| `ConfluenceService` | `dogma` | `confluence` | Snapshot | Confluence REST API (pages, search) |
+| `GithubOrgService` | `org` | `github` | Snapshot | GitHub REST API (org members) |
 | `SlackReaderService` | `chat` | `slack` | Snapshot | Slack API (channels, messages) |
 
 ### ProviderRegistry and CapabilityRegistry
@@ -163,9 +168,11 @@ URI scheme: `{kind}://{backend}/{id}`
 Examples:
 - `dogma://local/architecture.md`
 - `dogma://github-wiki/Getting-Started.md`
+- `dogma://confluence/12345`
 - `ticket://jira/PROJ-123`
 - `ticket://github/42`
 - `org://local/Jane Doe`
+- `org://github/octocat`
 - `sourcecode://local/my-repo`
 - `chat://slack/C04ABC123/1234567890.123456`
 
@@ -224,6 +231,32 @@ stateDiagram-v2
 All other transitions in the `VALID_TRANSITIONS` map have no preconditions
 (e.g., `handoff` -> `execution` is unconditional).
 
+## Execution Sub-Phases
+
+Finer-grained progress tracking within the `execution` state. Does not change
+the top-level state machine -- this is an overlay tracked in `META.json`.
+
+```mermaid
+stateDiagram-v2
+    [*] --> pre_phase
+    pre_phase --> red
+    red --> green
+    green --> refactor
+    refactor --> verify
+    verify --> red : next iteration
+```
+
+Five phases: `pre-phase` -> `red` -> `green` -> `refactor` -> `verify`.
+The `verify` -> `red` transition allows cycling back for additional iterations.
+
+`ExecutionTrackerService` validates:
+1. Handoff must be in `execution` state.
+2. Target phase must be a valid transition from current phase.
+3. Each transition is recorded in the ledger as a `phase-transition` event.
+
+CLI: `virgil handoff phase <handoff-id> [target-phase]`. Without a target,
+shows the current phase.
+
 ## Audit System
 
 `AuditService` runs 6 automated checks against the guardrails defined in
@@ -279,6 +312,7 @@ Append-only JSONL file at `.virgil/ledger.jsonl`. Records four event types:
 |-------|------|
 | `created` | Handoff created |
 | `transition` | State changed |
+| `phase-transition` | Execution sub-phase changed |
 | `audit` | Audit completed (with verdict) |
 | `break-glass` | Break-glass override activated |
 
@@ -456,8 +490,11 @@ bootstrap the full NestJS application with real service wiring.
 | `github-wiki-provider.test.ts` | 16 | Config states, snapshots, special file filtering, refs, health |
 | `brief-query.test.ts` | 8 | Kind/text/sourceRef filtering, drift detection, maxItems |
 | `json-output.test.ts` | 4 | JSON output for status and brief commands |
+| `confluence-provider.test.ts` | 8 | Confluence config states, health, snapshots, refs |
+| `execution-sub-phases.test.ts` | 9 | Phase transitions, validation, persistence, ledger |
+| `github-org-provider.test.ts` | 8 | GitHub Org config states, health, snapshots, refs, token fallback |
 
-94 test scenarios total. Filterable by test name via Vitest.
+119 test scenarios total across 14 test files. Filterable by test name via Vitest.
 
 ## Module Wiring
 
@@ -466,7 +503,7 @@ bootstrap the full NestJS application with real service wiring.
 1. `AppConfigModule.forRoot([...configs])` -- loads all provider configs from env
 2. `CapabilityRegistryModule` (global) -- status tracking
 3. `ProviderRegistryModule` (global) -- runtime provider lookup
-4. Provider modules (`DogmaLocal`, `GithubWiki`, `Jira`, `GithubIssues`, `OrgLocal`, `SourceCodeLocal`, `Slack`) -- each via `registerIfConfigured()`
+4. Provider modules (`DogmaLocal`, `GithubWiki`, `Confluence`, `Jira`, `GithubIssues`, `OrgLocal`, `GithubOrg`, `SourceCodeLocal`, `Slack`) -- each via `registerIfConfigured()`
 5. `RefResolverModule` -- cross-provider ref resolution
 6. `LedgerModule` -- append-only event log
 7. `HandoffModule` -- handoff creation + state machine
@@ -475,6 +512,7 @@ bootstrap the full NestJS application with real service wiring.
 10. `ProactiveModule` -- insight engine + analyzers
 11. `BriefModule` -- brief generation pipeline
 
-CLI commands (`StatusCommand`, `ContextCommand`, `HandoffCommand`,
-`AuditCommand`, `LedgerCommand`, `WatchCommand`, `InsightsCommand`,
-`BriefCommand`) are registered as providers in `AppModule` directly.
+CLI commands (`StatusCommand`, `ContextCommand`, `HandoffCommand` with
+subcommands `create/list/show/transition/phase`, `AuditCommand`,
+`LedgerCommand`, `WatchCommand`, `InsightsCommand`, `BriefCommand`) are
+registered as providers in `AppModule` directly.
