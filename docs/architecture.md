@@ -44,10 +44,23 @@ flowchart TD
     subgraph PROVIDERS["Providers (plugin pattern)"]
         DL["DogmaLocal\n(local files)"]
         JR["JiraReader\n(Jira API)"]
+        GH["GithubIssues\n(GitHub API)"]
         OL["OrgLocal\n(JSON/YAML)"]
         SC["SourceCodeLocal\n(local git)"]
         SL["SlackReader\n(Slack API)"]
     end
+
+    subgraph RAG["Brief Generation (RAG Phase 1)"]
+        BG["BriefGenerator"]
+        SE["SectionExtractor"]
+        RC["RegexClassifier"]
+        PS["PrivacySummarizer"]
+    end
+
+    BG --> SE
+    BG --> RC
+    BG --> PS
+    BG --> PR
 
     CLI --> CORE
     CORE --> PROVIDERS
@@ -128,6 +141,8 @@ entry. This is the graceful degradation pattern.
 | `JiraReaderService` | `ticket` | `jira` | Snapshot | Jira REST API (boards, sprints, issues) |
 | `OrgLocalService` | `org` | `local` | Snapshot | Local JSON/YAML (team members, roles) |
 | `SourceCodeLocalService` | `sourcecode` | `local` | Snapshot + Observable | Local git repos (branch, commits, status) |
+| `GithubIssuesReaderService` | `ticket` | `github` | Snapshot | GitHub REST API (issues, labels, milestones) |
+| `GithubWikiService` | `dogma` | `github-wiki` | Snapshot | GitHub Wiki (git clone of `.wiki.git`) |
 | `SlackReaderService` | `chat` | `slack` | Snapshot | Slack API (channels, messages) |
 
 ### ProviderRegistry and CapabilityRegistry
@@ -147,7 +162,9 @@ URI scheme: `{kind}://{backend}/{id}`
 
 Examples:
 - `dogma://local/architecture.md`
+- `dogma://github-wiki/Getting-Started.md`
 - `ticket://jira/PROJ-123`
+- `ticket://github/42`
 - `org://local/Jane Doe`
 - `sourcecode://local/my-repo`
 - `chat://slack/C04ABC123/1234567890.123456`
@@ -343,6 +360,37 @@ Event kinds defined: `ticket-updated`, `ticket-created`, `commit-pushed`,
 Each analyzer implements `InsightAnalyzerPort` (name + `analyze()` returning
 `Insight[]`). Insights are sorted by severity: `critical` > `warning` > `info`.
 
+## Brief Generation Pipeline (RAG Phase 1)
+
+Deterministic extraction + classification pipeline over dogma provider snapshots.
+Zero LLM, zero embeddings. Produces a structured brief for agent consumption.
+
+Pipeline: `DogmaSnapshot` -> `extractSections()` -> `classifySection()` ->
+`summarizeSection()` -> `Brief`
+
+### Components
+
+- **SectionExtractor** -- splits markdown documents on headings (`#{1,6}`).
+  Falls back to paragraph splitting on `\n{2,}` for headingless content.
+- **RegexClassifier** -- cascade of regex patterns maps each section to one of
+  6 `BriefKind` values: `risk` > `constraint` > `decision` > `glossary` >
+  `open-question` > `principle` (default).
+- **PrivacyAwareSummarizer** -- cascade of privacy-sensitive regex patterns.
+  Matches for credentials, PII, or sensitive data produce pre-authored safe
+  summary strings. Non-sensitive content gets truncated to 200 chars.
+
+### Output
+
+- `.virgil/brief.json` -- machine-readable: schemaVersion, watermark, items,
+  stats (byKind, totalDocuments, totalItems, durationMs).
+- `.virgil/brief.md` -- human-readable: items sorted by kind (risk first).
+- Watermark tracks the git commit SHA at generation time for drift detection.
+
+### BriefItem Identity
+
+Deterministic hashing: `"brief-" + SHA-256("{sourceRef}:{title}:{index}")[0:12]`.
+Same input always produces the same ID across runs.
+
 ## Two-Layer Architecture
 
 ```mermaid
@@ -375,8 +423,11 @@ bootstrap the full NestJS application with real service wiring.
 | `audit-checks.test.ts` | 26 | All 6 audit checks, verdicts, gap classification |
 | `reactive-events.test.ts` | 6 | Polling loop, cursors, event routing |
 | `proactive-insights.test.ts` | 4 | Insight engine, analyzer registration |
+| `github-issues-provider.test.ts` | 8 | GitHub config states, health, snapshots, refs |
+| `brief-generation.test.ts` | 6 | Classification, privacy summarization, persistence |
+| `github-wiki-provider.test.ts` | 16 | Config states, snapshots, special file filtering, refs, health |
 
-47 test scenarios total. Filterable by test name via Vitest.
+77 test scenarios total. Filterable by test name via Vitest.
 
 ## Module Wiring
 
@@ -385,12 +436,15 @@ bootstrap the full NestJS application with real service wiring.
 1. `AppConfigModule.forRoot([...configs])` -- loads all provider configs from env
 2. `CapabilityRegistryModule` (global) -- status tracking
 3. `ProviderRegistryModule` (global) -- runtime provider lookup
-4. Provider modules (`DogmaLocal`, `Jira`, `OrgLocal`, `SourceCodeLocal`, `Slack`) -- each via `registerIfConfigured()`
+4. Provider modules (`DogmaLocal`, `GithubWiki`, `Jira`, `GithubIssues`, `OrgLocal`, `SourceCodeLocal`, `Slack`) -- each via `registerIfConfigured()`
 5. `RefResolverModule` -- cross-provider ref resolution
 6. `LedgerModule` -- append-only event log
 7. `HandoffModule` -- handoff creation + state machine
 8. `AuditModule` -- guardrail verification
 9. `ReactiveModule` -- polling loop + cursors + event router
 10. `ProactiveModule` -- insight engine + analyzers
+11. `BriefModule` -- brief generation pipeline
 
-CLI commands are registered as providers in `AppModule` directly.
+CLI commands (`StatusCommand`, `ContextCommand`, `HandoffCommand`,
+`AuditCommand`, `LedgerCommand`, `WatchCommand`, `InsightsCommand`,
+`BriefCommand`) are registered as providers in `AppModule` directly.

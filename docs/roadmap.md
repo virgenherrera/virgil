@@ -5,23 +5,20 @@ current implementation. Not a normative document.
 
 ## Current State
 
-Virgil is a functional TypeScript CLI with 5 provider integrations, a
-complete handoff lifecycle, and 47 app-level tests. The implementation
-lives on `feat/virgil-cli`, built incrementally from `0aeb79e` (scaffold)
-through `7203262` (test suite).
+Virgil is a functional TypeScript CLI with 7 provider integrations
+(dogma-local, dogma-github-wiki, ticket-jira, ticket-github, org-local,
+sourcecode-local, chat-slack), a brief generation pipeline (RAG phase
+1), a complete handoff lifecycle, and 77 app-level tests. The
+implementation lives on `integration/virgil-cli`.
 
-### Commit History
+### Commit History (integration branch)
 
 ```
-7203262 test: app-level tests — 47 scenarios, zero mocks, filterable
-522c2c3 feat: principia enforcement — state machine, quality gates, ledger, break-glass
-1bec100 feat(f5): proactive insights + ChatProvider Slack
-26e77a4 feat(f4): reactive polling mode — RxJS events, cursors, EventRouter
-dcc675b feat(f3): org + sourcecode providers, unified RefResolver
-aa9c2a7 feat(f2): handoff generation + audit system
-29aaa20 feat(f1): provider registry + DogmaLocal + Jira providers
-0aeb79e feat: scaffold TypeScript CLI — NestJS standalone + nest-commander
-2572287 chore: pivot to TypeScript CLI — principia to reference, drop MCP docs
+5435882 feat: brief generation pipeline (RAG layer phase 1)
+146ac9e feat: GitHub Issues provider (ticket kind)
+d247b6f docs: add AGENTS.md and AGENTS-DEV.md
+589fd32 docs(principia): align constitution with CLI runtime
+5ed9410 feat: virgil CLI — complete F1-F5 implementation
 ```
 
 ## Completed Phases
@@ -76,25 +73,52 @@ aa9c2a7 feat(f2): handoff generation + audit system
 - `LedgerService`: append-only JSONL (created, transition, audit, break-glass events)
 - Quality gates blocking invalid transitions
 
+### GitHub Issues Provider (Ticket Kind)
+
+- `GithubIssuesReaderService`: SnapshotProviderPort<GithubIssueSnapshot>
+- `GithubHttpClientService`: native fetch, Bearer auth, rate-limit (429 + 403), exponential backoff
+- Config: VIRGIL_GITHUB_TOKEN, VIRGIL_GITHUB_OWNER, VIRGIL_GITHUB_REPO, VIRGIL_GITHUB_API_URL (optional)
+- Semantic refs: `ticket://github/{number}`
+- `resolveRef` returns `html_url`
+
+### Brief Generation Pipeline (RAG Phase 1)
+
+- `BriefGeneratorService`: deterministic extraction + classification pipeline, zero LLM
+- `extractSections()`: markdown heading splitter with paragraph fallback
+- `classifySection()`: regex cascade → 6 BriefKind categories (risk, constraint, decision, glossary, open-question, principle)
+- `summarizeSection()`: privacy-aware summarizer with pre-authored safe strings
+- `BriefItem` IDs: SHA-256 deterministic hashing
+- Watermark: git commit SHA for drift detection
+- Output: .virgil/brief.json + .virgil/brief.md
+- CLI: `virgil brief`
+
+### GitHub Wiki Dogma Provider
+
+- `GithubWikiService`: SnapshotProviderPort<DogmaDocument[]> via git clone
+- Clone `.wiki.git` to `.virgil/cache/wiki-{owner}-{repo}/`, shallow depth 1
+- Filters `_Sidebar`, `_Footer`, `_Header` (wiki chrome, not content)
+- Graceful offline: cached data still usable when remote unreachable
+- Config: VIRGIL_GITHUB_WIKI_OWNER, VIRGIL_GITHUB_WIKI_REPO, VIRGIL_GITHUB_WIKI_TOKEN (optional), VIRGIL_GITHUB_WIKI_CACHE_DIR (optional)
+- Semantic refs: `dogma://github-wiki/{page}` → resolves to GitHub wiki URL
+
 ### App-Level Test Suite
 
-- 6 test files, 47 scenarios
+- 9 test files, 77 scenarios
 - Zero mocks -- full NestJS application bootstrap
-- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights
+- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights, GitHub Issues, brief generation, GitHub Wiki
 - Filterable by test name via Vitest
 
 ## Next Steps (Priority Order)
 
-1. **RAG layer** -- vectorize provider snapshots for semantic retrieval
-   instead of raw reads. Enforce token economy so handoff context stays
-   within LLM context windows.
-
-2. **Additional providers** -- extend the provider plugin pattern to more
+1. **Additional providers** -- extend the provider plugin pattern to more
    backends:
    - Confluence (dogma kind)
-   - GitHub Issues (ticket kind)
    - Microsoft Teams (chat kind)
    - Azure DevOps (ticket kind)
+
+2. **RAG phase 2** -- brief querying interface. Agents query the brief
+   instead of reading raw dogma. Token economy enforcement so handoff
+   context stays within LLM context windows.
 
 3. **Execution tracking** -- sub-phases within the `execution` state:
    prePhase -> Red -> Green -> Refactor -> Verify. Finer-grained progress
