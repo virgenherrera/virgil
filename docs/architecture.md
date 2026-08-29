@@ -259,8 +259,8 @@ shows the current phase.
 
 ## Audit System
 
-`AuditService` runs 6 automated checks against the guardrails defined in
-`META.json`:
+`AuditService` runs 6 guardrail checks plus 3 optional verification gates
+against the constraints defined in `META.json`:
 
 | Check | What It Validates | Gap Type on Failure |
 |-------|-------------------|---------------------|
@@ -270,6 +270,13 @@ shows the current phase.
 | `line-count` | Total insertions+deletions within `maxLinesChanged` | `IMPLEMENTATION` |
 | `conflict-markers` | No `<<<<<<<` / `>>>>>>>` in changed files | `CONTRACT` |
 | `agent-output` | `AGENT_OUTPUT.md` exists | `COMPLIANCE` |
+| `coverage` | Statement coverage meets `VIRGIL_COVERAGE_THRESHOLD` | `TESTING` |
+| `npm-audit` | Critical+high CVEs within `VIRGIL_MAX_CRITICAL_CVES` | `COMPLIANCE` |
+| `type-check` | `tsc --noEmit` reports zero errors | `CONTRACT` |
+
+The last 3 checks are **verification gates** -- they only run when their
+respective env var is set. If the external tool is unavailable, the check
+passes with a "skipped" message (graceful degradation).
 
 ### Verdict Logic
 
@@ -281,8 +288,9 @@ shows the current phase.
 
 Four gap types: `IMPLEMENTATION`, `TESTING`, `CONTRACT`, `COMPLIANCE`.
 
-Recommendations based on gap type:
+Recommendations based on gap type (priority order):
 - `CONTRACT` -> "Manual intervention required -- resolve conflict markers"
+- `TESTING` -> "Improve test coverage to meet threshold before re-delegation"
 - `IMPLEMENTATION` -> "Re-delegate with tighter scope constraints"
 - `COMPLIANCE` only -> "Agent must write AGENT_OUTPUT.md -- re-execute"
 
@@ -493,8 +501,11 @@ bootstrap the full NestJS application with real service wiring.
 | `confluence-provider.test.ts` | 8 | Confluence config states, health, snapshots, refs |
 | `execution-sub-phases.test.ts` | 9 | Phase transitions, validation, persistence, ledger |
 | `github-org-provider.test.ts` | 8 | GitHub Org config states, health, snapshots, refs, token fallback |
+| `verification-gates.test.ts` | 9 | Coverage, npm-audit, type-check gates; gating logic; recommendation routing |
+| `config-file.test.ts` | 9 | YAML/JSON loading, env precedence, VIRGIL_ filtering, type coercion |
+| `init-command.test.ts` | 2 | Template creation, no-overwrite safety |
 
-119 test scenarios total across 14 test files. Filterable by test name via Vitest.
+139 test scenarios total across 17 test files. Filterable by test name via Vitest.
 
 ## Module Wiring
 
@@ -503,7 +514,7 @@ bootstrap the full NestJS application with real service wiring.
 1. `AppConfigModule.forRoot([...configs])` -- loads all provider configs from env
 2. `CapabilityRegistryModule` (global) -- status tracking
 3. `ProviderRegistryModule` (global) -- runtime provider lookup
-4. Provider modules (`DogmaLocal`, `GithubWiki`, `Confluence`, `Jira`, `GithubIssues`, `OrgLocal`, `GithubOrg`, `SourceCodeLocal`, `Slack`) -- each via `registerIfConfigured()`
+4. Provider modules (`DogmaLocal`, `GithubWiki`, `Confluence`, `Jira`, `GithubIssues`, `OrgLocal`, `GithubOrg`, `SourceCodeLocal`, `Slack`) -- each via `registerIfConfigured()`. `VerificationGatesConfig` also loaded here.
 5. `RefResolverModule` -- cross-provider ref resolution
 6. `LedgerModule` -- append-only event log
 7. `HandoffModule` -- handoff creation + state machine
@@ -514,5 +525,21 @@ bootstrap the full NestJS application with real service wiring.
 
 CLI commands (`StatusCommand`, `ContextCommand`, `HandoffCommand` with
 subcommands `create/list/show/transition/phase`, `AuditCommand`,
-`LedgerCommand`, `WatchCommand`, `InsightsCommand`, `BriefCommand`) are
-registered as providers in `AppModule` directly.
+`LedgerCommand`, `WatchCommand`, `InsightsCommand`, `BriefCommand`,
+`InitCommand`) are registered as providers in `AppModule` directly.
+
+## Config File
+
+`loadConfigFile()` runs before NestJS bootstrap in `main.ts`. It reads
+`.virgilrc.yaml` (or `.virgilrc.json` fallback) from the current directory
+and merges values into `process.env` so all Zod config schemas work unchanged.
+
+Rules:
+- Only `VIRGIL_`-prefixed keys are applied (security: prevents overriding
+  `PATH`, `HOME`, etc.)
+- Environment variables always take precedence over config file values
+- YAML may parse numbers/booleans; all values are stringified before assignment
+- Missing config file is not an error
+
+`virgil init` generates a `.virgilrc.yaml` template with all known env vars
+commented out. Refuses to overwrite an existing file.

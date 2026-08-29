@@ -1,5 +1,6 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { readFile, writeFile, access } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { execSync } from "node:child_process";
 import picomatch from "picomatch";
@@ -11,6 +12,10 @@ import type {
   GapType,
 } from "../handoff/handoff.types.js";
 import { GAP_TYPE } from "../handoff/handoff.types.js";
+import {
+  VERIFICATION_GATES_CONFIG_TOKEN,
+  type VerificationGatesConfigType,
+} from "../config/verification-gates.config.js";
 
 const HANDOFFS_DIR = ".virgil/handoffs";
 
@@ -21,6 +26,9 @@ const CHECK_GAP_MAP: Record<string, GapType> = {
   "line-count": GAP_TYPE.IMPLEMENTATION,
   "conflict-markers": GAP_TYPE.CONTRACT,
   "agent-output": GAP_TYPE.COMPLIANCE,
+  coverage: GAP_TYPE.TESTING,
+  "npm-audit": GAP_TYPE.COMPLIANCE,
+  "type-check": GAP_TYPE.CONTRACT,
 };
 
 @Injectable()
@@ -28,6 +36,9 @@ export class AuditService {
   constructor(
     @Inject(LedgerService)
     private readonly ledger: LedgerService,
+    @Optional()
+    @Inject(VERIFICATION_GATES_CONFIG_TOKEN)
+    private readonly verificationConfig?: VerificationGatesConfigType,
   ) {}
 
   async audit(handoffId: string): Promise<AuditResult> {
@@ -59,6 +70,27 @@ export class AuditService {
     }
 
     checks.push(await this.checkAgentOutput(handoffDir));
+
+    // Verification gates — optional, run only when configured
+    if (meta.repos.length > 0 && this.verificationConfig) {
+      const repo = meta.repos[0]!;
+
+      if (this.verificationConfig.coverageThreshold !== undefined) {
+        checks.push(
+          this.checkCoverage(repo.repoPath, this.verificationConfig.coverageThreshold),
+        );
+      }
+
+      if (this.verificationConfig.maxCriticalCves !== undefined) {
+        checks.push(
+          this.checkNpmAudit(repo.repoPath, this.verificationConfig.maxCriticalCves),
+        );
+      }
+
+      if (this.verificationConfig.typeCheck) {
+        checks.push(this.checkTypeCheck(repo.repoPath));
+      }
+    }
 
     // Annotate checks with gap types
     const annotatedChecks: AuditCheck[] = checks.map((check) => ({
@@ -287,6 +319,98 @@ export class AuditService {
     }
   }
 
+  private checkCoverage(repoPath: string, threshold: number): AuditCheck {
+    try {
+      execSync("npx vitest run --coverage --reporter=json 2>/dev/null", {
+        cwd: repoPath,
+        encoding: "utf-8",
+        timeout: 120000,
+      });
+      const summaryPath = resolve(repoPath, "coverage", "coverage-summary.json");
+      const summary = JSON.parse(readFileSync(summaryPath, "utf-8"));
+      const stmtPct = summary.total?.statements?.pct ?? 0;
+
+      if (stmtPct >= threshold) {
+        return {
+          name: "coverage",
+          passed: true,
+          message: `Coverage ${stmtPct}% meets threshold ${threshold}%`,
+        };
+      }
+      return {
+        name: "coverage",
+        passed: false,
+        message: `Coverage ${stmtPct}% below threshold ${threshold}%`,
+      };
+    } catch {
+      return {
+        name: "coverage",
+        passed: true,
+        message: "Coverage check skipped: tool unavailable",
+      };
+    }
+  }
+
+  private checkNpmAudit(repoPath: string, maxCritical: number): AuditCheck {
+    try {
+      const output = execSync("npm audit --json 2>/dev/null || true", {
+        cwd: repoPath,
+        encoding: "utf-8",
+        timeout: 60000,
+      });
+      const audit = JSON.parse(output);
+      const critical = audit.metadata?.vulnerabilities?.critical ?? 0;
+      const high = audit.metadata?.vulnerabilities?.high ?? 0;
+      const total = critical + high;
+
+      if (total <= maxCritical) {
+        return {
+          name: "npm-audit",
+          passed: true,
+          message: `${total} critical/high CVEs (max: ${maxCritical})`,
+        };
+      }
+      return {
+        name: "npm-audit",
+        passed: false,
+        message: `${total} critical/high CVEs exceeds limit of ${maxCritical}`,
+      };
+    } catch {
+      return {
+        name: "npm-audit",
+        passed: true,
+        message: "NPM audit check skipped: tool unavailable",
+      };
+    }
+  }
+
+  private checkTypeCheck(repoPath: string): AuditCheck {
+    try {
+      execSync("npx tsc --noEmit", {
+        cwd: repoPath,
+        encoding: "utf-8",
+        timeout: 120000,
+        stdio: "pipe",
+      });
+      return {
+        name: "type-check",
+        passed: true,
+        message: "No type errors",
+      };
+    } catch (error) {
+      const stderr =
+        error instanceof Error && "stderr" in error
+          ? (error as any).stderr
+          : "";
+      const errorCount = (stderr.match(/error TS/g) || []).length;
+      return {
+        name: "type-check",
+        passed: false,
+        message: `${errorCount || "Unknown number of"} type error(s) found`,
+      };
+    }
+  }
+
   private generateRecommendation(
     checks: readonly AuditCheck[],
     verdict: "PASS" | "WARN" | "FAIL",
@@ -303,6 +427,10 @@ export class AuditService {
 
     if (uniqueGaps.includes(GAP_TYPE.CONTRACT)) {
       return "Manual intervention required — resolve conflict markers before re-execution";
+    }
+
+    if (uniqueGaps.includes(GAP_TYPE.TESTING)) {
+      return "Improve test coverage to meet threshold before re-delegation";
     }
 
     if (uniqueGaps.includes(GAP_TYPE.IMPLEMENTATION)) {

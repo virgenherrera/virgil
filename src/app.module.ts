@@ -40,6 +40,8 @@ import { LedgerCommand } from "./commands/ledger.command.js";
 import { WatchCommand } from "./commands/watch.command.js";
 import { InsightsCommand } from "./commands/insights.command.js";
 import { BriefCommand } from "./commands/brief.command.js";
+import { InitCommand } from "./commands/init.command.js";
+import { VerificationGatesConfig } from "./config/verification-gates.config.js";
 
 @Module({
   imports: [
@@ -53,6 +55,7 @@ import { BriefCommand } from "./commands/brief.command.js";
       GithubOrgConfig,
       SourceCodeLocalConfig,
       SlackConfig,
+      VerificationGatesConfig,
     ]),
     CapabilityRegistryModule,
     ProviderRegistryModule,
@@ -87,6 +90,7 @@ import { BriefCommand } from "./commands/brief.command.js";
     WatchCommand,
     InsightsCommand,
     BriefCommand,
+    InitCommand,
   ],
 })
 export class AppModule {}

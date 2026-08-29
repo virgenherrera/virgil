@@ -9,12 +9,15 @@ Virgil is a functional TypeScript CLI with 9 provider integrations
 (dogma-local, dogma-github-wiki, dogma-confluence, ticket-jira,
 ticket-github, org-local, org-github, sourcecode-local, chat-slack),
 a brief generation pipeline (RAG phases 1+2), execution sub-phases,
-a complete handoff lifecycle, and 119 app-level tests. The
-implementation lives on `integration/virgil-cli`.
+a complete handoff lifecycle, mechanical verification gates,
+config file support, and 139 app-level tests. The implementation lives
+on `integration/virgil-cli`.
 
 ### Commit History (integration branch)
 
 ```
+(pending) feat: verification gates + config file + init command
+5755a24 docs: update for Confluence, GitHub Org, execution sub-phases
 f6167a3 feat: wire Confluence + GitHub Org providers + phase command
 e713d24 feat: GitHub Org provider (members via REST API)
 2aff924 feat: execution sub-phases (pre-phase → red → green → refactor → verify)
@@ -164,11 +167,28 @@ d247b6f docs: add AGENTS.md and AGENTS-DEV.md
 - CLI: `virgil handoff phase <id> [target]`
 - Does not change the top-level 5-state machine
 
+### Mechanical Verification Gates
+
+- 3 optional audit checks: `coverage` (statement coverage vs threshold), `npm-audit` (critical/high CVE count), `type-check` (`tsc --noEmit`)
+- Gated by env vars: `VIRGIL_COVERAGE_THRESHOLD`, `VIRGIL_MAX_CRITICAL_CVES`, `VIRGIL_TYPE_CHECK`
+- Graceful degradation: tool unavailable → check passes with "skipped" message
+- Gap type mappings: coverage→TESTING, npm-audit→COMPLIANCE, type-check→CONTRACT
+- `@Optional()` injection: backward-compatible, no module changes needed
+
+### CLI Config File
+
+- `.virgilrc.yaml` (or `.virgilrc.json`) loaded before NestJS bootstrap
+- Flat key-value format using same env var names
+- Security: only `VIRGIL_`-prefixed keys applied
+- Env vars always take precedence over file values
+- `virgil init` generates template with all known vars commented out
+- Config files added to `.gitignore` (may contain secrets)
+
 ### App-Level Test Suite
 
-- 14 test files, 119 scenarios
+- 17 test files, 139 scenarios
 - Zero mocks -- full NestJS application bootstrap
-- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights, GitHub Issues, brief generation, GitHub Wiki, brief query + drift, JSON output, Confluence, execution sub-phases, GitHub Org
+- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights, GitHub Issues, brief generation, GitHub Wiki, brief query + drift, JSON output, Confluence, execution sub-phases, GitHub Org, verification gates, config file, init command
 - Filterable by test name via Vitest
 
 ## Next Steps (Priority Order)
@@ -178,19 +198,17 @@ d247b6f docs: add AGENTS.md and AGENTS-DEV.md
    - Microsoft Teams (chat kind)
    - Azure DevOps (ticket kind)
 
-2. **Mechanical verification gates** -- extend audit checks with:
+2. **Advanced verification gates** -- extend audit checks with:
    - Mutation score
    - CRAP index
    - Cyclomatic complexity
-   - CVE scan
-   - Coverage thresholds
 
 3. **E2E tests** -- multi-service integration scenarios per the principia
    testing matrix. Currently all tests are app-level; E2E would exercise
    real provider backends (Jira, Slack, Confluence) in a controlled environment.
 
-4. **CLI polish** -- config file support (`.virgilrc` or similar), shell
-   completions, better error messages.
+4. **CLI polish** -- shell completions, better error messages, `--verbose`
+   flag for diagnostic output.
 
 ## Non-Goals for V1
 

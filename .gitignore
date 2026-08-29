@@ -27,6 +27,8 @@ coverage/
 # Env / IDE
 .env
 .env.*
+.virgilrc.yaml
+.virgilrc.json
 .DS_Store
 .idea/
 .vscode/
