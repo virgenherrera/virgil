@@ -1,12 +1,15 @@
 import { Inject } from "@nestjs/common";
 import { Command, CommandRunner } from "nest-commander";
 import { ProviderRegistryService } from "../providers/provider-registry.service.js";
+import { BriefQueryService } from "../brief/brief-query.service.js";
+import { BriefGeneratorService } from "../brief/brief-generator.service.js";
+import { AppError, ERROR_CODE } from "../shared/errors.js";
 import { buildRef } from "../domain/refs.js";
 import type {
   SnapshotProviderPort,
   SnapshotScope,
 } from "../ports/context-provider.port.js";
-import type { DogmaDocument } from "../providers/dogma/dogma.types.js";
+import type { BriefItem, BriefKind } from "../brief/brief.types.js";
 import type { OrgSnapshot } from "../providers/org/org.types.js";
 import type { SourceCodeSnapshot } from "../providers/sourcecode/sourcecode.types.js";
 
@@ -20,6 +23,10 @@ export class ContextCommand extends CommandRunner {
   constructor(
     @Inject(ProviderRegistryService)
     private readonly providerRegistry: ProviderRegistryService,
+    @Inject(BriefQueryService)
+    private readonly briefQuery: BriefQueryService,
+    @Inject(BriefGeneratorService)
+    private readonly briefGenerator: BriefGeneratorService,
   ) {
     super();
   }
@@ -35,7 +42,7 @@ export class ContextCommand extends CommandRunner {
     console.log("=".repeat(40));
 
     await this.showTicketContext(ticketKey);
-    await this.showDogmaContext();
+    await this.showBriefContext();
     await this.showOrgContext();
     await this.showSourceCodeContext();
   }
@@ -79,43 +86,57 @@ export class ContextCommand extends CommandRunner {
     }
   }
 
-  private async showDogmaContext(): Promise<void> {
-    const dogmaProviders = this.providerRegistry.getByKind("dogma");
+  private async showBriefContext(): Promise<void> {
+    const cwd = process.cwd();
 
-    if (dogmaProviders.length === 0) {
-      console.log("\n[Dogma] No dogma providers configured");
-      return;
-    }
-
-    console.log("\n[Dogma]");
-
-    for (const provider of dogmaProviders) {
-      const snapshotProvider = provider as SnapshotProviderPort<
-        DogmaDocument[]
-      >;
-
-      if (!("snapshot" in snapshotProvider)) {
-        continue;
-      }
-
-      try {
-        const scope: SnapshotScope = { maxItems: 20 };
-        const result = await snapshotProvider.snapshot(scope);
-
-        console.log(
-          `  Provider: ${provider.capabilityId} (${result.data.length} documents)`,
-        );
-
-        for (const doc of result.data) {
-          const sizeKb = (doc.size / 1024).toFixed(1);
-          console.log(`    ${doc.ref} (${sizeKb} KB)`);
+    let result;
+    try {
+      result = await this.briefQuery.query(cwd, {});
+    } catch (error) {
+      if (
+        error instanceof AppError &&
+        error.code === ERROR_CODE.BRIEF_NOT_FOUND
+      ) {
+        try {
+          await this.briefGenerator.generate(cwd);
+          result = await this.briefQuery.query(cwd, {});
+        } catch {
+          console.log(
+            "\n[Dogma Brief] No dogma brief available. Run `virgil brief` to generate.",
+          );
+          return;
         }
-      } catch (error) {
+      } else {
         console.log(
-          `  ${provider.capabilityId}: Error - ${error instanceof Error ? error.message : String(error)}`,
+          `\n[Dogma Brief] Error - ${error instanceof Error ? error.message : String(error)}`,
         );
+        return;
       }
     }
+
+    console.log("\n[Dogma Brief]");
+
+    if (result.drift.drifted) {
+      console.log(
+        `  Brief is ${result.drift.commitsBehind} commit(s) behind HEAD`,
+      );
+    }
+
+    const grouped = new Map<BriefKind, readonly BriefItem[]>();
+    for (const item of result.items) {
+      const existing = grouped.get(item.kind) ?? [];
+      grouped.set(item.kind, [...existing, item]);
+    }
+
+    for (const [kind, items] of grouped) {
+      for (const item of items) {
+        console.log(`  [${kind}] ${item.title}: ${item.summary}`);
+      }
+    }
+
+    console.log(
+      `  ${result.stats.matched} items from ${result.stats.total}`,
+    );
   }
 
   private async showOrgContext(): Promise<void> {
