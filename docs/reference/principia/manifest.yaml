@@ -1,0 +1,430 @@
+# Virgil Principia — Manifest
+# Machine-readable index for CLI discovery and RAG routing.
+# Source: principia/constitution.md (sealed, immutable)
+
+version: 1
+source: principia/constitution.md
+source_commit: 1d2dfa7
+
+# Layer taxonomy:
+#   navigation  — document structure and routing
+#   identity    — what Virgil IS (foundational definitions)
+#   structure   — how Virgil is built (layer model)
+#   lifecycle   — how projects flow through states
+#   principles  — governance and architectural invariants
+#   components  — what parts compose the system
+#   interaction — how parts and actors relate
+#   quality     — how quality is guaranteed (Echo, TDD, testing, supply chain)
+#   knowledge   — where knowledge lives (persistence, RAG, codebaseMemory)
+#   context     — how context flows between agents
+#   recovery    — how state is recovered after failure
+#   execution   — how work is executed (pipeline, Git, verification, gates)
+#   operation   — post-delivery operational phase
+#   authority   — constitutional authority and self-reference
+#   reference   — glossary and term definitions
+
+chunks:
+  - id: constitution
+    file: constitution.md
+    document_type: constitution
+    layer: authority
+    constitutional: true
+    title: Founding Principle — anchor document
+    keywords: [Founding Principle, anchor document, source of truth, sealed, immutable]
+
+  - id: navigation
+    file: sections/00-navigation.md
+    section_id: "index"
+    layer: navigation
+    constitutional: false
+    title: Document index
+    keywords: [index, table of contents, Principia documents, navigation]
+
+  - id: vocabulary
+    file: sections/01-vocabulary.md
+    section_id: "vocabulary"
+    layer: identity
+    constitutional: true
+    title: Actor vocabulary
+    keywords: [actors, roles, modes, Development, Consumption, vocabulary]
+
+  - id: identity
+    file: sections/02-identity.md
+    section_id: "1"
+    layer: identity
+    constitutional: true
+    title: What Virgil is
+    keywords: [what Virgil is, knowledge plane, control plane, identity, Open Agentic Standard, AGENTS.md]
+
+  - id: anti-drift
+    file: sections/03-anti-drift.md
+    section_id: "1a"
+    layer: identity
+    constitutional: true
+    title: Interpretive anti-drift rule
+    keywords: [anti-drift, closed accountability cycle, Echo System, certification gates, canonical boundary, normative force]
+
+  - id: structure
+    file: sections/04-structure.md
+    section_id: "2"
+    layer: structure
+    constitutional: true
+    title: Three-layer structure
+    keywords: [structure, three concentric layers, Principia, Dogma, Runtime, architecture]
+
+  - id: lifecycle
+    file: sections/05-lifecycle.md
+    section_id: "3a"
+    layer: lifecycle
+    constitutional: false
+    title: Lifecycle of a project
+    keywords: [lifecycle, state machine, PlanningGapDetected, FastForward, planning, execution, handoff]
+
+  - id: invocation-flow
+    file: sections/06-invocation-flow.md
+    section_id: "3b"
+    layer: lifecycle
+    constitutional: true
+    title: Flow of an invocation
+    keywords: [invocation flow, HostAdapter, Virgil Kernel, ArtifactStore, ContextBrief, Ledger, PDC, deterministic gates, certification]
+
+  - id: governance-architecture
+    file: sections/07-governance-architecture.md
+    section_id: "4"
+    layer: principles
+    constitutional: true
+    title: Governance and architecture
+    keywords: [governance, architecture, governance principles, architectural invariants, constraint over trust, parallel handoff, deterministic mechanical gates, identity before inference, end-to-end traceability, Development Mode, Consumption Mode]
+
+  - id: components
+    file: sections/08-components.md
+    section_id: "5"
+    layer: components
+    constitutional: true
+    title: Component catalog
+    keywords: [components, Kernel, Adapters, Method Packs, Ledger, TraceabilityGraph, ArtifactRepository, EvidenceIngestion, ContextCompiler, RetrievalProjection, HostAdapter, ArtifactStoreAdapter, Scrum, ceremony-agnostic, universal quality]
+
+  - id: interaction-model
+    file: sections/09-interaction-model.md
+    section_id: "6"
+    layer: interaction
+    constitutional: true
+    title: Interaction model
+    keywords: [actors and modes, Development Mode, Consumption Mode, separation of concerns, Method Pack, HostAdapter, ArtifactStoreAdapter, global ownership, global context injection, fundamental invariant, MCP JSON-RPC]
+
+  - id: echo-system
+    file: sections/10-echo-system.md
+    section_id: "7a"
+    layer: quality
+    constitutional: true
+    title: Echo System
+    keywords: [Echo System, deterministic pipeline, Setup, Build, Static, Dynamic, E2E, dev CI CD, automatic triggers, pre-commit pre-push]
+
+  - id: deliverables-vs-artifacts
+    file: sections/11-deliverables-vs-artifacts.md
+    section_id: "7b"
+    layer: quality
+    constitutional: true
+    title: Deliverables vs Build Artifacts
+    keywords: [deliverables, build artifacts, ArtifactStore, ArtifactRepository, ArtifactStoreAdapter, PMBOK ISO 21500, DevOps CI-CD, evidence traceability, OpenAPI]
+
+  - id: red-green-refactor
+    file: sections/12-red-green-refactor.md
+    section_id: "7c-rgr"
+    layer: quality
+    constitutional: true
+    title: Macro Red/Green/Refactor
+    keywords: [macro TDD, Red Green Refactor, test plan, test contract, mutation testing, CRAP, gates R0 R1 G1 F1 V1, batch TDD]
+
+  - id: composite-agent
+    file: sections/13-composite-agent.md
+    section_id: "7c-composite"
+    layer: quality
+    constitutional: true
+    title: compositeAgent and mutation domains
+    keywords: [compositeAgent, mutation domain, worktree, filesystem isolation, stateless invocation, independence invariant, GP-4 constraint over trust, parallel lanes]
+
+  - id: testing-matrix
+    file: sections/14-testing-matrix.md
+    section_id: "7d-tiers"
+    layer: quality
+    constitutional: true
+    title: Testing Matrix
+    keywords: [testing matrix, mock boundary, testing pyramid, App/Service primary tier, Solution E2E, zero mocks, T0 protocol app replay, T1 agent-in-the-loop, T2 host-adapter conformance]
+
+  - id: binding-layer
+    file: sections/15-binding-layer.md
+    section_id: "7d-binding"
+    layer: quality
+    constitutional: true
+    title: Binding Layer and traceability
+    keywords: [matrix-to-code traceability, RAG-searchable, Binding Layer, declared inferred verified, mutation testing confirms strength, static readonly, acceptance criteria]
+
+  - id: qa-gates
+    file: sections/16-qa-gates.md
+    section_id: "7e"
+    layer: quality
+    constitutional: true
+    title: QA / Acceptance Gates
+    keywords: [QA, acceptance gates, certification, mutation score, CRAP, CVE scan, coverage gate, architectural alignment, semantic comparison, escalate to phase]
+
+  - id: droppable-code
+    file: sections/17-droppable-code.md
+    section_id: "7f"
+    layer: quality
+    constitutional: true
+    title: droppableCode
+    keywords: [droppableCode, safeToAutoDelete, dead code, coverage threshold, documented exceptions, mutation testing exceptions, automatic mechanical removal]
+
+  - id: compliance-by-design
+    file: sections/18-compliance-by-design.md
+    section_id: "7g"
+    layer: quality
+    constitutional: false
+    title: complianceByDesign
+    keywords: [complianceByDesign, strict DTO assertions, abuseCases, structural validation, HIPAA, PCI DSS, GDPR, mandatory human review, regulatory blocking gate]
+
+  - id: supply-chain-pinning
+    file: sections/19-supply-chain-pinning.md
+    section_id: "7h-pinning"
+    layer: quality
+    constitutional: true
+    title: versionPinning and securityAudit
+    keywords: [supply chain integrity, versionPinning, exact version, lock file, securityAudit, vulnerability scan, Setup blocking gate, pnpm audit go vuln cargo audit pip-audit]
+
+  - id: supply-chain-bump
+    file: sections/20-supply-chain-bump.md
+    section_id: "7h-bump"
+    layer: quality
+    constitutional: true
+    title: bumpDependencies
+    keywords: [bumpDependencies, tech debt, update check, security fix, rollback, dependency maintenance, closed cycle, QA certifies result]
+
+  - id: knowledge-storage
+    file: sections/21-knowledge-storage.md
+    section_id: "8"
+    layer: knowledge
+    constitutional: true
+    title: Where knowledge lives
+    keywords: [ArtifactStore, RAG, codebaseMemory, watermark, re-sync, namespaces, persistence, context DBMS, structural graph]
+
+  - id: rag-dbms
+    file: sections/22-rag-dbms.md
+    section_id: "8c-dbms"
+    layer: knowledge
+    constitutional: true
+    title: RAG as DBMS
+    keywords: [RAG, context DBMS, codebaseMemory, watermark, anti-pattern, bounded queries, token savings]
+
+  - id: rag-watermark
+    file: sections/23-rag-watermark.md
+    section_id: "8c-watermark"
+    layer: knowledge
+    constitutional: true
+    title: Watermark and re-sync
+    keywords: [watermark, re-sync, drift, certification, sourceRevision, HEAD, merge-base, Dogma]
+
+  - id: rag-dual
+    file: sections/24-rag-dual.md
+    section_id: "8c-dual"
+    layer: knowledge
+    constitutional: false
+    title: devRag vs consumerRag
+    keywords: [devRag, consumerRag, development mode, consumption mode, adapter interfaces, Jira, Confluence, Azure DevOps, Asana]
+
+  - id: visibility-memoization
+    file: sections/25-visibility-memoization.md
+    section_id: "8d-8e"
+    layer: knowledge
+    constitutional: true
+    title: Visibility and memoization
+    keywords: [tiered visibility, bounded scope, delegationContract, memoization, cache, Ledger, TraceabilityGraph, derived projections]
+
+  - id: codebase-memory-concept
+    file: sections/26-codebase-memory-concept.md
+    section_id: "8f-concept"
+    layer: knowledge
+    constitutional: true
+    title: codebaseMemory concept
+    keywords: [codebaseMemory, AST graph, semantic query, structural query, routing, RAG]
+
+  - id: codebase-memory-construction
+    file: sections/27-codebase-memory-construction.md
+    section_id: "8f-construction"
+    layer: knowledge
+    constitutional: true
+    title: codebaseMemory construction
+    keywords: [codebaseMemory, AST parser, deterministic construction, incremental update, file watcher, watermark, mutation domain, worktree, parallel lanes, conservative soundness]
+
+  - id: context-flow
+    file: sections/28-context-flow.md
+    section_id: "9"
+    layer: context
+    constitutional: true
+    title: Context flow
+    keywords: [ContextBrief, topic_key, PatternA, PatternB, delegation, PDC, ECHO VERIFY MARK DECIDE, Status Report, circuitBreaker, devRag consumerRag]
+
+  - id: recovery
+    file: sections/29-recovery.md
+    section_id: "10"
+    layer: recovery
+    constitutional: true
+    title: Recovery
+    keywords: [recovery, crash, compaction, new session, consolidated revisions, derived phase, failure history, lastVerifiedAt, external changes]
+
+  - id: execution-pipeline
+    file: sections/30-execution-pipeline.md
+    section_id: "11a-11b"
+    layer: execution
+    constitutional: true
+    title: Execution pipeline
+    keywords: [prePhase, Red, Green, Refactor, Verify, contracts first, parallelism, lanes, PlanningGapDetected, exit gate]
+
+  - id: git-strategy
+    file: sections/31-git-strategy.md
+    section_id: "11c"
+    layer: execution
+    constitutional: true
+    title: Git strategy
+    keywords: [mutation domain, "--no-ff", worktrees, branches, concurrent lanes, buildArtifactSet, sourceRevision, commit conventions, invariants]
+
+  - id: mechanical-verification
+    file: sections/32-mechanical-verification.md
+    section_id: "11d"
+    layer: execution
+    constitutional: true
+    title: Mechanical verification
+    keywords: [mechanical verification, mutation testing, CRAP score, cyclomatic complexity, module size, dependency structure, CVE security, AUTH DDD review, regulatory compliance, Method Pack, PDC]
+
+  - id: accept-reject
+    file: sections/33-accept-reject.md
+    section_id: "11e-routing"
+    layer: execution
+    constitutional: true
+    title: Accept/Reject routing
+    keywords: [QA gate, virgil health, git tag qa/approved, implementation gap, testing gap, contract gap, planning gap, PlanningGapDetected, re-delegation, PDC]
+
+  - id: break-glass
+    file: sections/34-break-glass.md
+    section_id: "11e-breakglass"
+    layer: execution
+    constitutional: false
+    title: Break-glass
+    keywords: [break-glass, P1 incident, MIM authorization, standing policy, post-hoc certification, 72 hours, Ledger, critical technical debt]
+
+  - id: evidence-queryable
+    file: sections/35-evidence-queryable.md
+    section_id: "11f"
+    layer: execution
+    constitutional: true
+    title: Queryable evidence
+    keywords: [queryable evidence, EvidenceIngestion, immutable Ledger, Binding Layer, declared inferred verified, EchoRun, buildArtifactSet, test results, coverage, mutation testing]
+
+  - id: operation
+    file: sections/36-operation.md
+    section_id: "12"
+    layer: operation
+    constitutional: false
+    title: Operation phase
+    keywords: [operation, operational surface, operationalAssistant, ops-runbook, usage-guide, api-reference, Delivery support, escalation, bug detected, feature request, missing doc]
+
+  - id: authority
+    file: sections/37-authority.md
+    section_id: "authority"
+    layer: authority
+    constitutional: true
+    title: Authority, self-reference and authority note
+    keywords: [self-reference rule, Development Mode, Consumption Mode, same principles, same contracts, same gates, direction of agency, immutable, source of truth, authority note]
+
+  - id: glossary
+    file: sections/38-glossary.md
+    section_id: "glossary"
+    layer: reference
+    constitutional: true
+    title: Glossary
+    keywords: [Binding Layer, Break-glass, buildArtifactSet, bumpDependencies, circuitBreaker, codebaseMemory, compositeAgent, complianceByDesign, ContextBrief, ContextCompiler, CRAP score, delegationContract, droppableCode, Echo System, EchoRun, FastForward, Kernel, Ledger, mutation domain, Method Pack, PDC, PlanningGapDetected, RAG, re-sync, securityAudit, sourceRevision, safeToAutoDelete, Supply Chain Integrity, TraceabilityGraph, versionPinning, watermark]
+
+cross_cutting:
+  - name: pdc-vs-echo-disambiguation
+    sections: ["3b", "7a", "9"]
+    description: PDC is an orchestration safeguard, Echo is the certification pipeline
+
+  - name: certification-chain
+    sections: ["7b", "8c-watermark", "8f-construction", "11f"]
+    description: watermark → sourceRevision → buildArtifactSet → EchoRun
+
+  - name: mutation-domain
+    sections: ["7c-composite", "8f-construction", "11c"]
+    description: isolation, compositeAgent, worktrees, graph reconciliation
+
+  - name: deterministic-vs-judgment
+    sections: ["3b", "7e", "9", "11d"]
+    description: what is mechanical-deterministic and what requires evaluation
+
+  - name: mim-authority
+    sections: ["vocabulary", "7f", "7g", "11e-breakglass"]
+    description: where the MIM has explicit veto or final authority
+
+  - name: planning-gap-detected
+    sections: ["3a", "11c", "11e-routing"]
+    description: cross-cutting escalation signal from execution to planning
+
+  - name: modes-duality
+    sections: ["6", "8c-dual", "authority"]
+    description: Development Mode vs Consumption Mode, same principles
+
+  - name: binding-layer-progression
+    sections: ["7d-binding", "11f"]
+    description: declared → inferred → verified trust progression
+
+  - name: testing-quality-pipeline
+    sections: ["7a", "7c-rgr", "7c-composite", "7d-tiers", "7d-binding", "7e", "7f", "11a-11b", "11d"]
+    description: complete testing and quality pipeline — Echo System, TDD, testing matrix, gates, mechanical verification
+
+glossary_index:
+  AGENTS.md: identity
+  ARCH: qa-gates
+  ArtifactRepository: components
+  ArtifactStoreAdapter: components
+  Binding Layer: binding-layer
+  Break-glass: break-glass
+  buildArtifactSet: deliverables-vs-artifacts
+  bumpDependencies: supply-chain-bump
+  circuitBreaker: context-flow
+  codebaseMemory: codebase-memory-concept
+  compositeAgent: composite-agent
+  complianceByDesign: compliance-by-design
+  consumerRag: rag-dual
+  ContextBrief: context-flow
+  ContextCompiler: context-flow
+  CRAP score: qa-gates
+  delegationContract: context-flow
+  devRag: rag-dual
+  DogmaRef: invocation-flow
+  droppableCode: droppable-code
+  Echo System: echo-system
+  EchoRun: deliverables-vs-artifacts
+  EvidenceIngestion: components
+  FastForward: lifecycle
+  HostAdapter: components
+  Kernel: components
+  Ledger: components
+  Method Pack: components
+  MIM: vocabulary
+  mutation domain: composite-agent
+  PDC: invocation-flow
+  PlanningGapDetected: lifecycle
+  ProjectRef: invocation-flow
+  RAG: rag-dbms
+  re-sync: rag-watermark
+  RetrievalProjection: components
+  RunContext: invocation-flow
+  safeToAutoDelete: droppable-code
+  securityAudit: supply-chain-pinning
+  SM: vocabulary
+  sourceRevision: deliverables-vs-artifacts
+  Supply Chain Integrity: supply-chain-pinning
+  TPM: vocabulary
+  TraceabilityGraph: components
+  versionPinning: supply-chain-pinning
+  watermark: rag-watermark

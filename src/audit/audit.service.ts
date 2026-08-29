@@ -1,0 +1,334 @@
+import { Inject, Injectable } from "@nestjs/common";
+import { readFile, writeFile, access } from "node:fs/promises";
+import { resolve } from "node:path";
+import { execSync } from "node:child_process";
+import picomatch from "picomatch";
+import { LedgerService } from "../ledger/ledger.service.js";
+import type {
+  HandoffMeta,
+  AuditResult,
+  AuditCheck,
+  GapType,
+} from "../handoff/handoff.types.js";
+import { GAP_TYPE } from "../handoff/handoff.types.js";
+
+const HANDOFFS_DIR = ".virgil/handoffs";
+
+const CHECK_GAP_MAP: Record<string, GapType> = {
+  scope: GAP_TYPE.IMPLEMENTATION,
+  forbidden: GAP_TYPE.IMPLEMENTATION,
+  "file-count": GAP_TYPE.IMPLEMENTATION,
+  "line-count": GAP_TYPE.IMPLEMENTATION,
+  "conflict-markers": GAP_TYPE.CONTRACT,
+  "agent-output": GAP_TYPE.COMPLIANCE,
+};
+
+@Injectable()
+export class AuditService {
+  constructor(
+    @Inject(LedgerService)
+    private readonly ledger: LedgerService,
+  ) {}
+
+  async audit(handoffId: string): Promise<AuditResult> {
+    const handoffDir = resolve(process.cwd(), HANDOFFS_DIR, handoffId);
+    const metaPath = resolve(handoffDir, "META.json");
+
+    const raw = await readFile(metaPath, "utf-8");
+    const meta: HandoffMeta = JSON.parse(raw);
+
+    const checks: AuditCheck[] = [];
+
+    for (const repo of meta.repos) {
+      const changedFiles = this.getChangedFiles(repo.repoPath, repo.commitSha);
+      const lineStats = this.getLineStats(repo.repoPath, repo.commitSha);
+
+      checks.push(this.checkScope(changedFiles, meta.guardrails.allowedPaths as string[]));
+      checks.push(this.checkForbidden(changedFiles, meta.guardrails.forbiddenPaths as string[]));
+      checks.push(this.checkFileCount(changedFiles, meta.guardrails.maxFilesChanged));
+      checks.push(this.checkLineCount(lineStats, meta.guardrails.maxLinesChanged));
+      checks.push(this.checkConflictMarkers(repo.repoPath, changedFiles));
+    }
+
+    if (meta.repos.length === 0) {
+      checks.push({ name: "scope", passed: true, message: "No repos in baseline" });
+      checks.push({ name: "forbidden", passed: true, message: "No repos in baseline" });
+      checks.push({ name: "file-count", passed: true, message: "No repos in baseline" });
+      checks.push({ name: "line-count", passed: true, message: "No repos in baseline" });
+      checks.push({ name: "conflict-markers", passed: true, message: "No repos in baseline" });
+    }
+
+    checks.push(await this.checkAgentOutput(handoffDir));
+
+    // Annotate checks with gap types
+    const annotatedChecks: AuditCheck[] = checks.map((check) => ({
+      ...check,
+      ...((!check.passed && CHECK_GAP_MAP[check.name])
+        ? { gapType: CHECK_GAP_MAP[check.name] }
+        : {}),
+    }));
+
+    const agentOutputCheck = annotatedChecks.find((c) => c.name === "agent-output");
+    const nonAgentChecks = annotatedChecks.filter((c) => c.name !== "agent-output");
+
+    let verdict: "PASS" | "WARN" | "FAIL";
+    if (nonAgentChecks.every((c) => c.passed)) {
+      if (agentOutputCheck && !agentOutputCheck.passed) {
+        verdict = "WARN";
+      } else {
+        verdict = "PASS";
+      }
+    } else {
+      verdict = "FAIL";
+    }
+
+    const recommendation = this.generateRecommendation(annotatedChecks, verdict);
+    const now = new Date().toISOString();
+
+    const result: AuditResult = {
+      handoffId,
+      verdict,
+      checks: annotatedChecks,
+      auditedAt: now,
+      ...(recommendation ? { recommendation } : {}),
+    };
+
+    await writeFile(
+      resolve(handoffDir, "AUDIT_REPORT.json"),
+      JSON.stringify(result, null, 2),
+      "utf-8",
+    );
+
+    await this.writeFeedback(handoffDir, result);
+
+    await this.ledger.append({
+      timestamp: now,
+      handoffId,
+      event: "audit",
+      actor: "virgil-cli",
+      data: { verdict, recommendation },
+    });
+
+    return result;
+  }
+
+  private getChangedFiles(repoPath: string, baselineSha: string): string[] {
+    try {
+      const output = execSync(`git diff --name-only ${baselineSha}..HEAD`, {
+        cwd: repoPath,
+        encoding: "utf-8",
+      }).trim();
+
+      if (!output) return [];
+      return output.split("\n");
+    } catch {
+      return [];
+    }
+  }
+
+  private getLineStats(repoPath: string, baselineSha: string): number {
+    try {
+      const output = execSync(`git diff --stat ${baselineSha}..HEAD`, {
+        cwd: repoPath,
+        encoding: "utf-8",
+      }).trim();
+
+      if (!output) return 0;
+
+      // The last line of --stat output contains the summary
+      const lines = output.split("\n");
+      const summary = lines[lines.length - 1];
+      if (!summary) return 0;
+
+      // Parse "X files changed, Y insertions(+), Z deletions(-)"
+      const insertions = summary.match(/(\d+) insertion/);
+      const deletions = summary.match(/(\d+) deletion/);
+      const total =
+        (insertions ? parseInt(insertions[1]!, 10) : 0) +
+        (deletions ? parseInt(deletions[1]!, 10) : 0);
+
+      return total;
+    } catch {
+      return 0;
+    }
+  }
+
+  private checkScope(changedFiles: string[], allowedPaths: string[]): AuditCheck {
+    if (changedFiles.length === 0) {
+      return { name: "scope", passed: true, message: "No files changed" };
+    }
+
+    const isAllowed = picomatch(allowedPaths);
+    const outOfScope = changedFiles.filter((f) => !isAllowed(f));
+
+    if (outOfScope.length === 0) {
+      return {
+        name: "scope",
+        passed: true,
+        message: `All ${changedFiles.length} files within allowed paths`,
+      };
+    }
+
+    return {
+      name: "scope",
+      passed: false,
+      message: `${outOfScope.length} file(s) outside allowed paths: ${outOfScope.join(", ")}`,
+    };
+  }
+
+  private checkForbidden(changedFiles: string[], forbiddenPaths: string[]): AuditCheck {
+    if (changedFiles.length === 0) {
+      return { name: "forbidden", passed: true, message: "No files changed" };
+    }
+
+    const isForbidden = picomatch(forbiddenPaths);
+    const violations = changedFiles.filter((f) => isForbidden(f));
+
+    if (violations.length === 0) {
+      return {
+        name: "forbidden",
+        passed: true,
+        message: "No forbidden files modified",
+      };
+    }
+
+    return {
+      name: "forbidden",
+      passed: false,
+      message: `${violations.length} forbidden file(s) modified: ${violations.join(", ")}`,
+    };
+  }
+
+  private checkFileCount(changedFiles: string[], max: number): AuditCheck {
+    const count = changedFiles.length;
+    if (count <= max) {
+      return {
+        name: "file-count",
+        passed: true,
+        message: `${count}/${max} files changed`,
+      };
+    }
+
+    return {
+      name: "file-count",
+      passed: false,
+      message: `${count} files changed, exceeds limit of ${max}`,
+    };
+  }
+
+  private checkLineCount(totalLines: number, max: number): AuditCheck {
+    if (totalLines <= max) {
+      return {
+        name: "line-count",
+        passed: true,
+        message: `${totalLines}/${max} lines changed`,
+      };
+    }
+
+    return {
+      name: "line-count",
+      passed: false,
+      message: `${totalLines} lines changed, exceeds limit of ${max}`,
+    };
+  }
+
+  private checkConflictMarkers(repoPath: string, changedFiles: string[]): AuditCheck {
+    if (changedFiles.length === 0) {
+      return {
+        name: "conflict-markers",
+        passed: true,
+        message: "No files to check",
+      };
+    }
+
+    try {
+      const result = execSync(
+        `grep -rl '^<<<<<<<\\|^>>>>>>>' ${changedFiles.join(" ")} 2>/dev/null || true`,
+        { cwd: repoPath, encoding: "utf-8" },
+      ).trim();
+
+      if (!result) {
+        return {
+          name: "conflict-markers",
+          passed: true,
+          message: "No conflict markers found",
+        };
+      }
+
+      const filesWithMarkers = result.split("\n").filter(Boolean);
+      return {
+        name: "conflict-markers",
+        passed: false,
+        message: `Conflict markers found in: ${filesWithMarkers.join(", ")}`,
+      };
+    } catch {
+      return {
+        name: "conflict-markers",
+        passed: true,
+        message: "No conflict markers found",
+      };
+    }
+  }
+
+  private async checkAgentOutput(handoffDir: string): Promise<AuditCheck> {
+    try {
+      await access(resolve(handoffDir, "AGENT_OUTPUT.md"));
+      return {
+        name: "agent-output",
+        passed: true,
+        message: "AGENT_OUTPUT.md present",
+      };
+    } catch {
+      return {
+        name: "agent-output",
+        passed: false,
+        message: "AGENT_OUTPUT.md not found",
+      };
+    }
+  }
+
+  private generateRecommendation(
+    checks: readonly AuditCheck[],
+    verdict: "PASS" | "WARN" | "FAIL",
+  ): string | undefined {
+    if (verdict === "PASS") {
+      return undefined;
+    }
+
+    const failedGaps = checks
+      .filter((c) => !c.passed && c.gapType)
+      .map((c) => c.gapType!);
+
+    const uniqueGaps = [...new Set(failedGaps)];
+
+    if (uniqueGaps.includes(GAP_TYPE.CONTRACT)) {
+      return "Manual intervention required — resolve conflict markers before re-execution";
+    }
+
+    if (uniqueGaps.includes(GAP_TYPE.IMPLEMENTATION)) {
+      return "Re-delegate with tighter scope constraints";
+    }
+
+    if (
+      uniqueGaps.length > 0 &&
+      uniqueGaps.every((g) => g === GAP_TYPE.COMPLIANCE)
+    ) {
+      return "Agent must write AGENT_OUTPUT.md — re-execute with explicit instruction";
+    }
+
+    return undefined;
+  }
+
+  private async writeFeedback(dir: string, result: AuditResult): Promise<void> {
+    const lines = [`# Audit Feedback`, "", `Verdict: **${result.verdict}**`, `Audited: ${result.auditedAt}`, ""];
+
+    for (const check of result.checks) {
+      const icon = check.passed ? "PASS" : "FAIL";
+      lines.push(`- [${icon}] **${check.name}**: ${check.message}`);
+    }
+
+    lines.push("");
+
+    await writeFile(resolve(dir, "FEEDBACK.md"), lines.join("\n"), "utf-8");
+  }
+}

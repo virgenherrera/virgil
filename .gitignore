@@ -16,6 +16,14 @@ dist/
 *.out
 vendor/
 
+# Node / TypeScript
+node_modules/
+*.tgz
+coverage/
+
+# Virgil runtime
+.virgil/
+
 # Env / IDE
 .env
 .env.*

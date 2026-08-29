@@ -1,119 +1,123 @@
 # Virgil
 
-Virgil is a Go CLI — the knowledge and control plane for agent-assisted development. It guards ownership,
-minimal context, and traceability from idea to delivery.
+Virgil is an independent MCP server — a Go binary distributed as an autonomous process that any
+MCP-compatible host can discover and invoke without additional coupling. It is the planning-to-codebase
+bridge for AI-assisted development: it knows what a project's declared intent is (an idea, a requirement,
+a task) and where in the codebase that intent gets satisfied, and it keeps the link between the two
+traceable end to end. Virgil does not execute code, does not adopt ceremonial roles, and is not a
+framework — it maintains identity, context, and lifecycle transitions, then gets out of the way.
 
-## Install
+## The Three Pillars
 
-### Script (recommended)
+Virgil is one of three complementary pillars in the AI-assisted development ecosystem. None replaces
+the other two.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/virgenherrera/virgil/main/install.sh | sh
+| Pillar | Answers | Role |
+| ------ | ------- | ---- |
+| gentle-ai | HOW agents work | Review, receipt-driven development, orchestration patterns |
+| engram | WHAT agents remember | Persistent memory across sessions and compactions |
+| Virgil | WHAT exists and WHERE it lives | Planning-to-codebase bridge, with traceability |
+
+```mermaid
+flowchart LR
+    AGENT["Agent\n(Claude, GPT, etc.)"]
+
+    AGENT -->|"how to work"| GENTLE["gentle-ai\nHOW"]
+    AGENT -->|"what happened before"| ENGRAM["engram\nMEMORY"]
+    AGENT -->|"what exists / where"| VIRGIL["Virgil\nWHAT / WHERE"]
+
+    style GENTLE fill:#47a,stroke:#333,color:#fff
+    style ENGRAM fill:#7a4,stroke:#333,color:#fff
+    style VIRGIL fill:#a74,stroke:#333,color:#fff
 ```
 
-Resolves latest release automatically, verifies SHA-256 checksum. Supports Linux and macOS (amd64, arm64). Windows
-users: install from source with `go install` (below). Optional: `VIRGIL_VERSION` pins a specific release instead of
-latest; `VIRGIL_INSTALL_DIR` overrides the install location (default `/usr/local/bin`, falls back to `~/.local/bin`).
+## How It Works
 
-### GitHub Releases
+Any MCP-compatible agent talks to Virgil over the Model Context Protocol. Virgil resolves the
+project's declared intent through a `HostAdapter` and persists deliverables through an
+`ArtifactStoreAdapter`, keeping a `TraceabilityGraph` that links intent to decision to work to evidence.
 
-Binaries (linux/darwin, amd64/arm64) on the [Releases page](https://github.com/virgenherrera/virgil/releases).
+```mermaid
+flowchart LR
+    AGENT["Agent\n(Claude, GPT, Cursor, ...)"]
+    VIRGIL["Virgil\nMCP server"]
+    ADAPTER["ArtifactStoreAdapter\n(contract)"]
+    PM["PM Tool\n(Jira, GitHub, ...)"]
+    CODE["Codebase\n(evidence: tests, commits)"]
 
-### From source
+    AGENT -->|"MCP / JSON-RPC"| VIRGIL
+    VIRGIL -->|"persists via"| ADAPTER
+    ADAPTER --> PM
+    VIRGIL -->|"links intent to"| CODE
 
-Requires Go 1.26.5+.
+    style VIRGIL fill:#2b5,stroke:#333,color:#fff
+    style ADAPTER fill:#a74,stroke:#333,color:#fff
+```
+
+## Adapter Pattern
+
+`docs/` is the default `ArtifactStoreAdapter` — repo-docs, zero external dependencies, RAG-friendly by
+construction. External adapters (Jira, Azure DevOps, GitLab, GitHub Projects, Basecamp, and others) are
+first-class extension points, not provisional features: their implementation status is independent of
+their strategic priority.
+
+| Adapter | Status |
+| ------- | ------ |
+| repo-docs (`docs/`) | Implemented — default |
+| Jira | Contract defined, plugin TBD |
+| Azure DevOps | Contract defined, plugin TBD |
+| GitLab | Contract defined, plugin TBD |
+| GitHub (Issues/Projects) | Contract defined, plugin TBD |
+| Basecamp | Contract defined, plugin TBD |
+| Custom | Consumers can implement their own adapter against the contract |
+
+Whatever satisfies the `ArtifactStoreAdapter` contract can be plugged in — persist a deliverable with its
+revision and provenance, retrieve current state, execute a validated lifecycle transition, and report
+inventory without requiring a full content read.
+
+## MCP Tools
+
+| Tool | Description |
+| ---- | ------------ |
+| `virgil_init` | Initialize a Virgil-managed project — creates `virgil.json` and `AGENTS.md` |
+| `virgil_status` | Report current project state: initialization, active task, lifecycle step |
+| `virgil_write` | Create or update a planning document (idea, requirement, design, task) |
+| `virgil_transition` | Advance a task through its lifecycle status, validating the corresponding gate |
+
+## Quick Start
+
+Virgil's runtime is currently being re-derived from the sealed Principia on this branch — the commands
+below describe the intended consumer experience, not a shipped release yet.
 
 ```bash
+# Install the binary
+curl -fsSL https://raw.githubusercontent.com/virgenherrera/virgil/main/install.sh | sh
+
+# Or from source
 go install github.com/virgenherrera/virgil/cmd/virgil@latest
 ```
 
-## Setup
-
-In your project directory:
-
 ```bash
+# Wire Virgil into an agent host (detects Claude Code, Codex, etc.)
 virgil install
 ```
 
-Detects agents (Claude Code, Codex), configures MCP, installs skills/commands/prompt, writes `~/.virgil/state.json`.
+Manual MCP configuration for hosts without auto-detection points at the `virgil` binary as a stdio MCP
+server; consult your host's MCP configuration docs for the exact entry format.
 
-Re-apply Virgil skills, commands, and system prompt to installed agents without re-running detection or MCP config:
+## Project Status
 
-```bash
-virgil sync
-```
+Alpha. The Principia (`principia/constitution.md`) is sealed and constitutional — it is the sole
+authority for what Virgil is, does, and why. The Go runtime (`cmd/`, `internal/`) is being re-derived
+directly from the Principia on this branch, with no intermediate Dogma layer. See `AGENTS.md` for the
+current state of each layer and the architecture map.
 
-## Use
+## Contributing
 
-Open your AI agent in the project. Virgil exposes 5 tools via MCP:
+See `AGENTS.md` for repository conventions: commit format, prohibited tools and patterns, and the Echo
+System pipeline that gates every change. The `ArtifactStoreAdapter` contract for plugin development is
+documented in `AGENTS.md` under "Adapter Pattern".
 
-| Tool | What it does |
-|------|---------------|
-| `virgil_init` | Initialize a Virgil-managed project. Creates `virgil.json` and `AGENTS.md` |
-| `virgil_new` | Start a new planning change (project must not already have an active change) |
-| `virgil_propose` | Submit a content proposal for the current artifact step |
-| `virgil_approve` | Approve the current artifact revision, advancing to the next step |
-| `virgil_status` | Show current project state: initialized, active change, derived step |
+## License
 
-### Example
-
-```text
-You:   Initialize this project with Virgil
-Agent: [calls virgil_init] Project initialized.
-
-You:   I want to add JWT authentication
-Agent: [calls virgil_new, virgil_propose] Change created, idea proposed. Awaiting your approval.
-
-You:   Looks good, approve it
-Agent: [calls virgil_approve] Idea approved. Next step: spec.
-```
-
-## Artifact pipeline
-
-Each change moves through 5 artifact stages:
-
-```text
-idea -> spec -> design -> tasks -> handoff
-```
-
-"complete" is derived, not a stage — computed once all 5 are approved. Clears `active_change` from `virgil.json`.
-
-Artifacts are markdown files under `docs/{change_id}/`:
-
-```text
-docs/add-jwt-auth/
-  00-idea.md
-  01-spec.md
-  02-design.md
-  03-tasks.md
-  04-handoff.md
-```
-
-## Architecture
-
-- Stateless Go binary: each `virgil pipe` invocation receives a complete JSON envelope and returns a result.
-- `virgil serve` wraps the same logic as an MCP server over stdio for agent tool calls.
-- 3 runtime operations: `virgil.init`, `virgil.new`, `virgil.continue`.
-- `virgil.json` (target root) is the project config from `virgil_init`; `~/.virgil/state.json` is CLI install state.
-- `docs/` in this repo is operational dogma (read-only); in consumer repos it is the managed artifact store.
-- Adapter pattern (Open/Closed): new agents get an adapter, registered. Two ship today: Claude Code, Codex.
-
-## CLI reference
-
-| Command | What it does |
-|---------|---------------|
-| `virgil` | Show help |
-| `virgil install` | Install Virgil MCP integration for detected AI agents |
-| `virgil sync` | Re-apply Virgil skills, commands, and system prompt to installed agents |
-| `virgil serve` | Start the Virgil MCP server on stdio |
-| `virgil pipe` | Read a JSON envelope from stdin and write the result to stdout |
-| `virgil version` | Print the virgil version |
-
-## Validation
-
-Certified with 22 `TestApp_*` black-box scenarios in `test/app/`, run as subprocesses of the public binary.
-Unit tests are not certification evidence.
-
-```bash
-go test ./test/app -run '^TestApp_' -count=1
-```
+TBD.
