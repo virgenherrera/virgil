@@ -7,7 +7,7 @@ const LEDGER_PATH = ".virgil/ledger.jsonl";
 export interface LedgerEntry {
   readonly timestamp: string;
   readonly handoffId: string;
-  readonly event: "transition" | "audit" | "break-glass" | "created";
+  readonly event: "transition" | "audit" | "break-glass" | "created" | "phase-transition";
   readonly from?: string;
   readonly to?: string;
   readonly actor: string;
