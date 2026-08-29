@@ -6,6 +6,8 @@ import { DogmaLocalConfig } from "./providers/dogma/local/dogma-local.config.js"
 import { DogmaLocalModule } from "./providers/dogma/local/dogma-local.module.js";
 import { JiraConfig } from "./providers/ticket/jira/jira.config.js";
 import { JiraModule } from "./providers/ticket/jira/jira.module.js";
+import { GithubIssuesConfig } from "./providers/ticket/github/github-issues.config.js";
+import { GithubIssuesModule } from "./providers/ticket/github/github-issues.module.js";
 import { OrgLocalConfig } from "./providers/org/local/org-local.config.js";
 import { OrgLocalModule } from "./providers/org/local/org-local.module.js";
 import { SourceCodeLocalConfig } from "./providers/sourcecode/local/sourcecode-local.config.js";
@@ -35,6 +37,7 @@ import { InsightsCommand } from "./commands/insights.command.js";
     AppConfigModule.forRoot([
       DogmaLocalConfig,
       JiraConfig,
+      GithubIssuesConfig,
       OrgLocalConfig,
       SourceCodeLocalConfig,
       SlackConfig,
@@ -43,6 +46,7 @@ import { InsightsCommand } from "./commands/insights.command.js";
     ProviderRegistryModule,
     DogmaLocalModule.registerIfConfigured(),
     JiraModule.registerIfConfigured(),
+    GithubIssuesModule.registerIfConfigured(),
     OrgLocalModule.registerIfConfigured(),
     SourceCodeLocalModule.registerIfConfigured(),
     SlackModule.registerIfConfigured(),
