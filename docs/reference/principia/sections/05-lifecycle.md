@@ -5,7 +5,7 @@ source: "principia/constitution.md"
 source_lines: [237, 290]
 layer: lifecycle
 constitutional: false
-actors: [MIM, SM]
+actors: [MIM]
 glossary_terms: [FastForward, PlanningGapDetected]
 depends_on: []
 referenced_by: [7c-rgr, 11a-11b, 3b]
@@ -21,7 +21,7 @@ keywords:
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** MIM (the human who directs product decisions) and SM (the orchestrating agent that delegates the work) are the actors that operate this state machine. The lifecycle is configurable by Method Pack — the Kernel imposes mechanical convergence, but the specific ceremony of each phase can vary depending on the active Pack.
+> **Context:** MIM (the human who directs product decisions) is the actor that drives this state machine. The orchestrating agent delegates work within the boundaries MIM defines. The lifecycle ceremony can vary — the core services impose mechanical convergence, but the specific ceremony of each phase is configurable.
 
 ## 3. How it acts
 
@@ -58,7 +58,7 @@ stateDiagram-v2
     Verify --> Deliver : certified
     Deliver --> Operation : if applicable
 
-    note right of PLANNING : Virgil IMPOSES mechanical<br/>convergence via state machine.<br/>SM ORCHESTRATES delegations.<br/>MIM DIRECTS product decisions.
+    note right of PLANNING : Virgil IMPOSES mechanical<br/>convergence via state machine.<br/>The agent ORCHESTRATES delegations.<br/>MIM DIRECTS product decisions.
     note right of Execution : Virgil OBSERVES<br/>emits PlanningGapDetected<br/>if there are gaps
     note right of Operation : Virgil ASSISTS<br/>reactive, optional
 ```
@@ -72,7 +72,9 @@ deliverable is ambiguous, contradictory or insufficient, it emits this signal,
 blocks only the affected scope and returns control to planning. Execution
 never rewrites an approved deliverable.
 
-**FastForward**: the SM does not always run all phases with the same
+**FastForward**: the orchestrating agent does not always run all phases with the same
 ceremony. It evaluates a certainty gradient (FF-1 to FF-4) over the
 existing context and compresses the phases proportionally — from
-full ceremony (score 0-2) to direct execution (score 6-8). The SM computes the score based on observable, verifiable state. The scoring formula and its inputs plus result are recorded in the Ledger, making it auditable. FastForward compresses planning CEREMONY (deliberation phases), not Kernel quality gates — certification gates (R/G/R, mutation testing, fitness functions) run in full at ALL FastForward levels, from FF-1 to FF-4.
+full ceremony (score 0-2) to direct execution (score 6-8). The agent computes the score based on observable, verifiable state. The scoring formula and its inputs plus result are recorded in the Ledger, making it auditable. FastForward compresses planning CEREMONY (deliberation phases), not quality gates — certification gates run in full at ALL FastForward levels, from FF-1 to FF-4.
+
+> **Runtime note:** The current implementation represents FastForward as `ffLevel` (1-4) in `META.json`. The full scoring formula is an architectural provision for future refinement.

@@ -59,4 +59,6 @@ flowchart LR
 | CI | Pipeline stage — blocking gate |
 | CD | Deployment gate — absolute block |
 
-The severity threshold (high, critical, or both) is defined by the Method Pack. The Kernel enforces that the scan runs; the Pack decides the threshold. The scanning tool is agnostic: each ecosystem has its equivalent (`pnpm audit`, `go vuln check`, `cargo audit`, `pip-audit`, `mvn dependency-check`, etc.).
+The severity threshold (high, critical, or both) is defined by the Method Pack. The runtime enforces that the scan runs; the methodology configuration decides the threshold. The scanning tool is agnostic: each ecosystem has its equivalent (`pnpm audit`, `go vuln check`, `cargo audit`, `pip-audit`, `mvn dependency-check`, etc.).
+
+> **[Implementation status]** The runtime uses pnpm with `pnpm-lock.yaml` as the lock file artifact, honoring the versionPinning invariant. The automated securityAudit gate (blocking CI step) is an architectural provision — not yet integrated into the Echo pipeline. The `Method Pack` reference in the severity threshold is an architectural provision; in the current CLI, audit thresholds would be configurable via `virgil.json`.

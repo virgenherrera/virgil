@@ -6,7 +6,7 @@ source_lines: [951, 1024]
 layer: knowledge
 constitutional: true
 actors: []
-glossary_terms: [ArtifactStore, RAG, codebaseMemory, watermark, re-sync, ArtifactStoreAdapter]
+glossary_terms: [RAG, codebaseMemory, watermark, re-sync]
 depends_on: ["5", "7b"]
 referenced_by: ["8c-dbms", "8c-watermark", "8c-dual", "8d-8e", "8f-concept", "8f-construction"]
 keywords:
@@ -44,32 +44,32 @@ requires a **re-sync** that updates the projection. No
 certification is valid if the RAG projection is not synchronized
 with the revision being certified.
 
-### 8a. ArtifactStore — persistence
+### 8a. Persistence — filesystem store
 
 ```mermaid
 flowchart TD
-    VIRGIL["Virgil Kernel"]
-    VIRGIL -->|"persists via"| ASA["ArtifactStoreAdapter\n(contract)"]
+    VIRGIL["Virgil CLI"]
+    VIRGIL -->|"persists to"| FS[".virgil/\n(filesystem store)"]
 
-    ASA --> DEFAULT["repo-docs (default)\n{target}/docs/virgil/\nlocal, RAG-friendly,\nno external dependencies"]
+    FS --> HANDOFFS[".virgil/handoffs/{id}/\n6 files per handoff"]
+    FS --> LEDGER[".virgil/ledger.jsonl\nappend-only event log"]
+    FS --> CURSORS[".virgil/cursors.json\npolling state"]
 
-    ASA --> EXT["External adapters (TBD)"]
-
-    subgraph EXTERNOS["Options via contract"]
-        JIRA["Jira"]
-        CONF["Confluence"]
-        AZURE["Azure DevOps"]
-        ASANA["Asana"]
-        GH["GitHub Projects/Issues"]
-        OTROS["Others\n(via adapter contract)"]
+    subgraph PROVIDERS["Context sources (read-only)"]
+        DOGMA["DogmaLocal\n(docs/)"]
+        JIRA["JiraReader\n(REST API)"]
+        ORG["OrgLocal\n(JSON/YAML)"]
+        SC["SourceCodeLocal\n(git repos)"]
+        SLACK["SlackReader\n(Slack API)"]
     end
 
-    EXT --> EXTERNOS
+    VIRGIL -->|"reads via\nProviderRegistry"| PROVIDERS
 
-    style DEFAULT fill:#4a4,stroke:#333,color:#fff
-    style EXT fill:#777,stroke:#333,color:#fff
-    style EXTERNOS fill:#777,stroke:#333,color:#fff
+    style FS fill:#4a4,stroke:#333,color:#fff
+    style PROVIDERS fill:#47a,stroke:#333,color:#fff
 ```
+
+> **[Implementation status]** The current runtime persists all artifacts to the local filesystem under `.virgil/`. The provider plugin pattern (`ContextProviderPort` → `SnapshotProviderPort<T>` / `ObservableProviderPort<E>`) replaces the ArtifactStoreAdapter contract described in earlier versions of this document. Providers self-register via `registerIfConfigured()` and are skipped entirely when their configuration is absent — graceful degradation by design. External persistence backends (Jira, Confluence, Azure DevOps) are accessible as read-only context sources through the provider pattern, not as write adapters.
 
 ### 8b. Namespace separation
 
@@ -79,9 +79,9 @@ flowchart LR
         DOGMA["Virgil Dogma\nread-only for consumers\nnormative and versioned"]
     end
 
-    subgraph TARGET_DOCS["{target}/docs/"]
-        MANAGED["{target}/docs/virgil/\nManaged namespace\nVIRGIL writes here"]
-        CORPUS["{target}/docs/**\nProject corpus\nread-only for Virgil\n(opt-in for RAG)"]
+    subgraph TARGET_DOCS["{target}/.virgil/"]
+        MANAGED["{target}/.virgil/handoffs/\nManaged namespace\nVIRGIL writes here"]
+        CORPUS["{target}/docs/**\nProject corpus\nread-only for Virgil\n(via DogmaLocal provider)"]
     end
 
     DOGMA -.-|"are NOT the same"| TARGET_DOCS
@@ -92,6 +92,6 @@ flowchart LR
     style CORPUS fill:#777,stroke:#333,color:#fff
 ```
 
-> **Invariant**: `Virgil/docs/` (dogma) and `{target}/docs/` (project)
-> share the name `docs` but do NOT share identity, ownership or
-> write policy.
+> **Invariant**: `Virgil/docs/` (dogma) and `{target}/.virgil/` (project handoffs)
+> do NOT share identity, ownership or write policy. Virgil writes only to `.virgil/`;
+> project documentation is read-only context accessed via the DogmaLocal provider.

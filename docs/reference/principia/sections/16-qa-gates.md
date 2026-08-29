@@ -5,7 +5,7 @@ source: "principia/constitution.md"
 source_lines: [793, 814]
 layer: quality
 constitutional: true
-actors: [QA]
+actors: []
 glossary_terms: [mechanical gate, structured verification gate, ARCH, CERTIFIED]
 depends_on: [7a, 7d-tiers, 3b, 4]
 referenced_by: [11e-routing, 1a, 11a-11b, 11d]
@@ -46,3 +46,5 @@ flowchart TD
     style CERT fill:#4a4,stroke:#333,color:#fff
     style ESCALATE fill:#c44,stroke:#333,color:#fff
 ```
+
+> **[Implementation status]** The current runtime implements the certification concept via `AuditService` with 6 guardrail checks: `scope` (changed files within allowed paths), `forbidden` (no changes to forbidden paths), `file-count` (within limit), `line-count` (within limit), `conflict-markers` (no merge conflict markers), and `agent-output` (AGENT_OUTPUT.md exists). Verdict: PASS (all pass), WARN (only agent-output failed), FAIL (any non-agent check failed). Gap classification routes failures: IMPLEMENTATION → re-delegate, CONTRACT → manual intervention, COMPLIANCE → agent must write output. The full 7-step chain (mutation score, CRAP, CVE scan, coverage gate, architectural alignment) is on the roadmap as aspirational gates.

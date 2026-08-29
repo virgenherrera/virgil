@@ -5,7 +5,7 @@ source: "principia/constitution.md"
 source_lines: [618, 661]
 layer: quality
 constitutional: true
-actors: [SM]
+actors: []
 glossary_terms: [Red, Green, Refactor, R0, R1, G1, F1, V1]
 depends_on: [7a, 3a]
 referenced_by: [7c-composite, 7d-tiers, 7d-binding, 11a-11b]
@@ -62,7 +62,9 @@ stateDiagram-v2
     Refactor --> Red : regression
 ```
 
-The current dogma defines 5 gates within this cycle:
+The dogma defines 5 gates within this cycle:
 **R0** (complete handoff) → **R1** (valid red) → **G1** (production-safe
 green) → **F1** (safe refactor) → **V1** (independent
 verify).
+
+> **[Implementation status]** Execution sub-phases (prePhase → Red → Green → Refactor → Verify) and their gates are an architectural provision. The current runtime treats `execution` as a single monolithic state in the handoff lifecycle state machine. Sub-phase tracking is on the roadmap as a refinement of the execution state.

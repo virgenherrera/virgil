@@ -107,3 +107,5 @@ automatically to the commit that triggered the change. The certification
 invariant (section 8c) applies to both projections.
 
 In parallel-lane scenarios (section 11c), each isolated mutation domain maintains its own instance of the graph. In the reference implementation those domains are worktrees. Divergent graphs are reconciled at integration: the integrated revision triggers incremental graph reconstruction from its AST. There is no graph shared between divergent lanes.
+
+> **[Implementation status]** codebaseMemory construction is an architectural provision. External tooling (CodeGraph) provides deterministic AST-based structural graphs with incremental update, file watching, and watermark tracking — matching this specification. Integration between Virgil and CodeGraph is on the roadmap but not a V1 requirement.

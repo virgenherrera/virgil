@@ -6,53 +6,61 @@ source_lines: [1618, 1649]
 layer: execution
 constitutional: true
 actors: []
-glossary_terms: [EchoRun, buildArtifactSet, Ledger, Binding Layer]
+glossary_terms: [Ledger, LedgerService, Binding Layer]
 depends_on: ["7b", "8c-watermark", "11a-11b", "7a", "7d-binding", "11e-routing"]
 referenced_by: ["12"]
 keywords:
   - queryable evidence
-  - EvidenceIngestion
+  - LedgerService
   - immutable Ledger
   - Binding Layer
   - declared inferred verified
-  - EchoRun
-  - buildArtifactSet
-  - test results
-  - coverage
-  - mutation testing
+  - audit events
+  - transition events
+  - break-glass events
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** This section closes the execution pipeline (section 11a) by explaining how all generated evidence is ingested in a structured way, linked to the canonical EchoRun (section 7b), and how it feeds the progression of the Binding Layer.
+> **Context:** This section closes the execution pipeline (section 11a) by explaining how all generated evidence is ingested as structured, queryable data. The current implementation uses `LedgerService` (append-only JSONL); the full Binding Layer progression is an architectural provision.
 
 ### 11f. Evidence as queryable data
 
 Everything that happens during execution is ingested as queryable
-evidence, not as narrative documentation. For **code certification**,
-test results, coverage, metrics, scanners and build results
-are only eligible when linked to an `EchoRun` and its
-`buildArtifactSet`. Evidence from planning, human decisions or operation
-events can come from other sources, but does not replace the Echo
-path for certifying code.
+evidence, not as narrative documentation.
+
+#### Current implementation: LedgerService
+
+The `LedgerService` records four event types in an append-only JSONL file at `.virgil/ledger.jsonl`:
 
 ```mermaid
 flowchart TD
-    subgraph FUENTES["Evidence sources"]
-        TESTS["Test results\npass/fail + AC ref"]
-        COV["Coverage reports\n% per file"]
-        METRICS["Metrics\nmutation, CRAP,\ncomplexity"]
-        COMMITS["Commits\nSHA + phase + test ref"]
-        PIPELINE["Echo pipeline\nlogs, reports"]
+    subgraph EVENTS["Evidence sources (implemented)"]
+        CREATED["created\nhandoff generated"]
+        TRANSITION["transition\nstate changed\n(from → to)"]
+        AUDIT["audit\nverification completed\n(verdict + recommendation)"]
+        BREAKGLASS["break-glass\noverride activated\n(reason + deadline)"]
     end
 
-    FUENTES --> INGESTION["EvidenceIngestion\n(kernel)"]
-    INGESTION --> LEDGER["Ledger\n(immutable)"]
-    INGESTION --> BINDING["Binding Layer\ndeclared → inferred → verified"]
+    EVENTS --> LEDGER["LedgerService\n(append-only JSONL)"]
+    LEDGER --> QUERY["virgil ledger\n--handoff <id>"]
 
-    style INGESTION fill:#47a,stroke:#333,color:#fff
+    style EVENTS fill:#47a,stroke:#333,color:#fff
     style LEDGER fill:#4a4,stroke:#333,color:#fff
+    style QUERY fill:#2b5,stroke:#333,color:#fff
 ```
 
-Evidence feeds the Binding Layer: every commit referencing
-a test moves the link from `declared` to `inferred`. Mechanical
-verification (mutation testing) moves it to `verified`.
+Each ledger entry contains: `timestamp`, `handoffId`, `event`, `actor`, and optional `from`/`to` states, `reason`, and `data`. Entries are filterable by handoff ID.
+
+The `AuditService` also writes `AUDIT_REPORT.json` (machine-readable) and `FEEDBACK.md` (human-readable) to each handoff directory, providing structured evidence at the handoff level.
+
+#### Architectural provision: Binding Layer
+
+> **[Not yet implemented]** The Binding Layer describes three trust levels for the link between a test and the code it validates:
+>
+> | State | Phase | Guarantees |
+> |--------|------|-----------|
+> | declared | Red | The test exists and references an acceptance criterion |
+> | inferred | Green | Evidence shows code exercises the test |
+> | verified | Refactor | Mutation testing confirmed real strength |
+>
+> When execution sub-phases are implemented, evidence will feed the Binding Layer: every commit referencing a test moves the link from `declared` to `inferred`. Mechanical verification (mutation testing) moves it to `verified`.

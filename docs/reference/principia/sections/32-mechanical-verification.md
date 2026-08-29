@@ -5,59 +5,74 @@ source: "principia/constitution.md"
 source_lines: [1521, 1556]
 layer: execution
 constitutional: true
-actors: [SM]
-glossary_terms: [PDC, CRAP score]
+actors: [Agent]
+glossary_terms: [AuditService, GapType, CRAP score]
 depends_on: ["7e", "7g", "11a-11b", "3b", "4", "11c"]
 referenced_by: ["11e-routing"]
 keywords:
   - mechanical verification
+  - audit checks
+  - scope check
+  - forbidden paths
+  - file count
+  - line count
+  - conflict markers
+  - agent output
+  - gap classification
   - mutation testing
   - CRAP score
-  - cyclomatic complexity
-  - module size
-  - dependency structure
   - CVE security
-  - AUTH DDD review
-  - regulatory compliance
-  - Method Pack
-  - PDC
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** This section describes the Refactor phase of the execution pipeline (section 11a). It relies on the mechanical gates and structured verification defined in section 7e, and on the compliance-profile review mechanism from section 7g.
+> **Context:** This section describes the verification phase of the execution pipeline (section 11a). The current runtime implements guardrail-based mechanical verification through `AuditService`; the full metrics-based gates (mutation testing, CRAP, CVE) are architectural provisions.
 
 ### 11d. Mechanical verification — conditional human review
 
-The Refactor phase uses metrics-based mechanical verification as the primary certification mechanism. Mechanical gates (section 7e) are the main quality channel. For projects with a regulatory compliance profile, the Method Pack additionally activates blocking human review over authorization logic and domain modeling (see section 7g). In both cases, final certification requires that ALL applicable gates pass — both the mechanical ones and the human-review ones when active.
+Mechanical verification is the primary certification mechanism. The principle: **mechanical, not subjective**. Gates that can be automated MUST be automated. Human review is reserved for cases where mechanical gates cannot provide sufficient confidence (authorization logic, domain modeling under a compliance profile — see section 7g).
 
-Certification gates combine deterministic mechanical verification (test pass/fail, mutation score, coverage, CRAP, CVE scan) and structured verification (architectural alignment — see section 7e). Human review, when active due to a compliance profile, is also part of the applicable gates. The PDC operates during execution as a coherence safeguard (section 3b), but is not part of the certification pipeline — it can stop an incoherent delegation, it does not certify or approve code.
+#### Current implementation: AuditService
+
+The `AuditService` runs 6 guardrail checks against the constraints defined in `META.json`:
 
 ```mermaid
 flowchart TD
-    subgraph MECANICO["Mechanical verification (mandatory)"]
+    subgraph IMPLEMENTED["Implemented verification (AuditService)"]
+        SCOPE["scope\nfiles within allowedPaths"]
+        FORBIDDEN["forbidden\nno changes to forbiddenPaths"]
+        FCOUNT["file-count\nwithin maxFilesChanged"]
+        LCOUNT["line-count\nwithin maxLinesChanged"]
+        CONFLICT["conflict-markers\nno <<<<<<< / >>>>>>>"]
+        AGENT["agent-output\nAGENT_OUTPUT.md exists"]
+    end
+
+    subgraph PROVISION["Architectural provision (not yet implemented)"]
         MUT["Mutation testing\nreal test strength"]
         CRAP["CRAP score\nchange risk"]
         CYCL["Cyclomatic complexity\nsimple functions"]
-        SIZE["Module size\nbounded LOC"]
-        DEPS["Dependency structure\nzero cycles"]
         SEC["Security\nzero critical CVEs"]
     end
 
-    subgraph RESIDUAL["AUTH/DDD review (optional by default; blocking with compliance profile — see 7g)"]
-        AUTH["Authorization logic"]
-        DDD["Domain modeling"]
-    end
+    IMPLEMENTED -->|"gate"| PASS{{"Passes?"}}
+    PASS -->|"Yes"| VERIFY["PASS / WARN"]
+    PASS -->|"No"| BACK["FAIL\nre-delegate with\nrecommendation"]
 
-    MECANICO -->|"gate"| PASS{{"Passes?"}}
-    PASS -->|"Yes"| VERIFY["Verify"]
-    PASS -->|"No"| BACK["Re-delegate to\ncorresponding phase"]
-
-    style MECANICO fill:#47a,stroke:#333,color:#fff
-    style RESIDUAL fill:#777,stroke:#333,color:#fff
+    style IMPLEMENTED fill:#47a,stroke:#333,color:#fff
+    style PROVISION fill:#777,stroke:#333,color:#fff
     style PASS fill:#4a4,stroke:#333,color:#fff
     style BACK fill:#c44,stroke:#333,color:#fff
 ```
 
-The specific thresholds (mutation score, maximum CRAP, complexity)
-are defined by the dogma per tier (strict, standard, relaxed). The
+Each failed check is classified by gap type:
+
+| Check | Gap Type | Recommendation |
+|-------|----------|----------------|
+| scope, forbidden, file-count, line-count | `IMPLEMENTATION` | Re-delegate with tighter scope |
+| conflict-markers | `CONTRACT` | Manual intervention required |
+| agent-output | `COMPLIANCE` | Agent must write AGENT_OUTPUT.md |
+
+Verdict logic: all checks pass → `PASS`; only agent-output fails → `WARN`; any other check fails → `FAIL`.
+
+The specific thresholds for future metrics gates (mutation score, maximum CRAP, complexity)
+will be defined by the dogma per tier (strict, standard, relaxed). The
 Principia defines the principle: **mechanical, not subjective**.

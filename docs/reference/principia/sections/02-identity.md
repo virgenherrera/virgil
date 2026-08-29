@@ -6,7 +6,7 @@ source_lines: [100, 146]
 layer: identity
 constitutional: true
 actors: [MIM, Virgil]
-glossary_terms: [Virgil, MCP, AGENTS.md, Open Agentic Standard, Kernel, Method Pack]
+glossary_terms: [Virgil, AGENTS.md, Open Agentic Standard, Provider, Handoff, Ledger]
 depends_on: ["vocabulary"]
 referenced_by: [1a, 2, 5, 6]
 keywords:
@@ -16,6 +16,8 @@ keywords:
   - identity
   - Open Agentic Standard
   - AGENTS.md
+  - CLI
+  - providers
 -->
 
 ## 1. What Virgil is
@@ -27,10 +29,9 @@ framework, it is not a Scrum Master, it does not execute code. It
 maintains identity, traceability, context and transitions.
 
 Virgil adheres to the **Open Agentic Standard**: it publishes an
-`AGENTS.md` in the consuming project as a discoverability convention, and
-communicates via **Model Context Protocol (MCP)** / JSON-RPC. Any
-compatible agent can consume Virgil without coupling to a specific
-provider.
+`AGENTS.md` in the consuming project as a discoverability convention
+and operates as a **TypeScript CLI**. Any compatible agent can consume
+Virgil without coupling to a specific vendor or host.
 
 ```mermaid
 flowchart TD
@@ -61,6 +62,6 @@ should include:
 - Token ownership and housekeeping (how to manage context)
 - Planning boundary and stop conditions (when to stop)
 
-> **Pending definition**: the current AGENTS.md documents the wire protocol and operations. The orchestration pattern and token management will be specified in the corresponding Method Pack, not in this anchor document. This item is out of scope for the Principia.
+> **Pending definition**: the current AGENTS.md documents operational rules for the consuming agent. The orchestration pattern and token management will be specified in future methodology extensions, not in this anchor document. This item is out of scope for the Principia.
 
-> **Scope of this document.** The Principia is the foundational dogma: philosophy, architecture and invariants. It is NOT a go-to-market document, an adoption guide, or a user manual. The target consumer profile (ICP), MVP strategy, competitive positioning and onboarding guides are separate deliverables derived FROM the Principia but are not part of it. The Kernel + the Scrum Method Pack (the only one implemented) constitute the minimum viable slice; the other Method Packs, codebaseMemory and extensions are architectural provisions, not v1 requirements.
+> **Scope of this document.** The Principia is the foundational dogma: philosophy, architecture and invariants. It is NOT a go-to-market document, an adoption guide, or a user manual. The target consumer profile (ICP), MVP strategy, competitive positioning and onboarding guides are separate deliverables derived FROM the Principia but are not part of it. The core services (ProviderRegistry, HandoffService, AuditService, LedgerService) constitute the minimum viable slice; codebaseMemory, RAG and methodology extensions are architectural provisions, not v1 requirements.

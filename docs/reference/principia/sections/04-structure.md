@@ -6,7 +6,7 @@ source_lines: [194, 234]
 layer: structure
 constitutional: true
 actors: []
-glossary_terms: [Principia, Dogma, Runtime, Kernel, Method Pack, Ledger, Tracer]
+glossary_terms: [Principia, Dogma, Runtime, Provider, Handoff, Ledger]
 depends_on: ["vocabulary", "1"]
 referenced_by: ["5", "6"]
 keywords:
@@ -45,11 +45,11 @@ flowchart TD
         SLICES["Slices\nIncremental delivery"]
     end
 
-    subgraph RUNTIME["Runtime (Go binary)"]
+    subgraph RUNTIME["Runtime (TypeScript CLI)"]
         direction LR
-        KERNEL["Kernel\nLedger, Tracer, Context"]
-        ADAPTERS["Adapters\nHost, Store"]
-        PACKS["Method Packs\nCeremony, roles, gates"]
+        SERVICES["Core Services\nHandoff, Audit, Ledger,\nRefResolver"]
+        PROVIDERS["Providers\nDogma, Ticket, Org,\nSourceCode, Chat"]
+        COMMANDS["CLI Commands\nstatus, context, handoff,\naudit, watch, insights"]
     end
 
     PRINCIPIA -->|"governs"| DOGMA

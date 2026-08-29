@@ -25,6 +25,8 @@ editorial_additions: [context_paragraph, cross_reference_note]
 
 > **Continuation of:** [RAG as DBMS](22-rag-dbms.md) introduces the watermark concept. This section defines the complete mechanism.
 
+> **[Implementation status]** The watermark mechanism is an architectural provision — not yet implemented. The current runtime tracks source revisions via `repos[].commitSha` in META.json for audit purposes, but does not maintain a synchronized RAG projection with drift detection.
+
 #### Watermark and re-sync
 
 RAG and codebaseMemory maintain a **watermark**: the revision
@@ -40,7 +42,7 @@ mechanisms:
    invariant is mechanical: sourceRevision must be reachable from
    the watermark in the commit graph (equivalent to
    `git merge-base --is-ancestor sourceRevision watermark`). The
-   watermark is the Kernel's exclusive property and only updates
+   watermark is the runtime's exclusive property and only updates
    as an effect of a re-sync that rebuilds or updates the
    projection — an agent cannot modify the watermark without
    running the sync process.

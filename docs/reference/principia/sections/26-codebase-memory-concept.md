@@ -23,6 +23,8 @@ editorial_additions: [context_paragraph]
 
 ### 8f. codebaseMemory — structural code graph
 
+> **[Implementation status]** codebaseMemory is an architectural provision. External tooling (CodeGraph) provides this capability without runtime integration. The Principia makes room for it but it is not a V1 requirement; see the roadmap for integration plans.
+
 The RAG operates over deliverables and documentation — structured
 data that is indexed semantically. Source code is different: it cannot
 (and should not) be fully loaded into a RAG. For code, Virgil

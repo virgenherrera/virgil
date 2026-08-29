@@ -5,8 +5,8 @@ source: "principia/constitution.md"
 source_lines: [537, 576]
 layer: quality
 constitutional: true
-actors: [SM, MIM]
-glossary_terms: [Echo System, EchoRun, build artifact]
+actors: [MIM]
+glossary_terms: [Echo System, build artifact]
 depends_on: []
 referenced_by: [7b, 7c-rgr, 7e, 7h-pinning, 8f-construction, 11a-11b, 11f, 1a]
 keywords:
@@ -59,6 +59,8 @@ flowchart LR
 | CI | Complete | Push, PR | Pipeline stages |
 | CD | Absolute trust | Tag, merge to main | Deployment gates |
 
-Triggers are operation adapters and can change per project; **Echo does not change**. A project can fire the same scope via hooks, CI, a local runner or another mechanism as long as: (a) it produces the same Echo contract and its identified build artifacts, and (b) the trigger is automatic — not skippable by the executing agent.
+Triggers are configurable per project; **Echo does not change**. A project can fire the same scope via hooks, CI, a local runner or another mechanism as long as: (a) it produces the same Echo contract and its identified build artifacts, and (b) the trigger is automatic — not skippable by the executing agent.
 
 In the default configuration, pre-commit hooks run STRUCTURAL fast-feedback checks (lint, type-check, formatting, static analysis). Integration tests against a real stack (App/Service tier) run at pre-push or in the CI pipeline, not at pre-commit. "Fast feedback" in the Dev context refers to structural checks, not the full integration suite.
+
+> **[Implementation status]** The full Echo pipeline is an architectural provision. The current runtime implements quality verification via Vitest app-level tests (47 scenarios, zero mocks) and `AuditService` guardrail checks (scope, forbidden paths, file count, line count, conflict markers, agent output). The 5-step pipeline structure remains the target architecture for CI/CD integration.

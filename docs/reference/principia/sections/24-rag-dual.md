@@ -24,6 +24,8 @@ editorial_additions: [context_paragraph]
 
 > **Context:** RAG operates as the documentary context's DBMS (section 8c). Virgil instantiates that same pattern in two variants according to operational mode: `devRag` when developing Virgil itself, and `consumerRag` when a consuming project uses it.
 
+> **[Implementation status]** The dual RAG (devRag/consumerRag) is an architectural provision — not yet implemented. The current runtime uses the provider plugin pattern to access context sources: DogmaLocal for documentation, JiraReader for tickets, OrgLocal for team data, SourceCodeLocal for git state, and SlackReader for chat. The dual-mode concept maps to the Development Mode / Consumption Mode distinction (section 6a), which the runtime will support via `virgil.json` project manifest configuration.
+
 Virgil defines two instances of the same RAG-as-DBMS pattern, one
 per operational mode.
 

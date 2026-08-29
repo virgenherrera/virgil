@@ -24,7 +24,7 @@ keywords:
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** The Operation phase is optional and activates only when the delivered product has an active operational surface. It does not apply to libraries or single-use deliverables, whose documentation belongs to Delivery/support.
+> **Context:** The Operation phase is optional and activates only when the delivered product has an active operational surface. It does not apply to libraries or single-use deliverables, whose documentation belongs to Delivery/support. Virgil itself is a CLI tool with an operational surface, so this section applies to the Virgil project in Development Mode.
 
 ## 12. How it operates (optional)
 

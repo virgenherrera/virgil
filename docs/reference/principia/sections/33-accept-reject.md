@@ -5,53 +5,50 @@ source: "principia/constitution.md"
 source_lines: [1557, 1587]
 layer: execution
 constitutional: true
-actors: [SM]
-glossary_terms: [PDC]
+actors: [Agent]
+glossary_terms: [GapType, AuditService]
 depends_on: ["11a-11b", "11d", "9", "11c"]
 referenced_by: ["11f", "11e-breakglass"]
 keywords:
-  - QA gate
-  - virgil health
-  - git tag qa/approved
+  - audit gate
+  - gap type
   - implementation gap
-  - testing gap
   - contract gap
-  - planning gap
-  - PlanningGapDetected
+  - compliance gap
   - re-delegation
-  - PDC
+  - recommendation routing
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** This section closes the execution pipeline (section 11a) by describing how the Verify phase certifies or rejects a revision, and to which specific phase it re-delegates when a gap is detected.
+> **Context:** This section closes the execution pipeline (section 11a) by describing how the Verify phase certifies or rejects a handoff, and how gap classification routes re-delegation to the appropriate action.
 
 ### 11e. Accept/Reject — certification by gates
 
 ```mermaid
 flowchart TD
-    QA{{"QA: virgil health"}}
+    AUDIT{{"AuditService\nvirgil audit <id>"}}
 
-    QA -->|"passes"| CERT["CERTIFIED\ngit tag: qa/approved"]
-    QA -->|"implementation gap"| GREEN["→ Green"]
-    QA -->|"testing gap"| RED["→ Red"]
-    QA -->|"contract gap"| PRE["→ prePhase"]
-    QA -->|"planning gap"| PLANNING["→ Planning\n(PlanningGapDetected)"]
+    AUDIT -->|"PASS"| CERT["CERTIFIED\nverify → delivered"]
+    AUDIT -->|"IMPLEMENTATION gap"| REDELEGATE["Re-delegate\nwith tighter scope"]
+    AUDIT -->|"CONTRACT gap"| MANUAL["Manual intervention\nresolve conflict markers"]
+    AUDIT -->|"COMPLIANCE gap"| REEXEC["Re-execute\nagent must write output"]
 
     style CERT fill:#4a4,stroke:#333,color:#fff
-    style GREEN fill:#c44,stroke:#333,color:#fff
-    style RED fill:#c44,stroke:#333,color:#fff
-    style PRE fill:#c44,stroke:#333,color:#fff
-    style PLANNING fill:#c44,stroke:#333,color:#fff
+    style REDELEGATE fill:#c44,stroke:#333,color:#fff
+    style MANUAL fill:#c44,stroke:#333,color:#fff
+    style REEXEC fill:#c44,stroke:#333,color:#fff
 ```
 
-| Gap type | Rejection | Re-delegate to |
-|-------------|---------|--------------|
-| Code does not satisfy test | Incomplete implementation | Green |
-| Incomplete test suite | Missing tests | Red |
-| Contract violated | Broken interface | prePhase |
-| Design not reflected in code | Divergent architecture | Refactor |
-| Missing feature in planning | Insufficient deliverable | Planning |
+| Gap type | Verdict | Recommendation | State transition |
+|----------|---------|----------------|------------------|
+| None (all pass) | `PASS` | — | `verify → delivered` |
+| `IMPLEMENTATION` | `FAIL` | Re-delegate with tighter scope constraints | `verify → execution` |
+| `CONTRACT` | `FAIL` | Manual intervention — resolve conflict markers | `verify → execution` (after fix) |
+| `COMPLIANCE` only | `WARN` | Agent must write AGENT_OUTPUT.md — re-execute | `verify → execution` |
 
-Rejection is SPECIFIC — it identifies the exact phase that must
-be corrected, not a generic "fix it." Every re-delegation goes through
-the complete PDC (section 9c).
+Rejection is SPECIFIC — it identifies the gap type and provides an
+actionable recommendation, not a generic "fix it." The `HandoffStateMachine`
+enforces that `verify → delivered` requires audit `PASS`, and
+`verify → execution` requires audit NOT `PASS`.
+
+> **Architectural provision**: when execution sub-phases (prePhase, Red, Green, Refactor) are implemented, gap routing will target specific sub-phases instead of the monolithic `execution` state. The principle remains the same: rejection routes to the exact phase that must be corrected.

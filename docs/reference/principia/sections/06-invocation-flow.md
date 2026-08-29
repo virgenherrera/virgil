@@ -5,60 +5,56 @@ source: "principia/constitution.md"
 source_lines: [291, 329]
 layer: lifecycle
 constitutional: true
-actors: [PDC]
-glossary_terms: [ContextBrief, Ledger, PDC, ARCH, DogmaRef, ProjectRef, RunContext]
+actors: []
+glossary_terms: [SemanticRef, Ledger, Provider, Handoff]
 depends_on: [3a, 9]
 referenced_by: [7e, 7g, 11d, 4]
 keywords:
   - invocation flow
-  - HostAdapter
-  - Virgil Kernel
-  - ArtifactStore
-  - ContextBrief
+  - CLI command
+  - Provider
+  - SemanticRef
+  - Handoff
   - Ledger
-  - PDC
   - deterministic gates
   - certification
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** This canonical flow occurs within each lifecycle transition described in section 3a. The PDC (Orchestration Delegation Coherence) is an orchestration safeguard — important to distinguish it from the QA pipeline's certification gates (Echo System, detailed in section 7), which are the only ones that determine whether code is certified.
+> **Context:** This canonical flow occurs within each lifecycle transition described in section 3a. It distinguishes deterministic gates (binary pass/fail) from judgment-mediated steps (planning, escalation, architectural alignment).
 
 ### 3b. Flow of an invocation
 
 ```mermaid
 sequenceDiagram
-    participant ACT as Actor
-    participant HA as HostAdapter
-    participant VK as Virgil Kernel
-    participant SA as ArtifactStore
+    participant USR as User / Agent
+    participant CLI as CLI Command
+    participant SVC as Core Service
+    participant PRV as Provider
+    participant FS as Filesystem
 
-    ACT->>HA: request
-    HA->>VK: resolve DogmaRef + ProjectRef + RunContext
+    USR->>CLI: virgil <command> [args]
+    CLI->>SVC: resolve SemanticRef + scope
 
-    activate VK
-    VK->>VK: validate source != target
-    VK->>VK: compile ContextBrief
-    VK->>VK: execute canonical operation
-    VK->>SA: persist deliverable
-    SA-->>VK: confirmation
-    VK->>VK: ingest evidence
-    VK->>VK: record transition in Ledger
-    deactivate VK
+    activate SVC
+    SVC->>PRV: query provider(s) by kind
+    PRV-->>SVC: snapshot / event data
+    SVC->>SVC: execute operation (create handoff, audit, transition)
+    SVC->>FS: persist deliverable (.virgil/handoffs/)
+    FS-->>SVC: confirmation
+    SVC->>SVC: record transition in Ledger
+    deactivate SVC
 
-    VK-->>HA: result + status
-    HA-->>ACT: response
+    SVC-->>CLI: result + status
+    CLI-->>USR: formatted output
 ```
 
-This canonical flow has deterministic steps and judgment-mediated steps. Certification gates (test pass/fail, mutation score, CRAP, coverage, CVE scan) are deterministic — binary, without subjectivity. Planning, escalation, ContextBrief compilation, architectural alignment and coherence-verification (PDC) steps involve judgment from the orchestrating agent, are not deterministic, and must leave traceable evidence. The Principia distinguishes both types explicitly.
+This canonical flow has deterministic steps and judgment-mediated steps. Certification gates (audit checks: scope, forbidden paths, file count, line count, conflict markers, agent output) are deterministic — binary, without subjectivity. Planning, escalation, and architectural alignment steps involve judgment from the orchestrating agent, are not deterministic, and must leave traceable evidence. The Principia distinguishes both types explicitly.
 
-The PDC is an orchestration-coherence safeguard that operates during
-execution, but it is NOT a certification gate. Certification is determined exclusively by the Kernel-defined QA pipeline gates: deterministic mechanical gates (section 7e, 11d) and structured verification of architectural alignment (section 7e, ARCH gate). When the project declares a regulatory compliance profile, human review is added as an additional blocking gate (section 7g). The PDC can stop an incoherent delegation, but it does not certify or approve code.
-
-> **Invocation identities**: `DogmaRef`, `ProjectRef` and `RunContext` are the three identities the HostAdapter resolves at the start of every invocation. This Principia names them as participants in the canonical flow but does not specify their fields — that contract belongs to the protocol layer (docs/protocol/).
+> **Semantic refs**: `SemanticRef` follows the URI scheme `{kind}://{backend}/{id}` (e.g. `ticket://jira/PROJ-123`, `dogma://local/architecture.md`). The `RefResolverService` dispatches resolution to all providers of the matching kind — first successful resolution wins.
 
 > **Atomicity**: the flow shows sequential steps (persist →
-> ingest evidence → record transition). If the process fails between
+> record transition). If the process fails between
 > steps, the recovery mechanism (section 10) reconciles state by
 > deriving the current phase from existing deliverables, not from
 > a stored pointer. The Ledger implements idempotency: recording

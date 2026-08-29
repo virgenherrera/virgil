@@ -49,3 +49,5 @@ Scope: covers EXCLUSIVELY the technical data-controls layer
 (minimization, field-level access control, shape validation). It does NOT
 cover organizational, physical, legal, procedural controls
 or segregation of duties. When the project declares a regulatory compliance profile (HIPAA, PCI DSS, GDPR), the Method Pack MUST activate mandatory human review over authorization logic and domain modeling as a blocking gate. This activation is automatic for regulated profiles, not opt-in. For projects without a regulatory profile, human review remains optional and non-blocking. The Principia defines the technical capability; the project's compliance profile determines whether human review is required.
+
+> **[Implementation status]** complianceByDesign is an architectural provision — not yet implemented in the runtime. The principle is valid and will be enforced when regulatory compliance profiles are supported.

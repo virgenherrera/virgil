@@ -74,7 +74,7 @@ flowchart TD
     A3["3. Context compiled\nby contract"]
     A4["4. e2e traceability"]
     A5["5. Planning !=\nexecution"]
-    A6["6. Host and Store are\ndistinct adapters"]
+    A6["6. Input and persistence are\ndistinct concerns"]
     A7["7. Incremental\ndelivery"]
     A8["8. Control plane separate\nfrom ceremony"]
     A9["9. Dogma separate\nfrom operational RAG"]

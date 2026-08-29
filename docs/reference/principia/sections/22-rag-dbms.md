@@ -25,6 +25,8 @@ editorial_additions: [context_paragraph, cross_reference_note]
 
 ### 8c. Dual RAG — context DBMS
 
+> **[Implementation status]** The RAG layer is an architectural provision — not yet implemented in the runtime. Current context comes from raw provider snapshots: DogmaLocal reads files, JiraReader calls the REST API, SourceCodeLocal reads git state, etc. The principle of bounded queries over raw file reads remains the target architecture. The vision described below (watermarks, bounded queries, devRag/consumerRag split) is the design target for the RAG layer.
+
 Architectural principle: **agents query instead of reading**.
 The architecture favors querying the RAG (deliverables, documentation)
 and codebaseMemory (code structure, section 8f) over direct

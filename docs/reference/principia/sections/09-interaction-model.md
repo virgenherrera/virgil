@@ -6,7 +6,7 @@ source_lines: [462, 534]
 layer: interaction
 constitutional: true
 actors: [Developer, Implementer]
-glossary_terms: [Development Mode, Consumption Mode, Principia, Method Pack, HostAdapter, ArtifactStoreAdapter, global ownership, global context injection]
+glossary_terms: [Development Mode, Consumption Mode, Principia, Provider, global ownership, global context injection]
 depends_on: ["5", "vocabulary", "1", "2"]
 referenced_by: ["authority"]
 keywords:
@@ -14,17 +14,15 @@ keywords:
   - Development Mode
   - Consumption Mode
   - separation of concerns
-  - Method Pack
-  - HostAdapter
-  - ArtifactStoreAdapter
+  - Provider
+  - CLI
   - global ownership
   - global context injection
   - fundamental invariant
-  - MCP JSON-RPC
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** Method Pack, HostAdapter and ArtifactStoreAdapter are the components described in section 5 (parts catalog); here we show how those components and Virgil's two operational modes interact with each other without mixing responsibilities.
+> **Context:** Core services and providers are the components described in section 5 (parts catalog); here we show how those components and Virgil's two operational modes interact with each other without mixing responsibilities.
 
 **In this chunk:**
 - [6a. Actors and modes](#6a-actors-and-modes)
@@ -46,10 +44,10 @@ flowchart TD
 
     subgraph CONSUMO["Consumption Mode"]
         IMPL["Implementer\n(External agent)"]
-        IMPL -->|"uses via MCP\nJSON-RPC"| V_TOOL["Virgil\n(TOOL)"]
+        IMPL -->|"uses via CLI\ncommands"| V_TOOL["Virgil\n(TOOL)"]
     end
 
-    V_OBJ -.-|"same binary\nsame contracts\nsame gates"| V_TOOL
+    V_OBJ -.-|"same CLI\nsame contracts\nsame gates"| V_TOOL
 
     PRINCIPIA["Principia\n(immutable)"]
     PRINCIPIA -->|"governs"| DESARROLLO
@@ -66,23 +64,23 @@ Each piece has clear ownership. They are not mixed.
 
 ```mermaid
 flowchart TD
-    PACK["Method Pack\nCeremony | Roles | Routing | Gates"]
-    PACK -->|"injects policy"| VIRGIL
+    COMMANDS["CLI Commands\nstatus | context | handoff |\naudit | watch | insights"]
+    COMMANDS -->|"invoke"| SERVICES
 
-    VIRGIL["Virgil Kernel\nIdentity | Traceability | Context | Transitions"]
-    VIRGIL -->|"invokes via"| HOST
-    VIRGIL -->|"persists via"| STORE
+    SERVICES["Core Services\nIdentity | Traceability | Context | Transitions"]
+    SERVICES -->|"query via"| PROVIDERS
+    SERVICES -->|"persist to"| FS
 
-    HOST["HostAdapter\nDiscovery | Invocation | Capabilities"]
-    STORE["ArtifactStoreAdapter\nPersistence | Retrieval | Write Policy"]
+    PROVIDERS["Providers (plugin pattern)\nDogma | Ticket | Org |\nSourceCode | Chat"]
+    FS["Filesystem\n.virgil/handoffs/ | .virgil/ledger.jsonl"]
 
-    HOST ~~~ STORE
-    NOTE["Host and Store are INDEPENDENT concerns\na single host can use different stores\na single store can serve different hosts"]
+    PROVIDERS ~~~ FS
+    NOTE["Providers and persistence are INDEPENDENT concerns\na provider reads external data\npersistence writes local state"]
 
-    style PACK fill:#7a4,stroke:#333,color:#fff
-    style VIRGIL fill:#47a,stroke:#333,color:#fff
-    style HOST fill:#a74,stroke:#333,color:#fff
-    style STORE fill:#a74,stroke:#333,color:#fff
+    style COMMANDS fill:#7a4,stroke:#333,color:#fff
+    style SERVICES fill:#47a,stroke:#333,color:#fff
+    style PROVIDERS fill:#a74,stroke:#333,color:#fff
+    style FS fill:#a74,stroke:#333,color:#fff
     style NOTE fill:none,stroke:none
 ```
 

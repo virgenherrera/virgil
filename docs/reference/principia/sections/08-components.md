@@ -6,29 +6,28 @@ source_lines: [419, 459]
 layer: components
 constitutional: true
 actors: []
-glossary_terms: [Kernel, Ledger, TraceabilityGraph, ArtifactRepository, EvidenceIngestion, ContextCompiler, RetrievalProjection, HostAdapter, ArtifactStoreAdapter, Method Pack, ContextBrief]
+glossary_terms: [Ledger, Provider, ProviderRegistry, CapabilityRegistry, HandoffService, HandoffStateMachine, AuditService, RefResolver, InsightEngine, PollingLoop, ContextProviderPort, SnapshotProviderPort, ObservableProviderPort]
 depends_on: ["4", "1", "2"]
 referenced_by: ["6", "8", "10"]
 keywords:
   - components
-  - Kernel
-  - Adapters
-  - Method Packs
+  - core services
+  - providers
+  - port hierarchy
   - Ledger
-  - TraceabilityGraph
-  - ArtifactRepository
-  - EvidenceIngestion
-  - ContextCompiler
-  - RetrievalProjection
-  - HostAdapter
-  - ArtifactStoreAdapter
-  - Scrum
-  - ceremony-agnostic
+  - HandoffService
+  - AuditService
+  - ProviderRegistry
+  - CapabilityRegistry
+  - RefResolver
+  - InsightEngine
+  - PollingLoop
+  - methodology-agnostic
   - universal quality
 editorial_additions: [context_paragraph, synonym_note]
 -->
 
-> **Context:** The distinction between "universal quality" (Kernel) and "ceremony" (Method Pack) stems from the two layers of principles described in section 4: governance (the rules of the game) and architecture (the rules of construction). This component catalog is where both layers materialize into concrete pieces.
+> **Context:** The distinction between "universal quality" (core services) and "ceremony" (methodology configuration) stems from the two layers of principles described in section 4: governance (the rules of the game) and architecture (the rules of construction). This component catalog is where both layers materialize into concrete pieces.
 
 ## 5. What parts compose it
 
@@ -36,49 +35,49 @@ editorial_additions: [context_paragraph, synonym_note]
 
 ```mermaid
 flowchart TD
-    subgraph KERNEL["Kernel (ceremony-agnostic, universal quality)"]
-        LEDGER["Ledger\nEvents, transitions,\nimmutable history"]
-        TRACER["TraceabilityGraph\nIntent → decision →\nwork → evidence\n(derived projection,\nreconstructible from Ledger)"]
-        REPO["ArtifactRepository\nDeliverables, revisions,\nprovenance"]
-        EVIDENCE["EvidenceIngestion\nTests, commits, builds,\nhuman decisions"]
-        CONTEXT["ContextCompiler\nSelects deliverables →\nContextBrief"]
-        RAG["RetrievalProjection\nLexical/vector search\n(not an authority)"]
+    subgraph CORE["Core Services (methodology-agnostic, universal quality)"]
+        LEDGER["LedgerService\nEvents, transitions,\nimmutable JSONL history"]
+        HANDOFF["HandoffService\nCreates structured handoffs\nfor AI agents"]
+        HSM["HandoffStateMachine\nLifecycle enforcement,\npreconditions, break-glass"]
+        AUDIT["AuditService\nGuardrail verification,\ngap classification"]
+        REF["RefResolverService\nCross-provider ref resolution\nvia SemanticRef URIs"]
     end
 
-    subgraph ADAPTERS["Adapters (interchangeable)"]
-        HA["HostAdapter\nDiscovery, invocation,\nhost capabilities"]
-        ASA["ArtifactStoreAdapter\nPersistence, retrieval\n(repo-docs | Jira | etc.)"]
+    subgraph PROVIDERS["Providers (interchangeable, plugin pattern)"]
+        PORT["ContextProviderPort\nBase contract: kind, health, refs"]
+        SNAP["SnapshotProviderPort\nPoint-in-time reads"]
+        OBS["ObservableProviderPort\nEvent streaming via RxJS"]
+        PREG["ProviderRegistry\nRuntime lookup by kind"]
+        CREG["CapabilityRegistry\nStatus tracking"]
     end
 
-    subgraph PACKS["Method Packs (pluggable)"]
-        SCRUM["Scrum\n(default)\nIMPLEMENTED"]
-        TBD["Waterfall | Kanban | Shape Up\nTBD — not implemented"]
-        CUSTOM["Custom Pack\nthe consumer could define\ntheir own methodology"]
+    subgraph MODES["Operation Modes"]
+        ACTIVE["Active Mode\nCLI commands"]
+        REACTIVE["Reactive Mode\nPollingLoop + CursorStore\n+ EventRouter"]
+        PROACTIVE["Proactive Mode\nInsightEngine\n+ Analyzers"]
     end
 
-    KERNEL --> HA & ASA
-    PACKS -->|"ceremony, roles, gates"| KERNEL
+    CORE --> PROVIDERS
+    MODES --> PREG
 
-    style KERNEL fill:#47a,stroke:#333,color:#fff
-    style ADAPTERS fill:#a74,stroke:#333,color:#fff
-    style PACKS fill:#7a4,stroke:#333,color:#fff
-    style SCRUM fill:#4a4,stroke:#333,color:#fff
-    style TBD fill:#777,stroke:#333,color:#fff
-    style CUSTOM fill:#777,stroke:#333,color:#fff
+    style CORE fill:#47a,stroke:#333,color:#fff
+    style PROVIDERS fill:#a74,stroke:#333,color:#fff
+    style MODES fill:#7a4,stroke:#333,color:#fff
 ```
 
-> **Synonym**: `RetrievalProjection` is the formal name of the Kernel component; `RAG` is the operational term used in the rest of this document. Both designate the same reconstructible read projection.
+Each component has a clear responsibility. The core services impose universal
+quality invariants (audit checks, state machine preconditions, ledger
+recording) regardless of methodology. The handoff lifecycle is currently
+methodology-agnostic by design.
 
-Each component has a clear responsibility. The Kernel imposes universal
-quality invariants (Echo, testing, binding layer) regardless of
-methodology. The Method Pack defines the ceremony: how many roles participate,
-which ceremonial gates get compressed, how it iterates. Quality belongs to the
-Kernel; ceremony belongs to the Pack.
+> **[Architectural provision — not yet implemented]** Methodology extensions
+> (analogous to the originally envisioned Method Packs) could define additional
+> ceremony: how many roles participate, which ceremonial gates get compressed,
+> how iteration works. Quality belongs to the core services; ceremony would
+> belong to the methodology extension. An extension could define ADDITIONAL
+> quality mechanisms but could not reduce the core's minimum gates.
 
-Method Packs inherit quality gates (Red/Green/Refactor, mutation testing,
-fitness functions) as non-negotiable universal invariants. A Pack can define
-ADDITIONAL quality mechanisms but cannot reduce the Kernel's minimum.
-"Ceremony-agnostic" means the Pack chooses the ceremony (sprints, kanban
-boards, Shape Up cycles); "universal quality" means the R/G/R verification
-pipeline + fitness functions apply without exception, regardless of the
-ceremony chosen.
+> **[Architectural provision — not yet implemented]** RAG (RetrievalProjection)
+> as a vectorized read projection over provider snapshots. Currently, providers
+> deliver raw snapshots; the RAG layer would add semantic retrieval and bounded
+> context compilation.

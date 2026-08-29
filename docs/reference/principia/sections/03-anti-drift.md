@@ -48,7 +48,7 @@ Ledger / TraceabilityGraph
 - Macro Red/Green/Refactor and its independence per phase
 - The existence of regenerable build artifacts as the canonical output of Echo
 - The unambiguous association `EchoRun + sourceRevision + buildArtifactSet`
-- EvidenceIngestion, Binding Layer and the Kernel's minimum quality gates
+- Evidence recording, Binding Layer and the runtime's minimum quality gates
 - The rule that certification is decided on evidence produced by the canonical path, not on the agent's claims
 
 **These ARE substitutable/configurable as long as they preserve those contracts:**
@@ -58,7 +58,7 @@ Ledger / TraceabilityGraph
 - Triggers that fire Echo (hooks, CI, CD or other adapters)
 - Git strategy, branch names, worktrees and commit conventions
 - Physical location of build artifacts, as long as identity, provenance and reproducibility are preserved
-- HostAdapter, ArtifactStoreAdapter, RAG backends and other extensions expressly defined by contract
+- Provider backends, persistence mechanisms, RAG backends and other extensions expressly defined by contract
 
 **Anti-drift test:** if a reinterpretation allows Virgil to simply "observe whatever happened" and certify arbitrary evidence without going through Echo/build artifacts, that reinterpretation contradicts this Principia. Virgil is not a passive auditor: it defines the protocol by which execution acquires certifiable evidence.
 

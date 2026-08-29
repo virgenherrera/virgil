@@ -6,7 +6,7 @@ source_lines: [1136, 1186]
 layer: knowledge
 constitutional: true
 actors: [orchestrator]
-glossary_terms: [delegationContract, RAG, Ledger, ArtifactRepository, TraceabilityGraph]
+glossary_terms: [delegationContract, RAG, Ledger]
 depends_on: ["8"]
 referenced_by: ["9", "10"]
 keywords:
@@ -68,8 +68,10 @@ flowchart LR
     style FALLBACK fill:#777,stroke:#333,color:#fff
 ```
 
-The RAG is not the process's authority — the Ledger, the
-ArtifactRepository and the evidence are the source of truth. The RAG and
-the TraceabilityGraph are derived projections, reconstructible from
+The RAG is not the process's authority — the Ledger
+and the handoff files are the source of truth. The RAG
+is a derived projection, reconstructible from
 the Ledger and the deliverables. No projection is a source of truth;
 if it desyncs, it is rebuilt from the authoritative sources.
+
+> **[Implementation status]** Tiered visibility and memoization are architectural provisions — they depend on the RAG layer, which is not yet implemented. The current runtime's `LedgerService` (append-only JSONL at `.virgil/ledger.jsonl`) is the authoritative event log. The principle of bounded scope for sub-agents remains valid and will be enforced through the RAG's tiered visibility when implemented.

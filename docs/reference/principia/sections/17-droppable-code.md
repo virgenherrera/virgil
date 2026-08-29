@@ -49,3 +49,5 @@ and legacy code in the process of migration. Every exception requires an
 explicit tag in the file and periodic review.
 
 The same exception mechanism applies to mutation testing: the MIM may authorize documented exceptions for code where mutation testing is computationally prohibitive (heavy integration test suites, generated code, third-party adapters). Every exception requires an explicit tag, justification and periodic review. Mutation-score thresholds remain non-relaxable for non-exempted code.
+
+> **[Implementation status]** droppableCode is an architectural provision — not yet implemented in the runtime. The principle is valid and will be enforced once coverage tooling is integrated with the Echo pipeline.
