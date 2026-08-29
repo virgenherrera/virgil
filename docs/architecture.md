@@ -391,6 +391,34 @@ Pipeline: `DogmaSnapshot` -> `extractSections()` -> `classifySection()` ->
 Deterministic hashing: `"brief-" + SHA-256("{sourceRef}:{title}:{index}")[0:12]`.
 Same input always produces the same ID across runs.
 
+## Brief Query + Drift Detection (RAG Phase 2)
+
+`BriefQueryService` reads the persisted `.virgil/brief.json` and provides
+filtered access to brief items without re-generating.
+
+### Query Options
+
+- `kinds` -- filter by `BriefKind[]` (risk, constraint, decision, etc.)
+- `search` -- case-insensitive text match on title + summary
+- `sourceRef` -- exact match on any sourceRef
+- `maxItems` -- limit returned items (applied post-filter)
+
+### Drift Detection
+
+`checkDrift(outputDir)` compares the brief's watermark against `git rev-parse
+HEAD`. If different, counts commits behind via `git rev-list --count`. Every
+query result includes drift status automatically.
+
+### CLI
+
+`virgil brief --kind risk --search "security" --check-drift`
+
+When any query flag is present, the command switches to query mode (read
+existing brief) instead of generate mode. Flags:
+- `--kind` (repeatable or comma-separated)
+- `--search`
+- `--check-drift`
+
 ## Two-Layer Architecture
 
 ```mermaid
@@ -426,8 +454,9 @@ bootstrap the full NestJS application with real service wiring.
 | `github-issues-provider.test.ts` | 8 | GitHub config states, health, snapshots, refs |
 | `brief-generation.test.ts` | 6 | Classification, privacy summarization, persistence |
 | `github-wiki-provider.test.ts` | 16 | Config states, snapshots, special file filtering, refs, health |
+| `brief-query.test.ts` | 8 | Kind/text/sourceRef filtering, drift detection, maxItems |
 
-77 test scenarios total. Filterable by test name via Vitest.
+85 test scenarios total. Filterable by test name via Vitest.
 
 ## Module Wiring
 

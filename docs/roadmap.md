@@ -101,24 +101,32 @@ d247b6f docs: add AGENTS.md and AGENTS-DEV.md
 - Config: VIRGIL_GITHUB_WIKI_OWNER, VIRGIL_GITHUB_WIKI_REPO, VIRGIL_GITHUB_WIKI_TOKEN (optional), VIRGIL_GITHUB_WIKI_CACHE_DIR (optional)
 - Semantic refs: `dogma://github-wiki/{page}` → resolves to GitHub wiki URL
 
+### Brief Query + Drift Detection (RAG Phase 2)
+
+- `BriefQueryService`: loads persisted brief.json, filters by kind/text/sourceRef/maxItems
+- `checkDrift()`: compares brief watermark vs git HEAD, counts commits behind
+- CLI: `virgil brief --kind risk --search text --check-drift`
+- Query mode auto-activates when any filter flag present
+- Drift included in every query result
+
 ### App-Level Test Suite
 
-- 9 test files, 77 scenarios
+- 10 test files, 85 scenarios
 - Zero mocks -- full NestJS application bootstrap
-- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights, GitHub Issues, brief generation, GitHub Wiki
+- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights, GitHub Issues, brief generation, GitHub Wiki, brief query + drift
 - Filterable by test name via Vitest
 
 ## Next Steps (Priority Order)
 
-1. **Additional providers** -- extend the provider plugin pattern to more
+1. **Brief-handoff integration** (in progress) -- wire BriefQueryService
+   into HandoffService.create() so CONTEXT.md uses classified brief items
+   instead of raw dogma excerpts. Auto-generate brief if missing.
+
+2. **Additional providers** -- extend the provider plugin pattern to more
    backends:
    - Confluence (dogma kind)
    - Microsoft Teams (chat kind)
    - Azure DevOps (ticket kind)
-
-2. **RAG phase 2** -- brief querying interface. Agents query the brief
-   instead of reading raw dogma. Token economy enforcement so handoff
-   context stays within LLM context windows.
 
 3. **Execution tracking** -- sub-phases within the `execution` state:
    prePhase -> Red -> Green -> Refactor -> Verify. Finer-grained progress
