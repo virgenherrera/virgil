@@ -1,6 +1,7 @@
 import { Test, type TestingModule } from "@nestjs/testing";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { execSync } from "node:child_process";
 import { HandoffModule } from "../handoff/handoff.module.js";
 import { HandoffService } from "../handoff/handoff.service.js";
 import { HandoffStateMachine } from "../handoff/handoff-state-machine.js";
@@ -11,6 +12,10 @@ import { LedgerService } from "../ledger/ledger.service.js";
 import { ProviderRegistryModule } from "../providers/provider-registry.module.js";
 import { CapabilityRegistryModule } from "../capabilities/capability-registry.module.js";
 import { AppConfigModule } from "../config/app-config.module.js";
+import { DogmaLocalConfig } from "../providers/dogma/local/dogma-local.config.js";
+import { DogmaLocalModule } from "../providers/dogma/local/dogma-local.module.js";
+import { BriefModule } from "../brief/brief.module.js";
+import { BriefGeneratorService } from "../brief/brief-generator.service.js";
 import { createTestDir, cleanTestDir, initGitRepo } from "./test-helpers.js";
 
 describe("handoff lifecycle", () => {
@@ -103,6 +108,17 @@ describe("handoff lifecycle", () => {
         ticketKey: "TEST-3",
         ffLevel: 1,
       });
+    });
+
+    it("CONTEXT.md shows brief fallback when no dogma provider configured", async () => {
+      const meta = await handoffService.create("TEST-BRIEF-1", {
+        repoPath: testDir,
+      });
+
+      const handoffDir = resolve(testDir, ".virgil/handoffs", meta.id);
+      const context = readFileSync(resolve(handoffDir, "CONTEXT.md"), "utf-8");
+
+      expect(context).toContain("No dogma brief available.");
     });
 
     it("applies custom ff level and guardrails from options", async () => {
@@ -355,6 +371,102 @@ describe("handoff lifecycle", () => {
         (deadline.getTime() - activatedAt.getTime()) / (1000 * 60 * 60);
 
       expect(diffHours).toBe(72);
+    });
+  });
+
+  describe("create with dogma brief", () => {
+    let savedEnv: NodeJS.ProcessEnv;
+
+    beforeEach(async () => {
+      savedEnv = { ...process.env };
+
+      // Close the default module to reconfigure with dogma
+      await module.close();
+
+      const docsDir = resolve(testDir, "docs");
+      mkdirSync(docsDir, { recursive: true });
+      writeFileSync(
+        resolve(docsDir, "security.md"),
+        [
+          "# Security Policy",
+          "",
+          "There is a significant risk of data breaches if credentials are exposed.",
+          "",
+          "# Deployment Constraints",
+          "",
+          "All services must use TLS. This is a mandatory requirement.",
+        ].join("\n"),
+      );
+      writeFileSync(
+        resolve(docsDir, "architecture.md"),
+        [
+          "# System Architecture",
+          "",
+          "The system follows a hexagonal architecture pattern with ports and adapters.",
+        ].join("\n"),
+      );
+
+      process.env.VIRGIL_DOGMA_LOCAL_PATH = docsDir;
+
+      module = await Test.createTestingModule({
+        imports: [
+          AppConfigModule.forRoot([DogmaLocalConfig]),
+          CapabilityRegistryModule,
+          ProviderRegistryModule,
+          LedgerModule,
+          HandoffModule,
+          AuditModule,
+          DogmaLocalModule.registerIfConfigured(),
+          BriefModule,
+        ],
+      }).compile();
+
+      await module.init();
+      handoffService = module.get(HandoffService);
+    });
+
+    afterEach(() => {
+      process.env = savedEnv;
+    });
+
+    it("CONTEXT.md groups brief items by kind", async () => {
+      const meta = await handoffService.create("DOGMA-1", {
+        repoPath: testDir,
+      });
+
+      const handoffDir = resolve(testDir, ".virgil/handoffs", meta.id);
+      const context = readFileSync(resolve(handoffDir, "CONTEXT.md"), "utf-8");
+
+      expect(context).toContain("### Risk");
+      expect(context).toContain("### Constraint");
+      expect(context).toContain("### Principle");
+      expect(context).toContain("**Security Policy**:");
+      expect(context).toContain("**Deployment Constraints**:");
+      expect(context).toContain("**System Architecture**:");
+      expect(context).toContain("Source:");
+    });
+
+    it("CONTEXT.md shows drift warning when brief is stale", async () => {
+      const generator = module.get(BriefGeneratorService);
+      await generator.generate(testDir);
+
+      // Make a new commit to create drift
+      writeFileSync(resolve(testDir, "newfile.txt"), "new content");
+      execSync("git add .", { cwd: testDir, stdio: "pipe" });
+      execSync('git commit -m "second commit"', {
+        cwd: testDir,
+        stdio: "pipe",
+      });
+
+      const meta = await handoffService.create("DOGMA-2", {
+        repoPath: testDir,
+      });
+
+      const handoffDir = resolve(testDir, ".virgil/handoffs", meta.id);
+      const context = readFileSync(resolve(handoffDir, "CONTEXT.md"), "utf-8");
+
+      expect(context).toContain("Warning:");
+      expect(context).toContain("commit(s) behind HEAD");
     });
   });
 });

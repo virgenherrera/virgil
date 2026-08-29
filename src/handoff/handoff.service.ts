@@ -4,12 +4,15 @@ import { resolve } from "node:path";
 import { execSync } from "node:child_process";
 import { ProviderRegistryService } from "../providers/provider-registry.service.js";
 import { LedgerService } from "../ledger/ledger.service.js";
+import { BriefQueryService } from "../brief/brief-query.service.js";
+import { BriefGeneratorService } from "../brief/brief-generator.service.js";
+import { AppError, ERROR_CODE } from "../shared/errors.js";
 import { buildRef } from "../domain/refs.js";
 import type {
-  SnapshotProviderPort,
-  SnapshotScope,
-} from "../ports/context-provider.port.js";
-import type { DogmaDocument } from "../providers/dogma/dogma.types.js";
+  BriefItem,
+  BriefDriftStatus,
+  BriefQueryResult,
+} from "../brief/brief.types.js";
 import type {
   HandoffMeta,
   HandoffOptions,
@@ -28,6 +31,13 @@ const FF_LABELS: Record<number, string> = {
   4: "Direct execution",
 };
 
+function kindHeading(kind: string): string {
+  return kind
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 const DEFAULT_OPTIONS: Required<HandoffOptions> = {
   ffLevel: 1,
   repoPath: process.cwd(),
@@ -44,6 +54,10 @@ export class HandoffService {
     private readonly providerRegistry: ProviderRegistryService,
     @Inject(LedgerService)
     private readonly ledger: LedgerService,
+    @Inject(BriefQueryService)
+    private readonly briefQuery: BriefQueryService,
+    @Inject(BriefGeneratorService)
+    private readonly briefGenerator: BriefGeneratorService,
   ) {}
 
   async create(
@@ -57,7 +71,7 @@ export class HandoffService {
     await mkdir(handoffDir, { recursive: true });
 
     const ticketSummary = await this.resolveTicket(ticketKey);
-    const dogmaDocs = await this.snapshotDogma();
+    const briefResult = await this.getBriefItems(opts.repoPath);
     const repoBaseline = this.detectRepoBaseline(opts.repoPath);
 
     const guardrails: Guardrails = {
@@ -70,7 +84,15 @@ export class HandoffService {
     const now = new Date().toISOString();
 
     await this.writeTask(handoffDir, ticketKey, ticketSummary, guardrails, opts.ffLevel);
-    await this.writeContext(handoffDir, ticketKey, ticketSummary, dogmaDocs, repoBaseline, now);
+    await this.writeContext(
+      handoffDir,
+      ticketKey,
+      ticketSummary,
+      briefResult?.items ?? [],
+      briefResult?.drift ?? null,
+      repoBaseline,
+      now,
+    );
     await this.writeChecklist(handoffDir, guardrails);
 
     const meta: HandoffMeta = {
@@ -119,25 +141,22 @@ export class HandoffService {
     return null;
   }
 
-  private async snapshotDogma(): Promise<DogmaDocument[]> {
-    const dogmaProviders = this.providerRegistry.getByKind("dogma");
-
-    for (const provider of dogmaProviders) {
-      const snapshotProvider = provider as SnapshotProviderPort<DogmaDocument[]>;
-      if (!("snapshot" in snapshotProvider)) {
-        continue;
+  private async getBriefItems(
+    outputDir: string,
+  ): Promise<BriefQueryResult | null> {
+    try {
+      return await this.briefQuery.query(outputDir, {});
+    } catch (err) {
+      if (err instanceof AppError && err.code === ERROR_CODE.BRIEF_NOT_FOUND) {
+        try {
+          await this.briefGenerator.generate(outputDir);
+          return await this.briefQuery.query(outputDir, {});
+        } catch {
+          return null;
+        }
       }
-
-      try {
-        const scope: SnapshotScope = { maxItems: 50 };
-        const result = await snapshotProvider.snapshot(scope);
-        return result.data;
-      } catch {
-        // continue to next provider
-      }
+      return null;
     }
-
-    return [];
   }
 
   private detectRepoBaseline(repoPath: string): RepoBaseline | null {
@@ -199,7 +218,8 @@ ${FF_LABELS[ffLevel]}
     dir: string,
     ticketKey: string,
     ticketSummary: string | null,
-    dogmaDocs: DogmaDocument[],
+    briefItems: readonly BriefItem[],
+    drift: BriefDriftStatus | null,
     baseline: RepoBaseline | null,
     timestamp: string,
   ): Promise<void> {
@@ -218,16 +238,41 @@ Generated: ${timestamp}
 
     content += `\n## Documentation\n`;
 
-    if (dogmaDocs.length > 0) {
-      for (const doc of dogmaDocs) {
-        const excerpt = doc.content.slice(0, 200).replace(/\n/g, " ");
-        content += `- **${doc.ref}**: ${excerpt}\n`;
-      }
-    } else {
-      content += `No dogma documents available.\n`;
+    if (drift?.drifted) {
+      content += `\n> Warning: brief is ${drift.commitsBehind} commit(s) behind HEAD. Run \`virgil brief\` to refresh.\n\n`;
     }
 
-    content += `\n## Repository\n`;
+    if (briefItems.length > 0) {
+      const kindOrder: readonly string[] = [
+        "risk",
+        "constraint",
+        "decision",
+        "glossary",
+        "open-question",
+        "principle",
+      ];
+
+      const grouped = new Map<string, readonly BriefItem[]>();
+      for (const kind of kindOrder) {
+        const items = briefItems.filter((item) => item.kind === kind);
+        if (items.length > 0) {
+          grouped.set(kind, items);
+        }
+      }
+
+      for (const [kind, items] of grouped) {
+        content += `### ${kindHeading(kind)}\n`;
+        for (const item of items) {
+          content += `- **${item.title}**: ${item.summary}\n`;
+          content += `  Source: ${item.sourceRefs.join(", ")}\n`;
+        }
+        content += `\n`;
+      }
+    } else {
+      content += `No dogma brief available.\n`;
+    }
+
+    content += `## Repository\n`;
 
     if (baseline) {
       content += `- Path: ${baseline.repoPath}\n`;
