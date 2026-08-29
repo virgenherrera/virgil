@@ -455,8 +455,9 @@ bootstrap the full NestJS application with real service wiring.
 | `brief-generation.test.ts` | 6 | Classification, privacy summarization, persistence |
 | `github-wiki-provider.test.ts` | 16 | Config states, snapshots, special file filtering, refs, health |
 | `brief-query.test.ts` | 8 | Kind/text/sourceRef filtering, drift detection, maxItems |
+| `json-output.test.ts` | 4 | JSON output for status and brief commands |
 
-85 test scenarios total. Filterable by test name via Vitest.
+94 test scenarios total. Filterable by test name via Vitest.
 
 ## Module Wiring
 

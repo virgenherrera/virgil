@@ -109,20 +109,34 @@ d247b6f docs: add AGENTS.md and AGENTS-DEV.md
 - Query mode auto-activates when any filter flag present
 - Drift included in every query result
 
+### Handoff-Brief Integration
+
+- `HandoffService.create()` now uses `BriefQueryService` instead of raw dogma snapshots
+- CONTEXT.md shows kind-grouped, privacy-safe brief items with source refs
+- Drift warning when brief is stale
+- Auto-generates brief if `.virgil/brief.json` missing
+
+### Context Command Brief Integration
+
+- `virgil context` shows classified brief items instead of raw file listings
+- Same auto-generate and drift warning pattern as handoff
+
+### JSON Output (CLI Polish)
+
+- `virgil status --json` -- providers + capabilities as structured JSON
+- `virgil brief --json` -- Brief object (generate mode) or BriefQueryResult (query mode)
+- Enables scriptability by other tools and agents
+
 ### App-Level Test Suite
 
-- 10 test files, 85 scenarios
+- 11 test files, 94 scenarios
 - Zero mocks -- full NestJS application bootstrap
-- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights, GitHub Issues, brief generation, GitHub Wiki, brief query + drift
+- Covers: registry ops, context flow, handoff lifecycle, audit checks, reactive events, proactive insights, GitHub Issues, brief generation, GitHub Wiki, brief query + drift, JSON output
 - Filterable by test name via Vitest
 
 ## Next Steps (Priority Order)
 
-1. **Brief-handoff integration** (in progress) -- wire BriefQueryService
-   into HandoffService.create() so CONTEXT.md uses classified brief items
-   instead of raw dogma excerpts. Auto-generate brief if missing.
-
-2. **Additional providers** -- extend the provider plugin pattern to more
+1. **Additional providers** -- extend the provider plugin pattern to more
    backends:
    - Confluence (dogma kind)
    - Microsoft Teams (chat kind)
