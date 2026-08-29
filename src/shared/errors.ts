@@ -7,6 +7,7 @@ export const ERROR_CODE = {
   REF_PARSE_FAILED: "REF_PARSE_FAILED",
   REF_UNRESOLVABLE: "REF_UNRESOLVABLE",
   NO_DOGMA_PROVIDER: "NO_DOGMA_PROVIDER",
+  BRIEF_NOT_FOUND: "BRIEF_NOT_FOUND",
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODE)[keyof typeof ERROR_CODE];
