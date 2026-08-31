@@ -101,7 +101,7 @@ describe("cli polish", () => {
       const command = module.get(StatusCommand);
       await command.run([], { verbose: true });
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join("\n");
+      const output = consoleSpy.mock.calls.map((c: unknown[]) => c[0]).join("\n");
       expect(output).toContain("Health:");
       expect(output).toContain("Config source:");
       expect(output).toContain("Response time:");
@@ -121,7 +121,7 @@ describe("cli polish", () => {
       const command = module.get(StatusCommand);
       await command.run([], {});
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join("\n");
+      const output = consoleSpy.mock.calls.map((c: unknown[]) => c[0]).join("\n");
       expect(output).not.toContain("Health:");
       expect(output).not.toContain("Response time:");
     });
@@ -166,7 +166,7 @@ describe("cli polish", () => {
       const command = module.get(ContextCommand);
       await command.run(["TEST-1"], { verbose: true });
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join("\n");
+      const output = consoleSpy.mock.calls.map((c: unknown[]) => c[0]).join("\n");
       expect(output).toContain("Providers queried:");
       expect(output).toContain("Elapsed:");
     });
@@ -196,7 +196,7 @@ describe("cli polish", () => {
       const command = module.get(ContextCommand);
       await command.run(["TEST-1"]);
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join("\n");
+      const output = consoleSpy.mock.calls.map((c: unknown[]) => c[0]).join("\n");
       expect(output).not.toContain("Providers queried:");
       expect(output).not.toContain("Elapsed:");
     });
@@ -251,7 +251,7 @@ describe("cli polish", () => {
       const command = module.get(AuditCommand);
       await command.run(["test-handoff"], { verbose: true });
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join("\n");
+      const output = consoleSpy.mock.calls.map((c: unknown[]) => c[0]).join("\n");
       expect(output).toContain("Execution time:");
       expect(output).toContain("Detailed:");
     });
@@ -285,9 +285,9 @@ describe("cli polish", () => {
       });
 
       const command = module.get(DoctorCommand);
-      await command.run([], {});
+      await command.run();
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join("\n");
+      const output = consoleSpy.mock.calls.map((c: unknown[]) => c[0]).join("\n");
       expect(output).toContain("Node.js:");
       expect(output).toContain("Providers (1):");
       expect(output).toContain("[OK] dogma:local");
@@ -300,9 +300,9 @@ describe("cli polish", () => {
       }).compile();
 
       const command = module.get(DoctorCommand);
-      await command.run([], {});
+      await command.run();
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join("\n");
+      const output = consoleSpy.mock.calls.map((c: unknown[]) => c[0]).join("\n");
       expect(output).toContain("No providers configured.");
       expect(output).toContain("virgil init");
     });
@@ -314,9 +314,9 @@ describe("cli polish", () => {
       }).compile();
 
       const command = module.get(DoctorCommand);
-      await command.run([], {});
+      await command.run();
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join("\n");
+      const output = consoleSpy.mock.calls.map((c: unknown[]) => c[0]).join("\n");
       expect(output).toContain("Config:");
     });
   });
@@ -324,7 +324,7 @@ describe("cli polish", () => {
   describe("version command", () => {
     it("shows package version", async () => {
       const command = new VersionCommand();
-      await command.run([]);
+      await command.run();
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringMatching(/^virgil \d+\.\d+\.\d+/),

@@ -29,7 +29,7 @@ describe("init command", () => {
     const command = new InitCommand();
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-    await command.run([]);
+    await command.run();
 
     const configPath = join(testDir, ".virgilrc.yaml");
     expect(existsSync(configPath)).toBe(true);
@@ -52,7 +52,7 @@ describe("init command", () => {
     const command = new InitCommand();
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-    await command.run([]);
+    await command.run();
 
     const content = readFileSync(configPath, "utf-8");
     expect(content).toBe("VIRGIL_GITHUB_TOKEN: my-secret\n");

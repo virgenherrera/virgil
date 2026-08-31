@@ -11,7 +11,7 @@ import { GithubOrgService } from "../providers/org/github/github-org.service.js"
 import { ConfigurationError } from "../shared/errors.js";
 
 function stubFetch(responses: Record<string, unknown>) {
-  const fn = vi.fn(async (url: string | URL | Request) => {
+  const fn = vi.fn(async (url: string | URL | Request, _init?: RequestInit) => {
     const urlStr =
       typeof url === "string"
         ? url

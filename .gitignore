@@ -1,4 +1,4 @@
-# GoReleaser output
+# Build output
 dist/
 
 # Local binary at project root
@@ -8,18 +8,11 @@ dist/
 # Temporary handoff files
 .tmp-*
 
-# Go
-*.o
-*.a
-*.so
-*.test
-*.out
-vendor/
-
 # Node / TypeScript
 node_modules/
 *.tgz
 coverage/
+src/coverage/
 
 # Virgil runtime
 .virgil/
