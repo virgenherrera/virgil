@@ -25,3 +25,6 @@ src/coverage/
 .DS_Store
 .idea/
 .vscode/
+
+# Agent Teams Lite (vendor-specific)
+.atl/

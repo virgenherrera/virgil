@@ -287,28 +287,13 @@ density, not hard limits.
 - [ ] Running `virgil status` on the resulting file produces no warnings
       (if applicable).
 
-## Open Questions
+## Decisions (resolved)
 
-1. **Principia compliance.** Does the principia have any explicit stance on
-   AGENTS.md structure or mode-awareness? The constitution should be checked
-   before implementation to ensure the unified file does not violate any
-   sealed principle. This requires MIM review of the relevant principia
-   sections.
-
-2. **Consumption Mode depth.** How much operational guidance should the
-   Consumption Mode section include? The current AGENTS.md already has the
-   toolchain table and interaction model in the shared sections. The
-   Consumption Mode section could be very thin (just "when this applies" +
-   provider config) or could include a condensed quickstart. MIM decision
-   on verbosity level needed.
-
-3. **Branch strategy post-merge.** Once the unified AGENTS.md is on main,
-   the development branch should be rebased to pick it up. Should there be
-   a one-time branch reconciliation step documented, or is this handled by
-   normal git workflow?
-
-4. **Skill file references.** The `virgil-init`, `virgil-write`,
-   `virgil-transition`, and `virgil-status` skills may reference AGENTS.md
-   or AGENTS-DEV.md. These need auditing, but the scope depends on whether
-   those skills are still active after the MCP removal (COURSE-CORRECTION
-   Phase 2). MIM decision on sequencing with MCP cleanup.
+1. **Principia compliance**: Approved — amended principia (2026-08-31) aligned
+   with CLI. Mode-aware design preserves three-layer precedence.
+2. **Consumption Mode verbosity**: Thin — only mode-specific content. Shared
+   toolchain covers command surface.
+3. **Branch strategy**: Squash merges from development → main. One commit per
+   feature.
+4. **Skill files / .atl**: .atl/ purged (vendor-specific). Skill files already
+   updated to CLI (Phase 2). No stale references.
