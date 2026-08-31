@@ -92,6 +92,7 @@ flowchart LR
             LEDGER["ledger"]
             INIT["init"]
             DOCTOR["doctor"]
+            VERSION["version"]
         end
     end
 
@@ -157,9 +158,9 @@ Key properties:
 
 ```mermaid
 flowchart TD
-    BIN["1. Add bin field<br/>package.json → npx virgil works"] --> TSC["2. Fix vitest tsconfig<br/>0 TS errors in test files"]
-    TSC --> COV["3. Remove src/coverage/<br/>build artifacts out of git"]
-    COV --> VERIFY["4. Verify E2E<br/>tsc → node dist/main.js --help"]
+    BIN["1. Add bin field<br/>package.json → npx virgil works"] --> VERIFY["4. Verify E2E<br/>tsc → node dist/main.js --help"]
+    TSC["2. Fix vitest tsconfig<br/>0 TS errors in test files"] --> VERIFY
+    COV["3. Remove src/coverage/<br/>build artifacts out of git"] --> VERIFY
 
     style BIN fill:#2b5,stroke:#333,color:#fff
     style TSC fill:#2b5,stroke:#333,color:#fff

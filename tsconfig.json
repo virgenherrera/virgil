@@ -21,7 +21,7 @@
       "@/*": ["./src/*"]
     },
     "baseUrl": ".",
-    "types": ["vitest/globals"]
+    "types": ["node", "vitest/globals"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "coverage"]

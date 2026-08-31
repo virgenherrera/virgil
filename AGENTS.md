@@ -290,7 +290,7 @@ execute tasks directly.
 | Read as preparation for writing | — | YES alongside the write |
 | Write (any file) | — | YES |
 | Read-only bash (git status, eza) | YES | — |
-| Execution bash (tsc, vitest, npm) | — | YES |
+| Execution bash (tsc, vitest, pnpm) | — | YES |
 | Architectural decisions (no artifacts) | YES | — |
 | Present results to user | YES | — |
 
@@ -396,7 +396,7 @@ scope.
 ### Canonical Pipeline
 
 ```text
-0. Setup    → npm install (or pnpm install)
+0. Setup    → pnpm install
 1. Build    → tsc
 2. Static   → tsc --noEmit, eslint (if configured)
 3. Dynamic  → vitest run (App/Service tier)
@@ -423,7 +423,7 @@ scope.
 
 | Canonical Step | Command |
 |----------------|---------|
-| 0. Setup | `npm install` |
+| 0. Setup | `pnpm install` |
 | 1. Build | `npx tsc` |
 | 2. Static | `npx tsc --noEmit && npx eslint .` (if configured) |
 | 3. Dynamic | `npx vitest run` |
