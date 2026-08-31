@@ -2,7 +2,7 @@
 document_type: "constitution"
 title: "Founding Principle — anchor document"
 status: sealed
-sealed_commit: pending-reseal
+sealed_commit: 8f80901
 prior_sealed_commit: 1d2dfa7
 amendment_date: 2026-08-31
 amendment_reason: "CLI architecture alignment — Go/MCP vocabulary replaced with TypeScript/CLI reality; aspirational features reclassified as V2+"
