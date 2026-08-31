@@ -2,7 +2,10 @@
 document_type: "constitution"
 title: "Founding Principle — anchor document"
 status: sealed
-sealed_commit: 1d2dfa7
+sealed_commit: pending-reseal
+prior_sealed_commit: 1d2dfa7
+amendment_date: 2026-08-31
+amendment_reason: "CLI architecture alignment — Go/MCP vocabulary replaced with TypeScript/CLI reality; aspirational features reclassified as V2+"
 total_chunks: 39
 manifest: "principia/manifest.yaml"
 layer: authority
@@ -13,6 +16,7 @@ keywords:
   - constitutional source of truth
   - sealed immutable
   - Virgil
+  - amended 2026-08-31
 -->
 
 # Virgil — Founding Principle
@@ -124,13 +128,15 @@ maintains identity, traceability, context and transitions.
 
 Virgil adheres to the **Open Agentic Standard**: it publishes an
 `AGENTS.md` in the consuming project as a discoverability convention, and
-communicates via **Model Context Protocol (MCP)** / JSON-RPC. Any
+is invoked via **shell commands** (`virgil <command>`). Any
 compatible agent can consume Virgil without coupling to a specific
 provider.
 
-> **Constitutional clarification (CC-1):** Virgil is distributed as an independent MCP server binary. It is an autonomous process that any host can discover and invoke without additional coupling. This is the architectural realization of the commitment to the Open Agentic Standard described in the previous paragraph.
+> **Constitutional clarification (CC-1):** Virgil is distributed as an independent CLI binary (TypeScript/Node.js). It is an autonomous tool that any agent can discover and invoke via shell commands without additional coupling. This is the architectural realization of the commitment to the Open Agentic Standard described in the previous paragraph.
 
-> **Constitutional clarification (CC-4):** The consumption model is agent-agnostic by constitutional design. Any MCP-compatible agent — Claude, GPT, Gemini, OpenCode, Cursor, Windsurf, Kiro, or other future agents that comply with the protocol — can consume Virgil's tools. The HostAdapter (section 5) translates between each host's conventions and the Virgil Kernel; adding a new agent requires only a new HostAdapter implementation, not changes to the Kernel or ArtifactStore layers.
+> **Constitutional clarification (CC-4):** The consumption model is agent-agnostic by constitutional design. Any agent capable of shell invocation — Claude, GPT, Gemini, OpenCode, Cursor, Windsurf, Kiro, or other future agents — can consume Virgil's CLI commands. The CLI is the single integration point; HostAdapter abstraction (section 5) is V2+ aspirational.
+>
+> **V2+ aspirational** — HostAdapter abstraction not required for V1. Current status: all agents invoke Virgil directly via CLI commands.
 
 ```mermaid
 flowchart TD
@@ -165,7 +171,7 @@ should include:
 
 > **Pending definition**: the current AGENTS.md documents the wire protocol and operations. The orchestration pattern and token management will be specified in the corresponding Method Pack, not in this anchor document. This item is out of scope for the Principia.
 
-> **Scope of this document.** The Principia is the foundational dogma: philosophy, architecture and invariants. It is NOT a go-to-market document, an adoption guide, or a user manual. The target consumer profile (ICP), MVP strategy, competitive positioning and onboarding guides are separate deliverables derived FROM the Principia but are not part of it. The Kernel + the Scrum Method Pack (the only one implemented) constitute the minimum viable slice; the other Method Packs, codebaseMemory and Method Pack extensions are architectural provisions, not v1 requirements (ArtifactStoreAdapter plugins, on the other hand, are part of the core architecture — see CC-2).
+> **Scope of this document.** The Principia is the foundational dogma: philosophy, architecture and invariants. It is NOT a go-to-market document, an adoption guide, or a user manual. The target consumer profile (ICP), MVP strategy, competitive positioning and onboarding guides are separate deliverables derived FROM the Principia but are not part of it. The Core services (NestJS modules) constitute the minimum viable slice; Method Packs, codebaseMemory and Method Pack extensions are architectural provisions, not v1 requirements (ContextProviderPort backends, on the other hand, are part of the core architecture — see CC-2).
 
 ### 1a. Interpretive anti-drift rule
 
@@ -194,7 +200,7 @@ Ledger / TraceabilityGraph
 - Macro Red/Green/Refactor and its independence per phase
 - The existence of regenerable build artifacts as the canonical output of Echo
 - The unambiguous association `EchoRun + sourceRevision + buildArtifactSet`
-- EvidenceIngestion, Binding Layer and the Kernel's minimum quality gates
+- EvidenceIngestion, Binding Layer and the Core's minimum quality gates
 - The rule that certification is decided on evidence produced by the canonical path, not on the agent's claims
 
 **These ARE substitutable/configurable as long as they preserve those contracts:**
@@ -238,11 +244,11 @@ flowchart TD
         SLICES["Slices\nIncremental delivery"]
     end
 
-    subgraph RUNTIME["Runtime (Go binary)"]
+    subgraph RUNTIME["Runtime (TypeScript/Node.js CLI built on NestJS + nest-commander)"]
         direction LR
-        KERNEL["Kernel\nLedger, Tracer, Context"]
-        ADAPTERS["Adapters\nHost, Store"]
-        PACKS["Method Packs\nCeremony, roles, gates"]
+        CORE["Core\nLedgerService, HandoffService,\nPlanningService, AuditService,\nBriefService, ProviderRegistry,\nRefResolver"]
+        ADAPTERS["Adapters\nContextProviderPort (11 backends)"]
+        PACKS["Method Packs\nCeremony, roles, gates\n(V2+ aspirational)"]
     end
 
     PRINCIPIA -->|"governs"| DOGMA
@@ -252,6 +258,8 @@ flowchart TD
     style DOGMA fill:#47a,stroke:#333,color:#fff
     style RUNTIME fill:#a74,stroke:#333,color:#fff
 ```
+
+> **Amendment note (2026-08-31):** The Runtime layer is implemented as a TypeScript/Node.js CLI built on NestJS + nest-commander. Core services include: LedgerService, HandoffService, PlanningService, AuditService, BriefService, ProviderRegistry, and RefResolver. The ContextProviderPort contract supports 11 backends (filesystem, Confluence, GitHub Org, Azure DevOps, Teams, etc.).
 
 With this immutable structure as foundation, Virgil manifests through predictable lifecycles: a state machine that governs projects and an invocation flow that guarantees traceability at every transition.
 
@@ -297,9 +305,9 @@ stateDiagram-v2
     note right of Operation : Virgil ASSISTS<br/>reactive, optional
 ```
 
-The project's state machine (via virgil_status) indicates what
+The project's state machine (via `virgil status`) indicates what
 phase each feature and the overall project is in. A feature does not advance
-until its deliverable is consolidated.
+until its deliverable is consolidated. PlanningService now manages the Idea → Requirement → Design → Task ceremony through the `virgil write` and `virgil transition` CLI commands.
 
 **PlanningGapDetected**: if execution discovers that an approved
 deliverable is ambiguous, contradictory or insufficient, it emits this signal,
@@ -309,40 +317,42 @@ never rewrites an approved deliverable.
 **FastForward**: the SM does not always run all phases with the same
 ceremony. It evaluates a certainty gradient (FF-1 to FF-4) over the
 existing context and compresses the phases proportionally — from
-full ceremony (score 0-2) to direct execution (score 6-8). The SM computes the score based on observable, verifiable state. The scoring formula and its inputs plus result are recorded in the Ledger, making it auditable. FastForward compresses planning CEREMONY (deliberation phases), not Kernel quality gates — certification gates (R/G/R, mutation testing, fitness functions) run in full at ALL FastForward levels, from FF-1 to FF-4.
+full ceremony (score 0-2) to direct execution (score 6-8). The SM computes the score based on observable, verifiable state. The scoring formula and its inputs plus result are recorded in the Ledger, making it auditable. FastForward compresses planning CEREMONY (deliberation phases), not Core quality gates — certification gates (R/G/R, mutation testing, fitness functions) run in full at ALL FastForward levels, from FF-1 to FF-4.
 
 ### 3b. Flow of an invocation
 
+> **Amendment note (2026-08-31):** The canonical invocation flow below preserves the architectural sequence. In the current implementation, the agent invokes Virgil via `virgil <command>` (shell invocation), not via MCP/JSON-RPC. The HostAdapter layer is V2+ aspirational; the CLI binary handles resolution directly.
+
 ```mermaid
 sequenceDiagram
-    participant ACT as Actor
-    participant HA as HostAdapter
-    participant VK as Virgil Kernel
-    participant SA as ArtifactStore
+    participant ACT as Actor (Agent)
+    participant CLI as Virgil CLI
+    participant CORE as Core Services
+    participant FS as Filesystem
 
-    ACT->>HA: request
-    HA->>VK: resolve DogmaRef + ProjectRef + RunContext
+    ACT->>CLI: virgil <command> [args]
+    CLI->>CORE: resolve project context
 
-    activate VK
-    VK->>VK: validate source != target
-    VK->>VK: compile ContextBrief
-    VK->>VK: execute canonical operation
-    VK->>SA: persist deliverable
-    SA-->>VK: confirmation
-    VK->>VK: ingest evidence
-    VK->>VK: record transition in Ledger
-    deactivate VK
+    activate CORE
+    CORE->>CORE: validate source != target
+    CORE->>CORE: compile context
+    CORE->>CORE: execute canonical operation
+    CORE->>FS: persist deliverable
+    FS-->>CORE: confirmation
+    CORE->>CORE: ingest evidence
+    CORE->>CORE: record transition in Ledger
+    deactivate CORE
 
-    VK-->>HA: result + status
-    HA-->>ACT: response
+    CORE-->>CLI: result + status
+    CLI-->>ACT: response (stdout/stderr)
 ```
 
 This canonical flow has deterministic steps and judgment-mediated steps. Certification gates (test pass/fail, mutation score, CRAP, coverage, CVE scan) are deterministic — binary, without subjectivity. Planning, escalation, ContextBrief compilation, architectural alignment and coherence-verification (PDC) steps involve judgment from the orchestrating agent, are not deterministic, and must leave traceable evidence. The Principia distinguishes both types explicitly.
 
 The PDC is an orchestration-coherence safeguard that operates during
-execution, but it is NOT a certification gate. Certification is determined exclusively by the Kernel-defined QA pipeline gates: deterministic mechanical gates (section 7e, 11d) and structured verification of architectural alignment (section 7e, ARCH gate). When the project declares a regulatory compliance profile, human review is added as an additional blocking gate (section 7g). The PDC can stop an incoherent delegation, but it does not certify or approve code.
+execution, but it is NOT a certification gate. Certification is determined exclusively by the Core-defined QA pipeline gates: deterministic mechanical gates (section 7e, 11d) and structured verification of architectural alignment (section 7e, ARCH gate). When the project declares a regulatory compliance profile, human review is added as an additional blocking gate (section 7g). The PDC can stop an incoherent delegation, but it does not certify or approve code.
 
-> **Invocation identities**: `DogmaRef`, `ProjectRef` and `RunContext` are the three identities the HostAdapter resolves at the start of every invocation. This Principia names them as participants in the canonical flow but does not specify their fields — that contract belongs to the protocol layer (docs/protocol/).
+> **Invocation identities**: `DogmaRef`, `ProjectRef` and `RunContext` are the three identities resolved at the start of every invocation. In the current implementation, the CLI resolves these from `virgil.json` and the project filesystem. This Principia names them as participants in the canonical flow but does not specify their fields — that contract belongs to the protocol layer (docs/protocol/).
 
 > **Atomicity**: the flow shows sequential steps (persist →
 > ingest evidence → record transition). If the process fails between
@@ -449,50 +459,59 @@ know their components: what pieces implement these rules.
 
 ```mermaid
 flowchart TD
-    subgraph KERNEL["Kernel (ceremony-agnostic, universal quality)"]
-        LEDGER["Ledger\nEvents, transitions,\nimmutable history"]
-        TRACER["TraceabilityGraph\nIntent → decision →\nwork → evidence\n(derived projection,\nreconstructible from Ledger)"]
-        REPO["ArtifactRepository\nDeliverables, revisions,\nprovenance"]
-        EVIDENCE["EvidenceIngestion\nTests, commits, builds,\nhuman decisions"]
-        CONTEXT["ContextCompiler\nSelects deliverables →\nContextBrief"]
-        RAG["RetrievalProjection\nLexical/vector search\n(not an authority)"]
+    subgraph CORE["Core (ceremony-agnostic, universal quality — NestJS modules)"]
+        LEDGER["LedgerService\nEvents, transitions,\nimmutable history"]
+        HANDOFF["HandoffService\nHandoff lifecycle,\nstate machine"]
+        PLANNING["PlanningService\nIdea → Req → Design → Task\nceremony management"]
+        AUDIT["AuditService\nMechanical checks,\nguardrail enforcement"]
+        BRIEF["BriefService\nContext compilation\nfor delegations"]
+        PROVIDERS["ProviderRegistry\nRuntime lookup of\ncontext providers"]
+        REFRESOLVER["RefResolver\nCross-provider\nreference resolution"]
     end
 
-    subgraph ADAPTERS["Adapters (interchangeable)"]
-        HA["HostAdapter\nDiscovery, invocation,\nhost capabilities"]
-        ASA["ArtifactStoreAdapter\nPersistence, retrieval\n(repo-docs | Jira | etc.)"]
+    subgraph ADAPTERS["Adapters (ContextProviderPort — 11 backends)"]
+        FS_PROV["Filesystem\n(default)"]
+        CONF_PROV["Confluence, GitHub Org,\nAzure DevOps, Teams,\nand others"]
     end
 
-    subgraph PACKS["Method Packs (pluggable)"]
-        SCRUM["Scrum\n(default)\nIMPLEMENTED"]
+    subgraph PACKS["Method Packs (V2+ aspirational)"]
+        SCRUM["Scrum\n(reference design)"]
         TBD["Waterfall | Kanban | Shape Up\nTBD — not implemented"]
         CUSTOM["Custom Pack\nthe consumer could define\ntheir own methodology"]
     end
 
-    KERNEL --> HA & ASA
-    PACKS -->|"ceremony, roles, gates"| KERNEL
+    CORE --> FS_PROV & CONF_PROV
+    PACKS -->|"ceremony, roles, gates\n(V2+)"| CORE
 
-    style KERNEL fill:#47a,stroke:#333,color:#fff
+    style CORE fill:#47a,stroke:#333,color:#fff
     style ADAPTERS fill:#a74,stroke:#333,color:#fff
-    style PACKS fill:#7a4,stroke:#333,color:#fff
-    style SCRUM fill:#4a4,stroke:#333,color:#fff
+    style PACKS fill:#777,stroke:#333,color:#fff
+    style SCRUM fill:#777,stroke:#333,color:#fff
     style TBD fill:#777,stroke:#333,color:#fff
     style CUSTOM fill:#777,stroke:#333,color:#fff
 ```
 
-Each component has a clear responsibility. The Kernel imposes universal
+Each component has a clear responsibility. The Core imposes universal
 quality invariants (Echo, testing, binding layer) regardless of
 methodology. The Method Pack defines the ceremony: how many roles participate,
 which ceremonial gates get compressed, how it iterates. Quality belongs to the
-Kernel; ceremony belongs to the Pack.
+Core; ceremony belongs to the Pack.
+
+> **V2+ aspirational** — Method Packs (pluggable ceremony system) are not required for V1. Current status: the handoff lifecycle is methodology-agnostic by design; PlanningService manages the Idea → Requirement → Design → Task ceremony directly.
 
 Method Packs inherit quality gates (Red/Green/Refactor, mutation testing,
 fitness functions) as non-negotiable universal invariants. A Pack can define
-ADDITIONAL quality mechanisms but cannot reduce the Kernel's minimum.
+ADDITIONAL quality mechanisms but cannot reduce the Core's minimum.
 "Ceremony-agnostic" means the Pack chooses the ceremony (sprints, kanban
 boards, Shape Up cycles); "universal quality" means the R/G/R verification
 pipeline + fitness functions apply without exception, regardless of the
 ceremony chosen.
+
+> **V2+ aspirational** — TraceabilityGraph (queryable Intent → decision → work → evidence graph) is not required for V1. Current status: the Ledger records events and `virgil ledger --handoff <id>` provides event trail; a formal graph projection is planned for V2+.
+
+> **V2+ aspirational** — EvidenceIngestion / Binding Layer confidence levels (declared/inferred/verified) are not required for V1. Current status: the Ledger exists and records events, but structured confidence progression is not implemented.
+
+> **Amendment note (2026-08-31):** HostAdapter is V2+ aspirational; current integration is via CLI commands. ArtifactStoreAdapter is V2+ aspirational; current implementation uses direct filesystem persistence for handoffs and ContextProviderPort (11 backends) for context retrieval.
 
 > **Constitutional clarification (CC-5):** The TraceabilityGraph chain (Intent → decision → work → evidence) is the architectural realization of a bridge between product management (PM) tools and the codebase. "Intent" maps to artifacts from PM tools (stories, tickets, epics in Jira, Azure DevOps, GitLab, etc.); "decision" maps to design documents and specifications; "work" maps to code changes; "evidence" maps to test results and verification artifacts. This bridge — knowing WHAT to work on and WHERE in the codebase — constitutes Virgil's central value proposition, reinforced by GP-2: "It is not enough for the link to exist; it must be strong."
 
@@ -513,7 +532,7 @@ flowchart TD
 
     subgraph CONSUMO["Consumption Mode"]
         IMPL["Implementer\n(External agent)"]
-        IMPL -->|"uses via MCP\nJSON-RPC"| V_TOOL["Virgil\n(TOOL)"]
+        IMPL -->|"uses via CLI\nshell invocation"| V_TOOL["Virgil\n(TOOL)"]
     end
 
     V_OBJ -.-|"same binary\nsame contracts\nsame gates"| V_TOOL
@@ -533,23 +552,25 @@ Each piece has clear ownership. They are not mixed.
 
 ```mermaid
 flowchart TD
-    PACK["Method Pack\nCeremony | Roles | Routing | Gates"]
-    PACK -->|"injects policy"| VIRGIL
+    PACK["Method Pack (V2+)\nCeremony | Roles | Routing | Gates"]
+    PACK -->|"injects policy (V2+)"| VIRGIL
 
-    VIRGIL["Virgil Kernel\nIdentity | Traceability | Context | Transitions"]
-    VIRGIL -->|"invokes via"| HOST
+    VIRGIL["Virgil Core\nIdentity | Traceability | Context | Transitions"]
+    VIRGIL -->|"invoked via"| CLI_CMD["CLI Commands\nwrite | transition | status | init"]
     VIRGIL -->|"persists via"| STORE
+    VIRGIL -->|"retrieves context via"| PROVIDERS
 
-    HOST["HostAdapter\nDiscovery | Invocation | Capabilities"]
-    STORE["ArtifactStoreAdapter\nPersistence | Retrieval | Write Policy"]
+    STORE["Direct Filesystem\n.virgil/handoffs/ | .virgil/ledger.jsonl"]
+    PROVIDERS["ContextProviderPort\n11 backends (Confluence, GitHub Org, etc.)"]
 
-    HOST ~~~ STORE
-    NOTE["Host and Store are INDEPENDENT concerns\na single host can use different stores\na single store can serve different hosts"]
+    CLI_CMD ~~~ STORE
+    NOTE["CLI is the single integration point\nContextProviderPort is the adapter contract\nfor context retrieval"]
 
-    style PACK fill:#7a4,stroke:#333,color:#fff
+    style PACK fill:#777,stroke:#333,color:#fff
     style VIRGIL fill:#47a,stroke:#333,color:#fff
-    style HOST fill:#a74,stroke:#333,color:#fff
+    style CLI_CMD fill:#a74,stroke:#333,color:#fff
     style STORE fill:#a74,stroke:#333,color:#fff
+    style PROVIDERS fill:#a74,stroke:#333,color:#fff
     style NOTE fill:none,stroke:none
 ```
 
@@ -581,6 +602,8 @@ Eight mechanisms form a nested accountability cycle. None
 works in isolation.
 
 ### 7a. Echo System — deterministic pipeline
+
+> **Amendment note (2026-08-31):** The Echo System is documented in AGENTS.md but is not mechanically enforced via hooks or CI yet. The 5-step sequence remains the normative pipeline; enforcement is pending.
 
 Sequence of 5 steps executed in EVERY environment (dev, CI, CD).
 The steps are always the same and in the same order. What varies
@@ -680,7 +703,7 @@ stateDiagram-v2
     Green --> Refactor : all pass
 
     state Refactor {
-        [*] --> Metrics : mutation, CRAP, complexity
+        [*] --> Metrics : complexity, coverage
         Metrics --> Cleanup : metrics OK
         Cleanup --> [*] : tests still pass
     }
@@ -699,6 +722,8 @@ green) → **F1** (safe refactor) → **V1** (independent
 verify).
 
 #### compositeAgent — parallel execution of R/G/R
+
+> **V2+ aspirational** — compositeAgent / fitnessFunction runtime execution is not required for V1. Current status: not implemented at runtime level. The R/G/R pattern is followed manually by the executing agent.
 
 When execution is parallelized across multiple lanes, each lane operates
 within an **isolated mutation domain** and receives a compositeAgent: a
@@ -746,7 +771,7 @@ A compositeAgent is NOT a monolithic agent — it is a SEQUENCE of
 independent invocations orchestrated under a common label.
 Each phase has its own contract and exit criteria.
 
-**Independence invariant**: each compositeAgent phase (testEngineer, Implementor, fitnessFunction) runs as an independent agent invocation — new session, no conversational history. The Kernel implements this reset as a technical constraint (stateless invocation per phase), not as an instruction to the agent. Each phase receives only the deliverables and build artifacts produced by the previous phase, not the reasoning history. This mechanism satisfies Principle GP-4 (constraint > trust): independence is structural, not a promise of behavior.
+**Independence invariant**: each compositeAgent phase (testEngineer, Implementor, fitnessFunction) runs as an independent agent invocation — new session, no conversational history. The Core implements this reset as a technical constraint (stateless invocation per phase), not as an instruction to the agent. Each phase receives only the deliverables and build artifacts produced by the previous phase, not the reasoning history. This mechanism satisfies Principle GP-4 (constraint > trust): independence is structural, not a promise of behavior.
 
 > **Disambiguation**: "fitness functions" (plural, generic) designates a CATEGORY of quality gate (alongside mutation testing and R/G/R) applicable to the entire pipeline. `fitnessFunction` (singular, camelCase) designates a SPECIFIC invocation ROLE within the compositeAgent sequence (testEngineer → Implementor → fitnessFunction). Do not confuse them: the category is universal; the role is an invocation instance within a mutation domain.
 
@@ -818,6 +843,8 @@ share a traceable identifier.
 
 #### Binding Layer — link confidence
 
+> **V2+ aspirational** — declared/inferred/verified confidence levels are not required for V1. Current status: the Ledger exists but structured confidence progression is not implemented.
+
 The link between a test and the code that satisfies it is not binary
 (exists/does not exist). It has three levels of confidence that progress
 during the R/G/R cycle:
@@ -826,12 +853,14 @@ during the R/G/R cycle:
 |--------|------|-----------|
 | declared | Red | The test exists and references an AC |
 | inferred | Green | A hook detected that code exercises the test |
-| verified | Refactor | Mutation testing confirmed real strength |
+| verified | Refactor | Mutation testing confirmed real strength (V2+ — mutation testing not configured) |
 
 Only `verified` certifies strength — the others only confirm
 existence.
 
 ### 7e. QA / Acceptance Gates — certification
+
+> **Amendment note (2026-08-31):** The full certification chain is partially implemented. AuditService runs 6 mechanical checks against handoff guardrails; mutation score, CRAP, and CVE gates are V2+ aspirational. Coverage exists via vitest.
 
 Certification combines deterministic mechanical gates (test pass/fail, mutation score, coverage, CRAP, CVE scan, module size) and structured verification gates (architectural alignment). Mechanical gates are binary: they pass or they do not. Structured verification gates (ARCH: implementation aligned with design.md) use documented, traceable semantic comparison, subject to the same demarcation as section 3b.
 
@@ -854,6 +883,8 @@ flowchart TD
 ```
 
 ### 7f. droppableCode — coverage as a tool
+
+> **V2+ aspirational** — droppableCode / safeToAutoDelete dead-code detection is not required for V1. Current status: not implemented. Coverage measurement exists via vitest but automated dead-code detection is not active.
 
 Code with 0% coverage in appTests has no justification to
 exist. Coverage is not a vanity metric — it is a dead-code
@@ -882,6 +913,8 @@ explicit tag in the file and periodic review.
 The same exception mechanism applies to mutation testing: the MIM may authorize documented exceptions for code where mutation testing is computationally prohibitive (heavy integration test suites, generated code, third-party adapters). Every exception requires an explicit tag, justification and periodic review. Mutation-score thresholds remain non-relaxable for non-exempted code.
 
 ### 7g. complianceByDesign — compliance as a side effect
+
+> **V2+ aspirational** — complianceByDesign strict DTO shape assertions are not required for V1. Current status: strict DTO shape validation is not implemented. The principle remains valid; enforcement tooling is deferred.
 
 If every test asserts the EXACT shape of the DTO (fields present,
 fields absent, types), compliance verification is obtained without
@@ -915,6 +948,8 @@ External dependencies are attack surface and a source of tech debt. Virgil impos
 
 #### versionPinning — absolute reproducibility
 
+> **V2+ aspirational** — exact version pinning (no ranges) is not required for V1. Current status: the project uses caret ranges (`^`) with a pnpm lock file (`pnpm-lock.yaml`). The lock file provides reproducibility; migrating to exact versions is aspirational.
+
 All dependencies are declared with an EXACT version (no ranges, no compatibility prefixes). The dependency manager and its version are also declared explicitly in the project.
 
 | Invariant | What it means | Why |
@@ -945,7 +980,7 @@ flowchart LR
 | CI | Pipeline stage — blocking gate |
 | CD | Deployment gate — absolute block |
 
-The severity threshold (high, critical, or both) is defined by the Method Pack. The Kernel enforces that the scan runs; the Pack decides the threshold. The scanning tool is agnostic: each ecosystem has its equivalent (`pnpm audit`, `go vuln check`, `cargo audit`, `pip-audit`, `mvn dependency-check`, etc.).
+The severity threshold (high, critical, or both) is defined by the Method Pack (V2+; currently configured per-project). The Core enforces that the scan runs; the Pack decides the threshold. The scanning tool is agnostic: each ecosystem has its equivalent (`pnpm audit`, `cargo audit`, `pip-audit`, `mvn dependency-check`, etc.). Note: the project uses pnpm as its package manager.
 
 #### bumpDependencies — controlled tech-debt mitigation
 
@@ -1015,8 +1050,8 @@ with the revision being certified.
 
 ```mermaid
 flowchart TD
-    VIRGIL["Virgil Kernel"]
-    VIRGIL -->|"persists via"| ASA["ArtifactStoreAdapter\n(contract)"]
+    VIRGIL["Virgil Core"]
+    VIRGIL -->|"persists via"| ASA["Filesystem\n(.virgil/handoffs/)"]
 
     ASA --> DEFAULT["repo-docs (default)\n{target}/docs/virgil/\nlocal, RAG-friendly,\nno external dependencies"]
 
@@ -1038,7 +1073,7 @@ flowchart TD
     style EXTERNOS fill:#777,stroke:#333,color:#fff
 ```
 
-> **Constitutional clarification (CC-2):** The ArtifactStoreAdapter's external adapters (Jira, Confluence, Azure DevOps, GitLab, GitHub Projects, Basecamp, and others that satisfy the adapter contract) are first-class extension points, not provisional functionality. The "TBD" mark in the diagram above refers to implementation status, not strategic priority. The adapter contract is the universal interface; repo-docs is the default with no external dependencies. Whatever satisfies the adapter contract can connect — regardless of how many adapters exist implemented today.
+> **Constitutional clarification (CC-2):** The ContextProviderPort's provider implementations (Confluence, GitHub Org, Azure DevOps, Teams, and others that satisfy the port contract) are first-class extension points, not provisional functionality. The port contract is the universal interface; filesystem is the default with no external dependencies. Whatever satisfies the ContextProviderPort contract can connect — regardless of how many providers exist today. Note: ArtifactStoreAdapter as a formal abstraction is V2+ aspirational; current persistence is direct filesystem, and retrieval is via ContextProviderPort (11 backends).
 
 ### 8b. Namespace separation
 
@@ -1089,7 +1124,7 @@ mechanisms:
    invariant is mechanical: sourceRevision must be reachable from
    the watermark in the commit graph (equivalent to
    `git merge-base --is-ancestor sourceRevision watermark`). The
-   watermark is the Kernel's exclusive property and only updates
+   watermark is the Core's exclusive property and only updates
    as an effect of a re-sync that rebuilds or updates the
    projection — an agent cannot modify the watermark without
    running the sync process.
@@ -1205,6 +1240,8 @@ each delegation.
 
 ### 8e. Memoization
 
+> **V2+ aspirational** — in-memory memoization layer is not required for V1. Current status: brief queries read from disk. An in-memory cache is aspirational.
+
 The RAG maintains an in-memory cache layer to speed up repeated
 queries. It falls back to persistent storage when the cache is
 invalidated or the session restarts.
@@ -1228,6 +1265,8 @@ the Ledger and the deliverables. No projection is a source of truth;
 if it desyncs, it is rebuilt from the authoritative sources.
 
 ### 8f. codebaseMemory — structural code graph
+
+> **V2+ aspirational** — codebaseMemory is explicitly a Non-Goal for V1 per roadmap.md. Current status: not implemented. CodeGraph is used as an external tool for structural queries.
 
 The RAG operates over deliverables and documentation — structured
 data that is indexed semantically. Source code is different: it cannot
@@ -1359,13 +1398,15 @@ Compiling the ContextBrief is a judgment step (section 3b) with an inherent hall
 
 ### 9b. Two delivery patterns
 
+> **V2+ aspirational** — PatternB delivery (topic_key-based direct RAG reads) is not required for V1. Current status: only PatternA (curated injection) is implemented. PatternB requires a functioning RAG projection.
+
 ```mermaid
 flowchart TD
     NEED["Sub-agent needs context"]
     NEED --> Q{{"Target known\nand deterministic?"}}
 
-    Q -->|"Yes"| PB["PatternB\nSM passes topic_key\nsub-agent reads directly from RAG\nsignificantly more economical"]
-    Q -->|"No"| PA["PatternA\nSM searches, curates, injects\nquality over cost"]
+    Q -->|"Yes"| PB["PatternB (V2+)\nSM passes topic_key\nsub-agent reads directly from RAG\nsignificantly more economical"]
+    Q -->|"No"| PA["PatternA (implemented)\nSM searches, curates, injects\nquality over cost"]
 
     style PB fill:#4a4,stroke:#333,color:#fff
     style PA fill:#47a,stroke:#333,color:#fff
@@ -1428,6 +1469,8 @@ Three consecutive failures for the same role activate the circuitBreaker.
 ## 10. How it recovers
 
 [↑ Back to index](#index)
+
+> **Amendment note (2026-08-31):** Current implementation uses stored state (`META.json` per handoff) rather than Ledger-derived state. Deriving state from consolidated Ledger revisions is V2+ aspirational.
 
 After a crash, compaction or new session, state is
 reconstructed — it is not lost.
@@ -1499,6 +1542,8 @@ flowchart LR
 
 ### 11b. Contracts first — parallelism enabler
 
+> **V2+ aspirational** — multi-lane parallel execution is not required for V1. Current status: no worktree/lane model exists. The contracts-first principle remains valid for sequential execution.
+
 prePhase defines contracts BEFORE implementing. This allows
 multiple lanes to work in parallel against the same interface.
 
@@ -1517,6 +1562,8 @@ flowchart TD
 ```
 
 ### 11c. Git strategy — isolation and traceability
+
+> **V2+ aspirational** — multi-lane Git strategy with worktrees is not required for V1. Current status: no worktree/lane model exists. The four invariants below remain the normative target for when parallel execution is implemented.
 
 The Principia does NOT impose GitFlow, trunk-based, or concrete branch names. It imposes four invariants:
 
@@ -1570,8 +1617,8 @@ Certification gates combine deterministic mechanical verification (test pass/fai
 ```mermaid
 flowchart TD
     subgraph MECANICO["Mechanical verification (mandatory)"]
-        MUT["Mutation testing\nreal test strength"]
-        CRAP["CRAP score\nchange risk"]
+        MUT["Mutation testing (V2+)\nreal test strength"]
+        CRAP["CRAP score (V2+)\nchange risk"]
         CYCL["Cyclomatic complexity\nsimple functions"]
         SIZE["Module size\nbounded LOC"]
         DEPS["Dependency structure\nzero cycles"]
@@ -1596,6 +1643,8 @@ flowchart TD
 The specific thresholds (mutation score, maximum CRAP, complexity)
 are defined by the dogma per tier (strict, standard, relaxed). The
 Principia defines the principle: **mechanical, not subjective**.
+
+> **V2+ aspirational** — mutation testing and CRAP score are not configured for V1. Current status: coverage exists via vitest; mutation testing and CRAP metrics are planned for V2+.
 
 ### 11e. Accept/Reject — certification by gates
 
@@ -1629,6 +1678,8 @@ be corrected, not a generic "fix it." Every re-delegation goes through
 the complete PDC (section 9c).
 
 #### Emergency lane (break-glass)
+
+> **Amendment note (2026-08-31):** Break-glass bookkeeping exists (LedgerService records break-glass events); authorization is procedural via AGENTS.md, not mechanical.
 
 For P1 incidents in production, there is an expedited path that
 compresses ceremony without eliminating it:
@@ -1690,11 +1741,15 @@ Evidence feeds the Binding Layer: every commit referencing
 a test moves the link from `declared` to `inferred`. Mechanical
 verification (mutation testing) moves it to `verified`.
 
+> **V2+ aspirational** — structured Binding Layer confidence progression is not required for V1. Current status: the Ledger records events but declared/inferred/verified tracking is not implemented.
+
 ---
 
 ## 12. How it operates (optional)
 
 [↑ Back to index](#index)
+
+> **Amendment note (2026-08-31):** In the current implementation, watch/insights run unconditionally (no activation gate yet). Escalation is human-mediated: InsightEngine prints insights to console and the human decides whether to act.
 
 The operation phase activates ONLY if the product has an active
 operational surface (APIs, CLIs, services or operated tools). A
@@ -1790,50 +1845,55 @@ flowchart TD
 |---------|-----------|
 | AGENTS.md | Discoverability file published by Virgil in the consuming project following the Open Agentic Standard. Contains operational rules injected for the agent (section 1) |
 | ARCH | Architectural-alignment gate within the certification pipeline. Validates conformance with architecture principles (section 7e, 11d) |
-| ArtifactRepository | Kernel component that manages deliverables, revisions and provenance. Not to be confused with ArtifactStoreAdapter (external adapter) nor with the informal term "ArtifactStore" (section 5) |
-| ArtifactStoreAdapter | Adapter that translates persistence and retrieval between the Kernel and the external storage system (repo-docs, Jira, etc.). Not to be confused with ArtifactRepository (internal Kernel component) (section 5, 3b) |
-| Binding Layer | Three trust levels for contracts: declared (defined), inferred (derived from evidence), verified (confirmed by execution) (section 7d) |
+| ArtifactRepository | **V2+ aspirational.** Originally a Core component for deliverables, revisions and provenance. Current implementation: HandoffService + filesystem (section 5) |
+| ArtifactStoreAdapter | **V2+ aspirational.** Adapter contract for persistence and retrieval between the Core and external storage. Current implementation: direct filesystem for persistence, ContextProviderPort for retrieval (section 5, 3b) |
+| Binding Layer | Three trust levels for contracts: declared (defined), inferred (derived from evidence), verified (confirmed by execution). **V2+ aspirational** — confidence progression not implemented (section 7d) |
 | Break-glass | Emergency lane for P1 incidents that compresses ceremony with MIM authority and mandatory post-hoc certification (section 11e) |
 | buildArtifactSet | Set of build artifacts produced by an EchoRun, unambiguously linked to a sourceRevision (section 7b) |
 | bumpDependencies | Three-step maintenance cycle (security fix → update check → security fix) to update exact dependencies without introducing vulnerabilities (section 7h) |
 | circuitBreaker | Mechanism that stops delegations after 3 consecutive failures and escalates to the MIM (section 9c) |
-| codebaseMemory | Structural code graph derived from AST. Complements the RAG with queries about relationships between code entities (section 8f) |
-| compositeAgent | Sequence of independent invocations (testEngineer → Implementor → fitnessFunction) orchestrated under a common label within an isolated mutation domain; worktree is one possible implementation (section 7c) |
-| complianceByDesign | Data-shape assertions integrated into development. Covers exclusively technical data controls (section 7g) |
+| codebaseMemory | **V2+ aspirational (Non-Goal for V1).** Structural code graph derived from AST. CodeGraph is used as an external tool (section 8f) |
+| compositeAgent | **V2+ aspirational.** Sequence of independent invocations (testEngineer → Implementor → fitnessFunction) orchestrated under a common label within an isolated mutation domain (section 7c) |
+| complianceByDesign | **V2+ aspirational.** Data-shape assertions integrated into development. Covers exclusively technical data controls (section 7g) |
 | consumerRag | RAG projection of the consuming project in Consumption Mode. Complements devRag. See dual RAG (section 8c) |
-| ContextBrief | Context package compiled by the ContextCompiler to feed a delegation. Includes selected deliverables with origin traceability (section 9a) |
-| ContextCompiler | Kernel component that selects and compiles relevant deliverables into a ContextBrief. Judgment step with documented hallucination surface (section 9a) |
-| CRAP score | Change Risk Anti-Patterns — metric that combines complexity and coverage to assess change risk |
+| ContextBrief | Context package compiled for a delegation. Includes selected deliverables with origin traceability. Current implementation: handoff files (TASK.md + CONTEXT.md + ACCEPTANCE_CHECKLIST.md) (section 9a) |
+| ContextCompiler | Core component that selects and compiles relevant deliverables into a ContextBrief. Current implementation: HandoffService (section 9a) |
+| ContextProviderPort | **[New]** Adapter contract (port interface) for context retrieval from external sources. 11 backends implemented (Confluence, GitHub Org, Azure DevOps, Teams, etc.). Providers self-register on module initialization (section 5) |
+| Core | Virgil's ceremony-agnostic core services (NestJS modules). Contains LedgerService, HandoffService, PlanningService, AuditService, BriefService, ProviderRegistry, RefResolver. Replaces the term "Kernel" from the original Principia (section 5) |
+| CRAP score | **V2+ aspirational.** Change Risk Anti-Patterns — metric that combines complexity and coverage to assess change risk |
 | delegationContract | Contract of 6 required fields accompanying every SM delegation: identity (role, tier, constraints), scope, verifiable objective, resolved input, output schema, rules injected as text (section 9c) |
 | devRag | Virgil's RAG projection in Development Mode. Complements consumerRag. See dual RAG (section 8c) |
-| DogmaRef | Identity reference to the operational dogma (docs/). Resolved by the HostAdapter at the start of every invocation. Field contract defined in the protocol layer, out of scope for this Principia (section 3b) |
-| droppableCode | Code with 0% coverage in appTests. Must be removed or justify its existence with a documented exception. See safeToAutoDelete for safe mechanical removal (section 7f) |
-| Echo System | 5-step pipeline for the execution of each phase: Setup → Build → Static → Dynamic → E2E (section 7a) |
+| DogmaRef | Identity reference to the operational dogma (docs/). Resolved at the start of every invocation from `virgil.json` and the project filesystem. Field contract defined in the protocol layer, out of scope for this Principia (section 3b) |
+| droppableCode | **V2+ aspirational.** Code with 0% coverage in appTests. Must be removed or justify its existence with a documented exception (section 7f) |
+| Echo System | 5-step pipeline for the execution of each phase: Setup → Build → Static → Dynamic → E2E. Documented in AGENTS.md; not mechanically enforced via hooks/CI yet (section 7a) |
 | EchoRun | Concrete instance of Echo System execution that produces a buildArtifactSet linked to a sourceRevision (section 7b) |
-| EvidenceIngestion | Kernel component that ingests evidence produced by executions and records it in the Ledger with origin traceability (section 5) |
+| EvidenceIngestion | **V2+ aspirational.** Structured ingestion component for execution evidence. Current implementation: LedgerService (append-only JSONL) (section 5) |
 | FastForward | Certainty gradient (FF-1 to FF-4) that allows compressing planning ceremony when observable evidence supports it (section 3a) |
-| HostAdapter | Adapter that translates discovery, invocation and envelopes between the host (Claude, GPT, etc.) and the Virgil Kernel. Declares capabilities and degradations (section 3b, 5) |
-| Kernel | Virgil's ceremony-agnostic core. Contains Ledger, TraceabilityGraph, ArtifactRepository, EvidenceIngestion, ContextCompiler, RAG (section 5) |
-| Ledger | Immutable record of the project's events, transitions and history |
+| HostAdapter | **V2+ aspirational.** Adapter that translates discovery, invocation and envelopes between the host and Virgil. Current implementation: CLI commands are the single integration point (section 3b, 5) |
+| Kernel | Virgil's ceremony-agnostic core. Now referred to as "Core" (NestJS modules). See Core (section 5) |
+| Ledger | Immutable record of the project's events, transitions and history. Implemented as append-only JSONL at `.virgil/ledger.jsonl` |
+| Method Pack | **V2+ aspirational.** Ceremony layer defining roles, flows and additional gates. The current handoff lifecycle is methodology-agnostic by design (section 5) |
 | MIM | Mind in the Machine: human with final authority over the project. Approves, rejects, breaks ties. Its veto is non-negotiable (vocabulary) |
-| Method Pack | Ceremony layer mounted on top of the Kernel. Defines roles, flows and additional gates. Scrum Pack is the only one implemented (section 5) |
-| mutation domain | Isolation domain where an execution lane operates without interfering with other concurrent lanes. Must provide isolated filesystem, conflict detection at integration, and per-lane revision identity. Worktrees are the reference implementation (section 7c, 11c) |
+| mutation domain | **V2+ aspirational.** Isolation domain where an execution lane operates without interfering with other concurrent lanes. No worktree/lane model exists in V1 (section 7c, 11c) |
 | PDC | Post-Delegation Checkpoint: orchestration-coherence safeguard (ECHO → VERIFY → MARK → DECIDE). It is not a certification gate (section 3b) |
 | PlanningGapDetected | Escalation signal when execution detects a planning defect. Triggers re-planning |
-| ProjectRef | Identity reference to the target project. Resolved by the HostAdapter at the start of every invocation. Field contract defined in the protocol layer, out of scope for this Principia (section 3b) |
+| PlanningService | **[New]** Core service managing the Idea → Requirement → Design → Task ceremony through `virgil write` and `virgil transition` commands (section 3a, 5) |
+| ProjectRef | Identity reference to the target project. Resolved from `virgil.json` at the start of every invocation. Field contract defined in the protocol layer, out of scope for this Principia (section 3b) |
 | RAG | Read-optimized projection over deliverables and documentation. Not a source of truth — it is reconstructible (section 8e) |
 | re-sync | Process that updates a projection (RAG or codebaseMemory) to the current HEAD and advances its watermark. Can be triggered explicitly, via PR with deltas, or via post-merge hook (section 8c) |
-| RetrievalProjection | Formal name of the Kernel component that implements the read projections. Technical synonym for RAG in the context of the component catalog (section 5) |
-| RunContext | Execution context of the active run/change. Resolved by the HostAdapter at the start of every invocation. Field contract defined in the protocol layer, out of scope for this Principia (section 3b) |
-| securityAudit | Blocking gate of Echo step 1 (Setup): vulnerability scan over the dependency tree. The Kernel enforces execution; the Method Pack defines the severity threshold (section 7h) |
+| RetrievalProjection | Formal name of the Core component that implements the read projections. Current implementation: RefResolverService (section 5) |
+| RunContext | Execution context of the active run/change. Resolved from `virgil.json` at the start of every invocation. Field contract defined in the protocol layer, out of scope for this Principia (section 3b) |
+| securityAudit | Blocking gate of Echo step 1 (Setup): vulnerability scan over the dependency tree. The Core enforces execution; the Method Pack (V2+) defines the severity threshold (section 7h) |
 | SM | Session Manager: orchestrating agent that coordinates the session. Compiles context, delegates work, runs the PDC. It is not a Scrum Master (vocabulary) |
-| safeToAutoDelete | Subset of droppableCode that meets mechanical safe-removal criteria: no live dependents, no observed execution in N cycles, no transitive coverage. Enables automatic mechanical removal (section 7f) |
+| safeToAutoDelete | **V2+ aspirational.** Subset of droppableCode that meets mechanical safe-removal criteria: no live dependents, no observed execution in N cycles, no transitive coverage (section 7f) |
 | sourceRevision | Commit SHA that identifies the code revision that produced a buildArtifactSet. Must be reachable from the watermark for certification to be valid (section 7b, 8c) |
 | Supply Chain Integrity | Three dependency invariants: exact version pinning, security audit as a gate, and bumpDependencies as a controlled update cycle (section 7h) |
 | TPM | Task Progress Monitor: lightweight agent that scans states and reports to the SM without mutating deliverables (vocabulary) |
-| TraceabilityGraph | Derived projection connecting intent → decision → work → evidence. Reconstructible from the Ledger (section 5, 8e) |
-| versionPinning | Invariant requiring exact versions (no ranges) for all dependencies and the dependency manager. Guarantees absolute reproducibility (section 7h) |
-| watermark | Revision (commit SHA) against which a projection (RAG or codebaseMemory) was last built or synchronized. Exclusive Kernel property. Certification gate: sourceRevision must be reachable from watermark in the commit graph (section 8c) |
+| TraceabilityGraph | **V2+ aspirational.** Derived projection connecting intent → decision → work → evidence. Current implementation: `virgil ledger --handoff <id>` provides event trail (section 5, 8e) |
+| TransitionCommand | **[New]** CLI command (`virgil transition`) that changes a handoff's lifecycle status with precondition validation and Ledger recording (section 3a) |
+| versionPinning | **V2+ aspirational** for exact pinning. Current implementation uses caret ranges with pnpm lock file. The lock file provides reproducibility (section 7h) |
+| watermark | Revision (commit SHA) against which a projection (RAG or codebaseMemory) was last built or synchronized. Exclusive Core property. Certification gate: sourceRevision must be reachable from watermark in the commit graph (section 8c) |
+| WriteCommand | **[New]** CLI command (`virgil write`) that creates or updates planning documents (idea, requirement, design, task) with provider context injection (section 3a) |
 
 ---
 

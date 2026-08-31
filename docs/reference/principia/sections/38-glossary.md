@@ -6,7 +6,7 @@ source_lines: [1763, 1814]
 layer: reference
 constitutional: true
 actors: []
-glossary_terms: [AGENTS.md, AuditService, Binding Layer, Break-glass, FastForward, GapType, HandoffStateMachine, InsightEngine, Ledger, LedgerService, MIM, Method Pack, Provider, ProviderRegistry, CapabilityRegistry, SemanticRef]
+glossary_terms: [AGENTS.md, AuditService, Binding Layer, Break-glass, ContextProviderPort, Core, FastForward, GapType, HandoffStateMachine, InsightEngine, Ledger, LedgerService, MIM, Method Pack, PlanningService, Provider, ProviderRegistry, CapabilityRegistry, SemanticRef, TransitionCommand, WriteCommand]
 depends_on: []
 referenced_by: []
 keywords:
@@ -18,7 +18,7 @@ keywords:
 editorial_additions: [context_paragraph]
 -->
 
-> **Context:** This glossary collects the canonical definitions of the terms used throughout the Principia. Terms marked **[Implemented]** exist in the runtime. Terms marked **[Architectural provision]** are defined in the Principia but not yet implemented. Terms marked **[Superseded]** have been replaced by current runtime equivalents.
+> **Context:** This glossary collects the canonical definitions of the terms used throughout the Principia. Terms marked **[Implemented]** exist in the runtime. Terms marked **[V2+ aspirational]** are defined in the Principia but not required for V1. The constitution's glossary (amended 2026-08-31) now properly describes all terms with their current status and V2+ annotations; the "Superseded" section below is retained for historical reference.
 
 ## Glossary
 
@@ -42,8 +42,13 @@ editorial_additions: [context_paragraph]
 | ProviderRegistry | Service providing runtime lookup of providers by kind or capability ID. Used by HandoffService, RefResolverService, and PollingLoopService (section 5) |
 | SemanticRef | URI scheme `{kind}://{backend}/{id}` for cross-provider reference resolution. 5 kinds: dogma, ticket, org, sourcecode, chat. Parsed by `parseRef()`, constructed by `buildRef()`, resolved by `RefResolverService` |
 | sourceRevision | Commit SHA stored in `META.json` (`repos[].commitSha`) that identifies the baseline for audit diff comparison (section 7b, 11c) |
+| ContextProviderPort | Adapter contract (port interface) for context retrieval from external sources. 11 backends implemented (Confluence, GitHub Org, Azure DevOps, Teams, etc.). Providers self-register on module initialization (section 5) |
+| PlanningService | Core service managing the Idea → Requirement → Design → Task ceremony through `virgil write` and `virgil transition` commands (section 3a, 5) |
+| WriteCommand | CLI command (`virgil write`) that creates or updates planning documents (idea, requirement, design, task) with provider context injection (section 3a) |
+| TransitionCommand | CLI command (`virgil transition`) that changes a handoff's lifecycle status with precondition validation and Ledger recording (section 3a) |
+| Core | Virgil's ceremony-agnostic core services (NestJS modules). Contains LedgerService, HandoffService, PlanningService, AuditService, BriefService, ProviderRegistry, RefResolver. Replaces the term "Kernel" (section 5) |
 
-### Architectural provisions (not yet implemented)
+### V2+ aspirational (not required for V1)
 
 | Term | Definition |
 |---------|-----------|
@@ -64,9 +69,9 @@ editorial_additions: [context_paragraph]
 | virgil.json | Project manifest with `$schema` declaring mode (development/consumption), project metadata, and provider configuration per kind. Worktree-aware: each worktree carries its own manifest. Replaces scattered environment variables with a single committable config file |
 | watermark | Revision (commit SHA) against which a projection (RAG or codebaseMemory) was last built or synchronized. Certification gate: sourceRevision must be reachable from watermark (section 8c) |
 
-### Superseded terms
+### Historical mapping (pre-CLI vocabulary)
 
-These terms belonged to the MCP server architecture (pre-CLI pivot) and have been replaced by current runtime equivalents.
+These terms belonged to the original architecture (pre-CLI pivot). The constitution's glossary (amended 2026-08-31) now describes each with its current status and V2+ annotations. This table is retained for traceability.
 
 | Old term | Replaced by | Notes |
 |----------|-------------|-------|

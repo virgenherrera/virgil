@@ -4,7 +4,7 @@
 
 version: 1
 source: principia/constitution.md
-source_commit: 1d2dfa7
+source_commit: pending-reseal
 
 # Layer taxonomy:
 #   navigation  — document structure and routing
@@ -86,7 +86,7 @@ chunks:
     layer: lifecycle
     constitutional: true
     title: Flow of an invocation
-    keywords: [invocation flow, HostAdapter, Virgil Kernel, ArtifactStore, ContextBrief, Ledger, PDC, deterministic gates, certification]
+    keywords: [invocation flow, CLI commands, Virgil Core, ContextBrief, Ledger, PDC, deterministic gates, certification, shell invocation]
 
   - id: governance-architecture
     file: sections/07-governance-architecture.md
@@ -102,7 +102,7 @@ chunks:
     layer: components
     constitutional: true
     title: Component catalog
-    keywords: [components, Kernel, Adapters, Method Packs, Ledger, TraceabilityGraph, ArtifactRepository, EvidenceIngestion, ContextCompiler, RetrievalProjection, HostAdapter, ArtifactStoreAdapter, Scrum, ceremony-agnostic, universal quality]
+    keywords: [components, Core, Adapters, Method Packs, LedgerService, HandoffService, PlanningService, AuditService, BriefService, ProviderRegistry, RefResolver, ContextProviderPort, ceremony-agnostic, universal quality]
 
   - id: interaction-model
     file: sections/09-interaction-model.md
@@ -110,7 +110,7 @@ chunks:
     layer: interaction
     constitutional: true
     title: Interaction model
-    keywords: [actors and modes, Development Mode, Consumption Mode, separation of concerns, Method Pack, HostAdapter, ArtifactStoreAdapter, global ownership, global context injection, fundamental invariant, MCP JSON-RPC]
+    keywords: [actors and modes, Development Mode, Consumption Mode, separation of concerns, Method Pack, ContextProviderPort, CLI shell invocation, global ownership, global context injection, fundamental invariant]
 
   - id: echo-system
     file: sections/10-echo-system.md
@@ -342,7 +342,7 @@ chunks:
     layer: reference
     constitutional: true
     title: Glossary
-    keywords: [Binding Layer, Break-glass, buildArtifactSet, bumpDependencies, circuitBreaker, codebaseMemory, compositeAgent, complianceByDesign, ContextBrief, ContextCompiler, CRAP score, delegationContract, droppableCode, Echo System, EchoRun, FastForward, Kernel, Ledger, mutation domain, Method Pack, PDC, PlanningGapDetected, RAG, re-sync, securityAudit, sourceRevision, safeToAutoDelete, Supply Chain Integrity, TraceabilityGraph, versionPinning, watermark]
+    keywords: [Binding Layer, Break-glass, buildArtifactSet, bumpDependencies, circuitBreaker, codebaseMemory, compositeAgent, complianceByDesign, ContextBrief, ContextProviderPort, Core, CRAP score, delegationContract, droppableCode, Echo System, EchoRun, FastForward, Ledger, mutation domain, Method Pack, PDC, PlanningGapDetected, PlanningService, RAG, re-sync, securityAudit, sourceRevision, safeToAutoDelete, Supply Chain Integrity, TraceabilityGraph, TransitionCommand, versionPinning, watermark, WriteCommand]
 
 cross_cutting:
   - name: pdc-vs-echo-disambiguation
@@ -408,6 +408,11 @@ glossary_index:
   FastForward: lifecycle
   HostAdapter: components
   Kernel: components
+  Core: components
+  ContextProviderPort: components
+  PlanningService: components
+  WriteCommand: glossary
+  TransitionCommand: glossary
   Ledger: components
   Method Pack: components
   MIM: vocabulary
