@@ -48,6 +48,9 @@ import { TeamsConfig } from "./providers/chat/teams/teams.config.js";
 import { TeamsModule } from "./providers/chat/teams/teams.module.js";
 import { AzdoConfig } from "./providers/ticket/azdo/azdo.config.js";
 import { AzdoModule } from "./providers/ticket/azdo/azdo.module.js";
+import { PlanningModule } from "./planning/planning.module.js";
+import { WriteCommand } from "./commands/write.command.js";
+import { TransitionCommand } from "./commands/transition.command.js";
 
 @Module({
   imports: [
@@ -85,6 +88,7 @@ import { AzdoModule } from "./providers/ticket/azdo/azdo.module.js";
     ReactiveModule,
     ProactiveModule,
     BriefModule,
+    PlanningModule,
   ],
   providers: [
     StatusCommand,
@@ -103,6 +107,8 @@ import { AzdoModule } from "./providers/ticket/azdo/azdo.module.js";
     InitCommand,
     DoctorCommand,
     VersionCommand,
+    WriteCommand,
+    TransitionCommand,
   ],
 })
 export class AppModule {}
