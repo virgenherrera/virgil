@@ -361,18 +361,18 @@ export class AuditService {
         passed: false,
         message: `Coverage ${stmtPct}% below threshold ${threshold}%`,
       };
-    } catch {
+    } catch (error) {
       return {
         name: "coverage",
-        passed: true,
-        message: "Coverage check skipped: tool unavailable",
+        passed: false,
+        message: `Coverage check failed: tool unavailable (${error instanceof Error ? error.message : String(error)})`,
       };
     }
   }
 
   private checkNpmAudit(repoPath: string, maxCritical: number): AuditCheck {
     try {
-      const output = execSync("npm audit --json 2>/dev/null || true", {
+      const output = execSync("pnpm audit --json 2>/dev/null || true", {
         cwd: repoPath,
         encoding: "utf-8",
         timeout: 60000,
@@ -394,11 +394,11 @@ export class AuditService {
         passed: false,
         message: `${total} critical/high CVEs exceeds limit of ${maxCritical}`,
       };
-    } catch {
+    } catch (error) {
       return {
         name: "npm-audit",
-        passed: true,
-        message: "NPM audit check skipped: tool unavailable",
+        passed: false,
+        message: `NPM audit check failed: tool unavailable (${error instanceof Error ? error.message : String(error)})`,
       };
     }
   }
@@ -453,11 +453,11 @@ export class AuditService {
         passed: false,
         message: `${errorCount} function(s) exceed complexity threshold ${maxComplexity}`,
       };
-    } catch {
+    } catch (error) {
       return {
         name: "complexity",
-        passed: true,
-        message: "Complexity check skipped: tool unavailable",
+        passed: false,
+        message: `Complexity check failed: tool unavailable (${error instanceof Error ? error.message : String(error)})`,
       };
     }
   }
@@ -483,11 +483,11 @@ export class AuditService {
         passed: false,
         message: `${cycles.length} circular dependency chain(s) found`,
       };
-    } catch {
+    } catch (error) {
       return {
         name: "circular-deps",
-        passed: true,
-        message: "Circular dependency check skipped: tool unavailable",
+        passed: false,
+        message: `Circular dependency check failed: tool unavailable (${error instanceof Error ? error.message : String(error)})`,
       };
     }
   }
@@ -497,7 +497,7 @@ export class AuditService {
     maxMajorOutdated: number,
   ): AuditCheck {
     try {
-      const output = execSync("npm outdated --json 2>/dev/null || true", {
+      const output = execSync("pnpm outdated --json 2>/dev/null || true", {
         cwd: repoPath,
         encoding: "utf-8",
         timeout: 60000,
@@ -527,11 +527,11 @@ export class AuditService {
         passed: false,
         message: `${majorCount} major-outdated packages exceeds limit of ${maxMajorOutdated}`,
       };
-    } catch {
+    } catch (error) {
       return {
         name: "outdated-deps",
-        passed: true,
-        message: "Outdated dependency check skipped: tool unavailable",
+        passed: false,
+        message: `Outdated dependency check failed: tool unavailable (${error instanceof Error ? error.message : String(error)})`,
       };
     }
   }

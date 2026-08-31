@@ -74,8 +74,8 @@ describe("verification gates", () => {
       if (
         typeof cmd === "string" &&
         (cmd.includes("vitest") ||
-          cmd.includes("npm audit") ||
-          cmd.includes("npm outdated") ||
+          cmd.includes("pnpm audit") ||
+          cmd.includes("pnpm outdated") ||
           cmd.includes("tsc --noEmit") ||
           cmd.includes("eslint") ||
           cmd.includes("madge"))
@@ -196,7 +196,7 @@ describe("verification gates", () => {
         writeAgentOutput(meta.id);
 
         stubVerificationCommand((cmd) => {
-          if (cmd.includes("npm audit")) {
+          if (cmd.includes("pnpm audit")) {
             return JSON.stringify({
               metadata: {
                 vulnerabilities: {
@@ -232,7 +232,7 @@ describe("verification gates", () => {
         writeAgentOutput(meta.id);
 
         stubVerificationCommand((cmd) => {
-          if (cmd.includes("npm audit")) {
+          if (cmd.includes("pnpm audit")) {
             return JSON.stringify({
               metadata: {
                 vulnerabilities: {
@@ -481,7 +481,7 @@ describe("verification gates", () => {
         writeAgentOutput(meta.id);
 
         stubVerificationCommand((cmd) => {
-          if (cmd.includes("npm outdated")) {
+          if (cmd.includes("pnpm outdated")) {
             return JSON.stringify({
               "some-pkg": { current: "2.1.0", wanted: "2.3.0", latest: "2.5.0" },
               "minor-pkg": { current: "1.0.0", wanted: "1.2.0", latest: "1.5.0" },
@@ -511,7 +511,7 @@ describe("verification gates", () => {
         writeAgentOutput(meta.id);
 
         stubVerificationCommand((cmd) => {
-          if (cmd.includes("npm outdated")) {
+          if (cmd.includes("pnpm outdated")) {
             return JSON.stringify({
               "old-pkg": { current: "1.0.0", wanted: "1.2.0", latest: "3.0.0" },
               "another-old": { current: "2.0.0", wanted: "2.1.0", latest: "4.0.0" },
