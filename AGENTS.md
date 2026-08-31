@@ -49,6 +49,8 @@ understand what context sources are available.
 | `virgil watch` | Start reactive polling loop |
 | `virgil insights` | Run proactive analyzers |
 | `virgil ledger [--handoff <id>]` | Query append-only event log |
+| `virgil write` | Create or update planning documents |
+| `virgil transition` | Transition task lifecycle status |
 | `virgil init` | Generate `.virgilrc.yaml` config template |
 | `virgil doctor` | System health check (node, config, providers, tools) |
 | `virgil version` | Print CLI version |
