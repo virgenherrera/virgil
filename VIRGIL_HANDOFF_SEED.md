@@ -17,6 +17,7 @@
 - [Product Agent Orchestration](#product-agent-orchestration)
 - [POC Validation Results](#poc-validation-results)
 - [Technology Direction](#technology-direction)
+- [Global Development Toolchain](#global-development-toolchain)
 - [Exact Version Policy](#exact-version-policy)
 - [Repository Bootstrap Hygiene](#repository-bootstrap-hygiene)
 - [Development vs Consumption](#development-vs-consumption)
@@ -31,6 +32,7 @@
 - [Seed Scope](#seed-scope)
 - [Seed Definition of Done](#seed-definition-of-done)
 - [Required Child Handoffs](#required-child-handoffs)
+- [Implementation Plan](#implementation-plan)
 - [Anti-Goals](#anti-goals)
 - [Architectural Bias](#architectural-bias)
 - [Instruction to the Receiving Orchestrator](#instruction-to-the-receiving-orchestrator)
@@ -45,6 +47,7 @@
 - [ ] Repository bootstrap assignment completed
 - [ ] Open-agentic repository contract established
 - [ ] Root `.gitignore` established before tool-local state is created
+- [ ] Development toolchain bootstrapped (`gentle-ai install`, review mode active)
 - [ ] `.atl/` and equivalent local harness state are ignored by default
 - [ ] Exact-version enforcement established
 - [ ] Minimal CLI path proven
@@ -380,6 +383,50 @@ The seed must not hard-couple Virgil to LangChain, LlamaIndex, Prisma, TypeORM, 
 
 ---
 
+## Global Development Toolchain
+
+Virgil development depends on global machine tools that are not managed through npm/pnpm.
+
+These tools must be available on the development machine before repository bootstrap begins.
+
+### Required Global Tools
+
+| Tool | Version | Purpose | Installation |
+| --- | --- | --- | --- |
+| Node.js | 24.16.0 (exact) | Runtime | Platform package manager or version manager |
+| pnpm | 11.24.0 (exact) | Package manager | `corepack enable && corepack prepare` |
+| gentle-ai | 2.5.0 (exact) | Development quality toolchain | `brew install gentle-ai` or platform equivalent |
+
+### gentle-ai as Development Toolchain
+
+`gentle-ai` provides:
+
+- **Receipt-driven development** — review pipeline for implementation changes (`gentle-ai review start`)
+- **Agent configuration** — `.claude/` directory with agents, skills, and settings (`gentle-ai install`)
+- **Skill synchronization** — agent capabilities aligned with toolchain version (`gentle-ai sync`)
+
+Invariants:
+
+1. `gentle-ai` is a development-time machine dependency, not an npm dependency.
+2. `gentle-ai` is not a runtime dependency — Virgil users never need it installed.
+3. Its configuration surface (`.claude/`) is agent-local operational state, gitignored by default.
+4. `AGENTS.md` remains the canonical open-standard agent contract. `.claude/` is a compatibility bridge.
+5. Receipt-driven development activation is per-clone (`--scope clone`), not repository-mandated.
+6. Version upgrades are explicit maintenance operations, tracked as changes.
+
+### Virgil as Agent Helper
+
+Virgil generates implementation handoffs for other projects. Those handoffs are tool-agnostic — Virgil provides registered providers and cached RAG context. The receiving agent adapts using its own toolchain.
+
+- Virgil does not detect, interrogate, or condition on the target project's environment.
+- Virgil does not know or assume the target project's tech stack.
+- The receiving agent — which preferably has `gentle-ai` installed — applies its own quality gates.
+- H09 (Handoff Protocol) defines the machine-readable handoff format independently of any toolchain assumption.
+
+[↑ Menú](#menú)
+
+---
+
 ## Exact Version Policy
 
 Virgil has a **zero floating-version policy** for committed repository dependencies.
@@ -667,6 +714,16 @@ Do not assume one SEA binary is portable across operating systems or architectur
 ## Development Gates
 
 These gates apply to development/contribution, not normal product use.
+
+### Toolchain Prerequisites
+
+Before running any development gate, the following global tools must be available:
+
+- Node.js 24.16.0 (exact)
+- pnpm 11.24.0 (exact)
+- gentle-ai 2.5.0 (exact, for receipt-driven development)
+
+gentle-ai is optional for gate execution but required for review-gated delivery. See [Global Development Toolchain](#global-development-toolchain).
 
 ### Install
 
@@ -1003,6 +1060,18 @@ The receiving orchestrator must create at least the following child handoffs.
 
 Names/order may be refined, but responsibility boundaries must remain clear.
 
+### H00 — Toolchain Bootstrap & Receipt-Driven Development Gate
+
+Deliver:
+
+- global development toolchain verification (`gentle-ai` 2.5.0)
+- repository agent configuration (`gentle-ai install`)
+- receipt-driven development activation (`gentle-ai review mode enable --scope clone`)
+- review gate injection into `SHARED_VERIFICATION.md`
+- `AGENTS.md` amendment proposal for global toolchain dependency and token discipline
+
+This handoff is Wave 0. It must complete before any other handoff begins, including H01.
+
 ### H01 — Repository Bootstrap & Open Agentic Contract
 
 Deliver:
@@ -1192,6 +1261,150 @@ Implement metrics and policy for:
 Lifecycle decisions must be evidence-driven.
 
 Each child handoff must comply with `AGENTS.md`, including menu/backlink rules and a checkbox-based Progress Tracker.
+
+[↑ Menú](#menú)
+
+---
+
+## Implementation Plan
+
+This section defines the dependency graph, parallelization strategy, and execution constraints for implementing H00–H18. It exists to prevent sub-agents from drifting on sequencing or violating cross-handoff dependencies.
+
+### Dependency Graph
+
+```mermaid
+graph TD
+    H00[H00 Toolchain Bootstrap] --> H01[H01 Repository Bootstrap]
+
+    H01 --> H02[H02 CLI Runtime SEA]
+    H01 --> H03[H03 Workspace Configuration]
+    H01 --> H04[H04 Provider Contracts]
+    H01 --> H06[H06 Knowledge Persistence]
+    H01 --> H09[H09 Handoff Protocol]
+    H01 --> H16[H16 PW CDP Adapters]
+
+    H03 --> H05[H05 Local Repo Provider]
+    H04 --> H05
+
+    H06 --> H07[H07 RAG Core Retrieval]
+
+    H04 --> H10[H10 Product Orchestration]
+    H09 --> H10
+
+    H10 --> H11[H11 Agent Governance]
+
+    H04 --> H08[H08 Progressive Discovery]
+    H06 --> H08
+    H07 --> H08
+
+    H04 --> H12[H12 Remote Issue Provider]
+    H03 --> H12
+    H16 --> H12
+
+    H04 --> H13[H13 Remote Knowledge Provider]
+    H06 --> H13
+    H16 --> H13
+    H17 --> H13
+
+    H04 --> H14[H14 Chat Provider]
+    H06 --> H14
+    H16 --> H14
+
+    H03 --> H15[H15 Knowledge Lifecycle]
+    H04 --> H15
+    H06 --> H15
+    H07 --> H15
+
+    H04 --> H17[H17 Local Indexers]
+    H06 --> H17
+    H03 --> H17
+
+    H01 --> H18[H18 CI/CD Delivery]
+    H02 --> H18
+
+    classDef wave0 fill:#1a1a2e,stroke:#e94560,color:#fff
+    classDef wave1 fill:#16213e,stroke:#0f3460,color:#fff
+    classDef wave2 fill:#0f3460,stroke:#53a8b6,color:#fff
+    classDef wave3 fill:#1b4332,stroke:#52b788,color:#fff
+    classDef wave4 fill:#3d0066,stroke:#9b59b6,color:#fff
+
+    class H00 wave0
+    class H01 wave1
+    class H02,H03,H04,H06,H09,H16 wave2
+    class H05,H07,H10,H12,H14,H17,H18 wave3
+    class H08,H11,H13,H15 wave4
+```
+
+### Critical Paths
+
+| Path | Sequence | Constraint |
+| --- | --- | --- |
+| Discovery | H00 → H01 → H06 → H07 → H08 | Longest chain — paces Wave 4 |
+| Orchestration | H00 → H01 → H09 → H10 → H11 | Product orchestration requires handoff protocol |
+| CDP lateral | H16 → H12, H13, H14 | PW CDP adapters block all remote CDP paths; API paths can advance independently |
+
+### Parallelization Waves
+
+```mermaid
+graph LR
+    subgraph W0[Wave 0 — Serial]
+        H00_W[H00 Toolchain Bootstrap]
+    end
+
+    subgraph W1[Wave 1 — Serial]
+        H01_W[H01 Repository Bootstrap]
+    end
+
+    subgraph W2[Wave 2 — 6 Parallel]
+        H02_W[H02 CLI Runtime SEA]
+        H03_W[H03 Workspace Config]
+        H04_W[H04 Provider Contracts]
+        H06_W[H06 Knowledge Persistence]
+        H09_W[H09 Handoff Protocol]
+        H16_W[H16 PW CDP Adapters]
+    end
+
+    subgraph W3[Wave 3 — 7 Parallel]
+        H05_W[H05 Local Repo Provider]
+        H07_W[H07 RAG Core Retrieval]
+        H10_W[H10 Product Orchestration]
+        H12_W[H12 Remote Issue Provider]
+        H14_W[H14 Chat Provider]
+        H17_W[H17 Local Indexers]
+        H18_W[H18 CI/CD Delivery]
+    end
+
+    subgraph W4[Wave 4 — 4 Parallel]
+        H08_W[H08 Progressive Discovery]
+        H11_W[H11 Agent Governance]
+        H13_W[H13 Remote Knowledge Provider]
+        H15_W[H15 Knowledge Lifecycle]
+    end
+
+    W0 --> W1
+    W1 --> W2
+    W2 --> W3
+    W3 --> W4
+```
+
+### Implementation Progress
+
+- [ ] Wave 0 complete (H00 — Toolchain Bootstrap)
+- [ ] Wave 1 complete (H01 — Repository Bootstrap)
+- [ ] Wave 2 complete (H02, H03, H04, H06, H09, H16)
+- [ ] Wave 3 complete (H05, H07, H10, H12, H14, H17, H18)
+- [ ] Wave 4 complete (H08, H11, H13, H15)
+- [ ] All handoffs delivered
+
+### Execution Constraints
+
+1. Each handoff is independently assignable after its preconditions are met.
+2. A wave cannot be marked complete until all its handoffs pass verification.
+3. Cross-wave dependencies must not be violated. No handoff starts before its explicit preconditions are satisfied, regardless of wave assignment.
+4. The orchestrator assigns handoffs to sub-agents. Sub-agents implement them. The orchestrator never implements.
+5. Before launching three or more parallel handoff agents, the orchestrator must provide a pre-flight cost estimation and wait for owner approval.
+6. Within a wave, handoffs with no inter-dependency may start simultaneously. Handoffs with intra-wave dependencies must respect the dependency graph.
+7. The CDP lateral bottleneck (H16 → H12, H13, H14) means Wave 3 items with CDP dependencies cannot start their CDP paths until H16 completes. API-only paths within those handoffs may advance independently.
 
 [↑ Menú](#menú)
 

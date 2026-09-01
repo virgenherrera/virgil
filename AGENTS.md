@@ -16,6 +16,7 @@
 - [Markdown Authoring Rules](#markdown-authoring-rules)
 - [Repository Hygiene and Tool-Local State](#repository-hygiene-and-tool-local-state)
 - [Development Commands](#development-commands)
+- [Global Development Toolchain](#global-development-toolchain)
 - [Exact Dependency Policy](#exact-dependency-policy)
 - [Verification Policy](#verification-policy)
 - [Commit Convention](#commit-convention)
@@ -138,6 +139,8 @@ The Main Agent must not directly:
 - perform QA work assigned to a QA agent
 - perform implementation work assigned to an implementation agent
 - silently absorb a rejected or failed minion assignment and execute it itself
+- read repository files inline as a substitute for delegating a worker-tier reader
+- accumulate raw tool output in its working context
 
 If the active harness cannot create or delegate to subagents, the Main Agent must report the limitation instead of silently violating this rule.
 
@@ -366,6 +369,24 @@ Reserve for exceptional cases where materially stronger reasoning is justified.
 
 Model names must not be encoded into domain contracts.
 
+### Default Tier Selection
+
+The default tier for any task is the cheapest that covers its complexity.
+
+The orchestrator must justify tier selection above `worker` for any delegated assignment. Absent explicit justification, the assignment runs at `worker`.
+
+Common routing:
+
+| Task | Tier |
+| --- | --- |
+| File reading, grep, search, inventory | worker |
+| Documentation review | worker |
+| Mechanical transformation, extraction | worker |
+| Code implementation, test writing | reasoning |
+| Architecture, synthesis, conflict resolution | reasoning |
+| Adversarial review of implementation | reasoning |
+| Novel design under high ambiguity | pro (requires escalation) |
+
 [↑ Menú](#menú)
 
 ---
@@ -405,6 +426,18 @@ Agents should:
 - retain risks
 - retain evidence references
 - discard transient repetition when no longer useful
+
+### Pre-Flight Cost Estimation
+
+Before launching three or more agents for a coordinated task, the orchestrator must:
+
+1. estimate the total token cost of the planned agent fleet,
+2. report the estimate to the owner,
+3. wait for approval before launching.
+
+This prevents runaway token consumption from unreviewed multi-agent deployments.
+
+The orchestrator must summarize sub-agent results into compact evidence. Raw tool output must not persist in the orchestrator thread.
 
 Mechanical token-heavy work should preferentially use the `worker` tier.
 
@@ -551,6 +584,7 @@ The following local state is explicitly ignored unless the project owner later p
 ```gitignore
 # Agent/tool-local operational state
 .atl/
+.claude/
 ```
 
 If any agent, minion, harness, plugin, CLI, IDE, test runner, or development tool introduces a new local-only file or directory:
@@ -562,6 +596,8 @@ If any agent, minion, harness, plugin, CLI, IDE, test runner, or development too
 5. request explicit owner approval before committing a new vendor-specific agent configuration surface.
 
 `.atl/` may be used locally by an agent or helper tool, but it is **not** a Virgil product dependency and must remain ignored by default.
+
+`.claude/` is created by `gentle-ai install` and contains agent configuration, skills, and settings. It is agent-local operational state, analogous to `.atl/`. It must not become a second source of agent policy.
 
 Shared compatibility configuration is allowed only when it materially improves interoperability and does not create a second source of agent policy.
 
@@ -591,6 +627,37 @@ These are contributor/development requirements.
 They are not prerequisites for end users consuming a released Virgil executable.
 
 The preferred end-user distribution target is Node SEA.
+
+[↑ Menú](#menú)
+
+---
+
+## Global Development Toolchain
+
+Repository development requires global machine tools beyond the pnpm dependency graph.
+
+These tools must be available on the development machine before repository bootstrap begins.
+
+| Tool | Version | Purpose |
+| --- | --- | --- |
+| Node.js | 24.16.0 | Runtime |
+| pnpm | 11.24.0 | Package manager |
+| gentle-ai | 2.5.0 | Development quality toolchain |
+
+All versions are exact, consistent with the Exact Dependency Policy. Upgrades are tracked changes.
+
+### gentle-ai
+
+`gentle-ai` provides receipt-driven development, agent configuration, and skill synchronization for the development workflow.
+
+Rules:
+
+1. `gentle-ai` is a machine-level prerequisite, like `node` or `pnpm`. It is not an npm dependency.
+2. `gentle-ai` is not a Virgil runtime dependency. End users do not need it.
+3. The `.claude/` directory created by `gentle-ai install` is agent-local operational state. It must be gitignored.
+4. `AGENTS.md` remains the canonical open-standard agent contract. `.claude/` is a compatibility bridge, not a competing policy source.
+5. Receipt-driven development is activated globally (`gentle-ai review mode enable --scope global`) and can be overridden to off per-clone (`gentle-ai review mode disable --scope clone`). The repository recommends but does not mandate activation.
+6. `gentle-ai sync` aligns the agent configuration with the installed toolchain version. Synchronization is a developer maintenance operation, not an automated hook.
 
 [↑ Menú](#menú)
 
@@ -661,6 +728,20 @@ Coverage must not be inflated through meaningless exclusions.
 GitHub Actions is authoritative.
 
 Husky provides fast local guardrails.
+
+### Review (Receipt-Driven Development)
+
+When receipt-driven development is active (`gentle-ai review mode status` reports `on`), implementation changes pass through the review pipeline before delivery:
+
+1. All source-mutating normalizers complete first.
+2. All static and dynamic gates pass.
+3. `gentle-ai review start` freezes the candidate.
+4. The review lifecycle runs to completion or bounded correction.
+5. The review receipt serves as delivery evidence.
+
+Review is a quality layer, not a blocking gate when disabled. The developer controls activation per-clone.
+
+Review does not replace static or dynamic verification. It adds an additional dimension that evaluates the change as a cohesive unit.
 
 [↑ Menú](#menú)
 
