@@ -1,432 +1,735 @@
-# Virgil
+# AGENTS.md — Virgil Repository Agent Contract
 
-## Mission
+## Menú
 
-Virgil is a project's knowledge and control plane. It consolidates
-context from multiple sources (docs, tickets, org, chat, source code)
-via interchangeable providers and generates structured handoffs for
-AI agents. It does not execute code.
+- [Purpose](#purpose)
+- [Open Agentic Standard](#open-agentic-standard)
+- [Language Policy](#language-policy)
+- [Main Agent Rule](#main-agent-rule)
+- [Agent Delegation Contract](#agent-delegation-contract)
+- [Agent Acceptance Protocol](#agent-acceptance-protocol)
+- [Orchestrator–Minion Model](#orchestratorminion-model)
+- [Model-Tier Routing](#model-tier-routing)
+- [Context Budget Governance](#context-budget-governance)
+- [Capability Escalation](#capability-escalation)
+- [Handoff Rules](#handoff-rules)
+- [Markdown Authoring Rules](#markdown-authoring-rules)
+- [Repository Hygiene and Tool-Local State](#repository-hygiene-and-tool-local-state)
+- [Development Commands](#development-commands)
+- [Exact Dependency Policy](#exact-dependency-policy)
+- [Verification Policy](#verification-policy)
+- [Commit Convention](#commit-convention)
+- [Failure and Constraint Handling](#failure-and-constraint-handling)
 
-## Architecture Map
+---
 
-Before any architectural decision, contract modification, or structural
-change, consult sources of authority in this order:
+## Purpose
 
-| Layer | Document | Authority |
-|-------|----------|-----------|
-| Principia | `docs/reference/principia/constitution.md` | Constitutional. Sealed. Not overrideable. |
-| Dogma | `docs/` | Normative. Derived from Principia. Can evolve. |
-| Runtime | Source code in `src/` | Implementation. Conforms to Dogma and Principia. |
+This file is the canonical repository-level contract for agents working on **Virgil**.
 
-**Precedence**: Principia > Dogma > Runtime. If code contradicts the
-Dogma, the code is wrong. If the Dogma contradicts the Principia, the
-Dogma is wrong.
+It governs **how agents develop Virgil**.
 
-## Orientation
+It does not define the complete runtime orchestration behavior that Virgil will eventually provide to its users. Product-level agent orchestration belongs to the product architecture and its dedicated handoffs/specifications.
 
-Before any work, run:
+All agents operating in this repository must follow this file unless a more specific nested `AGENTS.md` narrows the rules for a subsystem.
 
-```
-virgil status
-```
+`AGENTS.md` is owner-controlled canon. Agents must not modify it unless the project owner explicitly requests a change to the canon.
 
-This reports registered providers and their health. Use it to
-understand what context sources are available.
+[↑ Menú](#menú)
 
-## Toolchain
+---
 
-| Command | Purpose |
-|---------|---------|
-| `virgil status` | System health and provider connectivity |
-| `virgil context [refs...]` | Resolve semantic refs across providers |
-| `virgil handoff create` | Generate structured handoff from provider context |
-| `virgil handoff list` | List existing handoffs |
-| `virgil handoff show <id>` | Display handoff details |
-| `virgil handoff transition <id> <state>` | Lifecycle state transition |
-| `virgil handoff phase <id> [target]` | Advance execution sub-phase |
-| `virgil audit <id>` | Run mechanical audit checks against guardrails |
-| `virgil brief` | Generate or query the brief (RAG pipeline) |
-| `virgil watch` | Start reactive polling loop |
-| `virgil insights` | Run proactive analyzers |
-| `virgil ledger [--handoff <id>]` | Query append-only event log |
-| `virgil write` | Create or update planning documents |
-| `virgil transition` | Transition task lifecycle status |
-| `virgil init` | Generate `.virgilrc.yaml` config template |
-| `virgil doctor` | System health check (node, config, providers, tools) |
-| `virgil version` | Print CLI version |
+## Open Agentic Standard
 
-Semantic refs use the URI scheme `{kind}://{backend}/{id}`.
-Five kinds: `dogma`, `ticket`, `org`, `sourcecode`, `chat`.
+Virgil adopts the **AGENTS.md open standard** as its vendor-neutral repository instruction surface.
 
-## Artifacts
+Canonical standard reference:
 
-Virgil generates artifacts under `.virgil/` in the working directory:
+- https://agents.md/
 
-| Path | Content |
-|------|---------|
-| `.virgil/handoffs/{id}/` | Handoff files (TASK.md, CONTEXT.md, META.json, etc.) |
-| `.virgil/ledger.jsonl` | Append-only event log |
-| `.virgil/cursors.json` | Polling cursors for reactive mode |
-| `.virgil/brief.json` | Machine-readable brief (RAG output) |
-| `.virgil/brief.md` | Human-readable brief |
+The standard is stewarded by the **Agentic AI Foundation under the Linux Foundation** and is intended to provide a portable instruction surface across coding-agent ecosystems.
 
-These artifacts persist in the **target project**, not in this
-repository. They should be gitignored in the target project if
-they are not meant to be shared.
+Repository rules:
 
-## Commit Conventions
+1. Root `AGENTS.md` is the canonical project-wide agent contract.
+2. Nested `AGENTS.md` files may narrow instructions for a subsystem only when genuinely necessary.
+3. Tool-specific instruction files must not become independent policy sources.
+4. If a harness does not natively discover `AGENTS.md`, a compatibility bridge may be introduced only to load or point to this file.
+5. Compatibility bridges must not copy, fork, reinterpret, weaken, or override this contract.
+6. Vendor-specific agent state is operational tooling, not repository canon.
+7. A tool's inability to honor this contract must be reported as a harness limitation rather than silently worked around by creating a competing instruction system.
 
-Each commit follows [Conventional Commits](https://www.conventionalcommits.org/).
+Acceptable compatibility strategies include a symlink, import/include mechanism, or minimal pointer supported by the active harness.
+
+The objective is:
 
 ```text
-<type>: Title
+one canonical open contract
+→ many compatible agent harnesses
+```
+
+[↑ Menú](#menú)
+
+---
+
+## Language Policy
+
+Human-facing communication with the project owner must default to:
+
+```text
+Spanish
+```
+
+Persistent project artifacts must use:
+
+```text
+International English
+```
+
+This includes:
+
+- source code
+- identifiers
+- comments
+- documentation
+- schemas
+- tests
+- test descriptions
+- reports
+- handoffs
+- architectural decisions
+- commit-ready artifacts
+
+The owner may explicitly override the conversation language for a particular interaction.
+
+[↑ Menú](#menú)
+
+---
+
+## Main Agent Rule
+
+The **Main Agent operates exclusively as a coordinator**.
+
+The Main Agent must **never execute delegated work directly**.
+
+The Main Agent may:
+
+- clarify intent with the human
+- decompose work
+- define agent assignments
+- instantiate or request minions/subagents
+- route tasks
+- maintain progress tracking
+- inspect returned reports and evidence
+- accept, reject, or request revision of agent output
+- resolve conflicts between agent findings
+- synthesize results from completed delegated work
+- generate or update handoffs
+- request human permission for gated capability escalation
+
+The Main Agent must not directly:
+
+- implement product code
+- edit implementation files as a substitute for delegation
+- perform repository-wide research
+- crawl providers
+- perform broad code search
+- execute test suites as the acting worker
+- perform QA work assigned to a QA agent
+- perform implementation work assigned to an implementation agent
+- silently absorb a rejected or failed minion assignment and execute it itself
+
+If the active harness cannot create or delegate to subagents, the Main Agent must report the limitation instead of silently violating this rule.
+
+[↑ Menú](#menú)
+
+---
+
+## Agent Delegation Contract
+
+Every delegated agent must receive an explicit, auditable assignment.
+
+Each agent must have:
+
+1. **Name**
+2. **Role**
+3. **Persona**, when useful
+4. **Bounded task**
+5. **Scope**
+6. **Out-of-scope boundaries**
+7. **Expected deliverables**
+8. **Acceptance criteria**
+9. **Required evidence or verification**
+10. **Applicable constraints**
+
+Roles are intentionally open-ended.
+
+Examples include, but are not limited to:
+
+- QA Engineer
+- Full-Stack Engineer
+- Backend Engineer
+- Frontend Engineer
+- Tech Lead
+- Scrum Master
+- Security Reviewer
+- SRE
+- Researcher
+- Technical Writer
+- Release Engineer
+- Photographer
+- Clown
+- Domain Specialist
+
+There is no closed role taxonomy.
+
+The Main Agent selects the role that best fits the assignment.
+
+A whimsical or unconventional role is valid when it materially improves the task outcome. Roles must never be chosen merely for decoration.
+
+A recommended assignment envelope is:
+
+```yaml
+agent:
+  name: "<unique agent name>"
+  role: "<task-appropriate role>"
+  persona: "<optional task-helpful behavioral style>"
+
+assignment:
+  objective: "<one bounded objective>"
+  scope:
+    - "<included responsibility>"
+  out_of_scope:
+    - "<explicit exclusion>"
+  inputs:
+    - "<known input or reference>"
+  deliverables:
+    - "<required output>"
+  acceptance_criteria:
+    - "<auditable completion criterion>"
+  evidence_required:
+    - "<test, citation, report, diff, artifact, or other evidence>"
+  constraints:
+    - "<technical or policy constraint>"
+```
+
+Assignments should be small enough that success or failure can be determined from observable evidence.
+
+[↑ Menú](#menú)
+
+---
+
+## Agent Acceptance Protocol
+
+A delegated agent must be able to decide whether it can responsibly execute its assignment.
+
+Before performing material work, the agent **must explicitly accept or reject** the assignment with one of:
+
+```text
+ACCEPTED
+```
+
+or:
+
+```text
+REJECTED: <reason>
+```
+
+Valid rejection reasons include:
+
+- insufficient information
+- missing access
+- conflicting constraints
+- task exceeds assigned authority
+- task is not auditable as written
+- dependency on unfinished upstream work
+- unavailable required capability
+- safety or policy conflict
+
+A rejection is not a failure of orchestration.
+
+It is structured feedback to the Main Agent.
+
+The Main Agent may then:
+
+- clarify the task
+- narrow the scope
+- add missing inputs
+- change the assigned role
+- create prerequisite work
+- route the task to another agent
+
+No material task execution begins before the assignment is accepted.
+
+Agents must not silently broaden their assignment to compensate for missing requirements.
+
+[↑ Menú](#menú)
+
+---
+
+## Orchestrator–Minion Model
+
+Virgil repository work follows an **Orchestrator–Minion** operating model.
+
+The Main Agent is the orchestrator.
+
+Minions are bounded workers.
+
+Conceptually:
+
+```text
+Human
+  ↓
+Main Agent / Orchestrator
+  ├── Research Minion
+  ├── Repository Minion
+  ├── Implementation Minion
+  ├── QA Minion
+  ├── Documentation Minion
+  └── Other task-specific Minions
+        ↓
+   compact evidence
+        ↓
+Main Agent / Orchestrator
+```
+
+The orchestrator owns:
+
+- planning
+- sequencing
+- delegation
+- coordination
+- synthesis
+- acceptance
+
+Minions own:
+
+- bounded execution
+- evidence collection
+- task-specific artifacts
+- explicit status reporting
+
+Independent assignments should be parallelized when the active harness supports it and doing so does not create coordination risk.
+
+[↑ Menú](#menú)
+
+---
+
+## Model-Tier Routing
+
+Architecture and repository policy must use vendor-neutral capability tiers.
+
+Initial tiers:
+
+```text
+worker
+reasoning
+pro
+```
+
+### Worker
+
+Use for repetitive, mechanical, search-heavy, or token-heavy work.
+
+Examples:
+
+- crawling
+- grep/search
+- inventory
+- extraction
+- normalization
+- classification
+- metadata gathering
+- repository triage
+- document triage
+- mechanical summarization
+
+Concrete implementations may use small, cheap, fast, local, mini, flash, Haiku-class, or equivalent models.
+
+### Reasoning
+
+Use for:
+
+- architecture
+- synthesis
+- conflict resolution
+- non-trivial code reasoning
+- implementation planning
+- complex review
+- handoff design
+
+This is the normal tier for high-value reasoning.
+
+### Pro
+
+Reserve for exceptional cases where materially stronger reasoning is justified.
+
+Model names must not be encoded into domain contracts.
+
+[↑ Menú](#menú)
+
+---
+
+## Context Budget Governance
+
+Context is a limited working set, not permanent storage.
+
+Agents must actively protect signal density.
+
+Prefer:
+
+```text
+bounded worker exploration
+→ compact evidence
+→ orchestrator synthesis
+```
+
+over:
+
+```text
+raw crawl output
+→ raw crawl output
+→ raw crawl output
+→ giant orchestrator context
+```
+
+Agents should:
+
+- delegate noisy exploration
+- summarize completed exploration
+- preserve provenance
+- query Virgil/shared RAG before repeating discovery
+- avoid copying large tool outputs between agents
+- retain architectural decisions
+- retain unresolved questions
+- retain risks
+- retain evidence references
+- discard transient repetition when no longer useful
+
+Mechanical token-heavy work should preferentially use the `worker` tier.
+
+Reasoning-tier agents should consume compact evidence whenever possible.
+
+The objective is both:
+
+- lower repeated token consumption
+- higher reasoning signal quality
+
+[↑ Menú](#menú)
+
+---
+
+## Capability Escalation
+
+Escalation must be explicit and auditable.
+
+Conceptual routing:
+
+```text
+worker → reasoning
+```
+
+may occur automatically when the assignment genuinely exceeds worker capability.
+
+Escalation from:
+
+```text
+reasoning → pro
+```
+
+requires explicit human permission.
+
+Before requesting `pro`, the agent must state:
+
+1. what remains unresolved,
+2. why the current tier is insufficient,
+3. what additional capability is expected from `pro`,
+4. why the expected value justifies escalation.
+
+The agent must wait for approval.
+
+No silent pro-tier escalation is allowed.
+
+[↑ Menú](#menú)
+
+---
+
+## Handoff Rules
+
+Significant implementation work should begin from a handoff.
+
+A handoff must be:
+
+- bounded
+- auditable
+- independently understandable
+- evidence-oriented
+- explicit about scope
+- explicit about completion criteria
+
+A receiving agent should not repeat discovery already represented in shared knowledge.
+
+Handoffs should reference reusable knowledge rather than embedding uncontrolled context dumps.
+
+Every handoff Markdown file must contain a **Progress Tracker** using checkboxes.
+
+Example:
+
+```md
+## Progress Tracker
+
+- [ ] Assignment accepted
+- [ ] Preconditions verified
+- [ ] Implementation complete
+- [ ] Static verification passed
+- [ ] Dynamic verification passed
+- [ ] Evidence recorded
+- [ ] Handoff completion report produced
+```
+
+The exact tracker may be adapted to the handoff, but a handoff without a progress tracker is incomplete.
+
+[↑ Menú](#menú)
+
+---
+
+## Markdown Authoring Rules
+
+Every project-owned Markdown file must contain a navigable menu near the beginning.
+
+The heading must be:
+
+```md
+## Menú
+```
+
+or, when document hierarchy requires it:
+
+```md
+# Menú
+```
+
+Every authored section must end with:
+
+```md
+[↑ Menú](#menú)
+```
+
+This applies to:
+
+- `AGENTS.md`
+- handoffs
+- architecture documents
+- development documentation
+- decision records
+- reports intended to persist in the repository
+
+Generated third-party Markdown, vendored content, package-generated reports, and externally sourced documents are exempt unless Virgil takes ownership of the file.
+
+Handoffs have the additional Progress Tracker requirement defined above.
+
+[↑ Menú](#menú)
+
+---
+
+## Repository Hygiene and Tool-Local State
+
+Agent harnesses and helper tools may create local operational state.
+
+That state must not become part of Virgil's source tree accidentally.
+
+The bootstrap must create and maintain a root:
+
+```text
+.gitignore
+```
+
+before or atomically with the first tool-generated local state.
+
+The following local state is explicitly ignored unless the project owner later promotes a specific artifact into versioned repository configuration:
+
+```gitignore
+# Agent/tool-local operational state
+.atl/
+```
+
+If any agent, minion, harness, plugin, CLI, IDE, test runner, or development tool introduces a new local-only file or directory:
+
+1. classify whether the artifact is product source, deliberate shared configuration, generated output, cache, credentials, transcript, or local operational state,
+2. if it is local/generated/private, update `.gitignore` in the same bounded change before or with its creation,
+3. never commit credentials, tokens, sensitive transcripts, machine-local paths, caches, or disposable agent state,
+4. do not promote tool-specific state into shared repository architecture merely because the active harness created it,
+5. request explicit owner approval before committing a new vendor-specific agent configuration surface.
+
+`.atl/` may be used locally by an agent or helper tool, but it is **not** a Virgil product dependency and must remain ignored by default.
+
+Shared compatibility configuration is allowed only when it materially improves interoperability and does not create a second source of agent policy.
+
+`AGENTS.md` remains canonical.
+
+Common build/test outputs must also be ignored rather than committed unless a handoff explicitly defines a versioned fixture.
+
+[↑ Menú](#menú)
+
+---
+
+## Development Commands
+
+Repository development uses pnpm.
+
+Required root commands:
+
+```text
+pnpm i
+pnpm build
+pnpm test:static
+pnpm test:dynamic
+```
+
+These are contributor/development requirements.
+
+They are not prerequisites for end users consuming a released Virgil executable.
+
+The preferred end-user distribution target is Node SEA.
+
+[↑ Menú](#menú)
+
+---
+
+## Exact Dependency Policy
+
+All committed direct dependency specifications must use exact versions.
+
+Forbidden examples:
+
+```json
+"package": "^1.2.3"
+"package": "~1.2.3"
+"package": ">=1.2.3"
+"package": "*"
+"package": "latest"
+```
+
+Required form:
+
+```json
+"package": "1.2.3"
+```
+
+The repository must configure pnpm so normal add/update workflows persist exact versions automatically.
+
+The root `pnpm-workspace.yaml` must include the repository's exact-version persistence configuration.
+
+Static verification must independently reject floating dependency specifications so manual edits cannot bypass the invariant.
+
+Node and pnpm versions must themselves be pinned exactly.
+
+[↑ Menú](#menú)
+
+---
+
+## Verification Policy
+
+Development verification is mandatory for contributed implementation work.
+
+### Static
+
+`pnpm test:static` must include the repository's configured static gates, including:
+
+- dependency/security audit with strict failure behavior
+- ESLint
+- Prettier verification
+- TypeScript static verification
+- exact dependency-spec validation
+
+### Dynamic
+
+`pnpm test:dynamic` must:
+
+- exercise public behavior
+- mock external systems at their boundaries
+- verify external interactions when those interactions are part of the contract
+- use assertions equivalent to `toHaveBeenCalledTimes(...)` and `toHaveBeenCalledWith(...)` where appropriate
+- maintain greater than 97% meaningful production-code coverage
+- emit machine-readable JSON artifacts
+- emit a standalone human-readable HTML/SPA report
+- validate normal Node runtime behavior
+- validate the Node SEA artifact where packaging can materially change behavior
+
+Coverage must not be inflated through meaningless exclusions.
+
+GitHub Actions is authoritative.
+
+Husky provides fast local guardrails.
+
+[↑ Menú](#menú)
+
+---
+
+## Commit Convention
+
+Every commit message follows **Conventional Commits**.
+
+### Format
+
+```text
+<type>: <title>
 
 Brief description.
 
-- Action item 1.
+- Action item 1
 - Action item n.
 ```
 
-| Type | When to use |
-|------|-------------|
+### Types
+
+| Type | Use |
+| --- | --- |
 | `feat` | New features or capabilities |
 | `fix` | Bug fixes |
-| `chore` | Tooling, config, dependencies, CI |
-| `docs` | Documentation changes |
-| `refactor` | Restructuring without behavior change |
-| `test` | Test additions or corrections |
+| `chore` | Tooling, configuration, dependencies, CI |
+| `task` | Changes to existing functionality |
+| `spike` | Research or exploration |
+| `release` | Version bumps generated by release automation |
 
-Rules:
-- Subject line: imperative mood, lowercase, no trailing period, 72 chars max
-- Body: brief description followed by bullet list of concrete changes
-- No `Co-Authored-By` or AI attribution lines
+### Rules
 
-## Judgment Boundaries
+- Subject line uses imperative mood.
+- Subject line is lowercase.
+- Subject line has no trailing period.
+- Subject line is at most 72 characters.
+- Body is brief and followed by bullets describing concrete changes when useful.
+- Do not add `Co-Authored-By` lines attributing work to AI agents.
 
-### NEVER (requires human authorization)
+[↑ Menú](#menú)
 
-- Break-glass override without explicit instruction
-- Transition handoff to `delivered` without audit PASS
-- Delete or mutate ledger entries
-- Modify principia sections without explicit instruction
-- Push to main or production branches without authorization
+---
 
-### ASK (propose and wait)
+## Failure and Constraint Handling
 
-- Create handoffs for new work
-- Transition handoffs between states
-- Architectural changes to provider contracts or ports
-- Changes to the state machine or audit checks
-- New dependencies
+Agents must surface constraints instead of hiding them.
 
-### ALWAYS (safe to proceed)
+When work cannot be completed, report:
 
-- Run `virgil status` to check system health
-- Query ledger entries
-- Resolve semantic refs
-- Run insights and analyzers
+- status
+- blocker
+- evidence
+- affected acceptance criteria
+- recommended next action
 
-## Invariants
+Do not fabricate successful verification.
 
-- **Global ownership ≠ global context injection**: query narrow
-  (`virgil context <ref>`), never dump inventory into prompts
-- **Planning boundary**: Virgil manages planning only. After tasks
-  reach `done`, stop and report. Implementation requires explicit
-  human instruction.
-- **Human directs, agent proposes**: never write documents without
-  explicit human direction.
+Do not silently weaken acceptance criteria.
 
-## Agent Prohibitions
+Do not silently expand scope.
 
-**PROHIBITED TOOLS:**
+Do not convert architectural uncertainty into an undocumented permanent decision.
 
-- PROHIBITED: `cat`, `grep`, `find`, `sed`, `ls` — use `bat`, `rg`, `fd`, `sd`, `eza`
-- PROHIBITED: `brew install`, `apt install` — no system-level installations
-- PROHIBITED: `Co-Authored-By` or AI attribution in commits
+The Main Agent must route unresolved uncertainty into:
 
-**PROHIBITED PATTERNS:**
+- clarification,
+- a spike,
+- a dedicated handoff,
+- or an explicit architectural decision.
 
-- PROHIBITED: unit tests with internal mocks (File/Unit tier). Primary tier is App/Service with real stack
-- PROHIBITED: assuming build artifacts exist from a previous run. Fresh build before E2E
-
-**ECHO GUARD:**
-
-- MANDATORY: canonical pipeline is `Setup(0) → Build(1) → Static(2) → Dynamic(3) → E2E(4)`. Never reorder
-- MANDATORY: a context may SKIP steps but NEVER change relative order
-- PROHIBITED: running E2E without prior Build in the same session. No exception
-
-Violation → immediate kill. No second attempt on the same violation.
-
-## Anti-Rationalization Protocol
-
-Rules in this document are MECHANICAL, not ADVISORY. An agent has no
-authority to:
-
-- Judge whether a rule "applies" based on task size, complexity, or urgency
-- Invent exceptions not explicitly written ("too small for a branch", "just a config change", "quick fix")
-- Reinterpret rule intent to justify skipping it ("the spirit of the rule doesn't require this here")
-- Defer compliance ("I'll create the handoff after this quick fix")
-
-### The Rationalization Test
-
-Before omitting, reducing, or "scaling down" ANY protocol in this document:
-
-1. **Cite the exact text** that authorizes the omission. Not a paraphrase — the exact sentence.
-2. If no exact sentence authorizes it → the omission is not authorized. Full stop.
-3. If the agent finds itself writing phrases like "this doesn't warrant", "this is just", "given the simplicity", "an exception for", or "in this case we can skip" → rationalization signal. Stop and comply as written.
-
-### Interpretation Rules
-
-- Ambiguity resolves in favor of MORE compliance, not less
-- "Scaling to the work" means reducing content volume, never skipping structural requirements
-- Silence on a topic means the default protocol applies, not that the agent has discretion
-- The agent cannot grant itself exceptions. Only an explicit user directive overrides a rule, and the agent MUST repeat the override to the user for confirmation before acting
-
-### Burden of Proof
-
-The burden of proof for non-compliance rests on the agent, not on the
-document. "The document doesn't explicitly say I must" is not valid
-justification for omission. If a reasonable reading implies the
-obligation, the obligation exists.
-
-## Model Assignment Policy
-
-Before launching a sub-agent, ask: does it need to REASON, IMPLEMENT,
-or SEARCH?
-
-| Tier | Role | Use when |
-|------|------|----------|
-| Search | Lightweight | Grep, read docs, lint checks, formatting, exploratory reads |
-| Implement | Standard | Write code, tests, reviews, verify quality gates |
-| Architect | Advanced | Design decisions, conflict resolution, multi-source synthesis |
-
-With 6+ agents, tier discipline multiplies savings. Never burn an
-architect-tier model on a grep.
-
-The orchestrator maps tiers to whatever models are available in the
-current runtime. Tier names are stable; model names are not.
-
-## Orchestrator-Minion Pattern
-
-Coordination pattern where a single orchestrator decomposes work into
-discrete units, delegates each to stateless workers (minions), collects
-and validates results, and manages workflow state. The orchestrator owns
-the execution plan and global context; workers know nothing beyond their
-current assignment. Formally catalogued as "Master-Slave" in POSA Vol. 1
-(Buschmann et al., 1996); instantiated in MapReduce, Sagas, Process
-Manager, and Temporal.io.
-
-### Principles
-
-1. **Centralized control, distributed execution** — the orchestrator owns the DAG; workers own only their assigned unit
-2. **Stateless workers** — workers retain no memory between invocations; all context arrives in the briefing
-3. **Self-contained briefings** — each delegation carries everything the worker needs; the worker never fetches its own context
-4. **Idempotent execution** — workers produce the same output for the same input
-5. **Orchestrator as single source of truth** — global state lives exclusively in the orchestrator or its durable store
-6. **Explicit quality gates** — the orchestrator validates each result against a contract before incorporating it; "looks good" is not verification
-7. **The orchestrator never executes** — it decomposes, assigns, and aggregates; executing substantive work inflates context and creates a bottleneck
-8. **Inject rules as text, not as paths** — workers receive pre-digested rules in their briefing; they never read config files or registries
-
-### Briefing Contract
-
-Every delegation from orchestrator to worker MUST include:
-
-| Element | Description |
-|---------|-------------|
-| Task ID | Unique identifier for deduplication and retry tracking |
-| Input payload | All required data, fully resolved |
-| Output schema | Exact structure of expected result |
-| Scope boundaries | What is in scope AND what is not |
-| Done criteria | Explicit stop condition |
-| Constraints | Timeout, resource limits, retry policy |
-| Context | Minimal relevant subset of global state |
-
-### Result Contract
-
-Every worker response MUST conform to:
-
-| Element | Description |
-|---------|-------------|
-| Task ID | Returned for correlation with original briefing |
-| Status | success / failure / partial |
-| Payload | Structured output conforming to requested schema |
-| Errors | Typed (transient vs permanent) with descriptive message |
-| Metadata | Duration, resource consumption, confidence signals |
-| Artifacts | Concrete, inspectable outputs (not vague summaries) |
-
-### Orchestration Anti-Patterns
-
-1. **Verbose orchestrator** — passing partial context, forcing worker to request more
-2. **Stateful workers** — caching data between invocations creates hidden coupling
-3. **Orchestrator as executor** — doing substantive work inflates orchestrator context
-4. **Unvalidated results** — accepting output without contract verification
-5. **Implicit ordering** — depending on execution timing instead of explicit DAG dependencies
-6. **Bloated briefings** — sending full global state instead of minimal relevant subset
-7. **Telephone-game decomposition** — splitting by problem type instead of context boundaries
-
-### References
-
-| Source | Contribution |
-|--------|-------------|
-| Buschmann et al., _POSA Vol. 1_ (1996) | First formal pattern catalogue entry (Master-Slave) |
-| Garcia-Molina & Salem, SIGMOD '87 | Sagas — orchestrated compensating transactions |
-| Dean & Ghemawat, OSDI '04 | MapReduce — canonical master-worker at scale |
-| Hohpe & Woolf, _EIP_ (2003) | Process Manager pattern in messaging |
-| Temporal.io docs | Durable execution: deterministic orchestrator + stateless workers |
-| Anthropic, "Building Multi-Agent Systems" (2025) | Orchestrator-worker as central multi-agent pattern |
-
-## Orchestration Protocol
-
-This protocol implements the pattern defined in
-[Orchestrator-Minion Pattern](#orchestrator-minion-pattern).
-
-### Pure Orchestrator Principle
-
-The primary agent operates exclusively as coordinator. It does not
-execute tasks directly.
-
-| Action | Inline (orchestrator) | Delegate (sub-agent) |
-|--------|-----------------------|----------------------|
-| Read to decide/verify (1-3 files) | YES | — |
-| Read to explore/understand (4+ files) | — | YES |
-| Read as preparation for writing | — | YES alongside the write |
-| Write (any file) | — | YES |
-| Read-only bash (git status, eza) | YES | — |
-| Execution bash (tsc, vitest, pnpm) | — | YES |
-| Architectural decisions (no artifacts) | YES | — |
-| Present results to user | YES | — |
-
-**Self-detection**: if the orchestrator finds itself editing files,
-writing code, or running builds, it is in violation. It must stop,
-delegate the task to a sub-agent, and resume as coordinator.
-
-### Circuit Breaker
-
-Sub-agent supervision is reactive, not proactive.
-
-**Pre-launch** — the orchestrator includes in every delegation prompt:
-
-- **Scope hint**: one line delimiting the scope
-- **Verifiable objective**: one sentence evaluable as binary against the result
-
-**Post-result** — the orchestrator evaluates a single invariant:
-
-> Is the sub-agent's result coherent with the declared objective and scope hint?
-
-| State | Condition | Overhead |
-|-------|-----------|----------|
-| Closed (normal) | Coherent results | Zero — delegate and wait |
-| Open (anomaly) | Invariant failed | High — exhaustive verification justified |
-| Half-open (recovery) | Next sub-agent with same scope gets reinforced prompt | Medium — if it passes, return to closed |
-
-### Post-Delegation Checkpoint (PDC)
-
-After receiving EACH sub-agent result, the orchestrator executes these
-4 steps IN ORDER before any other action:
-
-1. **ECHO** — Print the acceptance gates for this task. Format: `GATES: [gate1] | [gate2] | [gate3]`
-2. **VERIFY** — For each gate, declare PASS or FAIL with ONE line of evidence. "Looks correct" is NOT evidence
-3. **MARK** — Persist progress state NOW
-4. **DECIDE** — If any gate is FAIL → do not advance, re-delegate or correct. If all gates are PASS → `CHECKPOINT CLEAR`
-
-**Closure rule**: if step 3 was not completed, the orchestrator does NOT
-have permission to launch another sub-agent.
-
-### Escalation on Rejection
-
-1. Gate fails → specific feedback with evidence → agent corrects
-2. Same gate fails again → kill + clean relaunch with error context
-3. Third failure → orchestrator diagnoses root cause and relaunches with reduced scope or escalates to user
-
-## Compact Rules for Sub-Agent Injection
-
-Orchestrators MUST inject these rules verbatim into every sub-agent
-prompt that writes or reviews code. Do not summarize, do not paraphrase.
-
-### FORMO-CODE
-
-```text
-- Language: TypeScript. Follow NestJS + nest-commander conventions.
-- CLI tools: bat, rg, fd, sd, eza. PROHIBITED: cat, grep, find, sed, ls.
-- Commits: conventional commits. No Co-Authored-By, no AI attribution.
-- Imports: node built-ins first, then third-party, then internal. Separated by blank line.
-- Errors: throw typed errors (ConfigurationError, ProviderError). Never swallow silently.
-- Names: PascalCase for classes/interfaces, camelCase for functions/variables. Suffix services with Service, ports with Port.
-- Decorators: NestJS decorators (@Injectable, @Module, @Command) on the line above the declaration.
-- Strict mode: all TypeScript strict flags enabled. No `any` without justification.
-```
-
-### FORMO-TEST
-
-```text
-- PRIMARY tier: App/Service — real NestJS stack via @nestjs/testing, zero mocks.
-- PROHIBITED: unit tests with internal mocks (File/Unit tier). Value = 0.
-- Derived (Module/Integration, Regression/Smoke): filtered from app tests, not developed separately.
-- E2E: full solution, zero mocks, multi-provider.
-- Conditional (Performance/Load): only if design doc declares SLAs.
-- Test runner: Vitest. Filter by name: vitest run --test-name-pattern "<pattern>".
-- Each test bootstraps the full NestJS application with Test.createTestingModule().
-```
-
-**Testing Matrix:**
-
-| Tier | Type | Status |
-|------|------|--------|
-| File/Unit | Internal mocks | PROHIBITED |
-| Module/Integration | Filtered from app tests | DERIVED |
-| App/Service | Real stack, zero mocks | PRIMARY |
-| Solution/E2E | Multi-provider, zero mocks | EXPLICIT |
-| Performance/Load | Only if SLAs declared | CONDITIONAL |
-
-### FORMO-ANTI-DRIFT
-
-```text
-- Rules are MECHANICAL, not ADVISORY.
-- Before omitting any protocol: cite the exact text that authorizes it. No text → no omission.
-- Phrases like "this doesn't warrant", "given the simplicity", "in this case we can skip" = rationalization signal. STOP.
-- Ambiguity resolves in favor of MORE compliance, not less.
-- The agent cannot grant itself exceptions.
-- GP-4 (Principia): constraint > confidence. Enforceable gates, not agent promises.
-```
-
-## Echo System
-
-Deterministic 5-step pipeline. Runs in EVERY environment (dev, CI, CD).
-Steps are always the same and in the same order. What varies is the
-scope.
-
-### Canonical Pipeline
-
-```text
-0. Setup    → pnpm install
-1. Build    → tsc
-2. Static   → tsc --noEmit, eslint (if configured)
-3. Dynamic  → vitest run (App/Service tier)
-4. E2E      → vitest run (e2e pattern, full solution)
-```
-
-### Invariants
-
-1. **Never reorder** — a context may SKIP steps but never change relative order
-2. **Prerequisites** — step 4 (E2E) REQUIRES step 1 (Build). No exception
-3. **No phantom steps** — every pipeline step maps to a concrete command
-4. **Fresh build** — never assume binaries or artifacts exist from a previous run
-
-### Execution Contexts
-
-| # | Context | Steps | Notes |
-|---|---------|-------|-------|
-| A | Dev Setup | 0 | Install only |
-| B | Pre-commit | 2(partial)+3 | Lint + fast tests. No build (speed) |
-| C | Pre-push | 1+2+3+4 | Full pipeline |
-| D | CI | 0+1+2+3+4 | Full pipeline, strict canon |
-
-### Command Mapping
-
-| Canonical Step | Command |
-|----------------|---------|
-| 0. Setup | `pnpm install` |
-| 1. Build | `npx tsc` |
-| 2. Static | `npx tsc --noEmit && npx eslint .` (if configured) |
-| 3. Dynamic | `npx vitest run` |
-| 4. E2E | `npx vitest run --test-name-pattern "e2e"` |
+[↑ Menú](#menú)
