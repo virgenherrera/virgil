@@ -1,0 +1,9 @@
+{
+  "main": "./artifacts/sea/bundle.cjs",
+  "output": "./artifacts/sea/sea-prep.blob",
+  "disableExperimentalSEAWarning": true,
+  "useCodeCache": true,
+  "assets": {
+    "package.json": "./package.json"
+  }
+}

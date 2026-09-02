@@ -1,0 +1,11 @@
+#!/bin/sh
+# Poisoned `node` shim used by the runtime isolation adversarial tests
+# (see ../../sea-isolation.e2e-spec.ts and
+# handoffs/H02_CLI_RUNTIME_SEA.md#d5--runtime-isolation-proof).
+#
+# The Virgil SEA binary must never invoke this file. It exists to prove
+# that, even when a broken `node` shadows every real Node installation on
+# PATH, the SEA binary keeps working because it embeds its own runtime and
+# never shells out to a `node` resolved from the environment.
+echo "POISONED NODE INVOKED" >&2
+exit 1

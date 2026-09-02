@@ -6,8 +6,12 @@
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
+  "bin": {
+    "virgil": "./dist/main.js"
+  },
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && node -e \"require('node:fs').chmodSync('dist/main.js', 0o755)\"",
+    "build:sea": "node scripts/build-sea.mjs",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -37,7 +41,9 @@
     "@nestjs/testing": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "esbuild": "catalog:",
     "oxlint": "catalog:",
+    "postject": "catalog:",
     "prettier": "catalog:",
     "source-map-support": "catalog:",
     "typescript": "catalog:",

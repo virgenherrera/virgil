@@ -18,8 +18,11 @@ catalog:
   # tooling
   "@types/node": 24.13.3
   "@vitest/coverage-v8": 4.1.11
+  esbuild: 0.28.2
   husky: 9.1.7
   oxlint: 1.80.0
+  playwright: 1.61.1
+  postject: 1.0.0-alpha.6
   prettier: 3.9.6
   source-map-support: 0.5.21
   typescript: 6.0.3
