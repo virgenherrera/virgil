@@ -1391,7 +1391,7 @@ graph LR
 
 - [x] Wave 0 complete (H00 — Toolchain Bootstrap)
 - [x] Wave 1 complete (H01 — Repository Bootstrap)
-- [ ] Wave 2 complete (H02, H03, H04, H06, H09, H16)
+- [x] Wave 2 complete (H02, H03, H04, H06, H09, H16)
 - [ ] Wave 3 complete (H05, H07, H10, H12, H14, H17, H18)
 - [ ] Wave 4 complete (H08, H11, H13, H15)
 - [ ] All handoffs delivered
