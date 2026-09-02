@@ -86,6 +86,7 @@ describe('Persistence schema and CRUD (e2e)', () => {
         'artifacts',
         'chunks',
         'embedding_meta',
+        'lifecycle_transitions',
         'provenance_records',
         'relationships',
         'sources',

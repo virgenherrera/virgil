@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ChatModule } from './chat/chat.module.js';
 import { VersionCommand } from './commands/version.command.js';
+import { GovernanceModule } from './governance/governance.module.js';
 import { GitHubIssuesModule } from './issues/github-issues.module.js';
 import { HandoffProtocolModule } from './handoff/handoff-protocol.module.js';
+import { KnowledgeModule } from './knowledge/knowledge.module.js';
+import { LifecycleModule } from './lifecycle/lifecycle.module.js';
 import { PersistenceModule } from './persistence/index.js';
 import { WorkspaceModule } from './workspace/workspace.module.js';
 
@@ -10,7 +13,10 @@ import { WorkspaceModule } from './workspace/workspace.module.js';
   imports: [
     ChatModule,
     GitHubIssuesModule,
+    GovernanceModule,
     HandoffProtocolModule,
+    KnowledgeModule,
+    LifecycleModule.forRoot({ databasePath: ':memory:' }),
     // NestJS instantiates every provider in an imported module eagerly at
     // bootstrap, regardless of a command's needs — so every CLI invocation
     // (including `version`) would otherwise open/create a real SQLite file

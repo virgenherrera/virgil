@@ -5,3 +5,4 @@ export * from './chunks.schema.js';
 export * from './embedding-meta.schema.js';
 export * from './relationships.schema.js';
 export * from './task-associations.schema.js';
+export * from './lifecycle.schema.js';
