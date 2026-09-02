@@ -25,6 +25,9 @@ catalog:
   typescript: 6.0.3
   vite-tsconfig-paths: 5.1.4
   vitest: 4.1.11
+  # shared contracts (identifiers & validation)
+  ulid: 3.0.2
+  zod: 4.5.4
 
 # Supply chain security: blocks packages published less than 24 hours ago (1440 minutes).
 # This window is the most common attack vector for malicious package hijacking.
