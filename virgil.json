@@ -5,6 +5,7 @@
     "ceiling": "worker",
     "allowedTiers": [
       "worker"
-    ]
+    ],
+    "model": null
   }
 }

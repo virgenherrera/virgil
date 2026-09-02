@@ -1,0 +1,133 @@
+# Virgil Local Minion Infrastructure — Broker/Executor Architecture
+#
+# This Compose file implements the proven DMR broker/executor pattern from the
+# local-dmr-minions spike. It is a TEMPLATE — the broker and executor services
+# use placeholder entrypoints. The actual application code is future work.
+#
+# Architecture:
+#   Orchestrator (Claude Code / host)
+#     └─ docker compose up
+#          ├─ broker   — has network access to DMR via host.docker.internal:12434
+#          └─ executor — network_mode: none (CANNOT reach DMR, internet, or host)
+#
+# The executor's isolation is architectural, not just a firewall rule:
+# network_mode: none strips the host.docker.internal DNS alias entirely,
+# making DMR unreachable by construction.
+#
+# Proven on: Docker Desktop 4.89.0, Engine 29.7.2, Compose v5.5.0,
+#            Apple M1 Pro / 16GB / Metal (cgroup v2 via LinuxKit VM).
+#
+# Usage:
+#   MODEL_NAME=ai/smollm2 docker compose up
+#   docker compose config          # validate without running
+#   docker compose config --models # list resolved models
+
+# ---------------------------------------------------------------------------
+# Compose Models — top-level model declaration (requires Compose v2.38+)
+# The model MUST be referenced by a service's `models:` key to avoid pruning.
+# Model provisioning happens automatically on `compose up` if not already pulled.
+# ---------------------------------------------------------------------------
+models:
+  local-llm:
+    model: ${MODEL_NAME:-ai/smollm2}
+    # context_size must be an integer (Compose rejects interpolated strings here).
+    # Adjust this value directly when a larger context window is needed.
+    context_size: 2048
+
+services:
+  # -------------------------------------------------------------------------
+  # BROKER — network-capable service that receives tasks and queries DMR
+  #
+  # Has access to DMR at host.docker.internal:12434 (Docker Desktop host gateway).
+  # NOTE: Do NOT use a model-derived hostname (e.g. "model-backend") — it is NOT
+  # auto-injected by Compose Models in this version. Use host.docker.internal.
+  # NOTE: Do NOT use depends_on on the model key — models are not services in the
+  # Compose dependency graph and this breaks config validation.
+  # -------------------------------------------------------------------------
+  broker:
+    image: node:22-alpine
+    models:
+      - local-llm
+    environment:
+      - DMR_ENDPOINT=http://host.docker.internal:12434
+      - MODEL_NAME=${MODEL_NAME:-ai/smollm2}
+    working_dir: /app
+    # Placeholder entrypoint — replace with actual broker application
+    command: >
+      sh -c "echo 'Broker ready — DMR endpoint: $$DMR_ENDPOINT, model: $$MODEL_NAME';
+             echo 'Replace this entrypoint with the actual broker application.';
+             sleep 1"
+    # Health check verifies DMR is reachable from the broker
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://host.docker.internal:12434/v1/models"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    # Resource limits — appropriate for Apple Silicon / 16GB unified memory
+    deploy:
+      resources:
+        limits:
+          cpus: "${BROKER_CPU_LIMIT:-2.0}"
+          memory: ${BROKER_MEMORY_LIMIT:-512M}
+          pids: 50
+    # Security hardening (broker retains network for DMR access)
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M
+    user: "nobody"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges
+    restart: "no"
+    volumes:
+      # Bounded output volume for task results (broker writes, host reads)
+      - task-output:/output
+
+  # -------------------------------------------------------------------------
+  # EXECUTOR — fully isolated service with NO network access
+  #
+  # network_mode: none removes ALL networking including host.docker.internal DNS.
+  # This means the executor CANNOT reach DMR, the internet, or any host service.
+  # This is a hard architectural block, not a firewall rule.
+  #
+  # The executor receives work via shared volume (task-output) and produces
+  # bounded evidence receipts. It cannot mutate source code directly.
+  # -------------------------------------------------------------------------
+  executor:
+    image: node:22-alpine
+    # CRITICAL: Full network isolation — strips all interfaces and DNS
+    network_mode: none
+    working_dir: /app
+    # Placeholder entrypoint — replace with actual executor application
+    command: >
+      sh -c "echo 'Executor ready — network_mode: none (fully isolated)';
+             echo 'Replace this entrypoint with the actual executor application.';
+             sleep 1"
+    deploy:
+      resources:
+        limits:
+          # Conservative limits for isolated task execution
+          cpus: "${EXECUTOR_CPU_LIMIT:-1.0}"
+          memory: ${EXECUTOR_MEMORY_LIMIT:-64M}
+          pids: 10
+    # Full security hardening — all 6 controls from W4 evidence
+    read_only: true                     # Immutable root filesystem
+    tmpfs:
+      - /tmp:size=10M                   # Scoped writable scratch space
+    user: "nobody"                      # Non-root execution
+    cap_drop:
+      - ALL                             # Drop all Linux capabilities
+    security_opt:
+      - no-new-privileges               # Prevent privilege escalation
+    restart: "no"                        # No automatic restart on failure
+    # No Docker socket mount (absence = blocked by construction)
+    # No cloud credentials or environment secrets
+    volumes:
+      - task-output:/output
+
+volumes:
+  # Bounded shared volume for broker→executor task passing and evidence receipts
+  task-output:
+    driver: local
