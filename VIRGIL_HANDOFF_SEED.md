@@ -41,16 +41,16 @@
 
 ## Progress Tracker
 
-- [ ] Main Agent has read and accepted `AGENTS.md`
-- [ ] AGENTS.md open-standard compliance has been preserved
-- [ ] Seed work has been decomposed into bounded agent assignments
-- [ ] Repository bootstrap assignment completed
-- [ ] Open-agentic repository contract established
-- [ ] Root `.gitignore` established before tool-local state is created
-- [ ] Development toolchain bootstrapped (`gentle-ai install`, review mode active)
-- [ ] `.atl/` and equivalent local harness state are ignored by default
-- [ ] Exact-version enforcement established
-- [ ] Minimal CLI path proven
+- [x] Main Agent has read and accepted `AGENTS.md`
+- [x] AGENTS.md open-standard compliance has been preserved
+- [x] Seed work has been decomposed into bounded agent assignments
+- [x] Repository bootstrap assignment completed
+- [x] Open-agentic repository contract established
+- [x] Root `.gitignore` established before tool-local state is created
+- [x] Development toolchain bootstrapped (`gentle-ai install`, review mode active)
+- [x] `.atl/` and equivalent local harness state are ignored by default
+- [x] Exact-version enforcement established
+- [x] Minimal CLI path proven
 - [ ] Global-link development path verified
 - [ ] Virgil runtime isolation from target-repository Node has been proven
 - [ ] Static verification passes
@@ -61,7 +61,7 @@
 - [ ] Node SEA spike completed
 - [ ] SEA runtime-isolation proof completed
 - [ ] SEA risks documented
-- [ ] Required child handoffs generated
+- [x] Required child handoffs generated
 - [ ] Seed completion report synthesized by the Main Agent
 
 [↑ Menú](#menú)
@@ -1389,8 +1389,8 @@ graph LR
 
 ### Implementation Progress
 
-- [ ] Wave 0 complete (H00 — Toolchain Bootstrap)
-- [ ] Wave 1 complete (H01 — Repository Bootstrap)
+- [x] Wave 0 complete (H00 — Toolchain Bootstrap)
+- [x] Wave 1 complete (H01 — Repository Bootstrap)
 - [ ] Wave 2 complete (H02, H03, H04, H06, H09, H16)
 - [ ] Wave 3 complete (H05, H07, H10, H12, H14, H17, H18)
 - [ ] Wave 4 complete (H08, H11, H13, H15)
