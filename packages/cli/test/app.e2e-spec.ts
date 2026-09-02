@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../src/app.module.js';
 import { VersionCommand } from '../src/commands/version.command.js';
+import { WorkspaceCommand } from '../src/workspace/commands/workspace.command.js';
 
 describe('AppModule (e2e)', () => {
   let moduleRef: TestingModule;
@@ -25,5 +26,11 @@ describe('AppModule (e2e)', () => {
     const command = moduleRef.get(VersionCommand, { strict: false });
 
     expect(command).toBeInstanceOf(VersionCommand);
+  });
+
+  it('resolves the WorkspaceCommand registered via WorkspaceModule', () => {
+    const command = moduleRef.get(WorkspaceCommand, { strict: false });
+
+    expect(command).toBeInstanceOf(WorkspaceCommand);
   });
 });

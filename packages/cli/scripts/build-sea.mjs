@@ -7,12 +7,15 @@
  *   2. esbuild CJS bundle             (sea-entry.mjs -> artifacts/sea/bundle.cjs)
  *   3. node --experimental-sea-config (artifacts/sea/bundle.cjs -> sea-prep.blob)
  *   4. copy the platform Node binary
- *   5. postject blob injection
- *   6. platform codesigning (macOS ad-hoc; skipped elsewhere)
+ *   5. co-locate the better-sqlite3 native addon next to the binary (W3)
+ *   6. postject blob injection
+ *   7. platform codesigning (macOS ad-hoc; skipped elsewhere)
  *
- * Output: packages/cli/artifacts/virgil[.exe], self-contained aside from a
- * co-located native addon requirement documented in W3 (currently inert --
- * see scripts/native-binding-shim.cjs).
+ * Output: packages/cli/artifacts/virgil[.exe] plus a co-located
+ * `<platform>-<arch>.node` native addon file (W3, activated by H06 — see
+ * scripts/native-binding-shim.cjs) — the distribution is two files, not
+ * one, which is inherent to `process.dlopen()` requiring a real file on
+ * disk and is not a defect.
  *
  * Invoke via `pnpm --filter @virgil/cli build:sea` (or `pnpm build:sea` from
  * inside packages/cli/).
@@ -20,6 +23,7 @@
 import * as esbuild from 'esbuild';
 import { execFileSync } from 'node:child_process';
 import { chmodSync, copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,6 +35,14 @@ const blobPath = join(seaOutDir, 'sea-prep.blob');
 const seaConfigPath = join(packageRoot, 'sea-config.json');
 const binaryName = process.platform === 'win32' ? 'virgil.exe' : 'virgil';
 const binaryPath = join(packageRoot, 'artifacts', binaryName);
+
+/** Mirrors `better-sqlite3/lib/binding.js` and `native-binding-shim.cjs`'s own target naming. */
+function addonTargetName() {
+  const isLinuxMusl =
+    process.platform === 'linux' && !process.report.getReport().header.glibcVersionRuntime;
+  const platform = isLinuxMusl ? 'linuxmusl' : process.platform;
+  return `${platform}-${process.arch}.node`;
+}
 
 /**
  * Runs a child process, streaming its output, from the package root.
@@ -51,13 +63,12 @@ function log(step, message) {
 }
 
 /**
- * W3 -- native addon shim plugin (prepared, currently inert).
+ * W3 -- native addon shim plugin, activated by H06.
  *
- * Intercepts a native addon package's relative `./binding` require and
- * rewrites it to the SEA-aware shim in native-binding-shim.cjs. The filter
- * only matches when the resolve directory belongs to `better-sqlite3`,
- * which is not yet a dependency of this package (deferred to H06) -- so
- * this plugin is a documented no-op today.
+ * Intercepts `better-sqlite3`'s relative `./binding` require and rewrites
+ * it to the SEA-aware shim in native-binding-shim.cjs, which resolves the
+ * compiled `.node` addon co-located with the running executable (stage 5)
+ * instead of relative to a `__dirname` that does not exist once bundled.
  *
  * @type {import('esbuild').Plugin}
  */
@@ -83,7 +94,7 @@ async function main() {
   mkdirSync(seaOutDir, { recursive: true });
 
   // Stage 1 -- TypeScript compilation (type check + emit)
-  log('1/6', 'Compiling TypeScript (pnpm run build)...');
+  log('1/7', 'Compiling TypeScript (pnpm run build)...');
   run('pnpm', ['run', 'build']);
 
   const compiledEntry = join(packageRoot, 'dist', 'app.module.js');
@@ -94,7 +105,7 @@ async function main() {
   }
 
   // Stage 2 -- esbuild CJS bundle (W1, W3, W4)
-  log('2/6', 'Bundling with esbuild (CJS format, SEA workarounds applied)...');
+  log('2/7', 'Bundling with esbuild (CJS format, SEA workarounds applied)...');
 
   const buildResult = await esbuild.build({
     entryPoints: [join(packageRoot, 'sea-entry.mjs')],
@@ -129,7 +140,7 @@ async function main() {
   console.log(`Bundle created: ${bundlePath}`);
 
   // Stage 3 -- SEA blob generation
-  log('3/6', 'Generating SEA blob (node --experimental-sea-config)...');
+  log('3/7', 'Generating SEA blob (node --experimental-sea-config)...');
   run(process.execPath, ['--experimental-sea-config', seaConfigPath]);
 
   if (!existsSync(blobPath)) {
@@ -137,13 +148,29 @@ async function main() {
   }
 
   // Stage 4 -- copy the platform Node binary as the SEA base executable
-  log('4/6', `Copying the platform Node binary (${process.execPath})...`);
+  log('4/7', `Copying the platform Node binary (${process.execPath})...`);
   mkdirSync(dirname(binaryPath), { recursive: true });
   copyFileSync(process.execPath, binaryPath);
   chmodSync(binaryPath, 0o755);
 
-  // Stage 5 -- inject the SEA blob with postject
-  log('5/6', 'Injecting the SEA blob with postject...');
+  // Stage 5 -- co-locate the better-sqlite3 native addon (W3)
+  log('5/7', 'Co-locating the better-sqlite3 native addon...');
+  const addonName = addonTargetName();
+  const require = createRequire(import.meta.url);
+  const betterSqlite3PackageJson = require.resolve('better-sqlite3/package.json');
+  const addonSourcePath = join(dirname(betterSqlite3PackageJson), 'prebuilds', addonName);
+  if (!existsSync(addonSourcePath)) {
+    throw new Error(
+      `Expected a better-sqlite3 prebuild for this platform at ${addonSourcePath}; ` +
+        'cannot co-locate the native addon required by native-binding-shim.cjs.',
+    );
+  }
+  const addonDestinationPath = join(packageRoot, 'artifacts', addonName);
+  copyFileSync(addonSourcePath, addonDestinationPath);
+  console.log(`Native addon co-located: ${addonDestinationPath}`);
+
+  // Stage 6 -- inject the SEA blob with postject
+  log('6/7', 'Injecting the SEA blob with postject...');
   const postjectBin = resolve(
     packageRoot,
     'node_modules',
@@ -165,12 +192,12 @@ async function main() {
   }
   run(postjectBin, postjectArgs);
 
-  // Stage 6 -- platform codesigning
+  // Stage 7 -- platform codesigning
   if (process.platform === 'darwin') {
-    log('6/6', 'Code signing (macOS ad-hoc)...');
+    log('7/7', 'Code signing (macOS ad-hoc)...');
     run('codesign', ['--force', '--sign', '-', binaryPath]);
   } else {
-    log('6/6', `Skipping code signing (not required on ${process.platform}).`);
+    log('7/7', `Skipping code signing (not required on ${process.platform}).`);
   }
 
   const { size } = statSync(binaryPath);

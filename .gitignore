@@ -20,3 +20,12 @@ artifacts/
 .env
 .env.*
 !.env.example
+
+# Local SQLite databases (H06 persistence layer default location)
+.virgil/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.db
+*.db-journal
+*.db-wal

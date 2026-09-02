@@ -31,6 +31,11 @@ catalog:
   # shared contracts (identifiers & validation)
   ulid: 3.0.2
   zod: 4.5.4
+  # persistence (H06 — Drizzle ORM + better-sqlite3)
+  drizzle-orm: 0.45.2
+  drizzle-kit: 0.31.10
+  better-sqlite3: 13.0.3
+  "@types/better-sqlite3": 9.6.0
 
 # Supply chain security: blocks packages published less than 24 hours ago (1440 minutes).
 # This window is the most common attack vector for malicious package hijacking.
@@ -42,6 +47,7 @@ allowBuilds:
   "@nestjs/core": true # Required: runs nest-specific postinstall hooks
   esbuild: true # Required: bundler used by the Nest CLI build pipeline
   unrs-resolver: true # Required: compiles native bindings needed by some lint tools
+  better-sqlite3: true # Required: compiles the native SQLite binding (H06 persistence layer)
 
 # Packages exempted from minimumReleaseAge during a bump cycle.
 # Add entries here when a newly published package is blocked by the 24h window

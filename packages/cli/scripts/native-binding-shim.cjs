@@ -2,28 +2,35 @@
 
 /**
  * SEA-aware native addon loader (W3 in
- * handoffs/H02_CLI_RUNTIME_SEA.md#sea-workarounds-reference).
+ * handoffs/H02_CLI_RUNTIME_SEA.md#sea-workarounds-reference), activated by
+ * H06 for `better-sqlite3`.
  *
- * Status: prepared infrastructure, not yet activated. `packages/cli` does
- * not currently depend on any native (`.node`) addon -- SQLite persistence
- * via `better-sqlite3` is scoped to H06. The esbuild plugin in
- * scripts/build-sea.mjs that would route requests through this shim only
- * matches when a `better-sqlite3` package is present in the dependency
- * graph, so this file is inert until H06 introduces that dependency.
+ * A native addon's own binding loader typically resolves the compiled
+ * `.node` file relative to the source package's `__dirname`, which does
+ * not exist as a real filesystem path once code is loaded from inside a
+ * SEA binary (everything is bundled into one `.cjs` file, so `__dirname`
+ * inside the bundle resolves to the bundle's own directory, not
+ * `node_modules/better-sqlite3/...`). `process.dlopen()` still requires a
+ * real file on disk, so the `.node` file must be co-located with the
+ * binary (`scripts/build-sea.mjs`, stage 4b) and re-resolved here.
  *
- * The pattern is codified now so H06 does not have to rediscover it: a
- * native addon's own binding loader typically resolves the compiled
- * `.node` file relative to the source package's `__dirname`, which does not
- * exist as a real filesystem path once code is loaded from inside a SEA
- * binary. `process.dlopen()` still requires a real file on disk, so the
- * `.node` file must be co-located with the binary and re-resolved here.
+ * This module replaces `better-sqlite3/lib/binding.js` at bundle time
+ * (see the `native-addon-shim` esbuild plugin in `build-sea.mjs`). It must
+ * match that file's exact call signature: `better-sqlite3/lib/index.js`
+ * does `require('./database')(require('./binding').getBinding, true)` and
+ * `database.js` invokes the resulting function as `getBinding(nativeBinding)`
+ * — a single argument, `undefined` in the default (non-test-injection)
+ * case. This shim resolves the target file name itself instead of relying
+ * on a caller-supplied name.
  *
  * Resolution order:
- * 1. Co-located with the running executable (`process.execPath`) -- the SEA
+ * 1. Co-located with the running executable (`process.execPath`) — the SEA
  *    binary deployment scenario.
- * 2. Co-located with this shim's own directory -- the bundled/development
+ * 2. Co-located with this shim's own directory — the bundled/development
  *    scenario (e.g. `pnpm start:prod`, `pnpm link --global`).
- * 3. A caller-provided explicit path or object, if given.
+ * 3. The real `better-sqlite3` prebuild inside `node_modules`, resolved
+ *    relative to this shim's own directory — a safety net for any
+ *    non-SEA esbuild bundle that still routes through this shim.
  */
 const path = require('node:path');
 const fs = require('node:fs');
@@ -31,13 +38,19 @@ const { createRequire } = require('node:module');
 
 let cachedAddon;
 
+/** Mirrors `better-sqlite3/lib/binding.js`'s own prebuild target naming. */
+function addonTargetName() {
+  const isLinuxMusl =
+    process.platform === 'linux' && !process.report.getReport().header.glibcVersionRuntime;
+  const platform = isLinuxMusl ? 'linuxmusl' : process.platform;
+  return `${platform}-${process.arch}.node`;
+}
+
 /**
  * @param {string | object | undefined} nativeBinding
- * @param {string} addonName base filename of the compiled `.node` addon,
- *   e.g. `better_sqlite3.node`.
  * @returns {object} the loaded native addon exports.
  */
-function getBinding(nativeBinding, addonName) {
+function getBinding(nativeBinding) {
   if (typeof nativeBinding === 'string') {
     return require(path.resolve(nativeBinding).replace(/(\.node)?$/, '.node'));
   }
@@ -50,6 +63,7 @@ function getBinding(nativeBinding, addonName) {
     return cachedAddon;
   }
 
+  const addonName = addonTargetName();
   const candidates = [
     path.join(path.dirname(process.execPath), addonName),
     path.join(__dirname, addonName),
@@ -61,6 +75,22 @@ function getBinding(nativeBinding, addonName) {
       cachedAddon = req(candidate);
       return cachedAddon;
     }
+  }
+
+  // Safety net: resolve the real package's prebuild directly. `exports` in
+  // better-sqlite3's package.json does not expose raw `.node` files under
+  // `./prebuilds/*`, but it does expose `./package.json`, and plain `fs`
+  // access (unlike `require`) is never subject to the exports map.
+  try {
+    const req = createRequire(__filename);
+    const packageJsonPath = req.resolve('better-sqlite3/package.json');
+    const fallback = path.join(path.dirname(packageJsonPath), 'prebuilds', addonName);
+    if (fs.existsSync(fallback)) {
+      cachedAddon = req(fallback);
+      return cachedAddon;
+    }
+  } catch {
+    // fall through to the error below
   }
 
   throw new Error(
