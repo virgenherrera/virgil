@@ -314,6 +314,19 @@ Minions own:
 
 Independent assignments should be parallelized when the active harness supports it and doing so does not create coordination risk.
 
+### Delegation Budget Declaration
+
+Every delegated assignment must declare its resource envelope before launch. The assignment is incomplete without:
+
+1. **Tier** — the capability tier and justification (per Model-Tier Routing).
+2. **Scope** — bounded file/path/topic scope the minion may touch.
+3. **Expected output size** — a ceiling on the deliverable (e.g., "structured report under 2 000 tokens", "diff under 500 lines").
+4. **Turn limit** — maximum tool-call turns the minion may consume before returning a result or a bounded status report.
+
+The orchestrator must not launch a minion whose assignment omits any of these declarations.
+
+A minion that reaches its turn limit must stop, return what it has, and report the limit as a constraint — not silently continue, escalate, or restart.
+
 [↑ Menú](#menú)
 
 ---
@@ -387,6 +400,14 @@ Common routing:
 | Adversarial review of implementation | reasoning |
 | Novel design under high ambiguity | pro (requires escalation) |
 
+### Tier Accountability
+
+The orchestrator must record the tier selected for each delegated assignment and the justification for that selection.
+
+Assignments that could run at `worker` but are dispatched at `reasoning` or higher without justification are a policy violation equivalent to the Main Agent executing work directly — both waste budget on the wrong actor.
+
+When a session includes more than one `reasoning`-tier assignment in flight concurrently, the orchestrator must have estimated and reported the aggregate cost per Pre-Flight Cost Estimation before any launched.
+
 [↑ Menú](#menú)
 
 ---
@@ -427,6 +448,20 @@ Agents should:
 - retain evidence references
 - discard transient repetition when no longer useful
 
+### Fleet and Session Budget Governance
+
+The orchestrator must track cumulative token consumption across all active and completed minions within the session.
+
+Hard rules:
+
+1. **Concurrent fleet cap.** No more than three minions may be in flight simultaneously without explicit owner approval. The existing Pre-Flight Cost Estimation requirement applies at this threshold.
+2. **Sequential launch.** When a coordinated task requires more minions than the concurrent cap, the orchestrator must launch them in bounded waves, synthesize results between waves, and present a progress checkpoint to the owner before the next wave.
+3. **Session consumption awareness.** If the orchestrator estimates that cumulative session consumption has crossed 50% of the session budget, it must report remaining capacity and pending work to the owner before launching additional agents.
+4. **No silent recovery.** A failed, timed-out, or budget-exhausted minion must not be silently relaunched, duplicated, or absorbed by the orchestrator. The failure is reported, and the owner decides the next action.
+5. **Compact evidence only.** Minion results entering the orchestrator context must be compact evidence — status, deliverable references, affected paths, bounded diagnostics, and next action. Raw tool output, full file contents, and verbose logs are prohibited in the orchestrator thread.
+
+These rules apply to all delegated work regardless of runtime — cloud, local, or hybrid. They strengthen and extend the Pre-Flight Cost Estimation requirement below.
+
 ### Pre-Flight Cost Estimation
 
 Before launching three or more agents for a coordinated task, the orchestrator must:
@@ -434,6 +469,8 @@ Before launching three or more agents for a coordinated task, the orchestrator m
 1. estimate the total token cost of the planned agent fleet,
 2. report the estimate to the owner,
 3. wait for approval before launching.
+
+This requirement applies to both simultaneous and sequential fleet launches within the same task. A task that will require six agents launched in two waves of three is a six-agent coordinated task and requires the full fleet estimate up front, not three separate approvals.
 
 This prevents runaway token consumption from unreviewed multi-agent deployments.
 

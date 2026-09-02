@@ -1,0 +1,8 @@
+{
+  "$schema": "./schemas/virgil.schema.json",
+  "version": "0.1.0",
+  "localMinions": {
+    "ceiling": "disabled",
+    "allowedTiers": []
+  }
+}
