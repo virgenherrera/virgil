@@ -70,6 +70,7 @@ All static gates established by H01 must remain green after the handoff's change
 - Coverage greater than 97% for statements, lines, and functions.
 - JSON artifact present at the package's configured output path.
 - HTML/SPA artifact present at the package's configured output path.
+- All tests are app-level integration tests (see AGENTS.md Testing Policy). Isolated unit tests are prohibited. Tests bootstrap the NestJS container or exercise the package's public API — never isolated schemas, factories, or mocks outside DI.
 
 ### Build
 

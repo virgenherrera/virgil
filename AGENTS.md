@@ -725,6 +725,21 @@ Development verification is mandatory for contributed implementation work.
 
 Coverage must not be inflated through meaningless exclusions.
 
+### Testing Policy (Mandatory)
+
+All tests must be app-level integration tests that bootstrap the application container (NestJS `Test.createTestingModule` or `CommandFactory.run`). Tests prove the system works through the dependency injection graph, not that isolated pieces parse correctly in a vacuum.
+
+Isolated unit tests are prohibited. This includes:
+
+- Schema validation tests that call `schema.parse()` / `schema.safeParse()` outside a container
+- Factory function tests (e.g. `createUlid()`, `createTimestamp()`) in isolation
+- Mock adapter tests not registered in a NestJS module
+- Enum completeness assertions
+- Barrel export verification
+- Any `*.spec.ts` file co-located inside `src/` directories
+
+Test files live in `test/` at the package root, never inside `src/`. Every test bootstraps the module under test and validates behavior through the DI container. For non-NestJS packages, "app-level" means testing through the package's public API entry point, not individual private functions.
+
 GitHub Actions is authoritative.
 
 Husky provides fast local guardrails.
