@@ -26,7 +26,10 @@ import type {
  */
 @Injectable()
 class KnowledgeAndHandoffFactoryService {
-  createKnowledgeArtifact(sourceUri: string, content: string): KnowledgeArtifact {
+  createKnowledgeArtifact(
+    sourceUri: string,
+    content: string,
+  ): KnowledgeArtifact {
     const now = createTimestamp();
 
     return {
@@ -54,7 +57,10 @@ class KnowledgeAndHandoffFactoryService {
     };
   }
 
-  advanceHandoff(envelope: HandoffEnvelope, to: HandoffStatus): HandoffEnvelope {
+  advanceHandoff(
+    envelope: HandoffEnvelope,
+    to: HandoffStatus,
+  ): HandoffEnvelope {
     assertValidHandoffTransition(envelope.status, to);
 
     return { ...envelope, status: to, updatedAt: createTimestamp() };

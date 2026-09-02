@@ -6,8 +6,14 @@ import {
   ProviderRegistryModule,
   ProviderRegistryService,
 } from '../src/contracts/index.js';
-import type { KnowledgeDocument, KnowledgeProvider } from '../src/contracts/index.js';
-import type { DiscoveryScope, PaginatedResult } from '../src/contracts/index.js';
+import type {
+  KnowledgeDocument,
+  KnowledgeProvider,
+} from '../src/contracts/index.js';
+import type {
+  DiscoveryScope,
+  PaginatedResult,
+} from '../src/contracts/index.js';
 import type { ProviderHealth } from '../src/contracts/index.js';
 import { ProviderHealthStatus } from '../src/contracts/index.js';
 import {
@@ -95,7 +101,10 @@ class MockProviderRegistrar {
     });
   }
 
-  registerWithStatus(id: string, status: ProviderStatus): MockKnowledgeProvider {
+  registerWithStatus(
+    id: string,
+    status: ProviderStatus,
+  ): MockKnowledgeProvider {
     const provider = new MockKnowledgeProvider(id, status);
     this.registry.register(provider, {
       capability: ProviderCapability.KNOWLEDGE,
