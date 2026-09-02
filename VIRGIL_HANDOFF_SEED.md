@@ -1407,7 +1407,7 @@ graph LR
 - [x] Wave 1 complete (H01 — Repository Bootstrap)
 - [x] Wave 2 complete (H02, H03, H04, H06, H09, H16)
 - [x] Wave 3a complete (H05, H07, H10, H17 — core product)
-- [ ] Wave 3b complete (H12, H14 — remote providers)
+- [x] Wave 3b complete (H12, H14 — remote providers)
 - [ ] Wave 4 complete (H08, H11, H13, H15)
 - [ ] Wave 5 complete (H18 — CI/CD delivery)
 - [ ] All handoffs delivered
