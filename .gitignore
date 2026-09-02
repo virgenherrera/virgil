@@ -1,3 +1,22 @@
 # Agent/tool-local operational state
 .atl/
 .claude/
+
+# Dependencies
+node_modules/
+
+# Build and test output
+dist/
+coverage/
+artifacts/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# Environment
+.env
+.env.*
+!.env.example

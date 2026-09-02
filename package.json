@@ -1,0 +1,23 @@
+{
+  "name": "virgil",
+  "version": "0.0.1",
+  "description": "Virgil — a local-first, provider-agnostic AI development companion.",
+  "private": true,
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": "24.16.0",
+    "pnpm": "11.24.0"
+  },
+  "scripts": {
+    "build": "pnpm -r run --if-present build",
+    "audit": "pnpm audit --audit-level high",
+    "validate:exact-deps": "node scripts/validate-exact-deps.mjs",
+    "test:static": "pnpm run audit && pnpm -r run --if-present test:static && pnpm run validate:exact-deps",
+    "test:dynamic": "pnpm -r run --if-present test:dynamic",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "catalog:"
+  }
+}
