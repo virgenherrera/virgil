@@ -65,6 +65,10 @@ This handoff produces a **library package** consumed by `packages/cli/`, not a s
 
 ## Scope
 
+### Scope Clarification
+
+This handoff covers document/prose content from cloud-synced folders (Google Drive, OneDrive, local filesystem). Source code indexing is handled separately by H05 (Local Repo Provider) using CodeGraph for structural intelligence. Source code files (`.ts`, `.js`, `.py`, etc.) discovered in synced folders without a registered extractor produce metadata-only artifacts (path, size, timestamps, content hash) without content extraction. H17's document extractors target enterprise document formats (docx, pdf, xlsx, pptx) and structured text (md, txt, csv, json, yaml, html, xml, rtf).
+
 ### Included
 
 1. **Package scaffold** — `packages/local-indexers/` added to the pnpm workspace with its own `package.json`, `tsconfig.json` (extending `../../tsconfig.base.json`), source directory, and test directory.

@@ -1287,6 +1287,8 @@ graph TD
     H04 --> H05
 
     H06 --> H07[H07 RAG Core Retrieval]
+    H05 -.->|optional| H07
+    H05 -.->|optional| H10
 
     H04 --> H10[H10 Product Orchestration]
     H09 --> H10
@@ -1325,14 +1327,18 @@ graph TD
     classDef wave0 fill:#1a1a2e,stroke:#e94560,color:#fff
     classDef wave1 fill:#16213e,stroke:#0f3460,color:#fff
     classDef wave2 fill:#0f3460,stroke:#53a8b6,color:#fff
-    classDef wave3 fill:#1b4332,stroke:#52b788,color:#fff
+    classDef wave3a fill:#1b4332,stroke:#52b788,color:#fff
+    classDef wave3b fill:#2d6a4f,stroke:#74c69d,color:#fff
     classDef wave4 fill:#3d0066,stroke:#9b59b6,color:#fff
+    classDef wave5 fill:#4a1942,stroke:#c77dba,color:#fff
 
     class H00 wave0
     class H01 wave1
     class H02,H03,H04,H06,H09,H16 wave2
-    class H05,H07,H10,H12,H14,H17,H18 wave3
+    class H05,H07,H10,H17 wave3a
+    class H12,H14 wave3b
     class H08,H11,H13,H15 wave4
+    class H18 wave5
 ```
 
 ### Critical Paths
@@ -1364,14 +1370,16 @@ graph LR
         H16_W[H16 PW CDP Adapters]
     end
 
-    subgraph W3[Wave 3 — 7 Parallel]
-        H05_W[H05 Local Repo Provider]
+    subgraph W3a[Wave 3a — Core Product]
+        H05_W[H05 Local Repo Provider + CodeGraph]
         H07_W[H07 RAG Core Retrieval]
         H10_W[H10 Product Orchestration]
+        H17_W[H17 Local Indexers]
+    end
+
+    subgraph W3b[Wave 3b — Remote Providers]
         H12_W[H12 Remote Issue Provider]
         H14_W[H14 Chat Provider]
-        H17_W[H17 Local Indexers]
-        H18_W[H18 CI/CD Delivery]
     end
 
     subgraph W4[Wave 4 — 4 Parallel]
@@ -1381,10 +1389,16 @@ graph LR
         H15_W[H15 Knowledge Lifecycle]
     end
 
+    subgraph W5[Wave 5 — Delivery]
+        H18_W[H18 CI/CD Delivery]
+    end
+
     W0 --> W1
     W1 --> W2
-    W2 --> W3
-    W3 --> W4
+    W2 --> W3a
+    W3a --> W3b
+    W3b --> W4
+    W4 --> W5
 ```
 
 ### Implementation Progress
@@ -1392,8 +1406,10 @@ graph LR
 - [x] Wave 0 complete (H00 — Toolchain Bootstrap)
 - [x] Wave 1 complete (H01 — Repository Bootstrap)
 - [x] Wave 2 complete (H02, H03, H04, H06, H09, H16)
-- [ ] Wave 3 complete (H05, H07, H10, H12, H14, H17, H18)
+- [ ] Wave 3a complete (H05, H07, H10, H17 — core product)
+- [ ] Wave 3b complete (H12, H14 — remote providers)
 - [ ] Wave 4 complete (H08, H11, H13, H15)
+- [ ] Wave 5 complete (H18 — CI/CD delivery)
 - [ ] All handoffs delivered
 
 ### Execution Constraints
@@ -1405,6 +1421,8 @@ graph LR
 5. Before launching three or more parallel handoff agents, the orchestrator must provide a pre-flight cost estimation and wait for owner approval.
 6. Within a wave, handoffs with no inter-dependency may start simultaneously. Handoffs with intra-wave dependencies must respect the dependency graph.
 7. The CDP lateral bottleneck (H16 → H12, H13, H14) means Wave 3 items with CDP dependencies cannot start their CDP paths until H16 completes. API-only paths within those handoffs may advance independently.
+8. Wave 3 is split into sub-waves by execution priority: Wave 3a (H05, H07, H10, H17) delivers core product capabilities first; Wave 3b (H12, H14) delivers remote provider adapters second. H18 (CI/CD) is deferred to Wave 5 as it is not core product and all other handoffs benefit from completing first.
+9. H05 now integrates CodeGraph (via gentle-ai) for structural code intelligence. H07 adopts a dual retrieval strategy: traditional RAG for documents, CodeGraph for code. See refined handoff documents for details.
 
 [↑ Menú](#menú)
 

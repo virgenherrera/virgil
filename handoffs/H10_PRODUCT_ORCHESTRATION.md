@@ -12,6 +12,7 @@
 - [Objective](#objective)
 - [Product Orchestration Flow](#product-orchestration-flow)
 - [Scope](#scope)
+- [Context Assembly Sources](#context-assembly-sources)
 - [Out of Scope](#out-of-scope)
 - [Preconditions](#preconditions)
 - [Deliverables](#deliverables)
@@ -36,6 +37,7 @@
 - [ ] Vendor-neutral execution contract defined
 - [ ] Agent lifecycle state machine implemented
 - [ ] Orchestrator dispatches and collects agent results via shared knowledge
+- [ ] Context assembly sources (RAG + CodeGraph) designed
 - [ ] Standard verification gates pass (see [SHARED_VERIFICATION.md](./SHARED_VERIFICATION.md))
 
 [↑ Menú](#menú)
@@ -152,6 +154,30 @@ This handoff addresses seed item 30 (required child handoffs generated) for the 
 
 ---
 
+## Context Assembly Sources
+
+When the orchestrator assembles context for agent assignments — particularly for discovery, analysis, and implementation handoffs — it draws from three distinct knowledge channels:
+
+| Source | Provider | Query style | Best for |
+| --- | --- | --- | --- |
+| **Document knowledge** | H07 RAG (TextRetriever) | Text similarity, keywords, filters | Documentation, wiki content, chat history, meeting notes, design decisions |
+| **Code knowledge** | H05 `CodeGraphService` (optional — available when CodeGraph is present via `gentle-ai`) via H07 CodeRetriever | Symbol name, call path, blast radius, affected files | Code architecture, impact analysis, dependency chains, affected-file identification. When CodeGraph is unavailable, code context falls back to basic file content from the RepoProvider's git metadata. |
+| **Issue context** | H12 Issue Provider | Structured lookup by issue ID | Requirements, acceptance criteria, linked issues, task metadata |
+
+### Context Assembly Strategy
+
+The orchestrator selects the appropriate channel based on the nature of the work:
+
+- **Discovery agents** (Research, Repository, Analysis) receive query hints for both RAG and CodeGraph channels so they can gather evidence from both prose documentation and code structure.
+- **Implementation handoffs** prioritize CodeGraph context — affected files, call paths, dependencies — supplemented by RAG results for relevant documentation and design decisions.
+- **Verification agents** receive CodeGraph blast-radius data to validate that changes do not introduce unintended side effects beyond the declared scope.
+
+The orchestrator never embeds raw context dumps in agent envelopes. Instead, it provides query hints that agents use to retrieve context on demand through the retrieval ports.
+
+[↑ Menú](#menú)
+
+---
+
 ## Out of Scope
 
 | Exclusion | Owner |
@@ -189,6 +215,7 @@ H10 defines the **orchestration contract and runtime**. It does not implement sp
 3. **H09 complete or in progress** — the handoff protocol format must be defined (at minimum the Zod schema) so the orchestrator can generate conformant handoffs.
 4. **H06/H07 interfaces available** — shared knowledge read/write interfaces must be defined so agent results can be routed into persistent knowledge. Concrete implementations are not required; ports suffice.
 5. **AGENTS.md available** — the normative contract is consulted for design inspiration but is not imported or re-exported as a product runtime dependency. The product orchestration contract is independent.
+6. **H05 (optional)** — structural code context via `CodeGraphService` enhances context assembly but is not required. When unavailable, context assembly falls back to git metadata from the `LocalRepoProvider`.
 
 [↑ Menú](#menú)
 
@@ -305,7 +332,7 @@ Implement the result aggregation pipeline from completed agents into shared know
 
 - Completed agent results are validated against the deliverables and evidence requirements declared in their envelopes.
 - Results that meet acceptance criteria are routed to the shared knowledge layer (via the KnowledgeProvider port from H04/H06) with provenance metadata: agent name, role, task identity, timestamp, and source references.
-- The orchestrator synthesizes results from multiple parallel agents into a coherent discovery context before handoff generation.
+- The orchestrator synthesizes results from multiple parallel agents into a coherent discovery context before handoff generation, drawing from both document knowledge (H07 RAG) and structural code knowledge (H05 CodeGraph) as described in [Context Assembly Sources](#context-assembly-sources).
 - Results from failed or rejected agents are preserved as audit records but not injected into shared knowledge as validated facts.
 - The orchestrator produces a completion report summarising: agents dispatched, acceptance/rejection counts, completion status per agent, evidence summary, unresolved risks, and architectural decisions.
 

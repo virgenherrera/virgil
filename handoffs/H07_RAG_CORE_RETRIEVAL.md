@@ -11,6 +11,7 @@
 - [Progress Tracker](#progress-tracker)
 - [Objective](#objective)
 - [Scope](#scope)
+- [Dual Retrieval Strategy](#dual-retrieval-strategy)
 - [Out of Scope](#out-of-scope)
 - [Preconditions](#preconditions)
 - [Deliverables](#deliverables)
@@ -36,6 +37,8 @@
 - [ ] Vector library spike completed with documented findings
 - [ ] RAG library evaluation spike completed with documented findings
 - [ ] All ports verified with in-memory/stub adapters
+- [ ] Dual retrieval strategy (text RAG + CodeGraph) designed
+- [ ] CodeRetriever port defined and stubbed
 - [ ] Standard verification gates pass (see [SHARED_VERIFICATION.md](./SHARED_VERIFICATION.md))
 
 [↑ Menú](#menú)
@@ -110,6 +113,61 @@ This handoff addresses seed item 27 (vector extension risks documented) and cont
 
 ---
 
+## Dual Retrieval Strategy
+
+Virgil handles two fundamentally different content types that require different retrieval strategies:
+
+### Document/Prose Retrieval (Traditional RAG)
+
+Content from H17 local indexers and knowledge providers — documentation, wiki content, meeting notes, chat history — flows through the traditional RAG pipeline: chunk, embed, vector store, hybrid retrieval (FTS5 + semantic). The fixed-window chunker (D1) is appropriate for this content because prose has a relatively uniform information density.
+
+### Source Code Retrieval (CodeGraph)
+
+Source code from H05's LocalRepoProvider should NOT be naively chunked into fixed windows. Fixed-window chunking destroys structural meaning by splitting functions across chunks, losing import context, and severing the relationship between a symbol and its call sites. Instead, code retrieval delegates to CodeGraph (via H05's `CodeGraphService`) for symbol-level queries, call-path traversal, and blast-radius analysis.
+
+### Retriever Contracts
+
+The retriever layer supports both channels through distinct ports:
+
+- **`TextRetriever`** — traditional RAG for documents and prose. This is the hybrid retrieval pipeline that H07 already specifies (lexical FTS5 + semantic vector search, fused via RRF).
+- **`CodeRetriever`** — delegates to CodeGraph via H05's `CodeGraphService`. Queries are expressed as symbol names, file paths, or natural-language descriptions that CodeGraph resolves to structural results.
+- **`HybridRetriever`** (updated) — merges results from both the `TextRetriever` and the `CodeRetriever` using Reciprocal Rank Fusion when a query spans both domains.
+
+This means H07's chunking pipeline (D1) applies ONLY to document/prose content. Code content flows through CodeGraph's structural index, not through the embedding pipeline.
+
+```mermaid
+flowchart TD
+    Q["Agent Query"]
+    QP["Query Preprocessor"]
+
+    subgraph Document Retrieval
+        LEX["Lexical Retriever<br/>(SQLite FTS5)"]
+        SEM["Semantic Retriever<br/>(Vector Store)"]
+    end
+
+    subgraph Code Retrieval
+        CR["CodeRetriever<br/>(delegates to H05 CodeGraphService)"]
+        CG["CodeGraph<br/>(symbol graph, call paths,<br/>blast radius)"]
+    end
+
+    FUS["Reciprocal Rank Fusion<br/>(cross-domain merge)"]
+    RE["Ranked Evidence"]
+
+    Q --> QP
+    QP --> LEX
+    QP --> SEM
+    QP --> CR
+    CR --> CG
+    LEX --> FUS
+    SEM --> FUS
+    CR --> FUS
+    FUS --> RE
+```
+
+[↑ Menú](#menú)
+
+---
+
 ## Out of Scope
 
 The following responsibilities belong to other handoffs and must **not** be addressed here:
@@ -142,6 +200,7 @@ H07 consumes the persistence layer that H06 provides. It does not own schema mig
 3. Node.js 24.16.0 and pnpm 11.24.0 are available in the development environment.
 4. The POC reference branch `poc/ref` is available locally for SQLite/native-addon patterns.
 5. The `packages/cli/` package within the monorepo is the target location for RAG core modules.
+6. H05 (optional) — the `CodeRetriever` (D10) requires H05's `CodeGraphService` for structural code retrieval. When H05 is unavailable, code retrieval degrades to text-based search.
 
 [↑ Menú](#menú)
 
@@ -151,7 +210,7 @@ H07 consumes the persistence layer that H06 provides. It does not own schema mig
 
 ### D1 — Chunking Port and Default Adapter
 
-Define the `Chunker` port and a default fixed-window adapter.
+Define the `Chunker` port and a default fixed-window adapter for document/prose content. Source code content uses CodeGraph structural retrieval (via D10) instead of the chunking pipeline.
 
 **Acceptance criteria:**
 
@@ -161,7 +220,7 @@ Define the `Chunker` port and a default fixed-window adapter.
 - The default `FixedWindowChunker` adapter splits content into windows of configurable size (default 512 tokens) with configurable overlap (default 20%).
 - Chunk boundaries respect sentence boundaries when possible (do not split mid-sentence).
 - All types are Zod-validated.
-- Unit tests cover edge cases: empty input, content shorter than window size, overlap correctness, sentence-boundary snapping.
+- Tests cover edge cases: empty input, content shorter than window size, overlap correctness, sentence-boundary snapping.
 
 ### D2 — Embedding Port and Stub Adapter
 
@@ -175,7 +234,7 @@ Define the `EmbeddingProvider` port with a deterministic stub for testing.
 - A `StubEmbeddingProvider` returns deterministic vectors (e.g. hash-derived) for testing without network calls.
 - Error semantics: batch failures surface per-item errors; transient failures are retryable.
 - All types are Zod-validated.
-- Unit tests verify the stub adapter produces consistent, dimensionally correct output.
+- Tests verify the stub adapter produces consistent, dimensionally correct output.
 
 ### D3 — Vector Store Port and SQLite Adapter
 
@@ -188,7 +247,7 @@ Define the `VectorStore` port and implement a SQLite-backed adapter.
 - `VectorMatch` includes: `id`, `score`, `metadata`.
 - The SQLite adapter uses the vector extension selected by the spike (D7), or falls back to a brute-force cosine-similarity scan over stored vectors if no viable extension is found.
 - The adapter is injectable via NestJS DI and configured through the workspace configuration surface.
-- Unit tests verify insert, delete, and k-NN search correctness using the stub embedding provider.
+- Tests verify insert, delete, and k-NN search correctness using the stub embedding provider.
 
 ### D4 — Lexical Search Module
 
@@ -200,7 +259,7 @@ Implement BM25-ranked full-text search over the chunk corpus.
 - The module supports boolean queries, phrase matching, and BM25 ranking.
 - Results return `ChunkMatch` objects with: `chunkId`, `score`, `snippet` (highlighted match context).
 - Query input is sanitised to prevent FTS5 syntax injection.
-- Unit tests cover: single-term, multi-term, phrase, boolean, and empty-result queries.
+- Tests cover: single-term, multi-term, phrase, boolean, and empty-result queries.
 
 ### D5 — Hybrid Retriever with Reciprocal Rank Fusion
 
@@ -214,7 +273,7 @@ Implement the `HybridRetriever` that merges lexical and semantic results.
 - The fused result list is truncated to the requested limit.
 - Each result carries its component scores (lexical score, vector score) alongside the fused score.
 - The retriever is the sole entry point for agent queries — agents never call lexical or semantic paths directly.
-- Unit tests verify fusion correctness with known ranked inputs, including partial overlaps and disjoint result sets.
+- Tests verify fusion correctness with known ranked inputs, including partial overlaps and disjoint result sets.
 
 The following diagram shows the internal composition of the hybrid retriever module:
 
@@ -225,6 +284,7 @@ flowchart LR
         RQ["RetrievalQuery<br/>(Zod-validated)"]
         LP["Lexical Path<br/>FTS5 + BM25"]
         SP["Semantic Path<br/>Embed → k-NN"]
+        CP["Code Path<br/>(optional CodeRetriever<br/>via H05 CodeGraphService)"]
         RRF["RRF Merge<br/>k=60"]
         DD["Deduplicate"]
         TR["Truncate to limit"]
@@ -232,8 +292,10 @@ flowchart LR
 
     RQ --> LP
     RQ --> SP
+    RQ -.-> CP
     LP --> DD
     SP --> DD
+    CP -.-> DD
     DD --> RRF
     RRF --> TR
     TR --> RR["RetrievalResult[]"]
@@ -250,7 +312,7 @@ Define the Zod-validated query and result types consumed by Virgil agents.
 - Types are exported from `packages/cli/src/rag/contracts/`.
 - The contract is the only public surface — internal retrieval types are not exported.
 - Agents interact through `retrieve(query: RetrievalQuery): Promise<RetrievalResult[]>`.
-- Unit tests validate schema acceptance and rejection of malformed queries.
+- Tests validate schema acceptance and rejection of malformed queries.
 
 ### D7 — Vector Library Spike
 
@@ -286,7 +348,22 @@ Implement query-result caching with TTL and invalidation.
 - TTL is configurable (default 5 minutes).
 - Any chunk write (insert, update, delete) invalidates all cached results.
 - Cache hit/miss metrics are exposed through a queryable interface (not OTEL — just a method returning counts).
-- Unit tests verify: cache hit on identical query, cache miss on changed corpus, TTL expiry, manual invalidation.
+- Tests verify: cache hit on identical query, cache miss on changed corpus, TTL expiry, manual invalidation.
+
+### D10 — CodeRetriever Port
+
+Define the `CodeRetriever` port — a structural code retrieval adapter that delegates to H05's `CodeGraphService`.
+
+**Acceptance criteria:**
+
+- A `CodeRetriever` interface exists under `packages/cli/src/rag/ports/`.
+- The interface defines `retrieveCode(query: CodeRetrievalQuery): Promise<CodeRetrievalResult[]>` accepting symbol names, file paths, or natural-language descriptions.
+- `CodeRetrievalResult` includes: `symbolId`, `filePath`, `lineRange`, `content`, `score`, `callPaths` (optional), `blastRadius` (optional), and `provenance` metadata.
+- The adapter delegates to H05's `CodeGraphService` methods (`explore`, `querySymbols`, `callers`, `callees`, `impact`, `affected`).
+- Graceful degradation: when CodeGraph is unavailable, returns an empty result set with a structured notice rather than throwing an error.
+- The `HybridRetriever` (D5) is updated to accept an optional `CodeRetriever` alongside the existing lexical and semantic paths, merging code results into the RRF fusion when available.
+- All types are Zod-validated.
+- App-level integration tests verify the port contract using a stub adapter (per `AGENTS.md` Testing Policy).
 
 [↑ Menú](#menú)
 
@@ -336,8 +413,9 @@ Handoff-specific evidence:
 | RAG framework introduces hard coupling that violates the port architecture | D8 spike evaluates lock-in risk; the recommendation may be to use no framework and compose utilities manually |
 | Embedding model choice creates a runtime dependency on an external API | The `EmbeddingProvider` port must support both local and remote embeddings; model selection is deferred to workspace configuration (H03) |
 | FTS5 is not available in the compiled SQLite used by `better-sqlite3` | Verify FTS5 availability in `better-sqlite3` 13.0.3 during precondition check; FTS5 is enabled by default in recent builds |
-| Chunking strategy produces poor retrieval quality for code vs prose | The `Chunker` port allows strategy-specific adapters (e.g. AST-aware code chunker) without modifying retrieval; the default fixed-window adapter is a starting point |
+| Chunking strategy produces poor retrieval quality for code vs prose | Mitigated by the dual retrieval strategy: code content is retrieved via CodeGraph (structural queries through H05's `CodeGraphService`), not through the fixed-window chunking pipeline. The `Chunker` port remains extensible for future prose-specific strategies. |
 | Cache invalidation on every write creates performance overhead under heavy ingestion | Cache is optional and can be bypassed; TTL-only mode (no write-triggered invalidation) is a documented fallback configuration |
+| CodeRetriever depends on H05's CodeGraph integration being available | Fallback: degrade to text-based retrieval for code when the CodeGraph index is unavailable. The `CodeRetriever` port returns an empty result set with a structured degradation notice, and the `HybridRetriever` proceeds with document-only results. |
 | H06 persistence schema is not yet available when H07 begins | H07 can develop and test against in-memory stubs and mock tables; integration with real H06 tables is a late-stage wiring concern |
 
 [↑ Menú](#menú)

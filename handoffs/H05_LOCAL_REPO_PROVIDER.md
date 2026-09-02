@@ -11,6 +11,7 @@
 - [Progress Tracker](#progress-tracker)
 - [Objective](#objective)
 - [Scope](#scope)
+- [CodeGraph Integration](#codegraph-integration)
 - [Out of Scope](#out-of-scope)
 - [Preconditions](#preconditions)
 - [Deliverables](#deliverables)
@@ -33,8 +34,10 @@
 - [ ] Git-aware metadata extraction implemented
 - [ ] Bounded file discovery implemented (no unbounded context dumps)
 - [ ] Zod validation schemas defined for repo configuration and metadata
-- [ ] Unit tests cover all public behaviour
+- [ ] App-level integration tests cover all public behaviour
 - [ ] Integration tests exercise real Git repositories via fixtures
+- [ ] CodeGraph integration designed and documented
+- [ ] CodeGraph adapter implemented with init/query delegation
 - [ ] Standard verification gates pass (see [SHARED_VERIFICATION.md](./SHARED_VERIFICATION.md))
 
 [↑ Menú](#menú)
@@ -91,6 +94,52 @@ This handoff addresses the H05 requirements from the seed: configured local path
 
 ---
 
+## CodeGraph Integration
+
+The project already depends on `gentle-ai` (v2.5.0) as a dev toolchain, which includes **CodeGraph** — a SQLite knowledge graph of a codebase's symbols, edges, and files supporting 30+ languages. A single `codegraph explore` call returns verbatim, line-numbered source of relevant symbols together with call paths and blast-radius summaries. This capability optionally fills Virgil's structural code intelligence gap without introducing a new runtime dependency.
+
+### Two-Layer Architecture
+
+H05 delivers two layers of repository intelligence:
+
+- **Layer 1 — Git CLI** (already specified above): repository identity, branch/tag/remote metadata, working-tree status, and bounded file listing. Implemented by the `LocalRepoProvider`, which satisfies H04's `RepoProvider` contract unchanged.
+- **Layer 2 — CodeGraph**: structural code understanding — symbol resolution, call paths between symbols, dependency analysis, and blast-radius assessment. Implemented by a separate `CodeGraphService` NestJS injectable introduced in this handoff.
+
+The `LocalRepoProvider` implements H04's `RepoProvider` contract exactly as defined. The `CodeGraphService` is a new, separate NestJS injectable that lives in H05's module and delegates to CodeGraph CLI commands. Consuming modules inject whichever service they need independently.
+
+This layered design means H05 does NOT implement its own AST parser, tree-sitter integration, or LSP indexing. All structural code intelligence is delegated to CodeGraph through the `CodeGraphService`.
+
+### Initialization
+
+When a repository is registered in a workspace, the `CodeGraphService` triggers `codegraph init` to create the `.codegraph/` index. The index lives inside the repository itself (gitignored by the target project or by convention). Initialization is asynchronous with progress reporting to handle large repositories gracefully.
+
+### Runtime Availability
+
+CodeGraph is an **optional** runtime enhancement, not a hard dependency:
+
+- `codegraph` is available when the user has `gentle-ai` installed (development environments). It is **not** bundled in the SEA binary and is **not** required for basic Virgil functionality.
+- When `codegraph` is not detected on PATH, the `LocalRepoProvider` operates in git-metadata-only mode (Layer 1). All `CodeGraphService` structural query methods return empty results or throw a descriptive "CodeGraph not available" error.
+- This is consistent with the seed's invariants: "gentle-ai is a development-time machine dependency, not an npm dependency" and "gentle-ai is not a runtime dependency — Virgil users never need it installed."
+
+### Structural Query Methods
+
+The `CodeGraphService` exposes structural query methods that delegate to CodeGraph CLI commands:
+
+| Method | CodeGraph command | Purpose |
+| --- | --- | --- |
+| `explore(query)` | `codegraph explore` | Verbatim source of relevant symbols with call paths and blast radius |
+| `querySymbols(query)` | `codegraph query` | Symbol lookup across the indexed codebase |
+| `callers(symbol)` | `codegraph callers` | Incoming call paths to a symbol |
+| `callees(symbol)` | `codegraph callees` | Outgoing call paths from a symbol |
+| `impact(symbol)` | `codegraph impact` | Blast-radius assessment for a symbol change |
+| `affected(paths)` | `codegraph affected` | Files and symbols affected by changes to given paths |
+
+These `CodeGraphService` methods replace the need for custom AST parsing, tree-sitter integration, or LSP indexing — CodeGraph handles all of that internally for 30+ languages.
+
+[↑ Menú](#menú)
+
+---
+
 ## Out of Scope
 
 The following responsibilities belong to other handoffs and must **not** be addressed here:
@@ -105,7 +154,7 @@ The following responsibilities belong to other handoffs and must **not** be addr
 | RAG indexing, embedding, or vector storage of repository content | H07 |
 | Progressive discovery driven by issue context | H08 |
 | Remote repository providers (GitHub API, GitLab API) | Future handoff |
-| File content parsing, AST analysis, or language-specific indexing | Future handoff |
+| File content parsing, AST analysis, or language-specific indexing | Delegated to CodeGraph via the CodeGraphService introduced in this handoff (see [CodeGraph Integration](#codegraph-integration)). H05 does not implement its own parsers. |
 | Full-text search over repository contents | H07 |
 | CI/CD pipeline configuration | H18 |
 | Playwright CDP browser automation | `packages/pw-cdp/` (separate package) |
@@ -242,6 +291,20 @@ flowchart TD
 - Each Git operation is a bounded, independent step.
 - Metadata extraction and file discovery are independently invocable (a caller can request identity and branch without triggering full file enumeration).
 
+### D7 — CodeGraph Adapter
+
+Implement the `CodeGraphService` as a separate NestJS injectable: initialization, health check, and structural query delegation to CodeGraph CLI commands.
+
+**Acceptance criteria:**
+
+- The `CodeGraphService` is a NestJS injectable in H05's module, separate from the `LocalRepoProvider`.
+- When a repository is registered in a workspace, `codegraph init` is triggered asynchronously to create the `.codegraph/` index.
+- A health-check method reports whether the CodeGraph index exists and is usable for a given repository.
+- `CodeGraphService` methods (`explore`, `querySymbols`, `callers`, `callees`, `impact`, `affected`) delegate to the corresponding CodeGraph CLI commands and return structured, Zod-validated results.
+- CodeGraph CLI commands are invoked via spawned processes, consistent with the Git CLI execution pattern in D3.
+- Graceful degradation: if CodeGraph is unavailable or the index does not exist, `CodeGraphService` methods return a structured error result indicating the capability is unavailable, without affecting the `LocalRepoProvider` (Layer 1 Git CLI) operations.
+- App-level integration tests verify initialization, health check, and at least one structural query against a real repository fixture (per `AGENTS.md` Testing Policy: app-level integration tests only, no unit tests).
+
 [↑ Menú](#menú)
 
 ---
@@ -250,16 +313,14 @@ flowchart TD
 
 Standard static, dynamic, and build verification gates apply — see [SHARED_VERIFICATION.md](./SHARED_VERIFICATION.md).
 
-### Unit Tests
+### App-Level Integration Tests
 
-- Mock `child_process.spawn`/`exec` (or the Git execution wrapper) to test metadata extraction logic without requiring a real Git repository.
+Per `AGENTS.md` Testing Policy, all tests are app-level integration tests exercised through the NestJS container. No unit tests or direct `child_process` mocking outside DI.
+
+- Use temporary Git repository fixtures created programmatically (init, commit, branch, add remotes).
 - Verify Zod schema validation rejects malformed inputs.
 - Verify bounded file discovery enforces maximum count, depth, and size limits.
 - Verify error handling for non-existent paths, non-Git directories, and corrupt repositories.
-
-### Integration Tests
-
-- Use temporary Git repository fixtures created programmatically (init, commit, branch, add remotes).
 - Verify end-to-end metadata extraction produces correct, Zod-valid output against a real Git repository.
 - Verify multi-repository discovery correctly enumerates `1..N` configured repositories.
 - Verify `.gitignore` rules are respected in file discovery.
@@ -296,6 +357,7 @@ Handoff-specific evidence:
 | Binary files included in `git ls-files` output may be accidentally read | Detect binary files via Git attributes or heuristic (null bytes in first 8KB); exclude from content reads by default |
 | Different Git versions may produce different `--porcelain` output formats | Use `--porcelain` (v1) format which is stable across Git versions; document minimum supported Git version |
 | Concurrent Git operations on the same repository (developer working while Virgil reads) may produce inconsistent snapshots | Accept eventual consistency; metadata reflects a point-in-time snapshot, not a transaction; document this behaviour |
+| CodeGraph index creation may be slow for very large repositories (>100k files) | Async initialization with progress reporting; index only on explicit workspace registration, not on every provider access. Users can opt out of CodeGraph for specific repositories via workspace configuration. |
 
 [↑ Menú](#menú)
 
