@@ -1,11 +1,15 @@
 import { Module } from '@nestjs/common';
+import { ChatModule } from './chat/chat.module.js';
 import { VersionCommand } from './commands/version.command.js';
+import { GitHubIssuesModule } from './issues/github-issues.module.js';
 import { HandoffProtocolModule } from './handoff/handoff-protocol.module.js';
 import { PersistenceModule } from './persistence/index.js';
 import { WorkspaceModule } from './workspace/workspace.module.js';
 
 @Module({
   imports: [
+    ChatModule,
+    GitHubIssuesModule,
     HandoffProtocolModule,
     // NestJS instantiates every provider in an imported module eagerly at
     // bootstrap, regardless of a command's needs — so every CLI invocation
