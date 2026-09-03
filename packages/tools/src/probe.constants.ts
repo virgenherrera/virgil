@@ -1,0 +1,1 @@
+export const DEFAULT_RAM_RESERVATION_GB = 4;

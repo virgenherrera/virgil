@@ -5,7 +5,7 @@
 > **Status:** Resumed — Phase 4: hardware fitness probe and ceiling calculator
 > **Normative policy:** [`AGENTS.md`](../AGENTS.md)
 
-This spike creates an enforceable, local-first minion path without turning Docker Model Runner (DMR) into an external-model gateway. It responds to the observed incident in which seven Claude background agents exhausted the session limit before four Wave-4 assignments completed. The cloud harness remains the orchestrator; only explicitly eligible, offline-capable work may be delegated to qualified local minions.
+This spike creates an enforceable, local-first minion path for the development workflow -- offloading mechanical AI tasks (reads, grep, formatting, validation) to local models via Docker Model Runner (DMR) to save cloud tokens, without turning DMR into an external-model gateway. It responds to the observed incident in which seven Claude background agents exhausted the session limit before four Wave-4 assignments completed. The cloud harness remains the orchestrator; only explicitly eligible, offline-capable work may be delegated to qualified local minions. This is development tooling infrastructure, not a Virgil product feature.
 
 ## Menú
 
@@ -354,7 +354,7 @@ Amend or replace the existing `scripts/virgil-model-probe.ts` to implement a Zod
 
 The script MUST:
 
-1. Be implemented in TypeScript, runnable via `npx tsx scripts/virgil-model-probe.ts`.
+1. Be implemented in TypeScript, runnable via `pnpm probe <subcommand>`.
 2. Use **Zod schemas** for ALL input validation and output normalization — hardware profile, model catalog, fitness scores, ceiling configuration, and persisted output. No unvalidated JSON.
 3. Support **macOS** (Apple Silicon via Metal, Intel), **Linux** (NVIDIA CUDA, CPU-only), and **Windows** (NVIDIA CUDA, CPU-only) through OS-specific detection strategies with a unified output schema.
 4. Detect hardware profile:

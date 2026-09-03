@@ -15,10 +15,12 @@
     "validate:exact-deps": "node scripts/validate-exact-deps.mjs",
     "test:static": "pnpm run audit && pnpm -r run --if-present test:static && pnpm run validate:exact-deps",
     "test:dynamic": "pnpm -r run --if-present test:dynamic",
-    "prepare": "husky"
+    "prepare": "husky",
+    "probe": "node packages/tools/dist/main.js"
   },
   "devDependencies": {
     "husky": "catalog:",
+    "tsx": "catalog:",
     "zod": "catalog:"
   }
 }

@@ -69,6 +69,9 @@ catalogs:
     source-map-support:
       specifier: 0.5.21
       version: 0.5.21
+    tsx:
+      specifier: 4.23.13
+      version: 4.23.13
     typescript:
       specifier: 6.0.3
       version: 6.0.3
@@ -92,6 +95,9 @@ importers:
       husky:
         specifier: 'catalog:'
         version: 9.1.7
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.13
       zod:
         specifier: 'catalog:'
         version: 4.5.4
@@ -239,6 +245,64 @@ importers:
       prettier:
         specifier: 'catalog:'
         version: 3.9.6
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite-tsconfig-paths:
+        specifier: 'catalog:'
+        version: 5.1.4(supports-color@7.2.0)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.13))
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.13))
+
+  packages/tools:
+    dependencies:
+      '@nestjs/common':
+        specifier: 'catalog:'
+        version: 12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0)
+      '@nestjs/core':
+        specifier: 'catalog:'
+        version: 12.0.1(@nestjs/common@12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      nest-commander:
+        specifier: 'catalog:'
+        version: 3.21.0(@nestjs/common@12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(@nestjs/core@12.0.1(@nestjs/common@12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@types/inquirer@8.2.13)(@types/node@24.13.3)(typescript@6.0.3)
+      reflect-metadata:
+        specifier: 'catalog:'
+        version: 0.2.2
+      rxjs:
+        specifier: 'catalog:'
+        version: 7.8.2
+      zod:
+        specifier: 'catalog:'
+        version: 4.5.4
+    devDependencies:
+      '@nestjs/cli':
+        specifier: 'catalog:'
+        version: 12.0.0(@types/node@24.13.3)(prettier@3.9.6)
+      '@nestjs/schematics':
+        specifier: 'catalog:'
+        version: 12.0.0(chokidar@5.0.0)(prettier@3.9.6)(typescript@6.0.3)
+      '@nestjs/testing':
+        specifier: 'catalog:'
+        version: 12.0.1(@nestjs/common@12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(@nestjs/core@12.0.1(@nestjs/common@12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 4.1.11(vitest@4.1.11)
+      esbuild:
+        specifier: 'catalog:'
+        version: 0.28.2
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.80.0
+      prettier:
+        specifier: 'catalog:'
+        version: 3.9.6
+      source-map-support:
+        specifier: 'catalog:'
+        version: 0.5.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

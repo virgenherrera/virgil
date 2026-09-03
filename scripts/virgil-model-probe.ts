@@ -1,15 +1,15 @@
-#!/usr/bin/env -S npx tsx
+#!/usr/bin/env -S tsx
 /**
  * virgil-model-probe — CLI to detect hardware, score model fitness, compute
  * CAN/WANT ceilings, and manage local minion model selection.
  *
  * Usage:
- *   npx tsx scripts/virgil-model-probe.ts detect
- *   npx tsx scripts/virgil-model-probe.ts fitness
- *   npx tsx scripts/virgil-model-probe.ts ceiling [options]
- *   npx tsx scripts/virgil-model-probe.ts probe
- *   npx tsx scripts/virgil-model-probe.ts benchmark <model-name>
- *   npx tsx scripts/virgil-model-probe.ts select <model-name>
+ *   pnpm probe detect
+ *   pnpm probe fitness
+ *   pnpm probe ceiling [options]
+ *   pnpm probe probe
+ *   pnpm probe benchmark <model-name>
+ *   pnpm probe select <model-name>
  *
  * No network requests for detect/fitness/ceiling commands.
  * probe/benchmark/select require Docker Model Runner (DMR) at localhost:12434.
