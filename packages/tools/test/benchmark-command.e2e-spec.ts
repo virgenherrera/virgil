@@ -108,4 +108,79 @@ describe('BenchmarkCommand (e2e)', () => {
     errorSpy.mockRestore();
     exitSpy.mockRestore();
   });
+
+  it('exits with error when no model name is provided', async () => {
+    const command = moduleRef.get(BenchmarkCommand);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('process.exit');
+    }) as () => never);
+
+    await expect(command.run([])).rejects.toThrow('process.exit');
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Usage:'),
+    );
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+    exitSpy.mockRestore();
+  });
+
+  it('exits with error when DMR is unavailable', async () => {
+    const errorModule = await Test.createTestingModule({
+      imports: [ProbeModule],
+    })
+      .overrideProvider(DmrClientService)
+      .useValue({
+        fetchModels: vi
+          .fn()
+          .mockRejectedValue(new Error('ECONNREFUSED')),
+      })
+      .compile();
+
+    const command = errorModule.get(BenchmarkCommand);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('process.exit');
+    }) as () => never);
+
+    await expect(command.run([testModel])).rejects.toThrow('process.exit');
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Cannot reach DMR'),
+    );
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+    exitSpy.mockRestore();
+    await errorModule.close();
+  });
+
+  it('re-throws non-connection errors', async () => {
+    const errorModule = await Test.createTestingModule({
+      imports: [ProbeModule],
+    })
+      .overrideProvider(DmrClientService)
+      .useValue({
+        fetchModels: vi
+          .fn()
+          .mockRejectedValue(new Error('unexpected error')),
+      })
+      .compile();
+
+    const command = errorModule.get(BenchmarkCommand);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    await expect(command.run([testModel])).rejects.toThrow(
+      'unexpected error',
+    );
+
+    logSpy.mockRestore();
+    await errorModule.close();
+  });
 });

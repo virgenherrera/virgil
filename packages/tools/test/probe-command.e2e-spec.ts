@@ -63,7 +63,7 @@ describe('ProbeCommand (e2e)', () => {
     logSpy.mockRestore();
   });
 
-  it('reports error when DMR is unavailable', async () => {
+  it('reports error when DMR is unavailable (fetch failed)', async () => {
     const errorModule = await Test.createTestingModule({
       imports: [ProbeModule],
     })
@@ -91,5 +91,121 @@ describe('ProbeCommand (e2e)', () => {
     errorSpy.mockRestore();
     exitSpy.mockRestore();
     await errorModule.close();
+  });
+
+  it('reports error when DMR is unavailable (ECONNREFUSED)', async () => {
+    const errorModule = await Test.createTestingModule({
+      imports: [ProbeModule],
+    })
+      .overrideProvider(DmrClientService)
+      .useValue({
+        fetchModels: vi.fn().mockRejectedValue(new Error('ECONNREFUSED')),
+      })
+      .compile();
+
+    const command = errorModule.get(ProbeCommand);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('process.exit');
+    }) as () => never);
+
+    await expect(command.run([])).rejects.toThrow('process.exit');
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Cannot reach DMR'),
+    );
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+    exitSpy.mockRestore();
+    await errorModule.close();
+  });
+
+  it('re-throws non-connection errors', async () => {
+    const errorModule = await Test.createTestingModule({
+      imports: [ProbeModule],
+    })
+      .overrideProvider(DmrClientService)
+      .useValue({
+        fetchModels: vi
+          .fn()
+          .mockRejectedValue(new Error('unexpected error')),
+      })
+      .compile();
+
+    const command = errorModule.get(ProbeCommand);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    await expect(command.run([])).rejects.toThrow('unexpected error');
+
+    logSpy.mockRestore();
+    await errorModule.close();
+  });
+
+  it('handles empty models list', async () => {
+    const emptyModule = await Test.createTestingModule({
+      imports: [ProbeModule],
+    })
+      .overrideProvider(DmrClientService)
+      .useValue({
+        fetchModels: vi
+          .fn()
+          .mockResolvedValue({ object: 'list', data: [] }),
+      })
+      .compile();
+
+    const command = emptyModule.get(ProbeCommand);
+    let captured = '';
+    const logSpy = vi
+      .spyOn(console, 'log')
+      .mockImplementation((...args: unknown[]) => {
+        captured += String(args[0]) + '\n';
+      });
+
+    await command.run([]);
+
+    expect(captured).toContain('No models available');
+    expect(captured).toContain('docker model pull');
+
+    logSpy.mockRestore();
+    await emptyModule.close();
+  });
+
+  it('displays extra unknown properties on model objects', async () => {
+    const extraModule = await Test.createTestingModule({
+      imports: [ProbeModule],
+    })
+      .overrideProvider(DmrClientService)
+      .useValue({
+        fetchModels: vi.fn().mockResolvedValue({
+          object: 'list',
+          data: [
+            {
+              id: 'ai/extended-model',
+              object: 'model',
+              custom_field: 'custom_value',
+            },
+          ],
+        }),
+      })
+      .compile();
+
+    const command = extraModule.get(ProbeCommand);
+    let captured = '';
+    const logSpy = vi
+      .spyOn(console, 'log')
+      .mockImplementation((...args: unknown[]) => {
+        captured += String(args[0]) + '\n';
+      });
+
+    await command.run([]);
+
+    expect(captured).toContain('custom_field');
+    expect(captured).toContain('"custom_value"');
+
+    logSpy.mockRestore();
+    await extraModule.close();
   });
 });

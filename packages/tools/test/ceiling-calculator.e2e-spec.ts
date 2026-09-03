@@ -86,6 +86,21 @@ describe('CeilingCalculatorService (e2e)', () => {
       const can = service.computeCan(profile, 0);
       expect(can.totalRamBudgetGb).toBeLessThanOrEqual(8);
     });
+
+    it('uses total RAM when docker allocatedMemoryGb is null', () => {
+      const profile = makeProfile({
+        ram: { totalGb: 32, availableGb: 20 },
+        docker: {
+          engineVersion: '27.0.0',
+          composeVersion: '2.30.0',
+          dmrStatus: 'available',
+          allocatedCpu: 10,
+          allocatedMemoryGb: null,
+        },
+      });
+      const can = service.computeCan(profile, 4);
+      expect(can.totalRamBudgetGb).toBe(28);
+    });
   });
 
   describe('computeEffective()', () => {
@@ -125,6 +140,25 @@ describe('CeilingCalculatorService (e2e)', () => {
       };
       const effective = service.computeEffective(can, want);
       expect(effective.maxMinions).toBe(2);
+      expect(effective.explanation['maxMinions']).toContain('Capped');
+    });
+
+    it('explains when want <= can maxMinions', () => {
+      const can: CeilingCan = {
+        maxConcurrentModels: 5,
+        totalRamBudgetGb: 28,
+        availableDiskGb: 200,
+        qualifiedModels: { worker: ['llama3.1:8b'], reasoning: [], pro: [] },
+      };
+      const want: CeilingWant = {
+        maxMinions: 2,
+        allowedTiers: ['worker'],
+        selectedModels: { worker: 'llama3.1:8b' },
+        ramReservationGb: 0,
+      };
+      const effective = service.computeEffective(can, want);
+      expect(effective.maxMinions).toBe(2);
+      expect(effective.explanation['maxMinions']).toContain('Using 2');
     });
 
     it('drops tiers that have no qualified models', () => {
@@ -144,6 +178,35 @@ describe('CeilingCalculatorService (e2e)', () => {
       expect(effective.allowedTiers).toContain('worker');
       expect(effective.allowedTiers).not.toContain('reasoning');
       expect(effective.allowedTiers).not.toContain('pro');
+      expect(effective.explanation['allowedTiers']).toContain(
+        'no qualified models',
+      );
+    });
+
+    it('explains when all requested tiers are available', () => {
+      const can: CeilingCan = {
+        maxConcurrentModels: 3,
+        totalRamBudgetGb: 28,
+        availableDiskGb: 200,
+        qualifiedModels: {
+          worker: ['llama3.1:8b'],
+          reasoning: ['phi4:14b'],
+          pro: [],
+        },
+      };
+      const want: CeilingWant = {
+        maxMinions: 2,
+        allowedTiers: ['worker', 'reasoning'],
+        selectedModels: {
+          worker: 'llama3.1:8b',
+          reasoning: 'phi4:14b',
+        },
+        ramReservationGb: 0,
+      };
+      const effective = service.computeEffective(can, want);
+      expect(effective.explanation['allowedTiers']).toContain(
+        'All requested tiers',
+      );
     });
 
     it('handles empty allowedTiers result when no tiers qualify', () => {
@@ -179,6 +242,63 @@ describe('CeilingCalculatorService (e2e)', () => {
       };
       const effective = service.computeEffective(can, want);
       expect(effective.selectedModels['worker']).toBe('mistral:7b');
+      expect(effective.explanation['model:worker']).toContain('Fell back');
+    });
+
+    it('explains when no qualified models exist for a selected tier', () => {
+      const can: CeilingCan = {
+        maxConcurrentModels: 2,
+        totalRamBudgetGb: 10,
+        availableDiskGb: 100,
+        qualifiedModels: {
+          worker: ['llama3.1:8b'],
+          reasoning: [],
+          pro: [],
+        },
+      };
+      const want: CeilingWant = {
+        maxMinions: 1,
+        allowedTiers: ['worker', 'reasoning'],
+        selectedModels: {
+          worker: 'llama3.1:8b',
+          reasoning: 'phi4:14b',
+        },
+        ramReservationGb: 0,
+      };
+      const effective = service.computeEffective(can, want);
+      expect(effective.explanation['model:reasoning']).toContain(
+        'No qualified models',
+      );
+      expect(effective.explanation['model:reasoning']).toContain('Skipped');
+      expect(effective.selectedModels).not.toHaveProperty('reasoning');
+    });
+
+    it('removes selected models when their tier is excluded from allowedTiers', () => {
+      const can: CeilingCan = {
+        maxConcurrentModels: 2,
+        totalRamBudgetGb: 28,
+        availableDiskGb: 200,
+        qualifiedModels: {
+          worker: ['llama3.1:8b'],
+          reasoning: ['phi4:14b'],
+          pro: [],
+        },
+      };
+      const want: CeilingWant = {
+        maxMinions: 1,
+        allowedTiers: ['worker'],
+        selectedModels: {
+          worker: 'llama3.1:8b',
+          reasoning: 'phi4:14b',
+        },
+        ramReservationGb: 0,
+      };
+      const effective = service.computeEffective(can, want);
+
+      // reasoning is qualified in can but not in want.allowedTiers
+      // → first loop adds it, second loop removes it
+      expect(effective.selectedModels).not.toHaveProperty('reasoning');
+      expect(effective.explanation['model:reasoning']).toContain('excluded');
     });
   });
 });

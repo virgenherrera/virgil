@@ -1,4 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { ProbeModule } from '../src/probe.module.js';
 import {
   ConfigService,
@@ -30,6 +33,13 @@ describe('ConfigService (e2e)', () => {
       const root = service.getRepoRoot();
       expect(typeof root).toBe('string');
       expect(root.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getConfigPath()', () => {
+    it('returns a path ending with virgil.json', () => {
+      const path = service.getConfigPath();
+      expect(path).toMatch(/virgil\.json$/);
     });
   });
 
@@ -81,6 +91,81 @@ describe('ConfigService (e2e)', () => {
       expect(localMinions).toBeDefined();
       expect(localMinions.allowedTiers).toBeDefined();
       expect(Array.isArray(localMinions.allowedTiers)).toBe(true);
+    });
+
+    it('throws when virgil.json does not exist', () => {
+      const tmpDir = mkdtempSync(join(tmpdir(), 'virgil-test-'));
+      vi.spyOn(service, 'getRepoRoot').mockReturnValue(tmpDir);
+
+      expect(() => service.load()).toThrow(
+        'virgil.json not found at project root.',
+      );
+
+      rmSync(tmpDir, { recursive: true });
+    });
+
+    it('provides default localMinions when config has none', () => {
+      const tmpDir = mkdtempSync(join(tmpdir(), 'virgil-test-'));
+      const configPath = join(tmpDir, 'virgil.json');
+      writeFileSync(configPath, JSON.stringify({ name: 'test-project' }));
+      vi.spyOn(service, 'getRepoRoot').mockReturnValue(tmpDir);
+
+      const { config, localMinions } = service.load();
+
+      expect(config).toHaveProperty('localMinions');
+      expect(localMinions.ceiling).toBe('worker');
+      expect(localMinions.allowedTiers).toEqual(['worker']);
+      expect(localMinions.model).toBeNull();
+
+      rmSync(tmpDir, { recursive: true });
+    });
+  });
+
+  describe('save()', () => {
+    it('persists localMinions to virgil.json preserving existing data', () => {
+      const tmpDir = mkdtempSync(join(tmpdir(), 'virgil-test-'));
+      const configPath = join(tmpDir, 'virgil.json');
+      writeFileSync(
+        configPath,
+        JSON.stringify({ name: 'test-project', version: '1.0.0' }, null, 2),
+      );
+      vi.spyOn(service, 'getRepoRoot').mockReturnValue(tmpDir);
+
+      const localMinions = {
+        ceiling: 'reasoning' as const,
+        allowedTiers: ['worker' as const, 'reasoning' as const],
+        model: 'phi4:14b',
+        effectiveCeiling: null,
+        hardwareProfileHash: 'abc123def456ab12',
+        lastProbeDate: '2026-01-01T00:00:00.000Z',
+      };
+
+      service.save(localMinions);
+
+      const saved = JSON.parse(readFileSync(configPath, 'utf8'));
+      expect(saved.name).toBe('test-project');
+      expect(saved.version).toBe('1.0.0');
+      expect(saved.localMinions).toEqual(localMinions);
+
+      rmSync(tmpDir, { recursive: true });
+    });
+
+    it('throws when virgil.json does not exist', () => {
+      const tmpDir = mkdtempSync(join(tmpdir(), 'virgil-test-'));
+      vi.spyOn(service, 'getRepoRoot').mockReturnValue(tmpDir);
+
+      expect(() =>
+        service.save({
+          ceiling: 'worker',
+          allowedTiers: ['worker'],
+          model: null,
+          effectiveCeiling: null,
+          hardwareProfileHash: null,
+          lastProbeDate: null,
+        }),
+      ).toThrow('virgil.json not found at project root.');
+
+      rmSync(tmpDir, { recursive: true });
     });
   });
 });

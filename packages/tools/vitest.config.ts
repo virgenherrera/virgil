@@ -14,7 +14,7 @@ export default defineConfig({
       reportsDirectory: './artifacts/coverage',
       reporter: ['json', 'html', 'text'],
       include: ['src/**/*.ts'],
-      exclude: ['src/main.ts', 'src/**/*.spec.ts'],
+      exclude: ['src/main.ts', 'src/**/*.spec.ts', 'src/**/index.ts'],
       thresholds: {
         statements: 97,
         lines: 97,
