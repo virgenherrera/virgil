@@ -12,6 +12,7 @@
 - [Model-Tier Routing](#model-tier-routing)
 - [Context Budget Governance](#context-budget-governance)
 - [Capability Escalation](#capability-escalation)
+- [Local Minions Probe](#local-minions-probe)
 - [Handoff Rules](#handoff-rules)
 - [Markdown Authoring Rules](#markdown-authoring-rules)
 - [Repository Hygiene and Tool-Local State](#repository-hygiene-and-tool-local-state)
@@ -519,6 +520,101 @@ Before requesting `pro`, the agent must state:
 The agent must wait for approval.
 
 No silent pro-tier escalation is allowed.
+
+[↑ Menú](#menú)
+
+---
+
+## Local Minions Probe
+
+The local minions probe system detects hardware capabilities and determines which local LLM models can serve as minions alongside cloud orchestrators. It enforces a dual-ceiling architecture: the hardware determines what **can** run, the owner declares what they **want**, and the effective ceiling is the minimum of both.
+
+### Probe Flow
+
+```mermaid
+flowchart TD
+    A["User runs detect"] --> B["Hardware Detection\n(OS-specific: macOS / Linux / Windows)"]
+    B --> C["Zod Validation"]
+    C --> D["HardwareProfile JSON"]
+
+    E["User runs fitness"] --> F["HardwareProfile\n+ ModelCatalog"]
+    F --> G["Fitness Formula\nRAM = B x 0.55 + 1.5 GB"]
+    G --> H["FitnessResult[] JSON"]
+
+    I["User runs ceiling"] --> J["CAN Ceiling\n(from hardware)"]
+    I --> K["WANT Ceiling\n(from user input)"]
+    J --> L["min(CAN, WANT)"]
+    K --> L
+    L --> M["EffectiveCeiling"]
+    M --> N["Persist to virgil.json"]
+```
+
+### CAN/WANT Ceiling Resolution
+
+```mermaid
+flowchart LR
+    subgraph CAN["CAN (Hardware)"]
+        HP["HardwareProfile"] --> RB["RAM Budget\n(total - reservation)"]
+        RB --> QM["Qualify Each\nCatalog Model"]
+        QM --> CC["CAN Ceiling"]
+    end
+
+    subgraph WANT["WANT (Owner)"]
+        UI["User Input"] --> MM["Max Minions"]
+        UI --> AT["Allowed Tiers"]
+        UI --> SM["Selected Models"]
+        UI --> RR["RAM Reservation"]
+        MM --> WC["WANT Ceiling"]
+        AT --> WC
+        SM --> WC
+        RR --> WC
+    end
+
+    CC --> EC["Effective Ceiling\nmin(CAN, WANT)\nper dimension"]
+    WC --> EC
+    EC --> VJ["virgil.json\nlocalMinions key"]
+```
+
+### Orchestrator-Minion Model with Local Models
+
+```mermaid
+flowchart TD
+    subgraph Cloud["Cloud Orchestrator"]
+        CO["Claude / Gemini\n(reasoning or pro tier)"]
+    end
+
+    subgraph Local["Local Minion Execution"]
+        BR["Broker Container\n(network: DMR only)"]
+        EX["Executor Container\n(network: none)"]
+        LM["Local LLM\nvia Docker Model Runner"]
+    end
+
+    CO -->|"Delegates worker task"| BR
+    BR -->|"Forwards to DMR"| LM
+    LM -->|"Inference result"| EX
+    EX -->|"Compact evidence receipt"| CO
+
+    style Cloud fill:#e8f4fd,stroke:#2196f3
+    style Local fill:#f3e8fd,stroke:#9c27b0
+```
+
+### Tier Equivalence Catalog
+
+| Virgil Tier | Cloud Class | Local Models |
+| --- | --- | --- |
+| worker | Haiku-class | Llama 3.1 (8B), Mistral 7B, Gemma 2 (9B) |
+| reasoning | Sonnet/Fable-class | Qwen 3 (32B), Phi-4 (14B) |
+| pro | Opus-class | Llama 3.3 (70B), Qwen 3 (72B), DeepSeek V3 |
+
+### Fitness Formula
+
+The RAM requirement for running a model locally is:
+
+```text
+RAM Required (GB) = (Parameters in Billions x 0.55) + 1.5
+```
+
+A model fits when the available RAM budget (total RAM minus the OS/application reservation) exceeds its computed requirement.
 
 [↑ Menú](#menú)
 

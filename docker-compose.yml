@@ -17,8 +17,16 @@
 # Proven on: Docker Desktop 4.89.0, Engine 29.7.2, Compose v5.5.0,
 #            Apple M1 Pro / 16GB / Metal (cgroup v2 via LinuxKit VM).
 #
+# Parameterized values (MODEL_NAME, CONTEXT_SIZE, BROKER_MEMORY_LIMIT, etc.)
+# should come from probe output. Run the probe first, then pass values via
+# environment or .env file:
+#   npx tsx scripts/virgil-model-probe.ts ceiling --save
+#   COMPOSE_PROFILES=worker MODEL_NAME=ai/llama3.1:8b docker compose up
+#
 # Usage:
-#   MODEL_NAME=ai/smollm2 docker compose up
+#   npx tsx scripts/virgil-model-probe.ts ceiling --save  # select model first
+#   MODEL_NAME=ai/llama3.1:8b docker compose up           # or set explicitly
+#   COMPOSE_PROFILES=worker docker compose up              # activate only worker-tier broker
 #   docker compose config          # validate without running
 #   docker compose config --models # list resolved models
 
@@ -29,10 +37,10 @@
 # ---------------------------------------------------------------------------
 models:
   local-llm:
-    model: ${MODEL_NAME:-ai/smollm2}
-    # context_size must be an integer (Compose rejects interpolated strings here).
-    # Adjust this value directly when a larger context window is needed.
-    context_size: 2048
+    model: ${MODEL_NAME:?Run 'npx tsx scripts/virgil-model-probe.ts ceiling --save' to select a model}
+    # context_size: set via CONTEXT_SIZE env var; defaults to 2048.
+    # Override when probe output recommends a larger context window.
+    context_size: ${CONTEXT_SIZE:-2048}
 
 services:
   # -------------------------------------------------------------------------
@@ -46,11 +54,18 @@ services:
   # -------------------------------------------------------------------------
   broker:
     image: node:22-alpine
+    # Broker activates only when its tier profile is selected.
+    # COMPOSE_PROFILES=worker docker compose up — activates only the worker-tier broker.
+    # COMPOSE_PROFILES=worker,reasoning docker compose up — activates both tiers.
+    profiles: ["worker", "reasoning"]
+    labels:
+      ai.virgil.probe-hash: "${PROBE_HASH:-unset}"
+      ai.virgil.probe-date: "${PROBE_DATE:-unset}"
     models:
       - local-llm
     environment:
       - DMR_ENDPOINT=http://host.docker.internal:12434
-      - MODEL_NAME=${MODEL_NAME:-ai/smollm2}
+      - MODEL_NAME=${MODEL_NAME:?Run 'npx tsx scripts/virgil-model-probe.ts ceiling --save' to select a model}
     working_dir: /app
     # Placeholder entrypoint — replace with actual broker application
     command: >

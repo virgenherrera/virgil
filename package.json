@@ -18,6 +18,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "husky": "catalog:"
+    "husky": "catalog:",
+    "zod": "catalog:"
   }
 }

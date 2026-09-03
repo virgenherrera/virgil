@@ -2,7 +2,7 @@
 
 > **Project:** Virgil
 > **Artifact type:** Spike handoff
-> **Status:** Ready for assignment
+> **Status:** Resumed — Phase 4: hardware fitness probe and ceiling calculator
 > **Normative policy:** [`AGENTS.md`](../AGENTS.md)
 
 This spike creates an enforceable, local-first minion path without turning Docker Model Runner (DMR) into an external-model gateway. It responds to the observed incident in which seven Claude background agents exhausted the session limit before four Wave-4 assignments completed. The cloud harness remains the orchestrator; only explicitly eligible, offline-capable work may be delegated to qualified local minions.
@@ -20,6 +20,7 @@ This spike creates an enforceable, local-first minion path without turning Docke
 - [Hard Budget Contract](#hard-budget-contract)
 - [Verification and Decision Gate](#verification-and-decision-gate)
 - [Phase 3 — Conditional Local-First Capability Amendment](#phase-3-conditional-local-first-capability-amendment)
+- [Phase 4 — Hardware Fitness Probe and Ceiling Calculator](#phase-4-hardware-fitness-probe-and-ceiling-calculator)
 - [Deliverables and Acceptance Criteria](#deliverables-and-acceptance-criteria)
 - [Risks and Constraints](#risks-and-constraints)
 - [Official References](#official-references)
@@ -41,6 +42,13 @@ This spike creates an enforceable, local-first minion path without turning Docke
 - [x] Phase-3 local-first AGENTS.md amendment applied from passing evidence OR explicitly skipped with blocker evidence — SKIPPED: no model qualified worker tier; blocker evidence in W5 report and decision report
 - [ ] Applicable repository verification and evidence report completed — N/A: spike deliverables are policy and prototype, not product code
 - [x] Handoff completion report produced
+- **Phase 4 — Resumed 2026-09-02** (prior Phase 2 marked fiasco; infrastructure proven but execution reckless)
+- [x] Hardware intelligence baseline incorporated (tier equivalences, fitness formula)
+- [x] Multi-OS probe script implemented with Zod schemas (8 schemas, 1258 lines)
+- [x] TUI or structured output showing CAN vs WANT ceiling (structured JSON + stderr summary)
+- [x] Ceiling configuration persisted and validated in virgil.json
+- [x] Docker DMR implementation validated against probe output (MODEL_NAME required variable)
+- [x] Phase 4 completion report produced — adversarial review complete, all CRITICAL/HIGH/MEDIUM fixed
 
 [↑ Menú](#menú)
 
@@ -307,6 +315,122 @@ It MUST NOT label models as universal tiers, claim offline execution without hos
 
 ---
 
+## Phase 4: Hardware Fitness Probe and Ceiling Calculator
+
+Phase 2 proved the Docker/DMR infrastructure works but executed recklessly — pulling models without checking disk, accepting incomplete deliverables, burning tokens. Phase 4 replaces ad-hoc model pulling with a systematic, Zod-validated probe that discovers what the machine CAN run and lets the owner declare what it SHOULD run.
+
+### Hardware Intelligence Baseline
+
+External research (Gemini, 2026-09-02) established tier equivalences and a hardware fitness formula.
+
+**Tier Equivalence Mapping**
+
+| Virgil Tier | Equivalent Cloud Class | Local Candidate Models |
+| --- | --- | --- |
+| worker | Haiku-class | Llama 3.1 (8B), Mistral (7B), Gemma 2 (9B) |
+| reasoning | Sonnet/Fable-class | Qwen 3 (32B), Phi-4 (14B) |
+| pro | Opus-class | Llama 3.3 (70B), Qwen 3 (72B), DeepSeek V3 |
+
+**Hardware Requirements (Q4 quantization)**
+
+Formula:
+
+```text
+Memory Required = (Billions of parameters × 0.55 GB) + 1.5 GB context overhead
+```
+
+| Model Size | RAM / VRAM (Q4) | Disk | Minimum Hardware |
+| --- | --- | --- | --- |
+| 7B–9B | ~6–7 GB | ~4.5–6 GB | GPU 8 GB+ or Mac with sufficient unified memory |
+| 14B | ~10–11 GB | ~9–10 GB | GPU 12 GB+ or Mac 16 GB+ |
+| 32B | ~22–24 GB | ~20–22 GB | RTX 4090/5090 (32 GB) or Mac 32 GB+ |
+| 70B–72B | ~46–48 GB | ~40–45 GB | 2× GPUs (24 GB each) or Mac Studio 64 GB+ |
+
+These are inputs to the probe script, not hardcoded pass/fail labels. The script applies the formula dynamically against detected hardware.
+
+### Multi-OS Probe Script — `virgil-model-probe.ts`
+
+Amend or replace the existing `scripts/virgil-model-probe.ts` to implement a Zod-validated, multi-OS hardware fitness probe.
+
+The script MUST:
+
+1. Be implemented in TypeScript, runnable via `npx tsx scripts/virgil-model-probe.ts`.
+2. Use **Zod schemas** for ALL input validation and output normalization — hardware profile, model catalog, fitness scores, ceiling configuration, and persisted output. No unvalidated JSON.
+3. Support **macOS** (Apple Silicon via Metal, Intel), **Linux** (NVIDIA CUDA, CPU-only), and **Windows** (NVIDIA CUDA, CPU-only) through OS-specific detection strategies with a unified output schema.
+4. Detect hardware profile:
+   - CPU: architecture, core count, model.
+   - GPU: Metal cores (macOS), CUDA device/VRAM (Linux/Windows), or absent.
+   - Memory: total system RAM, available RAM, unified memory (Apple Silicon).
+   - Disk: available space on the Docker volume/partition.
+   - Docker: Engine version, Compose version, DMR status, allocated resources.
+5. Apply the fitness formula to each candidate model from the tier equivalence catalog.
+6. Present results as **structured output** (JSON) and optionally as a **TUI** showing:
+   - Which models FIT on this machine (**CAN** host) with fitness scores.
+   - Which tier each model qualifies for based on the W5 benchmark thresholds.
+   - Resource impact per model: RAM consumed, disk needed, estimated concurrent capacity.
+   - Maximum concurrent local minions given remaining resources.
+7. Accept the owner's **desired ceiling** (**WANT** to host):
+   - Maximum number of concurrent minions.
+   - Preferred tier ceiling (e.g., `["worker"]` or `["worker", "reasoning"]`).
+   - RAM reservation for host OS and non-Docker processes (default: 4 GB).
+   - Selected model per allowed tier (from qualified candidates only).
+8. Persist the validated ceiling configuration to `virgil.json` under a `localMinions` key.
+9. Validate persisted config against the Zod schema on every load — stale or invalid config is rejected, not silently accepted.
+
+The script MUST NOT pull models, enable DMR, modify Docker settings, or make network requests. It reports available state and recommends; the owner decides.
+
+### Ceiling Calculator Contract
+
+The ceiling has two dimensions that the probe script computes and validates.
+
+**CAN — hardware-determined maximum:**
+
+- Total system RAM minus OS reservation (configurable, default 4 GB).
+- Apply fitness formula per candidate model at Q4 quantization.
+- Account for Docker daemon overhead (~500 MB baseline).
+- Account for concurrent model memory — models on Apple Silicon Metal share unified memory but each instance reserves its allocation.
+- Available disk for model storage.
+- The CAN ceiling is a computed fact, not a preference.
+
+**WANT — owner-declared policy ceiling:**
+
+- Maximum concurrent local minions (persisted in `virgil.json`).
+- Allowed tiers: subset of `["worker", "reasoning"]`. Pro is excluded by default per existing AGENTS.md escalation rules.
+- Selected model per tier from qualified candidates only.
+- Docker resource limits per container: CPU shares, memory limit, PIDs limit.
+- The WANT ceiling MUST NOT exceed the CAN ceiling. The script validates this constraint and surfaces the effective ceiling.
+
+**Effective ceiling** = `min(CAN, WANT)` per dimension. The probe reports both and the resolved effective value.
+
+### Zod Schema Surface
+
+The script defines and exports at minimum:
+
+| Schema | Purpose |
+| --- | --- |
+| `HardwareProfileSchema` | Detected CPU, GPU, RAM, disk, Docker resources |
+| `ModelCatalogEntrySchema` | Model reference, parameter count, quantization, tier, disk/RAM requirements |
+| `FitnessResultSchema` | Per-model fitness score, fits (boolean), resource breakdown |
+| `CeilingCanSchema` | Hardware-derived maximum: concurrent models, total RAM budget, disk budget |
+| `CeilingWantSchema` | Owner-declared: max minions, allowed tiers, selected models, RAM reservation |
+| `EffectiveCeilingSchema` | Resolved ceiling: min(CAN, WANT) with explanations |
+| `VirgilLocalMinionsConfigSchema` | Persisted `virgil.json` shape for the `localMinions` key |
+
+All schemas use Zod. The script validates inputs, intermediate results, and outputs. No `.parse()` call outside the script boundary — this is an app-level tool, not a library with isolated unit tests.
+
+### Docker DMR Validation
+
+Phase 4 validates the Docker DMR implementation against the probe output:
+
+1. The `docker-compose.yml` template MUST consume the probe's effective ceiling — model reference, resource limits, context size, and concurrency are resolved from the probe, not hardcoded.
+2. If no model qualifies for a tier, that tier's service is omitted from the rendered Compose config — no placeholder services.
+3. The probe profile hash is recorded in the rendered Compose config as a label for staleness detection.
+4. Existing Phase 2 security controls (network isolation, no credentials, no socket, least-privilege) remain mandatory and are validated by the probe before declaring a model fit.
+
+[↑ Menú](#menú)
+
+---
+
 ## Deliverables and Acceptance Criteria
 
 | Deliverable | Acceptance evidence |
@@ -319,6 +443,9 @@ It MUST NOT label models as universal tiers, claim offline execution without hos
 | Benchmark report | Fixtures, thresholds, correctness/latency/resources/isolation, safe concurrency. |
 | Decision report | Adopt/narrow/defer/reject; proven facts, limits, risks, Phase-3 eligibility. |
 | Phase-3 local-first amendment | Full local-minion AGENTS.md diff (Blocks A–D) applied only after all Phase-2 pass conditions; otherwise explicit skip with blocker evidence and limitation report. |
+| Multi-OS probe script | `scripts/virgil-model-probe.ts` with Zod schemas, hardware detection, fitness scoring, CAN/WANT ceiling calculator, and `virgil.json` persistence. |
+| Ceiling configuration | Validated `localMinions` key in `virgil.json` with effective ceiling, selected models, and resource limits. |
+| Docker DMR validation | Compose template consuming probe output; no hardcoded models; security controls validated by probe. |
 
 The staged implementation/document diff must stay in spike-owned paths and never contain model data, credentials, local profiles, caches, transcripts, or Docker operational state.
 

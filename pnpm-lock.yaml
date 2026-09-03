@@ -92,6 +92,9 @@ importers:
       husky:
         specifier: 'catalog:'
         version: 9.1.7
+      zod:
+        specifier: 'catalog:'
+        version: 4.5.4
 
   packages/cli:
     dependencies:
