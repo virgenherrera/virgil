@@ -20,11 +20,11 @@
 # Parameterized values (MODEL_NAME, CONTEXT_SIZE, BROKER_MEMORY_LIMIT, etc.)
 # should come from probe output. Run the probe first, then pass values via
 # environment or .env file:
-#   npx tsx scripts/virgil-model-probe.ts ceiling --save
+#   pnpm probe ceiling --save
 #   COMPOSE_PROFILES=worker MODEL_NAME=ai/llama3.1:8b docker compose up
 #
 # Usage:
-#   npx tsx scripts/virgil-model-probe.ts ceiling --save  # select model first
+#   pnpm probe ceiling --save  # select model first
 #   MODEL_NAME=ai/llama3.1:8b docker compose up           # or set explicitly
 #   COMPOSE_PROFILES=worker docker compose up              # activate only worker-tier broker
 #   docker compose config          # validate without running
@@ -37,7 +37,7 @@
 # ---------------------------------------------------------------------------
 models:
   local-llm:
-    model: ${MODEL_NAME:?Run 'npx tsx scripts/virgil-model-probe.ts ceiling --save' to select a model}
+    model: ${MODEL_NAME:?Run 'pnpm probe ceiling --save' to select a model}
     # context_size: set via CONTEXT_SIZE env var; defaults to 2048.
     # Override when probe output recommends a larger context window.
     context_size: ${CONTEXT_SIZE:-2048}
@@ -65,7 +65,7 @@ services:
       - local-llm
     environment:
       - DMR_ENDPOINT=http://host.docker.internal:12434
-      - MODEL_NAME=${MODEL_NAME:?Run 'npx tsx scripts/virgil-model-probe.ts ceiling --save' to select a model}
+      - MODEL_NAME=${MODEL_NAME:?Run 'pnpm probe ceiling --save' to select a model}
     working_dir: /app
     # Placeholder entrypoint — replace with actual broker application
     command: >

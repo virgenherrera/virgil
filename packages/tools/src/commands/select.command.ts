@@ -27,7 +27,7 @@ export class SelectCommand extends CommandRunner {
   async run(passedParams: string[]): Promise<void> {
     const modelName = passedParams[0];
     if (!modelName) {
-      console.error('Usage: virgil-model-probe select <model-name>');
+      console.error('Usage: pnpm probe select <model-name>');
       process.exit(1);
     }
 
@@ -53,9 +53,7 @@ export class SelectCommand extends CommandRunner {
         );
         console.error(`  Disk needed:   ${fitness.diskNeededGb.toFixed(1)} GB`);
         console.error(`  Disk available: ${hw.disk.availableGb.toFixed(1)} GB`);
-        console.error(
-          "\nRun 'virgil-model-probe fitness' to see which models fit.",
-        );
+        console.error("\nRun 'pnpm probe fitness' to see which models fit.");
         process.exit(1);
       }
     }

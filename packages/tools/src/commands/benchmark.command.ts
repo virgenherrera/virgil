@@ -55,7 +55,7 @@ export class BenchmarkCommand extends CommandRunner {
   async run(passedParams: string[]): Promise<void> {
     const modelName = passedParams[0];
     if (!modelName) {
-      console.error('Usage: virgil-model-probe benchmark <model-name>');
+      console.error('Usage: pnpm probe benchmark <model-name>');
       process.exit(1);
     }
 
