@@ -10,6 +10,7 @@
 - [Agent Acceptance Protocol](#agent-acceptance-protocol)
 - [Orchestrator–Minion Model](#orchestratorminion-model)
 - [Model-Tier Routing](#model-tier-routing)
+- [Multi-Tier Orchestration Topology](#multi-tier-orchestration-topology)
 - [Context Budget Governance](#context-budget-governance)
 - [Capability Escalation](#capability-escalation)
 - [Local Minions Probe](#local-minions-probe)
@@ -361,7 +362,7 @@ Examples:
 - document triage
 - mechanical summarization
 
-Concrete implementations may use small, cheap, fast, local, mini, flash, Haiku-class, or equivalent models.
+Concrete implementations may use small, cheap, fast, mini, flash, Haiku-class, or equivalent cloud models. Local models are restricted to pre-tokenization only (see Local Tier Capability Boundary).
 
 ### Reasoning
 
@@ -391,15 +392,18 @@ The orchestrator must justify tier selection above `worker` for any delegated as
 
 Common routing:
 
-| Task | Tier |
-| --- | --- |
-| File reading, grep, search, inventory | worker |
-| Documentation review | worker |
-| Mechanical transformation, extraction | worker |
-| Code implementation, test writing | reasoning |
-| Architecture, synthesis, conflict resolution | reasoning |
-| Adversarial review of implementation | reasoning |
-| Novel design under high ambiguity | pro (requires escalation) |
+| Task | Tier | Harness Mechanism |
+| --- | --- | --- |
+| File reading, grep, search, inventory | worker | Worker-class model |
+| Documentation review | worker | Worker-class cloud model |
+| Mechanical transformation, extraction | worker | Worker-class model |
+| Context compression, pre-tokenization | worker | Local model (pre-tokenization only) or worker-class cloud model |
+| Code implementation, test writing | reasoning | Reasoning-class model |
+| Architecture, synthesis, conflict resolution | reasoning | Main agent |
+| Adversarial review of implementation | reasoning | Reasoning-class model |
+| Novel design under high ambiguity | pro (requires escalation) | Main agent + escalation |
+
+The Harness Mechanism column documents one implementation-specific mapping (the active harness, e.g. Claude Code). It is illustrative, not part of the vendor-neutral tier contract, and other harnesses may satisfy the same tier through different mechanisms.
 
 ### Tier Accountability
 
@@ -408,6 +412,59 @@ The orchestrator must record the tier selected for each delegated assignment and
 Assignments that could run at `worker` but are dispatched at `reasoning` or higher without justification are a policy violation equivalent to the Main Agent executing work directly — both waste budget on the wrong actor.
 
 When a session includes more than one `reasoning`-tier assignment in flight concurrently, the orchestrator must have estimated and reported the aggregate cost per Pre-Flight Cost Estimation before any launched.
+
+[↑ Menú](#menú)
+
+---
+
+## Multi-Tier Orchestration Topology
+
+The orchestrator routes work to the cheapest tier that covers the task's complexity, using concrete model parameters when the active harness supports them. The tier and its responsibilities are the canonical, vendor-neutral contract regardless of what any given harness can express.
+
+### Topology
+
+```text
+pro (orchestrates, synthesizes, decides)
+  ├── reasoning (implements, reviews, complex reasoning)
+  ├── worker cloud (reads, searches, classifies, formats)
+  └── worker local (pre-tokenizes raw context — context reduction only)
+```
+
+The `worker` tier defined in Model-Tier Routing may be satisfied by either a cloud-hosted worker-class model or a local model (see Local Minions Probe). Both are the same tier; the distinction is deployment location, not capability level.
+
+### Tier Responsibility Table
+
+| Tier | Role | Harness Mechanism (when available) | Example Tasks |
+| --- | --- | --- | --- |
+| pro | Orchestrates, synthesizes, decides | Main agent thread | Planning, conflict resolution, final acceptance |
+| reasoning | Implements, reviews, complex reasoning | Reasoning-class model | Code implementation, test writing, adversarial review |
+| worker cloud | Reads, searches, classifies, formats | Worker-class model | File reading, grep, inventory, mechanical transformation |
+| worker local | Pre-tokenizes raw context | Local model via container-based model runner | Context compression: file structural extraction, JSON shape inference, directory manifest generation |
+
+The Harness Mechanism column is an implementation-specific mapping (the active harness, e.g. Claude Code). It documents how a tier is currently realized and must not be read as a domain contract.
+
+### Routing Heuristic
+
+The orchestrator applies these rules in order when selecting a tier:
+
+1. **Local for pre-tokenization only.** If the task is context compression (reading raw files, extracting JSON shape, building directory manifests) AND a local model endpoint is configured and reachable, route to `worker local`. The local tier reads and reduces; it never classifies, triages, reviews, or opines.
+2. **Worker first.** If the task is mechanical, route to `worker` (cloud worker-class model).
+3. **Reasoning for code.** If the task requires code changes, complex reasoning, or review, route to `reasoning`.
+4. **Pro stays orchestrator.** The main thread handles planning, synthesis, and decisions at `pro`; it does not execute delegated work.
+
+### Local Tier Capability Boundary
+
+The local tier reads and reduces. It does not classify, triage, review, or opine. Any task requiring judgment — including classification, triage, and format validation beyond structural extraction — escalates to a cloud tier regardless of how mechanical it appears.
+
+This boundary is a hard design constraint derived from session evidence (2026-09-03): a 3B local model asked to review a policy diff hallucinated three findings that did not exist; the same model asked to read and compress file content produced correct structural summaries. The local model can read; it cannot think.
+
+### Relationship to Delegation Budget Declaration
+
+The `tier` field required by the Delegation Budget Declaration (see Orchestrator–Minion Model) maps directly to these routing rules. Declaring a tier without applying this heuristic is an incomplete declaration.
+
+### Lazy-Loading Consideration
+
+As `AGENTS.md` grows, reference-only sections — such as detailed tier routing tables — could become candidates for on-demand loading via a skill or include mechanism, similar to how the SDD workflow instructions are lazy-loaded from a separate file. This is a consideration for future maintenance, not a prescription. No lazy-loading mechanism is required by this section today.
 
 [↑ Menú](#menú)
 

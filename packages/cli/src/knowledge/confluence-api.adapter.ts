@@ -9,10 +9,7 @@ import type { KnowledgeDocument } from '../contracts/knowledge-provider.types.js
 import type { KnowledgeProvider } from '../contracts/knowledge-provider.types.js';
 import type { ContentIdentity } from '../contracts/common.types.js';
 import type { SemVer } from '../shared/primitives.js';
-import {
-  createContentHash,
-  createTimestamp,
-} from '../shared/primitives.js';
+import { createContentHash, createTimestamp } from '../shared/primitives.js';
 import type { ProviderMetadata } from '../shared/provider.types.js';
 import {
   ProviderCapability,
@@ -31,7 +28,12 @@ export function stripConfluenceStorageToMarkdown(html: string): string {
   let text = html;
   // Replace headings
   text = text.replace(/<h([1-6])[^>]*>(.*?)<\/h\1>/gi, (_m, level, content) => {
-    return '#'.repeat(Number(level)) + ' ' + content.replace(/<[^>]+>/g, '').trim() + '\n\n';
+    return (
+      '#'.repeat(Number(level)) +
+      ' ' +
+      content.replace(/<[^>]+>/g, '').trim() +
+      '\n\n'
+    );
   });
   // Replace paragraphs
   text = text.replace(/<p[^>]*>(.*?)<\/p>/gi, (_m, content) => {
@@ -166,10 +168,7 @@ export class ConfluenceApiAdapter implements KnowledgeProvider {
 
     if (scope.include?.length) {
       // Use first include pattern as title filter
-      params.set(
-        'cql',
-        `${cql} AND title~"${scope.include[0]}"`,
-      );
+      params.set('cql', `${cql} AND title~"${scope.include[0]}"`);
     }
 
     const response = await this.requestWithRetry(
@@ -324,7 +323,9 @@ export class ConfluenceApiAdapter implements KnowledgeProvider {
     );
   }
 
-  private normalisePageToDocument(page: ConfluencePageResponse): KnowledgeDocument {
+  private normalisePageToDocument(
+    page: ConfluencePageResponse,
+  ): KnowledgeDocument {
     const content = page.body?.storage?.value ?? '';
     const markdownContent = stripConfluenceStorageToMarkdown(content);
     const hash = createContentHash(markdownContent);
@@ -348,7 +349,9 @@ export class ConfluenceApiAdapter implements KnowledgeProvider {
     };
   }
 
-  private normaliseV2PageToDocument(page: ConfluenceV2PageResponse): KnowledgeDocument {
+  private normaliseV2PageToDocument(
+    page: ConfluenceV2PageResponse,
+  ): KnowledgeDocument {
     const content = page.body?.storage?.value ?? '';
     const markdownContent = stripConfluenceStorageToMarkdown(content);
     const hash = createContentHash(markdownContent);

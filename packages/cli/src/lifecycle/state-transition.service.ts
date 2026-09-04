@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { DatabaseConnection } from '../persistence/database.provider.js';
 import { DATABASE_CONNECTION } from '../persistence/persistence.constants.js';
-import type { Artifact, LifecycleState } from '../persistence/persistence.types.js';
+import type {
+  Artifact,
+  LifecycleState,
+} from '../persistence/persistence.types.js';
 import { ArtifactRepository } from '../persistence/repositories/artifact.repository.js';
 import { lifecycleTransitions } from '../persistence/schema/lifecycle.schema.js';
 import { createUlid } from '../shared/primitives.js';

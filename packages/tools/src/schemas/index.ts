@@ -25,6 +25,18 @@ export {
 export {
   ModelsResponseSchema,
   ChatResponseSchema,
+  DelegateOptionsSchema,
+  DelegateResultSchema,
   type ModelsResponse,
   type ChatResponse,
+  type DelegateOptions,
+  type DelegateResult,
 } from './dmr.schema.js';
+export {
+  LetheTaskTypeSchema,
+  LetheConfigSchema,
+  LetheResultSchema,
+  type LetheTaskType,
+  type LetheConfig,
+  type LetheResult,
+} from './lethe.schema.js';

@@ -42,11 +42,9 @@ describe('PromptService (e2e)', () => {
 
     const mockClose = vi.fn();
     mockCreateInterface.mockReturnValue({
-      question: vi.fn(
-        (_q: string, cb: (answer: string) => void) => {
-          cb('  test answer  ');
-        },
-      ),
+      question: vi.fn((_q: string, cb: (answer: string) => void) => {
+        cb('  test answer  ');
+      }),
       close: mockClose,
     } as any);
 

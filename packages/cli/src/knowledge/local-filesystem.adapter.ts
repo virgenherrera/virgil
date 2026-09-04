@@ -1,6 +1,5 @@
 import { readFile, readdir, readlink, realpath, stat } from 'node:fs/promises';
-import { join, resolve, extname, relative } from 'node:path';
-import { createHash } from 'node:crypto';
+import { join, resolve, extname } from 'node:path';
 import type {
   DiscoveryScope,
   PaginatedResult,
@@ -10,11 +9,8 @@ import { ProviderHealthStatus } from '../contracts/common.types.js';
 import type { KnowledgeDocument } from '../contracts/knowledge-provider.types.js';
 import type { KnowledgeProvider } from '../contracts/knowledge-provider.types.js';
 import type { ContentIdentity } from '../contracts/common.types.js';
-import type { ContentHash, SemVer, Timestamp } from '../shared/primitives.js';
-import {
-  createContentHash,
-  createTimestamp,
-} from '../shared/primitives.js';
+import type { ContentHash, SemVer } from '../shared/primitives.js';
+import { createContentHash, createTimestamp } from '../shared/primitives.js';
 import type { ProviderMetadata } from '../shared/provider.types.js';
 import {
   ProviderCapability,
@@ -127,9 +123,9 @@ export class LocalFilesystemAdapter implements KnowledgeProvider {
     const maxItems = scope.maxItems ?? 100;
 
     // Use recursive readdir and filter by patterns
-    const entries: string[] = (
-      await readdir(this._resolvedRoot, { recursive: true })
-    ) as string[];
+    const entries: string[] = (await readdir(this._resolvedRoot, {
+      recursive: true,
+    })) as string[];
     const allFiles = entries
       .filter((f) => this.matchesAnyPattern(f, includePatterns as string[]))
       .filter((f) => !this.matchesAnyPattern(f, excludePatterns as string[]));
@@ -218,7 +214,6 @@ export class LocalFilesystemAdapter implements KnowledgeProvider {
     this.ensureInitialised();
 
     if (cursor) {
-      const offset = parseInt(cursor, 10);
       // Re-discover from offset (simplified pagination)
       return this.discover({ maxItems: 100 });
     }

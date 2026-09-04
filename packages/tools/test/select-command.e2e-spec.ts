@@ -4,7 +4,6 @@ import { SelectCommand } from '../src/commands/index.js';
 import {
   DmrClientService,
   ConfigService,
-  HardwareDetectionService,
   FitnessScoringService,
 } from '../src/services/index.js';
 
@@ -105,9 +104,7 @@ describe('SelectCommand (e2e)', () => {
 
     await expect(command.run([])).rejects.toThrow('process.exit');
 
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Usage:'),
-    );
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
     expect(exitSpy).toHaveBeenCalledWith(1);
 
     errorSpy.mockRestore();
@@ -152,9 +149,7 @@ describe('SelectCommand (e2e)', () => {
     })
       .overrideProvider(DmrClientService)
       .useValue({
-        fetchModels: vi
-          .fn()
-          .mockRejectedValue(new Error('unexpected error')),
+        fetchModels: vi.fn().mockRejectedValue(new Error('unexpected error')),
       })
       .overrideProvider(ConfigService)
       .useValue(mockConfigService)
@@ -162,9 +157,7 @@ describe('SelectCommand (e2e)', () => {
 
     const command = mod.get(SelectCommand);
 
-    await expect(command.run([testModel])).rejects.toThrow(
-      'unexpected error',
-    );
+    await expect(command.run([testModel])).rejects.toThrow('unexpected error');
 
     await mod.close();
   });
@@ -202,9 +195,7 @@ describe('SelectCommand (e2e)', () => {
     }) as () => never);
 
     // Use a name that exists in MODEL_CATALOG so catalogEntry is found
-    await expect(command.run(['llama3.1:8b'])).rejects.toThrow(
-      'process.exit',
-    );
+    await expect(command.run(['llama3.1:8b'])).rejects.toThrow('process.exit');
 
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining('does not fit on this hardware'),

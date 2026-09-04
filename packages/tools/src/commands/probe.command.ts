@@ -10,7 +10,7 @@ export class ProbeCommand extends CommandRunner {
     super();
   }
 
-  async run(): Promise<void> {
+  async run(_passedParams: string[]): Promise<void> {
     console.log('Probing DMR at http://localhost:12434/v1/models ...\n');
 
     let models;

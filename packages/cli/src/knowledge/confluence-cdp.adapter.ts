@@ -9,10 +9,7 @@ import type { KnowledgeDocument } from '../contracts/knowledge-provider.types.js
 import type { KnowledgeProvider } from '../contracts/knowledge-provider.types.js';
 import type { ContentIdentity } from '../contracts/common.types.js';
 import type { SemVer } from '../shared/primitives.js';
-import {
-  createContentHash,
-  createTimestamp,
-} from '../shared/primitives.js';
+import { createContentHash, createTimestamp } from '../shared/primitives.js';
 import type { ProviderMetadata } from '../shared/provider.types.js';
 import {
   ProviderCapability,
@@ -145,7 +142,10 @@ export class ConfluenceCdpAdapter implements KnowledgeProvider {
       const linksToFollow = childLinks.slice(0, maxItems - 1);
       for (const link of linksToFollow) {
         try {
-          const childResult = await this.cdp!.executePom(confluencePagePom, link);
+          const childResult = await this.cdp!.executePom(
+            confluencePagePom,
+            link,
+          );
           const childContent = childResult.content;
           const childTitle = (childContent['title'] as string) ?? 'Untitled';
           const childHtml = (childContent['content'] as string) ?? '';

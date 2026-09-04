@@ -46,10 +46,7 @@ export class LifecycleMetricsService implements LifecycleMetricsPort {
     const chunkCount = this.connection.db.select().from(chunks).all().length;
 
     // Approximate embedding footprint: count * dimensions * 4 bytes (float32)
-    const embeddingRows = this.connection.db
-      .select()
-      .from(embeddingMeta)
-      .all();
+    const embeddingRows = this.connection.db.select().from(embeddingMeta).all();
     const embeddingFootprintBytes = embeddingRows.reduce(
       (sum, row) => sum + row.dimensions * 4,
       0,
@@ -104,7 +101,8 @@ export class LifecycleMetricsService implements LifecycleMetricsPort {
 
       return {
         artifactId: artifact.id,
-        lifecycleState: artifact.lifecycleState as ArtifactMetricsSnapshot['lifecycleState'],
+        lifecycleState:
+          artifact.lifecycleState as ArtifactMetricsSnapshot['lifecycleState'],
         accessCount: access?.count ?? 0,
         lastAccessTs: access?.lastTs ?? null,
         hasProvenance,
@@ -119,16 +117,13 @@ export class LifecycleMetricsService implements LifecycleMetricsPort {
 
     const countByState: Record<string, number> = {};
     const storageByState: Record<string, number> = {};
-    const latencySumByState: Record<
-      string,
-      { total: number; count: number }
-    > = {};
+    const latencySumByState: Record<string, { total: number; count: number }> =
+      {};
 
     for (const metric of perArtifact) {
       const state = metric.lifecycleState;
       countByState[state] = (countByState[state] ?? 0) + 1;
-      storageByState[state] =
-        (storageByState[state] ?? 0) + metric.chunkCount;
+      storageByState[state] = (storageByState[state] ?? 0) + metric.chunkCount;
 
       const access = this.accessMap.get(metric.artifactId);
       if (access && access.latencies.length > 0) {
@@ -136,17 +131,14 @@ export class LifecycleMetricsService implements LifecycleMetricsPort {
           latencySumByState[state] = { total: 0, count: 0 };
         }
         const avg =
-          access.latencies.reduce((s, l) => s + l, 0) /
-          access.latencies.length;
+          access.latencies.reduce((s, l) => s + l, 0) / access.latencies.length;
         latencySumByState[state]!.total += avg;
         latencySumByState[state]!.count += 1;
       }
     }
 
     const avgLatencyByState: Record<string, number> = {};
-    for (const [state, { total, count }] of Object.entries(
-      latencySumByState,
-    )) {
+    for (const [state, { total, count }] of Object.entries(latencySumByState)) {
       avgLatencyByState[state] = count > 0 ? total / count : 0;
     }
 

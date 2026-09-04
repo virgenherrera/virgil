@@ -6,7 +6,11 @@ import type {
   GapAnalysisResult,
   KnowledgeCoverageResult,
 } from './discovery.schemas.js';
-import { CoverageLevel, GapCategory, GapPriority } from './discovery.schemas.js';
+import {
+  CoverageLevel,
+  GapCategory,
+  GapPriority,
+} from './discovery.schemas.js';
 
 /**
  * Compares discovery intent against known-knowledge results to identify
@@ -28,9 +32,7 @@ export class GapAnalysisService {
     const coverageByKey = new Map(
       coverage.coverages.map((c) => [c.elementKey, c]),
     );
-    const elementsByKey = new Map(
-      intent.elements.map((e) => [e.key, e]),
-    );
+    const elementsByKey = new Map(intent.elements.map((e) => [e.key, e]));
 
     // Group insufficient elements by category for deduplication
     const gapBuckets = new Map<string, string[]>();
@@ -105,10 +107,7 @@ export class GapAnalysisService {
       case GapCategory.CONVERSATION:
         return [ProviderCapability.CHAT];
       case GapCategory.ARCHITECTURAL_CONTEXT:
-        return [
-          ProviderCapability.REPOSITORY,
-          ProviderCapability.KNOWLEDGE,
-        ];
+        return [ProviderCapability.REPOSITORY, ProviderCapability.KNOWLEDGE];
     }
   }
 

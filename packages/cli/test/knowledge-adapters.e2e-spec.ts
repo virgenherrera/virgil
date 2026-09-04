@@ -9,8 +9,11 @@ import {
   ProviderCapability,
   ProviderStatus,
 } from '../src/shared/provider.types.js';
-import { createContentHash, createTimestamp } from '../src/shared/primitives.js';
-import type { ContentHash, Timestamp } from '../src/shared/primitives.js';
+import {
+  createContentHash,
+  createTimestamp,
+} from '../src/shared/primitives.js';
+import type { Timestamp } from '../src/shared/primitives.js';
 import {
   ConfluenceApiAdapter,
   ConfluenceCdpAdapter,
@@ -160,8 +163,7 @@ function createDefaultConfluenceHttpClient(): IHttpClient {
               title: 'Getting Started',
               body: {
                 storage: {
-                  value:
-                    '<h1>Getting Started</h1><p>Welcome to the wiki.</p>',
+                  value: '<h1>Getting Started</h1><p>Welcome to the wiki.</p>',
                 },
               },
               version: { number: 3 },
@@ -628,10 +630,7 @@ describe('Knowledge adapters (e2e)', () => {
     it('reports UNAVAILABLE health when API returns error', async () => {
       const http = createMockHttpClient(
         new Map([
-          [
-            '/wiki/api/v2/spaces',
-            { status: 500, body: { message: 'error' } },
-          ],
+          ['/wiki/api/v2/spaces', { status: 500, body: { message: 'error' } }],
         ]),
       );
       const config = createConfluenceApiConfig();
@@ -783,9 +782,9 @@ describe('Knowledge adapters (e2e)', () => {
       const cdp = createMockCdpBrowser();
       const uninitAdapter = new ConfluenceCdpAdapter(config, cdp);
 
-      await expect(
-        uninitAdapter.discover({ maxItems: 10 }),
-      ).rejects.toThrow(KnowledgeError);
+      await expect(uninitAdapter.discover({ maxItems: 10 })).rejects.toThrow(
+        KnowledgeError,
+      );
     });
 
     it('returns DISCONNECTED healthCheck when CDP is null', async () => {
@@ -806,7 +805,10 @@ describe('Knowledge adapters (e2e)', () => {
     let adapter: LocalFilesystemAdapter;
 
     beforeEach(async () => {
-      testDir = join(tmpdir(), `virgil-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      testDir = join(
+        tmpdir(),
+        `virgil-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      );
       await mkdir(testDir, { recursive: true });
 
       // Create fixture files
@@ -852,9 +854,7 @@ describe('Knowledge adapters (e2e)', () => {
     it('discovers files in subdirectories', async () => {
       const result = await adapter.discover({ maxItems: 100 });
 
-      const deepFile = result.items.find((d) =>
-        d.title.includes('deep.md'),
-      );
+      const deepFile = result.items.find((d) => d.title.includes('deep.md'));
       expect(deepFile).toBeDefined();
     });
 
@@ -901,9 +901,7 @@ describe('Knowledge adapters (e2e)', () => {
       );
 
       const result = await adapter.discover({ maxItems: 100 });
-      const nmFile = result.items.find((d) =>
-        d.title.includes('node_modules'),
-      );
+      const nmFile = result.items.find((d) => d.title.includes('node_modules'));
       expect(nmFile).toBeUndefined();
     });
 

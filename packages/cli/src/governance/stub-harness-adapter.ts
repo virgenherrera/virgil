@@ -15,10 +15,17 @@ export class StubHarnessAdapter implements HarnessAdapter {
     [];
 
   supportedTiers(): readonly CapabilityTier[] {
-    return [CapabilityTier.Worker, CapabilityTier.Reasoning, CapabilityTier.Pro];
+    return [
+      CapabilityTier.Worker,
+      CapabilityTier.Reasoning,
+      CapabilityTier.Pro,
+    ];
   }
 
-  async execute(task: HarnessTask, tier: CapabilityTier): Promise<HarnessResult> {
+  async execute(
+    task: HarnessTask,
+    tier: CapabilityTier,
+  ): Promise<HarnessResult> {
     this._calls.push({ task, tier });
     return {
       taskId: task.taskId,

@@ -75,7 +75,10 @@ describe('DmrClientService (e2e)', () => {
 
     it('throws on HTTP error response', async () => {
       fetchSpy.mockResolvedValueOnce(
-        mockResponse({}, { ok: false, status: 500, statusText: 'Internal Server Error' }),
+        mockResponse(
+          {},
+          { ok: false, status: 500, statusText: 'Internal Server Error' },
+        ),
       );
 
       await expect(service.fetchModels()).rejects.toThrow(
@@ -84,9 +87,7 @@ describe('DmrClientService (e2e)', () => {
     });
 
     it('throws when Zod validation fails', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockResponse({ wrong: 'shape' }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockResponse({ wrong: 'shape' }));
 
       await expect(service.fetchModels()).rejects.toThrow();
     });
@@ -127,9 +128,7 @@ describe('DmrClientService (e2e)', () => {
     });
 
     it('uses custom maxTokens and temperature', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockResponse(chatResponse('custom')),
-      );
+      fetchSpy.mockResolvedValueOnce(mockResponse(chatResponse('custom')));
 
       await service.chatCompletion('model', 'sys', 'usr', {
         maxTokens: 512,
@@ -145,7 +144,10 @@ describe('DmrClientService (e2e)', () => {
 
     it('throws on HTTP error response', async () => {
       fetchSpy.mockResolvedValueOnce(
-        mockResponse({}, { ok: false, status: 503, statusText: 'Service Unavailable' }),
+        mockResponse(
+          {},
+          { ok: false, status: 503, statusText: 'Service Unavailable' },
+        ),
       );
 
       await expect(
@@ -178,9 +180,7 @@ describe('DmrClientService (e2e)', () => {
     });
 
     it('marks json_valid=false for non-JSON responses', async () => {
-      fetchSpy.mockResolvedValue(
-        mockResponse(chatResponse('not json at all')),
-      );
+      fetchSpy.mockResolvedValue(mockResponse(chatResponse('not json at all')));
 
       const attempts = await service.fixtureStructuredJson('ai/test-model');
 
@@ -229,7 +229,10 @@ describe('DmrClientService (e2e)', () => {
     it('returns 3 attempts with correct module grouping', async () => {
       const correctJson = JSON.stringify({
         modules: [
-          { name: 'auth', files: ['src/auth/login.ts', 'src/auth/register.ts'] },
+          {
+            name: 'auth',
+            files: ['src/auth/login.ts', 'src/auth/register.ts'],
+          },
           { name: 'api', files: ['src/api/users.ts', 'src/api/posts.ts'] },
           { name: 'ui', files: ['src/ui/Button.tsx'] },
         ],
@@ -358,9 +361,7 @@ describe('DmrClientService (e2e)', () => {
 
   describe('fixtureLatency()', () => {
     it('collects the specified number of latency samples', async () => {
-      fetchSpy.mockResolvedValue(
-        mockResponse(chatResponse('hello')),
-      );
+      fetchSpy.mockResolvedValue(mockResponse(chatResponse('hello')));
 
       const latencies = await service.fixtureLatency('ai/test-model', 3);
 
@@ -373,9 +374,7 @@ describe('DmrClientService (e2e)', () => {
     });
 
     it('defaults to 5 samples', async () => {
-      fetchSpy.mockResolvedValue(
-        mockResponse(chatResponse('hello')),
-      );
+      fetchSpy.mockResolvedValue(mockResponse(chatResponse('hello')));
 
       const latencies = await service.fixtureLatency('ai/test-model');
 
@@ -384,9 +383,7 @@ describe('DmrClientService (e2e)', () => {
     });
 
     it('passes maxTokens: 16 for latency measurements', async () => {
-      fetchSpy.mockResolvedValue(
-        mockResponse(chatResponse('hi')),
-      );
+      fetchSpy.mockResolvedValue(mockResponse(chatResponse('hi')));
 
       await service.fixtureLatency('ai/test-model', 1);
 

@@ -40,10 +40,7 @@ export type {
 } from './escalation.types.js';
 
 // D6 — Audit Trail
-export type {
-  AuditTrailStore,
-  EscalationRecord,
-} from './audit-trail.port.js';
+export type { AuditTrailStore, EscalationRecord } from './audit-trail.port.js';
 export { InMemoryAuditTrail } from './in-memory-audit-trail.js';
 
 // D7 — Module & Constants

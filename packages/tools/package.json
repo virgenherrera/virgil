@@ -25,8 +25,12 @@
     "@nestjs/common": "catalog:",
     "@nestjs/core": "catalog:",
     "nest-commander": "catalog:",
+    "quicktype-core": "26.0.0",
     "reflect-metadata": "catalog:",
     "rxjs": "catalog:",
+    "tree-sitter": "0.25.1",
+    "tree-sitter-javascript": "0.25.0",
+    "tree-sitter-typescript": "0.23.2",
     "zod": "catalog:"
   },
   "devDependencies": {

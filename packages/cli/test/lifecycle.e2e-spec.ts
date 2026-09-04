@@ -204,9 +204,9 @@ describe('H15 Knowledge Lifecycle (e2e)', () => {
       const source = createSource();
       const artifact = createArtifact(source.id, 'hot-to-cold');
 
-      expect(() =>
-        transitionService.transition(artifact.id, 'cold'),
-      ).toThrow(/invalid lifecycle transition.*hot.*cold/i);
+      expect(() => transitionService.transition(artifact.id, 'cold')).toThrow(
+        /invalid lifecycle transition.*hot.*cold/i,
+      );
     });
 
     it('throws on direct Cold -> Hot transition', () => {
@@ -219,9 +219,9 @@ describe('H15 Knowledge Lifecycle (e2e)', () => {
       transitionService.transition(artifact.id, 'warm');
       transitionService.transition(artifact.id, 'cold');
 
-      expect(() =>
-        transitionService.transition(artifact.id, 'hot'),
-      ).toThrow(/invalid lifecycle transition.*cold.*hot/i);
+      expect(() => transitionService.transition(artifact.id, 'hot')).toThrow(
+        /invalid lifecycle transition.*cold.*hot/i,
+      );
     });
   });
 
@@ -386,13 +386,11 @@ describe('H15 Knowledge Lifecycle (e2e)', () => {
       transitionService.transition(artifact.id, 'warm');
       transitionService.transition(artifact.id, 'cold');
 
-      mockRehydrate.mockRejectedValueOnce(
-        new Error('Provider unavailable'),
-      );
+      mockRehydrate.mockRejectedValueOnce(new Error('Provider unavailable'));
 
-      await expect(
-        transitionService.rehydrate(artifact.id),
-      ).rejects.toThrow(/provider unavailable/i);
+      await expect(transitionService.rehydrate(artifact.id)).rejects.toThrow(
+        /provider unavailable/i,
+      );
 
       const current = artifactRepo.findById(artifact.id);
       expect(current!.lifecycleState).toBe('cold');
@@ -428,9 +426,7 @@ describe('H15 Knowledge Lifecycle (e2e)', () => {
       transitionService.transition(artifact.id, 'warm');
 
       const transitions = connection.sqlite
-        .prepare(
-          'SELECT * FROM lifecycle_transitions WHERE artifact_id = ?',
-        )
+        .prepare('SELECT * FROM lifecycle_transitions WHERE artifact_id = ?')
         .all(artifact.id) as Array<{
         id: string;
         artifact_id: string;

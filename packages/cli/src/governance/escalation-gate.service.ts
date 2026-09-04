@@ -32,9 +32,7 @@ export class EscalationGate {
     string,
     { resolve: (decision: EscalationDecision) => void }
   >();
-  private requestHandler:
-    | ((req: EscalationRequest) => void)
-    | null = null;
+  private requestHandler: ((req: EscalationRequest) => void) | null = null;
 
   constructor(private readonly budgetGovernor: BudgetGovernor) {}
 

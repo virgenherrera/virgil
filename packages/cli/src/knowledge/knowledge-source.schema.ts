@@ -18,9 +18,7 @@ export type ConfluenceApiSourceConfig = z.infer<
 export const ConfluenceCdpSourceSchema = z.object({
   type: z.literal('confluence-cdp'),
   baseUrl: z.string().url(),
-  browser: z
-    .enum(['chrome', 'firefox', 'edge', 'safari'])
-    .default('chrome'),
+  browser: z.enum(['chrome', 'firefox', 'edge', 'safari']).default('chrome'),
   headless: z.boolean().default(true),
   profilePath: z.string().optional(),
 });
@@ -36,7 +34,9 @@ export const LocalFilesystemSourceSchema = z.object({
   include: z
     .array(z.string().min(1))
     .default(['**/*.md', '**/*.txt', '**/*.html', '**/*.pdf']),
-  exclude: z.array(z.string().min(1)).default(['**/node_modules/**', '**/.git/**']),
+  exclude: z
+    .array(z.string().min(1))
+    .default(['**/node_modules/**', '**/.git/**']),
 });
 
 export type LocalFilesystemSourceConfig = z.infer<

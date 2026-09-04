@@ -131,9 +131,7 @@ describe('CeilingCommand (e2e)', () => {
   describe('interactive mode', () => {
     it('prompts for maxMinions and tiers when not provided', async () => {
       const mockPrompt = {
-        ask: vi.fn()
-          .mockResolvedValueOnce('2')
-          .mockResolvedValueOnce('worker'),
+        ask: vi.fn().mockResolvedValueOnce('2').mockResolvedValueOnce('worker'),
       };
       const mod = await Test.createTestingModule({
         imports: [ProbeModule],
@@ -163,7 +161,8 @@ describe('CeilingCommand (e2e)', () => {
 
     it('falls back to maxMinions=1 on invalid interactive input', async () => {
       const mockPrompt = {
-        ask: vi.fn()
+        ask: vi
+          .fn()
           .mockResolvedValueOnce('abc')
           .mockResolvedValueOnce('worker'),
       };
@@ -196,9 +195,7 @@ describe('CeilingCommand (e2e)', () => {
 
     it('uses first available tier when user enters empty tiers', async () => {
       const mockPrompt = {
-        ask: vi.fn()
-          .mockResolvedValueOnce('1')
-          .mockResolvedValueOnce(''),
+        ask: vi.fn().mockResolvedValueOnce('1').mockResolvedValueOnce(''),
       };
       const mod = await Test.createTestingModule({
         imports: [ProbeModule],
@@ -304,7 +301,12 @@ describe('CeilingCommand (e2e)', () => {
       }) as () => never);
 
       await expect(
-        command.run([], { maxMinions: 1, tiers: 'pro', ramReservation: 0, save: true }),
+        command.run([], {
+          maxMinions: 1,
+          tiers: 'pro',
+          ramReservation: 0,
+          save: true,
+        }),
       ).rejects.toThrow('process.exit');
 
       expect(errorSpy).toHaveBeenCalledWith(

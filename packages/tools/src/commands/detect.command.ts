@@ -7,7 +7,7 @@ export class DetectCommand extends CommandRunner {
     super();
   }
 
-  async run(): Promise<void> {
+  async run(_passedParams: string[]): Promise<void> {
     const profile = this.hardware.detect();
     console.log(JSON.stringify(profile, null, 2));
   }

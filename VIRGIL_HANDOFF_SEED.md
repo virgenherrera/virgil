@@ -1268,7 +1268,7 @@ Each child handoff must comply with `AGENTS.md`, including menu/backlink rules a
 
 ## Implementation Plan
 
-This section defines the dependency graph, parallelization strategy, and execution constraints for implementing H00–H18. It exists to prevent sub-agents from drifting on sequencing or violating cross-handoff dependencies.
+This section defines the dependency graph, parallelization strategy, and execution constraints for implementing H00–H19. It exists to prevent sub-agents from drifting on sequencing or violating cross-handoff dependencies.
 
 ### Dependency Graph
 
@@ -1294,6 +1294,8 @@ graph TD
     H09 --> H10
 
     H10 --> H11[H11 Agent Governance]
+
+    H11 --> H19[H19 Multi-Tier Orchestration]
 
     H04 --> H08[H08 Progressive Discovery]
     H06 --> H08
@@ -1338,7 +1340,7 @@ graph TD
     class H05,H07,H10,H17 wave3a
     class H12,H14 wave3b
     class H08,H11,H13,H15 wave4
-    class H18 wave5
+    class H18,H19 wave5
 ```
 
 ### Critical Paths
@@ -1391,6 +1393,7 @@ graph LR
 
     subgraph W5[Wave 5 — Delivery]
         H18_W[H18 CI/CD Delivery]
+        H19_W[H19 Multi-Tier Orchestration]
     end
 
     W0 --> W1
@@ -1409,7 +1412,8 @@ graph LR
 - [x] Wave 3a complete (H05, H07, H10, H17 — core product)
 - [x] Wave 3b complete (H12, H14 — remote providers)
 - [x] Wave 4 complete (H08, H11, H13, H15)
-- [ ] Wave 5 complete (H18 — CI/CD delivery)
+- [ ] Wave 5 complete (H18 — CI/CD delivery, H19 — Multi-Tier Orchestration)
+- [ ] H19 — Multi-Tier Orchestration
 - [ ] All handoffs delivered
 
 ### Execution Constraints

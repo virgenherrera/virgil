@@ -129,9 +129,7 @@ describe('ProbeCommand (e2e)', () => {
     })
       .overrideProvider(DmrClientService)
       .useValue({
-        fetchModels: vi
-          .fn()
-          .mockRejectedValue(new Error('unexpected error')),
+        fetchModels: vi.fn().mockRejectedValue(new Error('unexpected error')),
       })
       .compile();
 
@@ -150,9 +148,7 @@ describe('ProbeCommand (e2e)', () => {
     })
       .overrideProvider(DmrClientService)
       .useValue({
-        fetchModels: vi
-          .fn()
-          .mockResolvedValue({ object: 'list', data: [] }),
+        fetchModels: vi.fn().mockResolvedValue({ object: 'list', data: [] }),
       })
       .compile();
 

@@ -16,7 +16,7 @@ A local-first, provider-agnostic AI development companion.
 
 ## Development Workflow: Local Minions (Optional)
 
-This section describes optional tooling for the AI-assisted development workflow. It lets the AI orchestrator delegate cheap mechanical tasks (reads, grep, formatting, validation) to local LLM models via Docker Model Runner, saving cloud tokens for reasoning work. This is development infrastructure, not a Virgil product feature.
+This section describes optional tooling for the AI-assisted development workflow. It lets the AI orchestrator probe local hardware capabilities and determine which local LLM models could serve as pre-tokenization filters -- compressing raw context before cloud-tier calls. This is development infrastructure, not a Virgil product feature.
 
 ### Additional Prerequisite
 

@@ -18,7 +18,7 @@ export class FitnessCommand extends CommandRunner {
     super();
   }
 
-  async run(): Promise<void> {
+  async run(_passedParams: string[]): Promise<void> {
     const hw = this.hardware.detect();
     const results = this.fitnessScoring.scoreAll(
       hw,

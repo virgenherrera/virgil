@@ -9,7 +9,11 @@ const FIVE_HUNDRED_MB = 500 * 1024 * 1024;
  */
 export const LifecycleConfigSchema = z.object({
   /** Observation window for access-count evaluation (ms). Default: 7 days. */
-  observation_window: z.number().int().positive().default(7 * ONE_DAY_MS),
+  observation_window: z
+    .number()
+    .int()
+    .positive()
+    .default(7 * ONE_DAY_MS),
   /** Minimum access count to remain in Hot state. Default: 5. */
   hot_access_threshold: z.number().int().nonnegative().default(5),
   /** Minimum access count to remain in Warm state. Default: 1. */

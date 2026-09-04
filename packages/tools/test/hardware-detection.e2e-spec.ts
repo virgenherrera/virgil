@@ -266,8 +266,7 @@ describe('HardwareDetectionService (e2e)', () => {
       stubCommands({
         lscpu: 'CPU(s): 16\nModel name: AMD Ryzen 9 5950X',
         'nvidia-smi': 'NVIDIA RTX 4090, 24576',
-        '/proc/meminfo':
-          'MemTotal: 33554432 kB\nMemAvailable: 16777216 kB',
+        '/proc/meminfo': 'MemTotal: 33554432 kB\nMemAvailable: 16777216 kB',
         ...DISK_UNIX,
         ...DOCKER_AVAILABLE,
       });
@@ -297,8 +296,7 @@ describe('HardwareDetectionService (e2e)', () => {
       stubCommands({
         lscpu: null,
         'nvidia-smi': null,
-        '/proc/meminfo':
-          'MemTotal: 16777216 kB\nMemAvailable: 8388608 kB',
+        '/proc/meminfo': 'MemTotal: 16777216 kB\nMemAvailable: 8388608 kB',
         ...DISK_UNIX,
         ...DOCKER_AVAILABLE,
       });
@@ -371,8 +369,7 @@ describe('HardwareDetectionService (e2e)', () => {
         'wmic cpu': '\nNode,Name,NumberOfCores\nMYPC,Intel Core i9-13900K,24',
         'nvidia-smi': 'NVIDIA RTX 4090, 24576',
         'wmic OS': 'TotalVisibleMemorySize=33554432',
-        'wmic logicaldisk':
-          'FreeSpace=214748364800',
+        'wmic logicaldisk': 'FreeSpace=214748364800',
         'docker version --format': '27.0.0',
         'docker compose version': '2.30.0',
         'docker model ls': 'NAME\nai/test-model',
@@ -469,9 +466,7 @@ describe('HardwareDetectionService (e2e)', () => {
       stubCommands({});
 
       expect(() => service.detect()).toThrow(UnsupportedPlatformError);
-      expect(() => service.detect()).toThrow(
-        'Unsupported platform: freebsd',
-      );
+      expect(() => service.detect()).toThrow('Unsupported platform: freebsd');
     });
   });
 
@@ -617,7 +612,10 @@ describe('HardwareDetectionService (e2e)', () => {
         'docker version --format': "'27.1.0'",
         'docker compose version': "'2.31.0'",
         'docker model ls': 'NAME\nai/test-model',
-        'docker info --format': JSON.stringify({ NCPU: 4, MemTotal: 8589934592 }),
+        'docker info --format': JSON.stringify({
+          NCPU: 4,
+          MemTotal: 8589934592,
+        }),
       });
 
       const profile = service.detect();

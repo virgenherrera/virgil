@@ -18,7 +18,10 @@ export class InMemoryAuditTrail implements AuditTrailStore {
     return this.entries.filter((e) => e.taskId === taskId);
   }
 
-  async queryByTimeRange(from: number, to: number): Promise<EscalationRecord[]> {
+  async queryByTimeRange(
+    from: number,
+    to: number,
+  ): Promise<EscalationRecord[]> {
     return this.entries.filter((e) => e.timestamp >= from && e.timestamp <= to);
   }
 }

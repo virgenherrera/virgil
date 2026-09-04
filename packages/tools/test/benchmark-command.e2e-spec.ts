@@ -119,9 +119,7 @@ describe('BenchmarkCommand (e2e)', () => {
 
     await expect(command.run([])).rejects.toThrow('process.exit');
 
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Usage:'),
-    );
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
     expect(exitSpy).toHaveBeenCalledWith(1);
 
     logSpy.mockRestore();
@@ -135,9 +133,7 @@ describe('BenchmarkCommand (e2e)', () => {
     })
       .overrideProvider(DmrClientService)
       .useValue({
-        fetchModels: vi
-          .fn()
-          .mockRejectedValue(new Error('ECONNREFUSED')),
+        fetchModels: vi.fn().mockRejectedValue(new Error('ECONNREFUSED')),
       })
       .compile();
 
@@ -167,18 +163,14 @@ describe('BenchmarkCommand (e2e)', () => {
     })
       .overrideProvider(DmrClientService)
       .useValue({
-        fetchModels: vi
-          .fn()
-          .mockRejectedValue(new Error('unexpected error')),
+        fetchModels: vi.fn().mockRejectedValue(new Error('unexpected error')),
       })
       .compile();
 
     const command = errorModule.get(BenchmarkCommand);
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-    await expect(command.run([testModel])).rejects.toThrow(
-      'unexpected error',
-    );
+    await expect(command.run([testModel])).rejects.toThrow('unexpected error');
 
     logSpy.mockRestore();
     await errorModule.close();

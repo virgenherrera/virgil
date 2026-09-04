@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EventEmitter } from 'node:events';
 import {
   GovernanceModule,
   CapabilityTier,
@@ -15,15 +14,11 @@ import type {
   TierResolver,
   AuditTrailStore,
   TaskDescriptor,
-  BudgetStatus,
   EscalationRequest,
-  EscalationDecision,
 } from '../src/governance/index.js';
 
 /** Helper to build a valid TaskDescriptor. */
-function descriptor(
-  overrides: Partial<TaskDescriptor> = {},
-): TaskDescriptor {
+function descriptor(overrides: Partial<TaskDescriptor> = {}): TaskDescriptor {
   return {
     taskType: 'code-generation',
     estimatedTokenWeight: 1000,
@@ -119,9 +114,9 @@ describe('Governance — Agent Execution Governance (H11)', () => {
     });
 
     it('resolves mechanical → worker', () => {
-      expect(resolver.resolve(descriptor({ complexitySignal: 'mechanical' }))).toBe(
-        CapabilityTier.Worker,
-      );
+      expect(
+        resolver.resolve(descriptor({ complexitySignal: 'mechanical' })),
+      ).toBe(CapabilityTier.Worker);
     });
 
     it('resolves search → worker', () => {
@@ -131,9 +126,9 @@ describe('Governance — Agent Execution Governance (H11)', () => {
     });
 
     it('resolves extraction → worker', () => {
-      expect(resolver.resolve(descriptor({ complexitySignal: 'extraction' }))).toBe(
-        CapabilityTier.Worker,
-      );
+      expect(
+        resolver.resolve(descriptor({ complexitySignal: 'extraction' })),
+      ).toBe(CapabilityTier.Worker);
     });
 
     it('resolves architecture → reasoning', () => {
@@ -143,9 +138,9 @@ describe('Governance — Agent Execution Governance (H11)', () => {
     });
 
     it('resolves synthesis → reasoning', () => {
-      expect(resolver.resolve(descriptor({ complexitySignal: 'synthesis' }))).toBe(
-        CapabilityTier.Reasoning,
-      );
+      expect(
+        resolver.resolve(descriptor({ complexitySignal: 'synthesis' })),
+      ).toBe(CapabilityTier.Reasoning);
     });
 
     it('resolves review → reasoning', () => {
@@ -362,7 +357,9 @@ describe('Governance — Agent Execution Governance (H11)', () => {
       );
 
       expect(capturedRequest).toBeDefined();
-      expect(capturedRequest!.whatUnresolved).toBe('Complex architectural decision');
+      expect(capturedRequest!.whatUnresolved).toBe(
+        'Complex architectural decision',
+      );
       expect(capturedRequest!.whyInsufficient).toBe(
         'Reasoning tier cannot handle multi-step synthesis',
       );
@@ -437,9 +434,9 @@ describe('Governance — Agent Execution Governance (H11)', () => {
         'extraction',
       ] as const;
       for (const signal of signals) {
-        expect(resolver.resolve(descriptor({ complexitySignal: signal }))).not.toBe(
-          CapabilityTier.Pro,
-        );
+        expect(
+          resolver.resolve(descriptor({ complexitySignal: signal })),
+        ).not.toBe(CapabilityTier.Pro);
       }
     });
 
@@ -546,7 +543,10 @@ describe('Governance — Agent Execution Governance (H11)', () => {
       expect(inRange).toHaveLength(1);
       expect(inRange[0].id).toBe('esc-a');
 
-      const allRange = await auditStore.queryByTimeRange(now - 6000, now + 1000);
+      const allRange = await auditStore.queryByTimeRange(
+        now - 6000,
+        now + 1000,
+      );
       expect(allRange).toHaveLength(2);
     });
 

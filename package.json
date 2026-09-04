@@ -16,7 +16,8 @@
     "test:static": "pnpm run audit && pnpm -r run --if-present test:static && pnpm run validate:exact-deps",
     "test:dynamic": "pnpm -r run --if-present test:dynamic",
     "prepare": "husky",
-    "probe": "node packages/tools/dist/main.js"
+    "probe": "node packages/tools/dist/main.js",
+    "delegate": "node packages/tools/dist/main.js delegate"
   },
   "devDependencies": {
     "husky": "catalog:",

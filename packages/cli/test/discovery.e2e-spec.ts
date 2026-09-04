@@ -41,11 +41,8 @@ import type {
   KnowledgeCoverageResult,
 } from '../src/discovery/index.js';
 import { HybridRetrieverService } from '../src/rag/services/hybrid-retriever.service.js';
-import {
-  createContentHash,
-  createTimestamp,
-} from '../src/shared/primitives.js';
-import type { ContentHash, SemVer, Timestamp } from '../src/shared/primitives.js';
+import { createContentHash } from '../src/shared/primitives.js';
+import type { SemVer, Timestamp } from '../src/shared/primitives.js';
 import {
   ProviderCapability,
   ProviderStatus,
@@ -117,9 +114,7 @@ function fixtureConfig(overrides?: Partial<CrawlConfig>): CrawlConfig {
 
 // ---- Mock factories ----
 
-function createMockIssueProvider(
-  issue?: NormalisedIssue,
-): IssueProvider {
+function createMockIssueProvider(issue?: NormalisedIssue): IssueProvider {
   const fixture = issue ?? fixtureIssue();
   return {
     metadata: fixtureProviderMeta('mock-issue', ProviderCapability.ISSUE),
@@ -178,10 +173,7 @@ function createMockKnowledgeProvider(): KnowledgeProvider {
 
 function createMockRepoProvider(): RepoProvider {
   return {
-    metadata: fixtureProviderMeta(
-      'mock-repo',
-      ProviderCapability.REPOSITORY,
-    ),
+    metadata: fixtureProviderMeta('mock-repo', ProviderCapability.REPOSITORY),
     status: ProviderStatus.CONNECTED,
     initialize: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     healthCheck: vi
@@ -370,7 +362,7 @@ describe('DiscoveryModule (e2e)', () => {
     it('propagates provider errors', async () => {
       await buildModule();
       const resolver = moduleRef.get(IssueResolutionService);
-      mockIssueProvider.getIssue.mockRejectedValueOnce(
+      vi.mocked(mockIssueProvider.getIssue).mockRejectedValueOnce(
         new Error('Issue not found'),
       );
 
@@ -407,9 +399,7 @@ describe('DiscoveryModule (e2e)', () => {
         e.key.startsWith('issue-ref:'),
       );
       expect(issueRefs.length).toBe(1);
-      expect(issueRefs[0].value).toBe(
-        'https://github.com/org/repo/issues/99',
-      );
+      expect(issueRefs[0].value).toBe('https://github.com/org/repo/issues/99');
     });
 
     it('extracts document reference elements', async () => {
@@ -429,9 +419,7 @@ describe('DiscoveryModule (e2e)', () => {
       const extractor = moduleRef.get(IntentExtractionService);
       const intent = extractor.extract(fixtureIssue());
 
-      const prRefs = intent.elements.filter((e) =>
-        e.key.startsWith('pr-ref:'),
-      );
+      const prRefs = intent.elements.filter((e) => e.key.startsWith('pr-ref:'));
       expect(prRefs.length).toBe(1);
       expect(prRefs[0].value).toBe('https://github.com/org/repo/pull/50');
     });
@@ -946,10 +934,7 @@ describe('DiscoveryModule (e2e)', () => {
       const boundary = moduleRef.get(CrawlBoundaryService);
       boundary.configure(fixtureConfig());
 
-      const result = await service.discoverForGap(
-        buildIssueGap(),
-        'task-1',
-      );
+      const result = await service.discoverForGap(buildIssueGap(), 'task-1');
 
       expect(result.gapId).toBe('gap-0');
       expect(result.evidence.length).toBeGreaterThan(0);
@@ -978,10 +963,7 @@ describe('DiscoveryModule (e2e)', () => {
       const boundary = moduleRef.get(CrawlBoundaryService);
       boundary.configure(fixtureConfig());
 
-      const result = await service.discoverForGap(
-        buildRepoGap(),
-        'task-1',
-      );
+      const result = await service.discoverForGap(buildRepoGap(), 'task-1');
 
       expect(result.evidence.length).toBeGreaterThan(0);
       expect(mockRepoProvider.listFiles).toHaveBeenCalled();
@@ -993,10 +975,7 @@ describe('DiscoveryModule (e2e)', () => {
       const boundary = moduleRef.get(CrawlBoundaryService);
       boundary.configure(fixtureConfig());
 
-      const result = await service.discoverForGap(
-        buildChatGap(),
-        'task-1',
-      );
+      const result = await service.discoverForGap(buildChatGap(), 'task-1');
 
       expect(result.evidence.length).toBeGreaterThan(0);
       expect(mockChatProvider.searchMessages).toHaveBeenCalled();
@@ -1035,10 +1014,7 @@ describe('DiscoveryModule (e2e)', () => {
       const boundary = moduleRef.get(CrawlBoundaryService);
       boundary.configure(fixtureConfig());
 
-      const result = await service.discoverForGap(
-        buildIssueGap(),
-        'task-1',
-      );
+      const result = await service.discoverForGap(buildIssueGap(), 'task-1');
 
       for (const ref of result.evidence) {
         expect(EvidenceRefSchema.safeParse(ref).success).toBe(true);
@@ -1049,7 +1025,9 @@ describe('DiscoveryModule (e2e)', () => {
       await buildModule();
       const service = moduleRef.get(TargetedDiscoveryService);
       const boundary = moduleRef.get(CrawlBoundaryService);
-      boundary.configure(fixtureConfig({ maxQueries: 1, perProviderBudget: 1 }));
+      boundary.configure(
+        fixtureConfig({ maxQueries: 1, perProviderBudget: 1 }),
+      );
 
       // First gap consumes the single allowed query
       await service.discoverForGap(buildIssueGap(), 'task-1');
@@ -1308,7 +1286,13 @@ describe('DiscoveryModule (e2e)', () => {
 
     it('DiscoveryOutputSchema rejects missing version', () => {
       const result = DiscoveryOutputSchema.safeParse({
-        issue: { id: 'x', externalId: 'x', title: 'x', description: '', labels: [] },
+        issue: {
+          id: 'x',
+          externalId: 'x',
+          title: 'x',
+          description: '',
+          labels: [],
+        },
         intent: { issueId: 'x', elements: [] },
         coverageSummary: { coverages: [], insufficientKeys: [] },
         resolvedEvidence: [],

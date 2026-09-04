@@ -8,10 +8,7 @@ export const StorageMetricsSchema = z.object({
   dbSizeBytes: z.number().nonnegative(),
   embeddingFootprintBytes: z.number().nonnegative(),
   chunkCount: z.number().int().nonnegative(),
-  artifactCountByState: z.record(
-    z.string(),
-    z.number().int().nonnegative(),
-  ),
+  artifactCountByState: z.record(z.string(), z.number().int().nonnegative()),
 });
 
 export type StorageMetrics = z.infer<typeof StorageMetricsSchema>;

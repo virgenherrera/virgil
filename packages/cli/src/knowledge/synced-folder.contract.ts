@@ -105,18 +105,25 @@ export class SyncedFolderStub implements SyncedFolderPort {
     this._changes = changes;
   }
 
-  async discoverFiles(): Promise<readonly DiscoveredFile[]> {
+  async discoverFiles(
+    _rootPath: string,
+    _include: readonly string[],
+    _exclude: readonly string[],
+  ): Promise<readonly DiscoveredFile[]> {
     return this._files;
   }
 
-  async extractContent(): Promise<ExtractedContent> {
+  async extractContent(_filePath: string): Promise<ExtractedContent> {
     if (!this._content) {
       throw new Error('No content configured in stub');
     }
     return this._content;
   }
 
-  async detectChanges(): Promise<readonly FileChangeEvent[]> {
+  async detectChanges(
+    _rootPath: string,
+    _knownHashes: ReadonlyMap<string, ContentHash>,
+  ): Promise<readonly FileChangeEvent[]> {
     return this._changes;
   }
 }

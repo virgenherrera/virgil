@@ -49,13 +49,26 @@ export interface CdpBrowserPort {
 export const confluencePagePom: CdpPomShape = {
   targetApp: 'confluence',
   version: '1.0.0',
-  description: 'Extracts title, content, and child links from a Confluence page',
+  description:
+    'Extracts title, content, and child links from a Confluence page',
   navigationSteps: [
-    { action: 'waitForSelector', selector: '#title-text, [data-testid="title-text"]', timeout: 10000 },
+    {
+      action: 'waitForSelector',
+      selector: '#title-text, [data-testid="title-text"]',
+      timeout: 10000,
+    },
   ],
   extractionSteps: [
-    { action: 'getText', selector: '#title-text, [data-testid="title-text"]', outputKey: 'title' },
-    { action: 'getHTML', selector: '#main-content, [data-testid="page-content-body"]', outputKey: 'content' },
+    {
+      action: 'getText',
+      selector: '#title-text, [data-testid="title-text"]',
+      outputKey: 'title',
+    },
+    {
+      action: 'getHTML',
+      selector: '#main-content, [data-testid="page-content-body"]',
+      outputKey: 'content',
+    },
     {
       action: 'getLinks',
       selector: '.childpages-macro a, [data-testid="children-item"] a',
@@ -75,7 +88,11 @@ export const confluenceChildPagesPom: CdpPomShape = {
   version: '1.0.0',
   description: 'Extracts child page links from a Confluence parent page',
   navigationSteps: [
-    { action: 'waitForSelector', selector: '.childpages-macro, [data-testid="children-item"]', timeout: 10000 },
+    {
+      action: 'waitForSelector',
+      selector: '.childpages-macro, [data-testid="children-item"]',
+      timeout: 10000,
+    },
   ],
   extractionSteps: [
     {

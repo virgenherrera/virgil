@@ -49,6 +49,9 @@ allowBuilds:
   esbuild: true # Required: bundler used by the Nest CLI build pipeline
   unrs-resolver: true # Required: compiles native bindings needed by some lint tools
   better-sqlite3: true # Required: compiles the native SQLite binding (H06 persistence layer)
+  tree-sitter: true
+  tree-sitter-javascript: true
+  tree-sitter-typescript: true
 
 # Packages exempted from minimumReleaseAge during a bump cycle.
 # Add entries here when a newly published package is blocked by the 24h window

@@ -4,10 +4,7 @@ import type { KnowledgeProvider } from '../contracts/knowledge-provider.types.js
 import type { RepoProvider } from '../contracts/repo-provider.types.js';
 import type { ChatProvider } from '../contracts/chat-provider.types.js';
 import { ProviderCapability } from '../shared/provider.types.js';
-import {
-  createContentHash,
-  createTimestamp,
-} from '../shared/primitives.js';
+import { createContentHash, createTimestamp } from '../shared/primitives.js';
 import type { Timestamp } from '../shared/primitives.js';
 import {
   DISCOVERY_CHAT_PROVIDER,
@@ -172,10 +169,7 @@ export class TargetedDiscoveryService {
     taskAssociation: string,
     now: Timestamp,
   ): Promise<EvidenceRef[]> {
-    const result = await this.issueProvider.search(
-      { text },
-      { maxItems: 5 },
-    );
+    const result = await this.issueProvider.search({ text }, { maxItems: 5 });
     return result.items.map((issue) => ({
       providerId: ProviderCapability.ISSUE,
       sourceUri: issue.identity.uri,
