@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:static": "pnpm run lint && pnpm run format:check && tsc -p tsconfig.json --noEmit",
-    "test:dynamic": "vitest run --coverage"
+    "test:dynamic": "vitest run --coverage",
+    "test:doctor": "pnpm run test:static && pnpm run test:dynamic"
   },
   "dependencies": {
     "@nestjs/common": "catalog:",

@@ -24,7 +24,8 @@
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:static": "pnpm run lint && pnpm run format:check && tsc -p tsconfig.json --noEmit",
-    "test:dynamic": "vitest run --coverage"
+    "test:dynamic": "vitest run --coverage",
+    "test:doctor": "pnpm run test:static && pnpm run build"
   },
   "dependencies": {
     "ulid": "catalog:",

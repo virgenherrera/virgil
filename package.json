@@ -17,7 +17,13 @@
     "test:dynamic": "pnpm -r run --if-present test:dynamic",
     "prepare": "husky",
     "probe": "node packages/tools/dist/main.js",
-    "delegate": "node packages/tools/dist/main.js delegate"
+    "delegate": "node packages/tools/dist/main.js delegate",
+    "cleanup": "pnpm install",
+    "test": "pnpm run build && pnpm run test:static && pnpm run test:dynamic",
+    "test:doctor": "pnpm run cleanup && pnpm run build && pnpm -r run --if-present test:doctor && pnpm run validate:exact-deps",
+    "securityFix": "pnpm update -r",
+    "securityCheck": "pnpm audit --audit-level high",
+    "bumpDependencies": "pnpm run securityFix && pnpm dlx npm-check-updates@22.2.9 && pnpm run securityFix && pnpm run test"
   },
   "devDependencies": {
     "husky": "catalog:",

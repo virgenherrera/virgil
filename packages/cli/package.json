@@ -25,6 +25,7 @@
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:static": "pnpm run lint && pnpm run format:check && tsc -p tsconfig.json --noEmit",
     "test:dynamic": "vitest run --coverage",
+    "test:doctor": "pnpm run test:static && pnpm run test:dynamic",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "node scripts/migrate.mjs",
     "db:benchmark": "node scripts/benchmark-persistence.mjs"
