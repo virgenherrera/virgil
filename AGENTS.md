@@ -2,6 +2,7 @@
 
 ## Menú
 
+- [PROJECT.md](PROJECT.md)
 - [Purpose](#purpose)
 - [Open Agentic Standard](#open-agentic-standard)
 - [Language Policy](#language-policy)
@@ -30,9 +31,9 @@
 
 This file is the canonical repository-level contract for agents working on **Virgil**.
 
-It governs **how agents develop Virgil**.
+**Virgil** is a deterministic, local-first RAG knowledge service -- AI agents query it for project context instead of reading files directly. For the complete product identity, non-goals, and identity scenarios, see [`PROJECT.md`](PROJECT.md).
 
-It does not define the complete runtime orchestration behavior that Virgil will eventually provide to its users. Product-level agent orchestration belongs to the product architecture and its dedicated handoffs/specifications.
+This file governs **how agents develop Virgil** -- the process, delegation, and quality contract. It does not define the complete runtime behavior that Virgil provides to its users; that belongs to [`PROJECT.md`](PROJECT.md) and its dedicated specifications. However, agents must understand what Virgil is before working on it: read `PROJECT.md` before making any product-shaping decision.
 
 All agents operating in this repository must follow this file unless a more specific nested `AGENTS.md` narrows the rules for a subsystem.
 
