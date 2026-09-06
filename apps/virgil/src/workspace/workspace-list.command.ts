@@ -21,8 +21,14 @@ export class WorkspaceListCommand extends CommandRunner {
     options?: Record<string, unknown>,
   ): Promise<void> {
     WorkspaceListInputSchema.parse({});
-    const result = this.workspaceService.list();
-    const output = WorkspaceListOutputSchema.parse(result);
+    const entries = await this.workspaceService.list();
+    const output = WorkspaceListOutputSchema.parse({
+      workspaces: entries.map((e) => ({
+        slug: e.metadata.slug,
+        name: e.metadata.displayName ?? e.metadata.slug,
+        active: e.active,
+      })),
+    });
     const opts = JsonOptionSchema.parse(options ?? {});
 
     console.log(formatOutput(output, opts.json));

@@ -33,8 +33,12 @@ export class WorkspaceCreateCommand extends CommandRunner {
     const name = (options?.name as string | undefined) ?? undefined;
 
     const input = WorkspaceCreateInputSchema.parse({ slug, name });
-    const result = this.workspaceService.create(input);
-    const output = WorkspaceCreateOutputSchema.parse(result);
+    const metadata = await this.workspaceService.create(input.slug, input.name);
+    const output = WorkspaceCreateOutputSchema.parse({
+      slug: metadata.slug,
+      name: metadata.displayName ?? metadata.slug,
+      created: true,
+    });
     const opts = JsonOptionSchema.parse(options ?? {});
 
     console.log(formatOutput(output, opts.json));

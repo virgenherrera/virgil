@@ -27,10 +27,13 @@ export class WorkspaceDeleteCommand extends CommandRunner {
   ): Promise<void> {
     let slug = passedParams[0];
     if (!slug) {
-      const workspaces = this.workspaceService.list();
+      const entries = await this.workspaceService.list();
       slug = await this.promptService.select(
         'Select workspace to delete',
-        workspaces.workspaces.map((w) => ({ name: w.name, value: w.slug })),
+        entries.map((e) => ({
+          name: e.metadata.displayName ?? e.metadata.slug,
+          value: e.metadata.slug,
+        })),
       );
     }
 
@@ -44,8 +47,13 @@ export class WorkspaceDeleteCommand extends CommandRunner {
     }
 
     const input = WorkspaceDeleteInputSchema.parse({ slug, confirm: confirmed });
-    const result = this.workspaceService.delete(input);
-    const output = WorkspaceDeleteOutputSchema.parse(result);
+    if (input.confirm) {
+      await this.workspaceService.delete(input.slug);
+    }
+    const output = WorkspaceDeleteOutputSchema.parse({
+      slug: input.slug,
+      deleted: input.confirm,
+    });
 
     console.log(formatOutput(output, opts.json));
   }

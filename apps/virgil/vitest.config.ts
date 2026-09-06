@@ -10,7 +10,12 @@ export default defineConfig({
       enabled: true,
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/shared/index.ts', 'src/main.ts'],
+      exclude: [
+        'src/**/index.ts',
+        'src/**/*.port.ts',
+        'src/**/*.types.ts',
+        'src/main.ts',
+      ],
       reportsDirectory: 'artifacts/coverage',
       reporter: ['json', 'html', 'text'],
       thresholds: {

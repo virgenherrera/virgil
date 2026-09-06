@@ -27,16 +27,24 @@ export class WorkspaceShowCommand extends CommandRunner {
   ): Promise<void> {
     let slug = passedParams[0];
     if (!slug) {
-      const workspaces = this.workspaceService.list();
+      const entries = await this.workspaceService.list();
       slug = await this.promptService.select(
         'Select workspace',
-        workspaces.workspaces.map((w) => ({ name: w.name, value: w.slug })),
+        entries.map((e) => ({
+          name: e.metadata.displayName ?? e.metadata.slug,
+          value: e.metadata.slug,
+        })),
       );
     }
 
     const input = WorkspaceShowInputSchema.parse({ slug });
-    const result = this.workspaceService.show(input);
-    const output = WorkspaceShowOutputSchema.parse(result);
+    const details = await this.workspaceService.show(input.slug);
+    const output = WorkspaceShowOutputSchema.parse({
+      slug: details.metadata.slug,
+      name: details.metadata.displayName ?? details.metadata.slug,
+      path: details.path,
+      active: details.active,
+    });
     const opts = JsonOptionSchema.parse(options ?? {});
 
     console.log(formatOutput(output, opts.json));

@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Test, TestingModule } from '@nestjs/testing';
 import { WorkspaceModule } from '../src/workspace/workspace.module.js';
 import { WorkspaceCommand } from '../src/workspace/workspace.command.js';
@@ -6,6 +9,8 @@ import { WorkspaceListCommand } from '../src/workspace/workspace-list.command.js
 import { WorkspaceSelectCommand } from '../src/workspace/workspace-select.command.js';
 import { WorkspaceShowCommand } from '../src/workspace/workspace-show.command.js';
 import { WorkspaceDeleteCommand } from '../src/workspace/workspace-delete.command.js';
+import { WorkspaceService } from '../src/workspace/workspace.service.js';
+import { StateDirectoryService } from '../src/workspace/state-directory.service.js';
 import { PromptService } from '../src/shared/prompt.service.js';
 import { NonTtyError } from '../src/shared/non-tty.error.js';
 import { createMockPromptService } from './support/mock-prompt.service.js';
@@ -14,8 +19,10 @@ describe('WorkspaceCommands', () => {
   let module: TestingModule;
   let promptService: ReturnType<typeof createMockPromptService>;
   let logSpy: ReturnType<typeof vi.spyOn>;
+  let tmpDir: string;
 
   beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'virgil-cmd-'));
     promptService = createMockPromptService();
 
     module = await Test.createTestingModule({
@@ -23,13 +30,24 @@ describe('WorkspaceCommands', () => {
     })
       .overrideProvider(PromptService)
       .useValue(promptService)
+      .overrideProvider(StateDirectoryService)
+      .useValue({
+        resolveRoot: () => tmpDir,
+        ensureRoot: async () => tmpDir,
+      })
       .compile();
+
+    const ws = module.get(WorkspaceService);
+    await ws.create('my-workspace', 'My Workspace');
+    await ws.create('other-project', 'Other Project');
+    await ws.select('my-workspace');
 
     logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     logSpy.mockRestore();
+    await rm(tmpDir, { recursive: true, force: true });
   });
 
   // --- workspace create ---

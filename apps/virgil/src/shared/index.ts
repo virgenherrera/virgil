@@ -1,3 +1,8 @@
+export * from './primitives.js';
+export * from './provider.types.js';
+export * from './workspace.types.js';
+export * from './handoff.types.js';
+export * from './knowledge.types.js';
 export { NonTtyError } from './non-tty.error.js';
 export { formatOutput } from './output.formatter.js';
 export { PromptService } from './prompt.service.js';

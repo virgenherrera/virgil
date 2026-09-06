@@ -17,7 +17,7 @@ export class GovernanceAuditCommand extends CommandRunner {
     options?: Record<string, unknown>,
   ): Promise<void> {
     const opts = AuditOptionsSchema.parse(options ?? {});
-    const result = this.governanceService.audit(opts.since);
+    const result = await this.governanceService.audit(opts.since);
     const output = AuditOutputSchema.parse(result);
     console.log(formatOutput(output, opts.json));
   }

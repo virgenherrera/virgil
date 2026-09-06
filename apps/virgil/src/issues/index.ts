@@ -1,0 +1,17 @@
+export { GitHubAdapterSelectorService } from './github-adapter-selector.service.js';
+export type { AdapterSelectionResult } from './github-adapter-selector.service.js';
+export { GitHubApiAdapter } from './github-api.adapter.js';
+export { GitHubCdpAdapter } from './github-cdp.adapter.js';
+export type { ICdpBrowser } from './github-cdp.adapter.js';
+export { CDP_BROWSER } from './github-cdp.adapter.js';
+export { IssuesModule } from './issues.module.js';
+export { IssuesError, IssuesErrorCode } from './issues.errors.js';
+export { HTTP_CLIENT, FetchHttpClient } from './issues-http-client.js';
+export type { IHttpClient, HttpResponse } from './issues-http-client.js';
+export { GitHubAdapterPreference, GitHubIssuesConfigSchema } from './issues-config.schema.js';
+export type { GitHubIssuesConfig, GitHubIssuesConfigInput, GitHubCredentialRef } from './issues-config.schema.js';
+export { normaliseGitHubIssue, mapGitHubState, extractReferencesFromBody, extractLabelNames } from './github-field-normaliser.js';
+export { extractDiscoveryHints } from './github-discovery-hints.js';
+export type { DiscoveryHint } from './github-discovery-hints.js';
+export { GitHubIssueSchema, parseLinkHeader } from './github-api-response.schema.js';
+export type { GitHubIssue } from './github-api-response.schema.js';
